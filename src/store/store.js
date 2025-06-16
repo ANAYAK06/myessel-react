@@ -5,6 +5,7 @@ import workflowReducer from "../slices/workflowSlice/workflowSlice"
 import budgetReducer from "../slices/budgetSlice/budgetSlice";
 import budgetReportReducer from "../slices/budgetSlice/budgetReportSlice";
 import accruedInterestReducer from "../slices/financialReportSlice/accruedInterestSlice"; 
+import bankStatementReducer from "../slices/bankSlice/bankStatementSlice";
 
 
 const store = configureStore({
@@ -15,7 +16,8 @@ const store = configureStore({
     workflow: workflowReducer,
     budget: budgetReducer,
     budgetreport: budgetReportReducer,
-    accruedinterest: accruedInterestReducer
+    accruedinterest: accruedInterestReducer,
+    bankstatement: bankStatementReducer
   }
 
 });

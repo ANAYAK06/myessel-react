@@ -6,6 +6,8 @@ import DashboardContent from './DashboardContent';
 import BasicBusinessInfoSetup from '../BusinessInfo/BusinessInfoSetup';
 import BudgetReport from '../Budget/BudgetReport';
 import AccruedInterestReport from '../FinancialReports/AccruedInterestReport';
+import BankStatementPage from '../Bank/BankStatementPage';
+import BankDetailsPage from '../Bank/BankDetailsPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -69,6 +71,42 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // Check if menu item should route to Bank Statement Page
+    const isBankStatementPage = (menuData) => {
+        if (!menuData) return false;
+        
+        // Check various ways this menu item might be identified
+        const pathMatches = menuData.path === '/Home/BankStatement' || 
+                           menuData.path === '/Reports/BankStatement' ||
+                           menuData.path === '/Bank/BankStatement' ||
+                           menuData.path?.toLowerCase().includes('bankstatement');
+        const nameMatches = menuData.name?.toLowerCase().includes('bankstatement') || 
+                           menuData.name?.toLowerCase().includes('bank statement') ||
+                           menuData.name?.toLowerCase().includes('bank transaction') ||
+                           menuData.name?.toLowerCase().includes('statement');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('bankstatement');
+        
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // Check if menu item should route to Bank Details Page
+    const isBankDetailsPage = (menuData) => {
+        if (!menuData) return false;
+        
+        // Check various ways this menu item might be identified
+        const pathMatches = menuData.path === '/Home/BankDetails' || 
+                           menuData.path === '/Reports/BankDetails' ||
+                           menuData.path === '/Bank/BankDetails' ||
+                           menuData.path?.toLowerCase().includes('bankdetails');
+        const nameMatches = menuData.name?.toLowerCase().includes('bankdetails') || 
+                           menuData.name?.toLowerCase().includes('bank details') ||
+                           menuData.name?.toLowerCase().includes('bank info') ||
+                           menuData.name?.toLowerCase().includes('bank information');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('bankdetails');
+        
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -104,6 +142,18 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isBudgetReport(currentMenuData)) {
             console.log('✅ Rendering BudgetReport for:', currentMenuData.name);
             return <BudgetReport menuData={currentMenuData} />;
+        }
+
+        // Check if this menu item should show Bank Statement Page
+        if (currentMenuData && isBankStatementPage(currentMenuData)) {
+            console.log('✅ Rendering BankStatementPage for:', currentMenuData.name);
+            return <BankStatementPage menuData={currentMenuData} />;
+        }
+
+        // Check if this menu item should show Bank Details Page
+        if (currentMenuData && isBankDetailsPage(currentMenuData)) {
+            console.log('✅ Rendering BankDetailsPage for:', currentMenuData.name);
+            return <BankDetailsPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

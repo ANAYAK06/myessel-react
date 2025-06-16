@@ -334,7 +334,7 @@ const TransactionDetailsModal = ({ isOpen, onClose, transactionData, loading, mo
 };
 
 // Report Summary Cards Component
-const ReportSummaryCards = ({ reportSummary }) => {
+const ReportSummaryCards = ({ reportSummary, reportType }) => {
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
         return new Intl.NumberFormat('en-IN', {
@@ -345,41 +345,89 @@ const ReportSummaryCards = ({ reportSummary }) => {
 
     if (!reportSummary) return null;
 
-    const cards = [
-        {
-            title: 'Total Net Received',
-            value: reportSummary.totalNetReceived,
-            icon: TrendingUp,
-            color: 'from-green-500 to-emerald-600',
-            bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20'
-        },
-        {
-            title: 'Total Net Paid',
-            value: reportSummary.totalNetPaid,
-            icon: TrendingDown,
-            color: 'from-red-500 to-pink-600',
-            bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
-        },
-        {
-            title: 'Final Cash Status',
-            value: reportSummary.finalCashStatus,
-            icon: reportSummary.hasNegativeCashFlow ? AlertTriangle : DollarSign,
-            color: reportSummary.hasNegativeCashFlow ? 'from-red-500 to-red-600' : 'from-green-500 to-green-600',
-            bgColor: reportSummary.hasNegativeCashFlow 
-                ? 'from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20'
-                : 'from-green-50 to-green-50 dark:from-green-900/20 dark:to-green-900/20'
-        },
-        {
-            title: 'Accumulated Interest',
-            value: reportSummary.totalAccumulatedInterest,
-            icon: Calculator,
-            color: 'from-purple-500 to-indigo-600',
-            bgColor: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20'
+    // Different cards for Summary vs Detail reports
+    const getSummaryCards = () => {
+        if (reportType === 'Summary') {
+            return [
+                {
+                    title: 'Total Cumulative Received',
+                    value: reportSummary.totalNetReceived,
+                    icon: TrendingUp,
+                    color: 'from-green-500 to-emerald-600',
+                    bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20'
+                },
+                {
+                    title: 'Total Cumulative Net Paid',
+                    value: reportSummary.totalNetPaid,
+                    icon: TrendingDown,
+                    color: 'from-red-500 to-pink-600',
+                    bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
+                },
+                {
+                    title: 'Total Cumulative Paid Amount',
+                    value: reportSummary.totalCumulativePaidAmount,
+                    icon: BanknoteIcon,
+                    color: 'from-blue-500 to-cyan-600',
+                    bgColor: 'from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20'
+                },
+                {
+                    title: 'Total Net Cash Status',
+                    value: reportSummary.finalCashStatus,
+                    icon: reportSummary.hasNegativeCashFlow ? AlertTriangle : DollarSign,
+                    color: reportSummary.hasNegativeCashFlow ? 'from-red-500 to-red-600' : 'from-green-500 to-green-600',
+                    bgColor: reportSummary.hasNegativeCashFlow 
+                        ? 'from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20'
+                        : 'from-green-50 to-green-50 dark:from-green-900/20 dark:to-green-900/20'
+                },
+                {
+                    title: 'Total Accumulated Interest',
+                    value: reportSummary.totalAccumulatedInterest,
+                    icon: Calculator,
+                    color: 'from-purple-500 to-indigo-600',
+                    bgColor: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20'
+                }
+            ];
+        } else {
+            // Detail report cards (original)
+            return [
+                {
+                    title: 'Total Net Received',
+                    value: reportSummary.totalNetReceived,
+                    icon: TrendingUp,
+                    color: 'from-green-500 to-emerald-600',
+                    bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20'
+                },
+                {
+                    title: 'Total Net Paid',
+                    value: reportSummary.totalNetPaid,
+                    icon: TrendingDown,
+                    color: 'from-red-500 to-pink-600',
+                    bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
+                },
+                {
+                    title: 'Final Cash Status',
+                    value: reportSummary.finalCashStatus,
+                    icon: reportSummary.hasNegativeCashFlow ? AlertTriangle : DollarSign,
+                    color: reportSummary.hasNegativeCashFlow ? 'from-red-500 to-red-600' : 'from-green-500 to-green-600',
+                    bgColor: reportSummary.hasNegativeCashFlow 
+                        ? 'from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20'
+                        : 'from-green-50 to-green-50 dark:from-green-900/20 dark:to-green-900/20'
+                },
+                {
+                    title: 'Accumulated Interest',
+                    value: reportSummary.totalAccumulatedInterest,
+                    icon: Calculator,
+                    color: 'from-purple-500 to-indigo-600',
+                    bgColor: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20'
+                }
+            ];
         }
-    ];
+    };
+
+    const cards = getSummaryCards();
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-6">
             {cards.map((card, index) => (
                 <div key={index} className={`bg-gradient-to-r ${card.bgColor} rounded-xl p-6 border border-gray-200 dark:border-gray-700`}>
                     <div className="flex items-center justify-between">
@@ -697,18 +745,34 @@ const AccruedInterestReport = ({ menuData }) => {
                 return;
             }
 
-            const excelData = currentReportData.map(item => ({
-                'Date': item.date || item.Date,
-                'Net Received Amount': item.netrecieved || item.NetReceived || 0,
-                'Cumulative Received': item.cumrec || item.CumulativeReceived || 0,
-                'Net Paid Amount': item.netpaid || item.NetPaid || 0,
-                'Cumulative Net Paid Amount': item.cumpaid || item.CumulativePaid || 0,
-                'Paid Amount': item.paidAmount || item.PaidAmount || 0,
-                'Cumulative Paid Amount': item.Cupaidamount || item.CumulativePaidAmount || 0,
-                'Net Cash Status': item.cashstatus || item.CashStatus || 0,
-                'Interest On (-Ve) Cash Flow': item.incf || item.Interest || 0,
-                'Accumulated Interest': item.NewAccumulatedInterst || item.AccumulatedInterest || 0
-            }));
+            const excelData = currentReportData.map(item => {
+                if (localFilters.reportType === 'Summary') {
+                    // Summary Report columns
+                    return {
+                        'Cost Center': item.CC || item.CCCode || item.cc || '-',
+                        'Date': item.date || item.Date,
+                        'Cumulative Received': item.cumrec || item.CumulativeReceived || 0,
+                        'Cumulative Net Paid Amount': item.cumpaid || item.CumulativePaid || 0,
+                        'Cumulative Paid Amount': item.Cupaidamount || item.CumulativePaidAmount || 0,
+                        'Net Cash Status': item.cashstatus || item.CashStatus || 0,
+                        'Accumulated Interest': item.NewAccumulatedInterst || item.AccumulatedInterest || 0
+                    };
+                } else {
+                    // Detail Report columns
+                    return {
+                        'Date': item.date || item.Date,
+                        'Net Received Amount': item.netrecieved || item.NetReceived || 0,
+                        'Cumulative Received': item.cumrec || item.CumulativeReceived || 0,
+                        'Net Paid Amount': item.netpaid || item.NetPaid || 0,
+                        'Cumulative Net Paid Amount': item.cumpaid || item.CumulativePaid || 0,
+                        'Paid Amount': item.paidAmount || item.PaidAmount || 0,
+                        'Cumulative Paid Amount': item.Cupaidamount || item.CumulativePaidAmount || 0,
+                        'Net Cash Status': item.cashstatus || item.CashStatus || 0,
+                        'Interest On (-Ve) Cash Flow': item.incf || item.Interest || 0,
+                        'Accumulated Interest': item.NewAccumulatedInterst || item.AccumulatedInterest || 0
+                    };
+                }
+            });
 
             const filename = `${localFilters.reportType}_Report_${localFilters.reportType === 'Detail' ? localFilters.costCenter : localFilters.ccStatus}_${new Date().toISOString().split('T')[0]}`;
             downloadAsExcel(excelData, filename);
@@ -732,6 +796,45 @@ const AccruedInterestReport = ({ menuData }) => {
         } else {
             return localFilters.costCenter && localFilters.ccStatus && localFilters.subType; // All required for Detail
         }
+    };
+
+    // Calculate summary totals for Summary reports
+    const calculateSummaryTotals = () => {
+        if (!Array.isArray(currentReportData) || currentReportData.length === 0 || localFilters.reportType !== 'Summary') {
+            return null;
+        }
+
+        const totals = currentReportData.reduce((acc, item) => {
+            acc.totalCumulativeReceived += parseFloat(item.cumrec || item.CumulativeReceived || 0);
+            acc.totalCumulativeNetPaid += parseFloat(item.cumpaid || item.CumulativePaid || 0);
+            acc.totalCumulativePaidAmount += parseFloat(item.Cupaidamount || item.CumulativePaidAmount || 0);
+            acc.totalNetCashStatus += parseFloat(item.cashstatus || item.CashStatus || 0);
+            acc.totalAccumulatedInterest += parseFloat(item.NewAccumulatedInterest || item.AccumulatedInterest || 0);
+            return acc;
+        }, {
+            totalCumulativeReceived: 0,
+            totalCumulativeNetPaid: 0,
+            totalCumulativePaidAmount: 0,
+            totalNetCashStatus: 0,
+            totalAccumulatedInterest: 0
+        });
+
+        return {
+            totalNetReceived: totals.totalCumulativeReceived,
+            totalNetPaid: totals.totalCumulativeNetPaid,
+            finalCashStatus: totals.totalNetCashStatus,
+            totalAccumulatedInterest: totals.totalAccumulatedInterest,
+            hasNegativeCashFlow: totals.totalNetCashStatus < 0,
+            totalCumulativePaidAmount: totals.totalCumulativePaidAmount
+        };
+    };
+
+    // Get the appropriate summary data
+    const getSummaryData = () => {
+        if (localFilters.reportType === 'Summary') {
+            return calculateSummaryTotals();
+        }
+        return reportSummary;
     };
 
     // Check if any loading is happening
@@ -960,8 +1063,8 @@ const AccruedInterestReport = ({ menuData }) => {
             </div>
 
             {/* Report Summary Cards */}
-            {reportSummary && (
-                <ReportSummaryCards reportSummary={reportSummary} />
+            {getSummaryData() && (
+                <ReportSummaryCards reportSummary={getSummaryData()} reportType={localFilters.reportType} />
             )}
 
             {/* Accrued Interest Report Table */}
@@ -971,86 +1074,135 @@ const AccruedInterestReport = ({ menuData }) => {
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gradient-to-r from-indigo-600 to-purple-700">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Date</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Net Received Amount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Received</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Net Paid Amount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Net Paid Amount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Paid Amount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Paid Amount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Net Cash Status</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Interest On (-Ve) Cash Flow</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Accumulated Interest</th>
+                                    {localFilters.reportType === 'Summary' ? (
+                                        /* Summary Report Columns */
+                                        <>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Cost Center</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Date</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Received</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Net Paid Amount</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Paid Amount</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Net Cash Status</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Accumulated Interest</th>
+                                        </>
+                                    ) : (
+                                        /* Detail Report Columns */
+                                        <>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Date</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Net Received Amount</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Received</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Net Paid Amount</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Net Paid Amount</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Paid Amount</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Cumulative Paid Amount</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Net Cash Status</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Interest On (-Ve) Cash Flow</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Accumulated Interest</th>
+                                        </>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {currentReportData.map((item, index) => (
                                     <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                            {item.date || item.Date}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">
-                                            {(item.netrecieved || item.NetReceived || 0) > 0 ? (
-                                                <button
-                                                    onClick={() => handleAmountClick(
-                                                        item.CCCode || localFilters.costCenter,
-                                                        item.date || item.Date,
-                                                        '2',
-                                                        item.netrecieved || item.NetReceived
+                                        {localFilters.reportType === 'Summary' ? (
+                                            /* Summary Report Row */
+                                            <>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                                                    {item.CC || item.CCCode || item.cc || '-'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                                    {item.date || item.Date}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.cumrec || item.CumulativeReceived || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.cumpaid || item.CumulativePaid || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.Cupaidamount || item.CumulativePaidAmount || 0)}
+                                                </td>
+                                                <td className={clsx(
+                                                    "px-6 py-4 whitespace-nowrap text-sm text-right font-bold",
+                                                    getCashStatusColorClass(item.cashstatus || item.CashStatus || 0)
+                                                )}>
+                                                    {formatCurrency(item.cashstatus || item.CashStatus || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-bold">
+                                                    {formatCurrency(item.NewAccumulatedInterest || item.AccumulatedInterest || 0)}
+                                                </td>
+                                            </>
+                                        ) : (
+                                            /* Detail Report Row */
+                                            <>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                                    {item.date || item.Date}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">
+                                                    {(item.netrecieved || item.NetReceived || 0) > 0 ? (
+                                                        <button
+                                                            onClick={() => handleAmountClick(
+                                                                localFilters.costCenter,
+                                                                item.date || item.Date,
+                                                                '2',
+                                                                item.netrecieved || item.NetReceived
+                                                            )}
+                                                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline cursor-pointer transition-colors font-medium"
+                                                        >
+                                                            {formatCurrency(item.netrecieved || item.NetReceived || 0)}
+                                                        </button>
+                                                    ) : (
+                                                        <span className="font-medium">
+                                                            {formatCurrency(item.netrecieved || item.NetReceived || 0)}
+                                                        </span>
                                                     )}
-                                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline cursor-pointer transition-colors font-medium"
-                                                >
-                                                    {formatCurrency(item.netrecieved || item.NetReceived || 0)}
-                                                </button>
-                                            ) : (
-                                                <span className="font-medium">
-                                                    {formatCurrency(item.netrecieved || item.NetReceived || 0)}
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
-                                            {formatCurrency(item.cumrec || item.CumulativeReceived || 0)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">
-                                            {(item.netpaid || item.NetPaid || 0) > 0 ? (
-                                                <button
-                                                    onClick={() => handleAmountClick(
-                                                        item.CCCode || localFilters.costCenter,
-                                                        item.date || item.Date,
-                                                        '1',
-                                                        item.netpaid || item.NetPaid
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.cumrec || item.CumulativeReceived || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">
+                                                    {(item.netpaid || item.NetPaid || 0) > 0 ? (
+                                                        <button
+                                                            onClick={() => handleAmountClick(
+                                                                localFilters.costCenter,
+                                                                item.date || item.Date,
+                                                                '1',
+                                                                item.netpaid || item.NetPaid
+                                                            )}
+                                                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline cursor-pointer transition-colors font-medium"
+                                                        >
+                                                            {formatCurrency(item.netpaid || item.NetPaid || 0)}
+                                                        </button>
+                                                    ) : (
+                                                        <span className="font-medium">
+                                                            {formatCurrency(item.netpaid || item.NetPaid || 0)}
+                                                        </span>
                                                     )}
-                                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline cursor-pointer transition-colors font-medium"
-                                                >
-                                                    {formatCurrency(item.netpaid || item.NetPaid || 0)}
-                                                </button>
-                                            ) : (
-                                                <span className="font-medium">
-                                                    {formatCurrency(item.netpaid || item.NetPaid || 0)}
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
-                                            {formatCurrency(item.cumpaid || item.CumulativePaid || 0)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
-                                            {formatCurrency(item.paidAmount || item.PaidAmount || 0)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
-                                            {formatCurrency(item.Cupaidamount || item.CumulativePaidAmount || 0)}
-                                        </td>
-                                        <td className={clsx(
-                                            "px-6 py-4 whitespace-nowrap text-sm text-right font-bold",
-                                            getCashStatusColorClass(item.cashstatus || item.CashStatus || 0)
-                                        )}>
-                                            {formatCurrency(item.cashstatus || item.CashStatus || 0)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
-                                            {formatCurrency(item.incf || item.Interest || 0)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-bold">
-                                            {formatCurrency(item.NewAccumulatedInterst || item.AccumulatedInterest || 0)}
-                                        </td>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.cumpaid || item.CumulativePaid || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.paidAmount || item.PaidAmount || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.Cupaidamount || item.CumulativePaidAmount || 0)}
+                                                </td>
+                                                <td className={clsx(
+                                                    "px-6 py-4 whitespace-nowrap text-sm text-right font-bold",
+                                                    getCashStatusColorClass(item.cashstatus || item.CashStatus || 0)
+                                                )}>
+                                                    {formatCurrency(item.cashstatus || item.CashStatus || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
+                                                    {formatCurrency(item.incf || item.Interest || 0)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-bold">
+                                                    {formatCurrency(item.NewAccumulatedInterst || item.AccumulatedInterest || 0)}
+                                                </td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -1107,15 +1259,17 @@ const AccruedInterestReport = ({ menuData }) => {
                     <div className="text-indigo-800 dark:text-indigo-200 text-sm">
                         <p className="font-semibold mb-1">Enhanced Features:</p>
                         <p className="text-gray-600 dark:text-indigo-200">
-                            1. Click on any non-zero "Net Received" or "Net Paid" amounts to view detailed transaction breakdowns<br/>
+                            1. <strong>Detail Report:</strong> Click on any non-zero "Net Received" or "Net Paid" amounts to view detailed transaction breakdowns<br/>
                             2. Date range is optional - if not selected, system defaults to April 1900 through today<br/>
-                            3. Summary cards show key financial metrics and current cash status<br/>
-                            4. Export functionality for detailed analysis<br/>
+                            3. <strong>Summary Report:</strong> Shows Cost Center-wise data with totals in summary cards<br/>
+                            4. Export functionality matches the displayed columns for each report type<br/>
                             {canShowSummaryReport && (
                                 <>
                                     <strong>5. Role 100 users can access both Detail and Summary reports</strong><br/>
-                                    <strong>6. Summary Report requires only CC Status and date selection</strong><br/>
-                                    <strong>7. Detail Report requires Sub Type, CC Status, and Cost Center selection</strong><br/>
+                                    <strong>6. Summary Report:</strong> Requires only CC Status, shows multiple cost centers with aggregated totals<br/>
+                                    <strong>7. Detail Report:</strong> Requires Sub Type, CC Status, and Cost Center selection for single CC analysis<br/>
+                                    <strong>8. Summary Report columns:</strong> Cost Center, Date, Cumulative Received, Cumulative Net Paid Amount, Cumulative Paid Amount, Net Cash Status, Accumulated Interest<br/>
+                                    <strong>9. Detail Report columns:</strong> Date, Net Received Amount, Cumulative Received, Net Paid Amount, Cumulative Net Paid Amount, Paid Amount, Cumulative Paid Amount, Net Cash Status, Interest On (-Ve) Cash Flow, Accumulated Interest<br/>
                                 </>
                             )}
                             <strong>Cost Center Type is fixed to "Performing" as per business requirements.</strong>

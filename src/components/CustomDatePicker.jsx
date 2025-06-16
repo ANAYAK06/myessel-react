@@ -33,9 +33,120 @@ const CustomDatePicker = ({
   customValidation = null, // Custom validation function
   yearRange = { start: 1900, end: 2100 }
 }) => {
+  // Create a date in local timezone without timezone conversion
+  const createSafeLocalDate = (year, month, day) => {
+    return new Date(year, month, day);
+  };
+
+  // Parse input date string - create date in local timezone
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    
+    let day, month, year;
+    
+    // Handle different separators
+    const separators = ['/', '-', '.'];
+    let parts = [];
+    let separator = '';
+    
+    for (const sep of separators) {
+      if (dateString.includes(sep)) {
+        parts = dateString.split(sep);
+        separator = sep;
+        break;
+      }
+    }
+    
+    if (parts.length !== 3) return null;
+    
+    switch (format) {
+      case 'MM/DD/YYYY':
+        [month, day, year] = parts;
+        break;
+      case 'YYYY-MM-DD':
+        [year, month, day] = parts;
+        break;
+      case 'DD/MM/YYYY':
+      default:
+        [day, month, year] = parts;
+        break;
+    }
+    
+    // Convert to numbers and validate
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+    const dayNum = parseInt(day);
+    
+    if (isNaN(yearNum) || isNaN(monthNum) || isNaN(dayNum)) return null;
+    if (monthNum < 1 || monthNum > 12) return null;
+    if (dayNum < 1 || dayNum > 31) return null;
+    
+    // Create date in local timezone (month is 0-indexed)
+    return createSafeLocalDate(yearNum, monthNum - 1, dayNum);
+  };
+
+  // Create a date object in local timezone to avoid timezone conversion issues
+  const createLocalDate = (dateInput) => {
+    if (!dateInput) return null;
+    
+    if (dateInput instanceof Date) {
+      // If it's already a Date object, create a new one with the same local components
+      // Use getFullYear, getMonth, getDate to avoid any timezone issues
+      const year = dateInput.getFullYear();
+      const month = dateInput.getMonth();
+      const day = dateInput.getDate();
+      return createSafeLocalDate(year, month, day);
+    }
+    
+    if (typeof dateInput === 'string') {
+      // If it's a string, parse it carefully to avoid timezone issues
+      if (dateInput.includes('T') || dateInput.includes('Z')) {
+        // ISO string - extract date components to avoid timezone conversion
+        const isoDate = new Date(dateInput);
+        const year = isoDate.getUTCFullYear();
+        const month = isoDate.getUTCMonth();
+        const day = isoDate.getUTCDate();
+        return createSafeLocalDate(year, month, day);
+      } else if (dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // YYYY-MM-DD format - parse manually to avoid timezone issues
+        const [year, month, day] = dateInput.split('-').map(Number);
+        return createSafeLocalDate(year, month - 1, day);
+      } else {
+        // Other formats - use parseDate function
+        return parseDate(dateInput);
+      }
+    }
+    
+    // Fallback - try to create a date but extract local components
+    try {
+      const fallbackDate = new Date(dateInput);
+      if (!isNaN(fallbackDate.getTime())) {
+        const year = fallbackDate.getFullYear();
+        const month = fallbackDate.getMonth();
+        const day = fallbackDate.getDate();
+        return createSafeLocalDate(year, month, day);
+      }
+    } catch (e) {
+      console.warn('CustomDatePicker: Invalid date input:', dateInput);
+    }
+    
+    return null;
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(value ? new Date(value) : null);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Initialize selectedDate safely
+    if (value) {
+      try {
+        return createLocalDate(value);
+      } catch (e) {
+        console.warn('CustomDatePicker: Error initializing selectedDate:', e);
+        return null;
+      }
+    }
+    return null;
+  });
   const [view, setView] = useState('days'); // days, months, years
   const [time, setTime] = useState({ hours: '00', minutes: '00' });
   const [internalError, setInternalError] = useState('');
@@ -67,11 +178,14 @@ const CustomDatePicker = ({
 
   const config = sizeConfig[size];
 
-  // Format date for display
+  // Format date for display - using local date components to avoid timezone issues
   const formatDate = (date) => {
     if (!date) return '';
     
-    const d = new Date(date);
+    // Use the actual date object's local components directly
+    const d = date instanceof Date ? date : createLocalDate(date);
+    if (!d || isNaN(d.getTime())) return '';
+    
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
@@ -87,26 +201,12 @@ const CustomDatePicker = ({
     }
   };
 
-  // Parse input date string
-  const parseDate = (dateString) => {
-    if (!dateString) return null;
-    
-    let day, month, year;
-    
-    switch (format) {
-      case 'MM/DD/YYYY':
-        [month, day, year] = dateString.split('/');
-        break;
-      case 'YYYY-MM-DD':
-        [year, month, day] = dateString.split('-');
-        break;
-      case 'DD/MM/YYYY':
-      default:
-        [day, month, year] = dateString.split('/');
-        break;
-    }
-    
-    return new Date(year, month - 1, day);
+  // Check if two dates are the same day
+  const isSameDay = (date1, date2) => {
+    if (!date1 || !date2) return false;
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
   };
 
   // Validation
@@ -116,12 +216,12 @@ const CustomDatePicker = ({
       return '';
     }
 
-    if (minDate && date < new Date(minDate)) {
-      return `Date must be after ${formatDate(minDate)}`;
+    if (minDate && date < createLocalDate(minDate)) {
+      return `Date must be after ${formatDate(createLocalDate(minDate))}`;
     }
 
-    if (maxDate && date > new Date(maxDate)) {
-      return `Date must be before ${formatDate(maxDate)}`;
+    if (maxDate && date > createLocalDate(maxDate)) {
+      return `Date must be before ${formatDate(createLocalDate(maxDate))}`;
     }
 
     const dateString = formatDate(date);
@@ -139,19 +239,25 @@ const CustomDatePicker = ({
 
   // Handle date selection
   const handleDateSelect = (date) => {
-    const validationError = validateDate(date);
+    // Create a clean local date to avoid timezone issues
+    const cleanDate = createSafeLocalDate(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    const validationError = validateDate(cleanDate);
     setInternalError(validationError);
     
     if (!validationError) {
-      setSelectedDate(date);
-      setCurrentDate(date);
+      setSelectedDate(cleanDate);
+      setCurrentDate(cleanDate);
       
       if (showTime) {
-        const finalDate = new Date(date);
+        const finalDate = createSafeLocalDate(cleanDate.getFullYear(), cleanDate.getMonth(), cleanDate.getDate());
         finalDate.setHours(parseInt(time.hours), parseInt(time.minutes));
         onChange(finalDate);
       } else {
-        onChange(date);
+        // Create a timezone-safe date that will serialize correctly
+        const safeDate = createSafeLocalDate(cleanDate.getFullYear(), cleanDate.getMonth(), cleanDate.getDate());
+        safeDate.setHours(12, 0, 0, 0); // Set to noon to prevent timezone shifts
+        onChange(safeDate);
       }
       
       onValidation(validationError);
@@ -162,43 +268,45 @@ const CustomDatePicker = ({
     }
   };
 
-  // Generate calendar days
+  // Generate calendar days - FIXED VERSION
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
+    // Get first day of the month
+    const firstDayOfMonth = createSafeLocalDate(year, month, 1);
     
-    // Adjust for week start
-    const dayOfWeek = (firstDay.getDay() - weekStartsOn + 7) % 7;
-    startDate.setDate(firstDay.getDate() - dayOfWeek);
+    // Get what day of the week the first day falls on
+    const firstDayWeekday = firstDayOfMonth.getDay();
+    
+    // Calculate how many days to go back to start the calendar
+    const daysToGoBack = (firstDayWeekday - weekStartsOn + 7) % 7;
+    
+    // Create the start date by going back the calculated number of days
+    const startYear = year;
+    const startMonth = month;
+    const startDay = 1 - daysToGoBack;
     
     const days = [];
     const today = new Date();
+    const todayLocal = createSafeLocalDate(today.getFullYear(), today.getMonth(), today.getDate());
     
+    // Generate 42 days (6 weeks)
     for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
+      // Calculate the actual date for this cell
+      const cellDate = createSafeLocalDate(startYear, startMonth, startDay + i);
       
-      const isCurrentMonth = date.getMonth() === month;
-      const isToday = highlightToday && 
-        date.getDate() === today.getDate() && 
-        date.getMonth() === today.getMonth() && 
-        date.getFullYear() === today.getFullYear();
-      const isSelected = selectedDate && 
-        date.getDate() === selectedDate.getDate() && 
-        date.getMonth() === selectedDate.getMonth() && 
-        date.getFullYear() === selectedDate.getFullYear();
+      const isCurrentMonth = cellDate.getMonth() === month;
+      const isToday = highlightToday && isSameDay(cellDate, todayLocal);
+      const isSelected = selectedDate && isSameDay(cellDate, selectedDate);
       
-      const isDisabled = (minDate && date < new Date(minDate)) ||
-        (maxDate && date > new Date(maxDate)) ||
-        disabledDates.includes(formatDate(date));
+      const isDisabled = (minDate && cellDate < createLocalDate(minDate)) ||
+        (maxDate && cellDate > createLocalDate(maxDate)) ||
+        disabledDates.includes(formatDate(cellDate));
       
       days.push({
-        date,
-        day: date.getDate(),
+        date: cellDate,
+        day: cellDate.getDate(),
         isCurrentMonth,
         isToday,
         isSelected,
@@ -218,7 +326,7 @@ const CustomDatePicker = ({
     ];
     
     monthNames.forEach((name, index) => {
-      const date = new Date(currentDate.getFullYear(), index, 1);
+      const date = createSafeLocalDate(currentDate.getFullYear(), index, 1);
       const isSelected = selectedDate && 
         selectedDate.getMonth() === index && 
         selectedDate.getFullYear() === currentDate.getFullYear();
@@ -252,19 +360,34 @@ const CustomDatePicker = ({
   // Navigation handlers
   const navigateMonth = (direction) => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + direction);
-      return newDate;
+      return createSafeLocalDate(prev.getFullYear(), prev.getMonth() + direction, 1);
     });
   };
 
   const navigateYear = (direction) => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      newDate.setFullYear(prev.getFullYear() + direction);
-      return newDate;
+      return createSafeLocalDate(prev.getFullYear() + direction, prev.getMonth(), 1);
     });
   };
+
+  // Generate week headers based on weekStartsOn
+  const getWeekHeaders = () => {
+    const allDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const reorderedDays = [];
+    for (let i = 0; i < 7; i++) {
+      reorderedDays.push(allDays[(weekStartsOn + i) % 7]);
+    }
+    return reorderedDays;
+  };
+
+  // Update selected date when value prop changes
+  useEffect(() => {
+    const newSelectedDate = value ? createLocalDate(value) : null;
+    setSelectedDate(newSelectedDate);
+    if (newSelectedDate) {
+      setCurrentDate(newSelectedDate);
+    }
+  }, [value]);
 
   // Handle click outside
   useEffect(() => {
@@ -295,7 +418,8 @@ const CustomDatePicker = ({
         case 'Enter':
           if (view === 'days') {
             const today = new Date();
-            handleDateSelect(today);
+            const todayLocal = createSafeLocalDate(today.getFullYear(), today.getMonth(), today.getDate());
+            handleDateSelect(todayLocal);
           }
           break;
         default:
@@ -424,7 +548,7 @@ const CustomDatePicker = ({
               <>
                 {/* Week Headers */}
                 <div className="grid grid-cols-7 gap-1 mb-2">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                  {getWeekHeaders().map((day) => (
                     <div key={day} className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 py-2">
                       {day}
                     </div>
@@ -494,7 +618,7 @@ const CustomDatePicker = ({
                   <button
                     key={yearInfo.year}
                     onClick={() => {
-                      setCurrentDate(new Date(yearInfo.year, currentDate.getMonth(), 1));
+                      setCurrentDate(createSafeLocalDate(yearInfo.year, currentDate.getMonth(), 1));
                       setView('days');
                     }}
                     className={`
@@ -549,7 +673,8 @@ const CustomDatePicker = ({
             <button
               onClick={() => {
                 const today = new Date();
-                handleDateSelect(today);
+                const todayLocal = createSafeLocalDate(today.getFullYear(), today.getMonth(), today.getDate());
+                handleDateSelect(todayLocal);
               }}
               className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors font-medium"
             >
@@ -560,7 +685,7 @@ const CustomDatePicker = ({
               <button
                 onClick={() => {
                   if (selectedDate && showTime) {
-                    const finalDate = new Date(selectedDate);
+                    const finalDate = createSafeLocalDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
                     finalDate.setHours(parseInt(time.hours), parseInt(time.minutes));
                     onChange(finalDate);
                     setIsOpen(false);

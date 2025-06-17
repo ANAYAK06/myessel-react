@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { Eye, EyeOff, Building2, Shield, User, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Building2, Shield, User, Loader2, CheckCircle, BarChart3, Users, HardHat } from 'lucide-react';
 import { 
     validateEmployee, 
     clearErrors, 
@@ -14,7 +14,6 @@ import {
 } from '../../slices/auth/authSlice';
 import LoginOptionsPopup from '../../components/LoginOptionPopup';
 import ThemeToggle from '../../components/ThemeToggle';
-
 
 // Validation Schema
 const validationSchema = Yup.object({
@@ -30,6 +29,7 @@ const Login = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
+    const [focusedField, setFocusedField] = useState('');
     
     // Redux state
     const { 
@@ -60,7 +60,7 @@ const Login = () => {
                 employeeId: values.employeeId,
                 password: values.password
             };
-            console.log('Dispatching validateEmployee with:', credentials); //
+            console.log('Dispatching validateEmployee with:', credentials);
             
             dispatch(validateEmployee(credentials));
         }
@@ -70,7 +70,6 @@ const Login = () => {
     useEffect(() => {
         if (success.getEmployeeDetails) {
             dispatch(clearSuccess());
-            // Navigate to employee dashboard
             navigate('/employee-dashboard');
         }
     }, [success.getEmployeeDetails, dispatch, navigate]);
@@ -78,7 +77,6 @@ const Login = () => {
     useEffect(() => {
         if (success.getMenu) {
             dispatch(clearSuccess());
-            // Navigate to role dashboard
             navigate('/role-dashboard');
         }
     }, [success.getMenu, dispatch, navigate]);
@@ -116,6 +114,11 @@ const Login = () => {
         }
     };
 
+    // Floating label logic
+    const shouldShowFloatingLabel = (fieldName) => {
+        return formik.values[fieldName] || focusedField === fieldName;
+    };
+
     // Show loading screen while checking authentication
     if (loading.loadFromStorage) {
         return (
@@ -130,51 +133,73 @@ const Login = () => {
 
     return (
         <>
-            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4 transition-colors">
-                {/* Theme Toggle - Top Right */}
+            <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
+                
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-20 dark:opacity-10">
+                    <div className="absolute top-0 left-0 w-full h-full" style={{
+                        backgroundImage: `radial-gradient(circle at 25% 25%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
+                                         radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.3) 0%, transparent 50%)`
+                    }}></div>
+                </div>
+
+                {/* Floating shapes */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+                </div>
+
+                {/* Theme Toggle */}
                 <div className="absolute top-4 right-4 z-10">
                     <ThemeToggle variant="simple" showLabel={false} />
                 </div>
 
-                <div className="w-full max-w-md">
-                    {/* Company Logo/Header */}
-                    <div className="text-center mb-8">
-                        <div className="mx-auto w-16 h-16 bg-gradient-to-r rounded-xl flex items-center justify-center ">
-                            {/* <Building2 className="w-8 h-8 text-white" /> */}
-                            <img 
-                                src="/logo.jpg" 
-                                alt="Essel Projects Pvt Ltd Logo" 
-                                className="w-16 h-16 object-contain mx-auto mb-6 shadow-lg"
-                            />
-                        </div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
-                            Essel Projects Pvt Ltd
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-300 transition-colors">
-                            Sign in to access your account
-                        </p>
-                    </div>
-
-                    {/* Login Form */}
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8 transition-colors">
-                        <div className="space-y-6">
-                            {/* General Error */}
-                            {error.validateEmployee && (
-                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-3">
-                                    <Shield className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
-                                    <p className="text-red-700 dark:text-red-300 text-sm">{error.validateEmployee}</p>
-                                </div>
-                            )}
-
-                            {/* Employee ID Field */}
-                            <div className="space-y-2">
-                                <label htmlFor="employeeId" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    Employee ID
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                {/* Main Container Card */}
+                <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-white/20 dark:border-gray-700 backdrop-blur-sm transition-colors">
+                    <div className="grid md:grid-cols-2 min-h-[600px]">
+                        
+                        {/* Left Side - Login Form */}
+                        <div className="p-8 md:p-12 flex flex-col justify-center bg-white dark:bg-gray-800 transition-colors">
+                            
+                            {/* Logo Section */}
+                            <div className="text-center mb-8">
+                                <div className="flex items-center justify-center mb-4">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+                                            {/* <img 
+                                                src="/logo.jpg" 
+                                                alt="Essel Projects Pvt Ltd Logo" 
+                                                className="w-10 h-10 object-contain"
+                                            /> */}
+                                            <User className="w-10 h-10 text-white" />
+                                        </div>
+                                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800">
+                                            <CheckCircle className="w-2.5 h-2.5 text-white" />
+                                        </div>
                                     </div>
+                                </div>
+                                
+                                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
+                                    Log In
+                                </h1>
+                                <p className="text-gray-600 dark:text-gray-300 transition-colors">
+                                    Welcome back to your account
+                                </p>
+                            </div>
+
+                            {/* Login Form */}
+                            <div className="space-y-6">
+                                
+                                {/* General Error */}
+                                {error.validateEmployee && (
+                                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-3">
+                                        <Shield className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
+                                        <p className="text-red-700 dark:text-red-300 text-sm">{error.validateEmployee}</p>
+                                    </div>
+                                )}
+
+                                {/* Employee ID Field */}
+                                <div className="relative">
                                     <input
                                         type="text"
                                         id="employeeId"
@@ -182,26 +207,35 @@ const Login = () => {
                                         value={formik.values.employeeId}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        onFocus={() => setFocusedField('employeeId')}
                                         onKeyPress={handleKeyPress}
-                                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
-                                            formik.touched.employeeId && formik.errors.employeeId 
-                                                ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20' 
-                                                : 'border-gray-300 dark:border-gray-600'
+                                        className={`w-full px-4 py-4 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${
+                                            focusedField === 'employeeId' || formik.values.employeeId
+                                                ? 'border-purple-500 focus:border-purple-600' 
+                                                : formik.touched.employeeId && formik.errors.employeeId
+                                                ? 'border-red-300 dark:border-red-600'
+                                                : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
                                         }`}
-                                        placeholder="Enter your employee ID"
+                                        placeholder="Employee ID"
                                         disabled={loading.validateEmployee}
+                                        required
                                     />
+                                    <label 
+                                        htmlFor="employeeId"
+                                        className={`absolute left-4 transition-all duration-200 pointer-events-none ${
+                                            shouldShowFloatingLabel('employeeId')
+                                                ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-purple-600 dark:text-purple-400 font-medium'
+                                                : 'top-4 text-gray-500 dark:text-gray-400'
+                                        }`}
+                                    >
+                                        Employee ID
+                                    </label>
+                                    {formik.touched.employeeId && formik.errors.employeeId && (
+                                        <p className="text-red-600 dark:text-red-400 text-sm mt-1">{formik.errors.employeeId}</p>
+                                    )}
                                 </div>
-                                {formik.touched.employeeId && formik.errors.employeeId && (
-                                    <p className="text-red-600 dark:text-red-400 text-sm">{formik.errors.employeeId}</p>
-                                )}
-                            </div>
 
-                            {/* Password Field */}
-                            <div className="space-y-2">
-                                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    Password
-                                </label>
+                                {/* Password Field */}
                                 <div className="relative">
                                     <input
                                         type={showPassword ? 'text' : 'password'}
@@ -210,81 +244,152 @@ const Login = () => {
                                         value={formik.values.password}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        onFocus={() => setFocusedField('password')}
                                         onKeyPress={handleKeyPress}
-                                        className={`w-full pl-4 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
-                                            formik.touched.password && formik.errors.password 
-                                                ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20' 
-                                                : 'border-gray-300 dark:border-gray-600'
+                                        className={`w-full px-4 py-4 pr-12 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${
+                                            focusedField === 'password' || formik.values.password
+                                                ? 'border-purple-500 focus:border-purple-600' 
+                                                : formik.touched.password && formik.errors.password
+                                                ? 'border-red-300 dark:border-red-600'
+                                                : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
                                         }`}
-                                        placeholder="Enter your password"
+                                        placeholder="Password"
                                         disabled={loading.validateEmployee}
+                                        required
                                     />
+                                    <label 
+                                        htmlFor="password"
+                                        className={`absolute left-4 transition-all duration-200 pointer-events-none ${
+                                            shouldShowFloatingLabel('password')
+                                                ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-purple-600 dark:text-purple-400 font-medium'
+                                                : 'top-4 text-gray-500 dark:text-gray-400'
+                                        }`}
+                                    >
+                                        Password
+                                    </label>
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                                         disabled={loading.validateEmployee}
                                     >
-                                        {showPassword ? (
-                                            <EyeOff className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" />
-                                        ) : (
-                                            <Eye className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" />
-                                        )}
+                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                    </button>
+                                    {formik.touched.password && formik.errors.password && (
+                                        <p className="text-red-600 dark:text-red-400 text-sm mt-1">{formik.errors.password}</p>
+                                    )}
+                                </div>
+
+                                {/* Remember Me & Forgot Password */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <input
+                                            id="rememberMe"
+                                            name="rememberMe"
+                                            type="checkbox"
+                                            checked={formik.values.rememberMe}
+                                            onChange={formik.handleChange}
+                                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-600 rounded"
+                                            disabled={loading.validateEmployee}
+                                        />
+                                        <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600 dark:text-gray-300">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                    <button className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 font-medium">
+                                        Forgot password?
                                     </button>
                                 </div>
-                                {formik.touched.password && formik.errors.password && (
-                                    <p className="text-red-600 dark:text-red-400 text-sm">{formik.errors.password}</p>
-                                )}
+
+                                {/* Submit Button */}
+                                <button
+                                    type='submit'
+                                    onClick={formik.handleSubmit}
+                                    disabled={loading.validateEmployee || !formik.isValid}
+                                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    {loading.validateEmployee ? (
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Verifying...</span>
+                                        </div>
+                                    ) : (
+                                        'Log In'
+                                    )}
+                                </button>
+
+                                {/* Support Contact */}
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        Having trouble? Contact{' '}
+                                        <a href="mailto:it-support@sltouch.in" className="text-purple-600 dark:text-purple-400 hover:text-purple-500 font-medium">
+                                            IT Support
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Side - Compact Visual Content */}
+                        <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 p-8 md:p-12 flex flex-col justify-center items-center text-white relative overflow-hidden">
+                            
+                            {/* Background decorative elements */}
+                            <div className="absolute inset-0 opacity-10">
+                                <div className="absolute top-10 right-10 w-20 h-20 border-2 border-white rounded-full animate-bounce"></div>
+                                <div className="absolute bottom-10 left-10 w-16 h-16 border-2 border-white rotate-45"></div>
+                                <div className="absolute top-1/2 left-10 w-12 h-12 border-2 border-white rounded-full"></div>
                             </div>
 
-                            {/* Remember Me */}
-                            <div className="flex items-center">
-                                <input
-                                    id="rememberMe"
-                                    name="rememberMe"
-                                    type="checkbox"
-                                    checked={formik.values.rememberMe}
-                                    onChange={formik.handleChange}
-                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
-                                    disabled={loading.validateEmployee}
-                                />
-                                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                                    Remember me
-                                </label>
-                            </div>
-
-                            {/* Submit Button */}
-                            <button
-                                type='submit'
-                                onClick={formik.handleSubmit}
-                                disabled={loading.validateEmployee || !formik.isValid}
-                                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading.validateEmployee ? (
-                                    <div className="flex items-center justify-center space-x-2">
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        <span>Verifying...</span>
+                            <div className="relative z-10 text-center">
+                                {/* Main Visual Element */}
+                                <div className="mb-8">
+                                    <div className="w-32 h-32 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-white/30">
+                                        {/* <HardHat className="w-16 h-16 text-white" /> */}
+                                        <img src="/logo.jpg" alt="" />
                                     </div>
-                                ) : (
-                                    'Sign In'
-                                )}
-                            </button>
-                        </div>
+                                    
+                                    <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+                                        Essel Projects Pvt Ltd
+                                    </h2>
+                                   
+                                    <p className="text-purple-200 text-lg">
+                                        Building Tomorrow's Infrastructure
+                                    </p>
+                                </div>
 
-                        {/* Footer */}
-                        <div className="mt-6 text-center">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Having trouble? Contact IT support at{' '}
-                                <span className="text-indigo-600 dark:text-indigo-400 font-medium">it-support@sltouch.in</span>
-                            </p>
-                        </div>
-                    </div>
+                                {/* Key Stats Grid */}
+                                <div className="grid grid-cols-3 gap-4 mb-8">
+                                    <div className="text-center">
+                                        <div className="w-12 h-12 mx-auto bg-white/20 rounded-lg flex items-center justify-center mb-2">
+                                            <BarChart3 className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-2xl font-bold">150+</div>
+                                        <div className="text-xs text-purple-200">Projects</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="w-12 h-12 mx-auto bg-white/20 rounded-lg flex items-center justify-center mb-2">
+                                            <Users className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-2xl font-bold">500+</div>
+                                        <div className="text-xs text-purple-200">Employees</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="w-12 h-12 mx-auto bg-white/20 rounded-lg flex items-center justify-center mb-2">
+                                            <CheckCircle className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-2xl font-bold">99.9%</div>
+                                        <div className="text-xs text-purple-200">Uptime</div>
+                                    </div>
+                                </div>
 
-                    {/* Security Notice */}
-                    <div className="mt-6 text-center">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                            This is a secure company portal. Unauthorized access is prohibited.
-                        </p>
+                                {/* Trust Badge */}
+                                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                                    <p className="text-sm font-medium text-center">
+                                        Trusted by leading construction and manufacturing companies
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

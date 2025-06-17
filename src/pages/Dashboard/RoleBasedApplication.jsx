@@ -1,5 +1,5 @@
-// pages/Dashboard/RoleBasedApplication.js
-import React, { useState } from 'react';
+// pages/Dashboard/RoleBasedApplication.js - UPDATED WITH CENTRALIZED FREQUENCY TRACKING
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import TopNavbarLayout from '../../components/TopNavbarLayout';
 import DashboardContent from './DashboardContent';
@@ -8,16 +8,76 @@ import BudgetReport from '../Budget/BudgetReport';
 import AccruedInterestReport from '../FinancialReports/AccruedInterestReport';
 import BankStatementPage from '../Bank/BankStatementPage';
 import BankDetailsPage from '../Bank/BankDetailsPage';
+import ClientPOReportPage from '../ClientPO/ClientPOReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
     
     const [currentPage, setCurrentPage] = useState('dashboard');
     const [currentMenuData, setCurrentMenuData] = useState(null);
+    
+    // Centralized frequency tracking state
+    const [linkFrequency, setLinkFrequency] = useState({});
 
-    // Handle navigation from TopNavbarLayout
+    // Load frequency data from sessionStorage on component mount
+    useEffect(() => {
+        const savedFrequency = sessionStorage.getItem('menuLinkFrequency');
+        if (savedFrequency) {
+            try {
+                setLinkFrequency(JSON.parse(savedFrequency));
+                console.log('🔄 Loaded frequency data:', JSON.parse(savedFrequency));
+            } catch (error) {
+                console.error('Error loading link frequency:', error);
+                setLinkFrequency({});
+            }
+        }
+    }, []);
+
+    // Save frequency data to sessionStorage whenever it changes
+    useEffect(() => {
+        if (Object.keys(linkFrequency).length > 0) {
+            sessionStorage.setItem('menuLinkFrequency', JSON.stringify(linkFrequency));
+            console.log('💾 Saved frequency data:', linkFrequency);
+        }
+    }, [linkFrequency]);
+
+    // Centralized function to track ALL navigation events
+    const trackMenuUsage = useCallback((menuData) => {
+        if (!menuData) return;
+
+        // Create a unique key for the menu item
+        // Use consistent key format across all navigation sources
+        let linkKey;
+        
+        if (menuData.name === 'Dashboard' || menuData.type === 'dashboard') {
+            linkKey = 'Dashboard_Dashboard';
+        } else {
+            // For menu items from API
+            const section = menuData.li || menuData.section || 'Other';
+            const name = menuData.name || menuData.subli || menuData.SUBLI || 'Unknown';
+            linkKey = `${section}_${name}`;
+        }
+        
+        // Update frequency count
+        setLinkFrequency(prev => {
+            const newFrequency = {
+                ...prev,
+                [linkKey]: (prev[linkKey] || 0) + 1
+            };
+            console.log('📊 Updated frequency for:', linkKey, 'New count:', newFrequency[linkKey]);
+            return newFrequency;
+        });
+
+    }, []);
+
+    // Enhanced navigation handler that tracks ALL navigation
     const handleNavigation = (route, menuData) => {
         console.log('🔗 Navigation:', route, menuData);
+        
+        // Track this navigation event
+        trackMenuUsage(menuData);
+        
+        // Update current page state
         setCurrentPage(route);
         setCurrentMenuData(menuData);
     };
@@ -26,7 +86,6 @@ const RoleBasedApplication = () => {
     const isBasicBusinessInfoSetup = (menuData) => {
         if (!menuData) return false;
         
-        // Check various ways this menu item might be identified
         const pathMatches = menuData.path === '/Home/BasicBusinessInfoSetup';
         const nameMatches = menuData.name?.toLowerCase().includes('basicbusinessinfosetup') || 
                            menuData.name?.toLowerCase().includes('basic business info setup');
@@ -39,7 +98,6 @@ const RoleBasedApplication = () => {
     const isAccruedInterestReport = (menuData) => {
         if (!menuData) return false;
         
-        // Check various ways this menu item might be identified
         const pathMatches = menuData.path === '/Reports/AccruedInterestReport' || 
                            menuData.path === '/Home/AccruedInterestReport' ||
                            menuData.path?.toLowerCase().includes('accruedinterest') ||
@@ -60,7 +118,6 @@ const RoleBasedApplication = () => {
     const isBudgetReport = (menuData) => {
         if (!menuData) return false;
         
-        // Check various ways this menu item might be identified
         const pathMatches = menuData.path === '/Home/BudgetReport' || 
                            menuData.path === '/Accounts/BudgetReport' ||
                            menuData.path?.toLowerCase().includes('budgetreport');
@@ -75,7 +132,6 @@ const RoleBasedApplication = () => {
     const isBankStatementPage = (menuData) => {
         if (!menuData) return false;
         
-        // Check various ways this menu item might be identified
         const pathMatches = menuData.path === '/Home/BankStatement' || 
                            menuData.path === '/Reports/BankStatement' ||
                            menuData.path === '/Bank/BankStatement' ||
@@ -93,7 +149,6 @@ const RoleBasedApplication = () => {
     const isBankDetailsPage = (menuData) => {
         if (!menuData) return false;
         
-        // Check various ways this menu item might be identified
         const pathMatches = menuData.path === '/Home/BankDetails' || 
                            menuData.path === '/Reports/BankDetails' ||
                            menuData.path === '/Bank/BankDetails' ||
@@ -107,11 +162,30 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // Check if menu item should route to Client PO Report Page
+    const isClientPOReportPage = (menuData) => {
+        if (!menuData) return false;
+        
+        const pathMatches = menuData.path === '/Home/ClientPOReport' || 
+                           menuData.path === '/Reports/ClientPOReport' ||
+                           menuData.path === '/Reports/GetClientPOForReport' ||
+                           menuData.path?.toLowerCase().includes('clientpo') ||
+                           menuData.path?.toLowerCase().includes('getclientpofor');
+        const nameMatches = menuData.name?.toLowerCase().includes('clientpo') || 
+                           menuData.name?.toLowerCase().includes('client po') ||
+                           menuData.name?.toLowerCase().includes('po report') ||
+                           menuData.name?.toLowerCase().includes('purchase order report') ||
+                           menuData.name?.toLowerCase().includes('getclientpofor');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('clientpo') ||
+                            menuData.reactRoute?.toLowerCase().includes('getclientpofor');
+        
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
         
-        // Check if this is any budget-related menu item
         const pathMatches = menuData.path?.toLowerCase().includes('budget');
         const nameMatches = menuData.name?.toLowerCase().includes('budget');
         const sectionMatches = menuData.li?.toLowerCase().includes('budget') || 
@@ -123,7 +197,13 @@ const RoleBasedApplication = () => {
     // Render content based on current page
     const renderPageContent = () => {
         if (currentPage === 'dashboard') {
-            return <DashboardContent />;
+            return (
+                <DashboardContent 
+                    onNavigate={handleNavigation}
+                    linkFrequency={linkFrequency}
+                    trackMenuUsage={trackMenuUsage}
+                />
+            );
         }
 
         // Check if this menu item should show BasicBusinessInfoSetup
@@ -154,6 +234,12 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isBankDetailsPage(currentMenuData)) {
             console.log('✅ Rendering BankDetailsPage for:', currentMenuData.name);
             return <BankDetailsPage menuData={currentMenuData} />;
+        }
+
+        // Check if this menu item should show Client PO Report Page
+        if (currentMenuData && isClientPOReportPage(currentMenuData)) {
+            console.log('✅ Rendering ClientPOReportPage for:', currentMenuData.name);
+            return <ClientPOReportPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

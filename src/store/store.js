@@ -7,6 +7,7 @@ import budgetReportReducer from "../slices/budgetSlice/budgetReportSlice";
 import accruedInterestReducer from "../slices/financialReportSlice/accruedInterestSlice"; 
 import bankStatementReducer from "../slices/bankSlice/bankStatementSlice";
 import clientPOReportReducer from "../slices/clientPOSlice/clientPOReportSlice";
+import transactionLogReducer from "../slices/financialReportSlice/transactionLogSlice";
 
 
 const store = configureStore({
@@ -19,7 +20,8 @@ const store = configureStore({
     budgetreport: budgetReportReducer,
     accruedinterest: accruedInterestReducer,
     bankstatement: bankStatementReducer,
-    clientporeport: clientPOReportReducer
+    clientporeport: clientPOReportReducer,
+    transactionlog: transactionLogReducer
   }
 
 });

@@ -9,6 +9,7 @@ import AccruedInterestReport from '../FinancialReports/AccruedInterestReport';
 import BankStatementPage from '../Bank/BankStatementPage';
 import BankDetailsPage from '../Bank/BankDetailsPage';
 import ClientPOReportPage from '../ClientPO/ClientPOReportPage';
+import TransactionLogPage from '../FinancialReports/TransactionLogPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -182,6 +183,22 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    const isTransactionLogPage = (menuData) => {
+    if (!menuData) return false;
+    
+    const pathMatches = menuData.path === '/Reports/TransactionLog' || 
+                       menuData.path === '/Home/TransactionLog' ||
+                       menuData.path === '/Reports/ViewTransactionLogGrid' ||
+                       menuData.path?.toLowerCase().includes('transactionlog');
+    const nameMatches = menuData.name?.toLowerCase().includes('transactionlog') || 
+                       menuData.name?.toLowerCase().includes('transaction log') ||
+                       menuData.name?.toLowerCase().includes('transaction report') ||
+                       menuData.name?.toLowerCase().includes('viewtransactionlog');
+    const routeMatches = menuData.reactRoute?.toLowerCase().includes('transactionlog');
+    
+    return pathMatches || nameMatches || routeMatches;
+};
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -193,6 +210,8 @@ const RoleBasedApplication = () => {
         
         return pathMatches || nameMatches || sectionMatches;
     };
+
+
 
     // Render content based on current page
     const renderPageContent = () => {
@@ -241,6 +260,12 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering ClientPOReportPage for:', currentMenuData.name);
             return <ClientPOReportPage menuData={currentMenuData} />;
         }
+
+        // Check if this menu item should show Transaction Log Page
+        if (currentMenuData && isTransactionLogPage(currentMenuData)) {
+             console.log('✅ Rendering TransactionLogPage for:', currentMenuData.name);
+             return <TransactionLogPage menuData={currentMenuData} />;
+}
 
         // For any other budget-related menu item, show a budget module placeholder
         if (currentMenuData && isBudgetModule(currentMenuData)) {

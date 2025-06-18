@@ -1,15 +1,39 @@
 // Enhanced Dashboard Content Component with Centralized Frequency Tracking
-import React, { useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useCallback, useEffect } from 'react';
+
+import { useSelector, useDispatch } from 'react-redux';
 import { 
     TrendingUp, TrendingDown, ShoppingCart, Package, AlertTriangle, 
     CheckCircle, Clock, BarChart3, PieChart, Activity, Users, FileText,
     DollarSign, ArrowUpRight, ArrowDownRight, Eye, ExternalLink,
     Zap, Target, Award, Bell, Star, TrendingUpIcon, Calculator, CreditCard
 } from 'lucide-react';
+import {fetchTodayTransactionLog,
+        selectTodayTransactionLog,
+        selectTodayTransactionLogLoading
+} from '../../slices/financialReportSlice/transactionLogSlice'
 
 const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) => {
     const { roleData, userData } = useSelector((state) => state.auth);
+
+    const dispatch = useDispatch();
+
+    const todayTransactions = useSelector(selectTodayTransactionLog);
+    const todayTransactionsLoading = useSelector(selectTodayTransactionLogLoading);
+
+    useEffect(()=>{
+        dispatch(fetchTodayTransactionLog());
+    }, [dispatch]);
+
+    const formatCurrency = (amount) => {
+        if (!amount && amount !== 0) return '0.00';
+        return new Intl.NumberFormat('en-IN', {
+            style: 'decimal',
+            minimumFractionDigits: 2
+        }).format(amount);
+    }
+     const recentTransactions = Array.isArray(todayTransactions?.Data) ? todayTransactions.Data.slice(0, 5) : 
+                              Array.isArray(todayTransactions) ? todayTransactions.slice(0, 5) : [];
 
     // Mock dashboard data - replace with actual API calls
     const dashboardData = {
@@ -50,8 +74,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
         if (onNavigate) {
             onNavigate(linkData.reactRoute, linkData);
         }
-        
-        console.log('🔗 Dashboard Link clicked:', linkData.name, 'Navigation triggered');
+       
     }, [onNavigate, trackMenuUsage]);
 
     // Get icon for menu items
@@ -107,7 +130,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
         
         // If no frequency data exists, return first 8 items as default
         if (Object.keys(linkFrequency).length === 0) {
-            console.log('📊 No frequency data, showing default first 8 items');
+            
             return allItems.slice(0, 8);
         }
         
@@ -117,7 +140,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
             .sort((a, b) => b.frequency - a.frequency)
             .slice(0, 8);
         
-        console.log('📊 Found frequent items:', frequentItems.map(item => `${item.name}: ${item.frequency}`));
+       
         
         // If we have less than 8 frequent items, fill remaining with unclicked items
         if (frequentItems.length < 8) {
@@ -125,7 +148,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                 .filter(item => item.frequency === 0)
                 .slice(0, 8 - frequentItems.length);
             
-            console.log('📊 Adding unclicked items to fill slots:', unclickedItems.length);
+            
             return [...frequentItems, ...unclickedItems];
         }
         
@@ -147,13 +170,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
     const totalClicks = Object.values(linkFrequency).reduce((sum, count) => sum + count, 0);
     const uniqueItemsClicked = Object.keys(linkFrequency).length;
 
-    // Debug logging
-    console.log('🔍 Dashboard Debug - Frequency Data:', {
-        linkFrequency,
-        totalClicks,
-        uniqueItemsClicked,
-        quickAccessLinks: quickAccessLinks.map(item => ({ name: item.name, frequency: item.frequency }))
-    });
+    
 
     return (
         <div className="space-y-6">
@@ -449,64 +466,90 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
             {/* Recent Activity and Notifications */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Activity Table */}
-                <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+                  <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Today's Recent Activity</h3>
                         <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">View All</button>
                     </div>
                     
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        ID
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Type
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Amount
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {[
-                                    { id: 'TXN001', type: 'Sale', amount: '₹45,000', status: 'Completed' },
-                                    { id: 'TXN002', type: 'Purchase', amount: '₹23,500', status: 'Pending' },
-                                    { id: 'TXN003', type: 'Sale', amount: '₹67,800', status: 'Completed' },
-                                    { id: 'TXN004', type: 'Purchase', amount: '₹12,300', status: 'Rejected' },
-                                    { id: 'TXN005', type: 'Sale', amount: '₹89,200', status: 'Completed' }
-                                ].map((transaction, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                                            {transaction.id}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                            {transaction.type}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                            {transaction.amount}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                transaction.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' :
-                                                transaction.status === 'Pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' :
-                                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                                            }`}>
-                                                {transaction.status}
-                                            </span>
-                                        </td>
+                    {todayTransactionsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                            <span className="ml-2 text-gray-500 dark:text-gray-400">Loading today's transactions...</span>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Entry Date
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Account Name
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Voucher Type
+                                        </th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Debit
+                                        </th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Credit
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Status
+                                        </th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    {recentTransactions.length > 0 ? recentTransactions.map((transaction, index) => (
+                                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                {transaction.EntryDate || transaction.Date || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                <div className="max-w-xs truncate" title={transaction.NameofAccount || transaction.AccountName || transaction.Description || transaction.Name}>
+                                                    {transaction.NameofAccount || transaction.AccountName || transaction.Description || transaction.Name || '-'}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                                <span className="px-2 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full">
+                                                    {transaction.VoucherType || transaction.TranType || transaction.TransactionType || '-'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-right font-medium">
+                                                <span className="text-red-600 dark:text-red-400">
+                                                    ₹{formatCurrency(transaction.DebitValue || transaction.Debit || 0)}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-right font-medium">
+                                                <span className="text-green-600 dark:text-green-400">
+                                                    ₹{formatCurrency(transaction.CreditValue || transaction.Credit || 0)}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    (transaction.Status || 'Approved').toLowerCase() === 'approved' 
+                                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
+                                                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                                                }`}>
+                                                    {transaction.Status || 'Approved'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan="6" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                                No transactions found for today
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
-
                 {/* Notifications & Alerts */}
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="flex items-center justify-between mb-4">

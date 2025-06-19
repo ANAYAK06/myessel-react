@@ -170,14 +170,13 @@ const RoleBasedApplication = () => {
         const pathMatches = menuData.path === '/Home/ClientPOReport' || 
                            menuData.path === '/Reports/ClientPOReport' ||
                            menuData.path === '/Reports/GetClientPOForReport' ||
-                           menuData.path?.toLowerCase().includes('clientpo') ||
+                           menuData.path?.toLowerCase().includes('clientporeport') ||
                            menuData.path?.toLowerCase().includes('getclientpofor');
-        const nameMatches = menuData.name?.toLowerCase().includes('clientpo') || 
-                           menuData.name?.toLowerCase().includes('client po') ||
-                           menuData.name?.toLowerCase().includes('po report') ||
-                           menuData.name?.toLowerCase().includes('purchase order report') ||
-                           menuData.name?.toLowerCase().includes('getclientpofor');
-        const routeMatches = menuData.reactRoute?.toLowerCase().includes('clientpo') ||
+        const nameMatches = menuData.name?.toLowerCase().includes('clientporeport') || 
+                           menuData.name?.toLowerCase().includes('po report');
+                           
+                           
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('clientpoReport') ||
                             menuData.reactRoute?.toLowerCase().includes('getclientpofor');
         
         return pathMatches || nameMatches || routeMatches;

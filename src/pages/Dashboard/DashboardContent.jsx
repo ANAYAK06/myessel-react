@@ -2,15 +2,26 @@
 import React, { useCallback, useEffect } from 'react';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-    TrendingUp, TrendingDown, ShoppingCart, Package, AlertTriangle, 
+import {
+    TrendingUp, TrendingDown, ShoppingCart, Package, AlertTriangle,
     CheckCircle, Clock, BarChart3, PieChart, Activity, Users, FileText,
     DollarSign, ArrowUpRight, ArrowDownRight, Eye, ExternalLink,
     Zap, Target, Award, Bell, Star, TrendingUpIcon, Calculator, CreditCard
 } from 'lucide-react';
-import {fetchTodayTransactionLog,
-        selectTodayTransactionLog,
-        selectTodayTransactionLogLoading
+import {
+    fetchTodayTransactionLog,
+    selectTodayTransactionLog,
+    selectTodayTransactionLogLoading,
+    fetchmonthlyTransactionLog,
+    fetchMonthlyClientInvoiceLog,
+    fetchMonthlyVendorInvoiceLog,
+    fetchPreviousMonthVendorInvoiceLog,
+    fetchPreviousMonthClientInvoiceLog,
+    selectMonthlyVendorInvoiceLog,
+    selectMonthlyClientInvoiceLog,
+    selectPreviousMonthVendorInvoiceLog,
+    selectPreviousMonthClientInvoiceLog
+
 } from '../../slices/financialReportSlice/transactionLogSlice'
 
 const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) => {
@@ -20,9 +31,17 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
 
     const todayTransactions = useSelector(selectTodayTransactionLog);
     const todayTransactionsLoading = useSelector(selectTodayTransactionLogLoading);
+    const monthlyVendorData = useSelector(selectMonthlyVendorInvoiceLog);
+    const monthlyClientData = useSelector(selectMonthlyClientInvoiceLog);
+    const previousMonthVendorData = useSelector(selectPreviousMonthVendorInvoiceLog);
+    const previousMonthClientData = useSelector(selectPreviousMonthClientInvoiceLog);
 
-    useEffect(()=>{
+    useEffect(() => {
         dispatch(fetchTodayTransactionLog());
+        dispatch(fetchMonthlyVendorInvoiceLog());
+        dispatch(fetchMonthlyClientInvoiceLog());
+        dispatch(fetchPreviousMonthVendorInvoiceLog());
+        dispatch(fetchPreviousMonthClientInvoiceLog());
     }, [dispatch]);
 
     const formatCurrency = (amount) => {
@@ -32,22 +51,52 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
             minimumFractionDigits: 2
         }).format(amount);
     }
-     const recentTransactions = Array.isArray(todayTransactions?.Data) ? todayTransactions.Data.slice(0, 5) : 
-                              Array.isArray(todayTransactions) ? todayTransactions.slice(0, 5) : [];
+
+
+
+    // Calculate totals from transaction data
+    const calculateTransactionTotals = (data) => {
+        if (!data?.Data || !Array.isArray(data.Data)) return 0;
+
+        return data.Data.reduce((total, transaction) => {
+            const debit = parseFloat(transaction.DebitValue || transaction.Debit || 0);
+            const credit = parseFloat(transaction.CreditValue || transaction.Credit || 0);
+            return total + debit + credit; // or adjust logic based on your needs
+        }, 0);
+    };
+
+    // Calculate current month totals
+    const currentMonthSales = calculateTransactionTotals(monthlyClientData);
+    const currentMonthPurchase = calculateTransactionTotals(monthlyVendorData);
+
+    // Calculate previous month totals
+    const previousMonthSales = calculateTransactionTotals(previousMonthClientData);
+    const previousMonthPurchase = calculateTransactionTotals(previousMonthVendorData);
+
+    // Calculate growth percentages
+    const salesGrowth = previousMonthSales > 0
+        ? ((currentMonthSales - previousMonthSales) / previousMonthSales * 100).toFixed(1)
+        : 0;
+
+    const purchaseGrowth = previousMonthPurchase > 0
+        ? ((currentMonthPurchase - previousMonthPurchase) / previousMonthPurchase * 100).toFixed(1)
+        : 0;
+    const recentTransactions = Array.isArray(todayTransactions?.Data) ? todayTransactions.Data.slice(0, 5) :
+        Array.isArray(todayTransactions) ? todayTransactions.slice(0, 5) : [];
 
     // Mock dashboard data - replace with actual API calls
     const dashboardData = {
         sales: {
-            today: 125000,
-            thisMonth: 2500000,
-            growth: 15.3,
-            trend: 'up'
+            today: 0,
+            thisMonth: currentMonthSales,
+            growth: parseFloat(salesGrowth),
+            trend: salesGrowth >= 0 ? 'up' : 'down'
         },
         purchase: {
-            today: 85000,
-            thisMonth: 1800000,
-            growth: -3.2,
-            trend: 'down'
+            today: 0,
+            thisMonth: currentMonthPurchase,
+            growth: parseFloat(purchaseGrowth),
+            trend: purchaseGrowth >= 0 ? 'up' : 'down'
         },
         transactions: {
             total: 1456,
@@ -74,14 +123,14 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
         if (onNavigate) {
             onNavigate(linkData.reactRoute, linkData);
         }
-       
+
     }, [onNavigate, trackMenuUsage]);
 
     // Get icon for menu items
     const getIconForItem = (item) => {
         const path = item.Path?.toLowerCase() || '';
         const name = (item.SUBLI || '').toLowerCase();
-        
+
         if (path.includes('report') || name.includes('report')) return BarChart3;
         if (path.includes('employee') || name.includes('employee')) return Users;
         if (path.includes('purchase') || name.includes('purchase')) return ShoppingCart;
@@ -98,14 +147,14 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
     // Get all available menu items with their frequency data
     const getAllMenuItemsWithFrequency = () => {
         if (!roleData?.menuItems) return [];
-        
+
         return roleData.menuItems.map(item => {
             // Use consistent key format with RoleBasedApplication
             const section = item.LI || 'Other';
             const name = item.SUBLI || item.FirmFunctionalAreaName || 'Unknown';
             const linkKey = `${section}_${name}`;
             const frequency = linkFrequency[linkKey] || 0;
-            
+
             return {
                 id: item.FirmFunctionalAreaId,
                 name: name,
@@ -127,31 +176,31 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
     // Get frequently accessed links (top 8 most clicked)
     const getFrequentlyAccessedLinks = () => {
         const allItems = getAllMenuItemsWithFrequency();
-        
+
         // If no frequency data exists, return first 8 items as default
         if (Object.keys(linkFrequency).length === 0) {
-            
+
             return allItems.slice(0, 8);
         }
-        
+
         // Sort by frequency (descending) and take top 8
         const frequentItems = allItems
             .filter(item => item.frequency > 0)
             .sort((a, b) => b.frequency - a.frequency)
             .slice(0, 8);
-        
-       
-        
+
+
+
         // If we have less than 8 frequent items, fill remaining with unclicked items
         if (frequentItems.length < 8) {
             const unclickedItems = allItems
                 .filter(item => item.frequency === 0)
                 .slice(0, 8 - frequentItems.length);
-            
-            
+
+
             return [...frequentItems, ...unclickedItems];
         }
-        
+
         return frequentItems;
     };
 
@@ -170,7 +219,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
     const totalClicks = Object.values(linkFrequency).reduce((sum, count) => sum + count, 0);
     const uniqueItemsClicked = Object.keys(linkFrequency).length;
 
-    
+
 
     return (
         <div className="space-y-6">
@@ -276,14 +325,30 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                             View Details
                         </button>
                     </div>
-                    
+
                     <div className="h-48 bg-gradient-to-r from-green-50 to-indigo-50 dark:from-green-900/20 dark:to-indigo-900/20 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 relative transition-colors">
                         <div className="text-center">
                             <BarChart3 className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                            <p className="text-gray-500 dark:text-gray-400 font-medium">Sales Chart</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">₹{dashboardData.sales.thisMonth.toLocaleString()} this month</p>
+                            <p className="text-gray-500 dark:text-gray-400 font-medium">Sales Comparison</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                This Month: ₹{currentMonthSales.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                Last Month: ₹{previousMonthSales.toLocaleString()}
+                            </p>
                         </div>
-                        <div className="absolute bottom-4 left-4 right-4 h-1 bg-gradient-to-r from-green-400 to-indigo-400 rounded"></div>
+                        <div className="absolute bottom-4 left-4 right-4 space-y-1">
+                            <div className="flex justify-between text-xs">
+                                <span className="text-green-600">This Month</span>
+                                <span className="text-gray-400">Previous Month</span>
+                            </div>
+                            <div className="h-1 bg-gradient-to-r from-green-400 to-indigo-400 rounded relative">
+                                <div
+                                    className="absolute right-0 h-1 bg-gray-400 rounded"
+                                    style={{ width: `${Math.min((previousMonthSales / Math.max(currentMonthSales, previousMonthSales)) * 100, 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -296,21 +361,26 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                             View Details
                         </button>
                     </div>
-                    
+
                     <div className="h-48 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 relative transition-colors">
                         <div className="text-center">
                             <PieChart className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                            <p className="text-gray-500 dark:text-gray-400 font-medium">Purchase Distribution</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">₹{dashboardData.purchase.thisMonth.toLocaleString()} this month</p>
+                            <p className="text-gray-500 dark:text-gray-400 font-medium">Purchase Comparison</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                This Month: ₹{currentMonthPurchase.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                Last Month: ₹{previousMonthPurchase.toLocaleString()}
+                            </p>
                         </div>
                         <div className="absolute top-4 right-4 space-y-1">
                             <div className="flex items-center space-x-1">
                                 <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Materials</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">This Month</span>
                             </div>
                             <div className="flex items-center space-x-1">
                                 <div className="w-2 h-2 bg-pink-400 rounded-full"></div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Services</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Previous Month</span>
                             </div>
                         </div>
                     </div>
@@ -330,12 +400,12 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                             </span>
                         </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                         {quickAccessLinks.map((link, index) => {
                             const IconComponent = link.icon;
                             const isFrequent = link.frequency > 0;
-                            
+
                             return (
                                 <button
                                     key={`${link.id}-${index}`}
@@ -349,23 +419,21 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                             {link.frequency}
                                         </div>
                                     )}
-                                    
+
                                     {/* Star indicator for most frequent */}
                                     {index === 0 && isFrequent && (
                                         <Star className="absolute top-1 left-1 w-3 h-3 text-yellow-500 fill-current" />
                                     )}
-                                    
-                                    <IconComponent className={`w-4 h-4 mr-3 flex-shrink-0 ${
-                                        isFrequent 
-                                            ? 'text-indigo-600 dark:text-indigo-400' 
-                                            : 'text-gray-400 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-                                    }`} />
+
+                                    <IconComponent className={`w-4 h-4 mr-3 flex-shrink-0 ${isFrequent
+                                        ? 'text-indigo-600 dark:text-indigo-400'
+                                        : 'text-gray-400 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                                        }`} />
                                     <div className="min-w-0 flex-1">
-                                        <p className={`text-sm font-medium truncate ${
-                                            isFrequent 
-                                                ? 'text-indigo-900 dark:text-indigo-300' 
-                                                : 'text-gray-900 dark:text-white'
-                                        }`}>
+                                        <p className={`text-sm font-medium truncate ${isFrequent
+                                            ? 'text-indigo-900 dark:text-indigo-300'
+                                            : 'text-gray-900 dark:text-white'
+                                            }`}>
                                             {link.name}
                                         </p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -414,7 +482,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                             Track All
                         </button>
                     </div>
-                    
+
                     <div className="space-y-3">
                         <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-lg transition-colors">
                             <div className="flex items-center">
@@ -466,12 +534,12 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
             {/* Recent Activity and Notifications */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Activity Table */}
-                  <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+                <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Today's Recent Activity</h3>
                         <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">View All</button>
                     </div>
-                    
+
                     {todayTransactionsLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
@@ -529,11 +597,10 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                    (transaction.Status || 'Approved').toLowerCase() === 'approved' 
-                                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
-                                                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                                                }`}>
+                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${(transaction.Status || 'Approved').toLowerCase() === 'approved'
+                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                                                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                                                    }`}>
                                                     {transaction.Status || 'Approved'}
                                                 </span>
                                             </td>
@@ -556,7 +623,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alerts</h3>
                         <Bell className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
-                    
+
                     <div className="space-y-3">
                         <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg transition-colors">
                             <div className="flex items-start">
@@ -567,7 +634,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg transition-colors">
                             <div className="flex items-start">
                                 <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-500 mt-0.5 mr-2" />
@@ -577,7 +644,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg transition-colors">
                             <div className="flex items-start">
                                 <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-500 mt-0.5 mr-2" />
@@ -587,7 +654,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Usage Summary Alert */}
                         {totalClicks > 0 && (
                             <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg transition-colors">

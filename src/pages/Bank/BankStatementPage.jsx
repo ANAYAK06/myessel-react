@@ -890,8 +890,7 @@ const BankStatementPage = () => {
     );
 };
 
-// Named export
-export { BankStatementPage };
+
 
 // Default export  
 export default BankStatementPage;

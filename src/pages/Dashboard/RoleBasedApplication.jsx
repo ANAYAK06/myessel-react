@@ -10,13 +10,15 @@ import BankStatementPage from '../Bank/BankStatementPage';
 import BankDetailsPage from '../Bank/BankDetailsPage';
 import ClientPOReportPage from '../ClientPO/ClientPOReportPage';
 import TransactionLogPage from '../FinancialReports/TransactionLogPage';
+import TermLoanReportPage from '../TermLoan/TermLoanReport';
+import AssetDepreciationReportPage from '../Assets/AssetDepreciationReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
-    
+
     const [currentPage, setCurrentPage] = useState('dashboard');
     const [currentMenuData, setCurrentMenuData] = useState(null);
-    
+
     // Centralized frequency tracking state
     const [linkFrequency, setLinkFrequency] = useState({});
 
@@ -49,7 +51,7 @@ const RoleBasedApplication = () => {
         // Create a unique key for the menu item
         // Use consistent key format across all navigation sources
         let linkKey;
-        
+
         if (menuData.name === 'Dashboard' || menuData.type === 'dashboard') {
             linkKey = 'Dashboard_Dashboard';
         } else {
@@ -58,7 +60,7 @@ const RoleBasedApplication = () => {
             const name = menuData.name || menuData.subli || menuData.SUBLI || 'Unknown';
             linkKey = `${section}_${name}`;
         }
-        
+
         // Update frequency count
         setLinkFrequency(prev => {
             const newFrequency = {
@@ -74,10 +76,10 @@ const RoleBasedApplication = () => {
     // Enhanced navigation handler that tracks ALL navigation
     const handleNavigation = (route, menuData) => {
         console.log('🔗 Navigation:', route, menuData);
-        
+
         // Track this navigation event
         trackMenuUsage(menuData);
-        
+
         // Update current page state
         setCurrentPage(route);
         setCurrentMenuData(menuData);
@@ -86,127 +88,164 @@ const RoleBasedApplication = () => {
     // Check if menu item should route to BasicBusinessInfoSetup
     const isBasicBusinessInfoSetup = (menuData) => {
         if (!menuData) return false;
-        
+
         const pathMatches = menuData.path === '/Home/BasicBusinessInfoSetup';
-        const nameMatches = menuData.name?.toLowerCase().includes('basicbusinessinfosetup') || 
-                           menuData.name?.toLowerCase().includes('basic business info setup');
+        const nameMatches = menuData.name?.toLowerCase().includes('basicbusinessinfosetup') ||
+            menuData.name?.toLowerCase().includes('basic business info setup');
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('basicbusinessinfosetup');
-        
+
         return pathMatches || nameMatches || routeMatches;
     };
 
     // Check if menu item should route to Accrued Interest Report
     const isAccruedInterestReport = (menuData) => {
         if (!menuData) return false;
-        
-        const pathMatches = menuData.path === '/Reports/AccruedInterestReport' || 
-                           menuData.path === '/Home/AccruedInterestReport' ||
-                           menuData.path?.toLowerCase().includes('accruedinterest') ||
-                           menuData.path?.toLowerCase().includes('liquiditystatus');
-        const nameMatches = menuData.name?.toLowerCase().includes('accruedinterest') || 
-                           menuData.name?.toLowerCase().includes('accrued interest') ||
-                           menuData.name?.toLowerCase().includes('liquidity status') ||
-                           menuData.name?.toLowerCase().includes('liquiditystatus') ||
-                           menuData.name?.toLowerCase().includes('cash flow') ||
-                           menuData.name?.toLowerCase().includes('cashflow');
+
+        const pathMatches = menuData.path === '/Reports/AccruedInterestReport' ||
+            menuData.path === '/Home/AccruedInterestReport' ||
+            menuData.path?.toLowerCase().includes('accruedinterest') ||
+            menuData.path?.toLowerCase().includes('liquiditystatus');
+        const nameMatches = menuData.name?.toLowerCase().includes('accruedinterest') ||
+            menuData.name?.toLowerCase().includes('accrued interest') ||
+            menuData.name?.toLowerCase().includes('liquidity status') ||
+            menuData.name?.toLowerCase().includes('liquiditystatus') ||
+            menuData.name?.toLowerCase().includes('cash flow') ||
+            menuData.name?.toLowerCase().includes('cashflow');
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('accruedinterest') ||
-                            menuData.reactRoute?.toLowerCase().includes('liquiditystatus');
-        
+            menuData.reactRoute?.toLowerCase().includes('liquiditystatus');
+
         return pathMatches || nameMatches || routeMatches;
     };
 
     // Check if menu item should route to Budget Report
     const isBudgetReport = (menuData) => {
         if (!menuData) return false;
-        
-        const pathMatches = menuData.path === '/Home/BudgetReport' || 
-                           menuData.path === '/Accounts/BudgetReport' ||
-                           menuData.path?.toLowerCase().includes('budgetreport');
-        const nameMatches = menuData.name?.toLowerCase().includes('budgetreport') || 
-                           menuData.name?.toLowerCase().includes('budget report');
+
+        const pathMatches = menuData.path === '/Home/BudgetReport' ||
+            menuData.path === '/Accounts/BudgetReport' ||
+            menuData.path?.toLowerCase().includes('budgetreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('budgetreport') ||
+            menuData.name?.toLowerCase().includes('budget report');
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('budgetreport');
-        
+
         return pathMatches || nameMatches || routeMatches;
     };
 
     // Check if menu item should route to Bank Statement Page
     const isBankStatementPage = (menuData) => {
         if (!menuData) return false;
-        
-        const pathMatches = menuData.path === '/Home/BankStatement' || 
-                           menuData.path === '/Reports/BankStatement' ||
-                           menuData.path === '/Bank/BankStatement' ||
-                           menuData.path?.toLowerCase().includes('bankstatement');
-        const nameMatches = menuData.name?.toLowerCase().includes('bankstatement') || 
-                           menuData.name?.toLowerCase().includes('bank statement') ||
-                           menuData.name?.toLowerCase().includes('bank transaction') ||
-                           menuData.name?.toLowerCase().includes('statement');
+
+        const pathMatches = menuData.path === '/Home/BankStatement' ||
+            menuData.path === '/Reports/BankStatement' ||
+            menuData.path === '/Bank/BankStatement' ||
+            menuData.path?.toLowerCase().includes('bankstatement');
+        const nameMatches = menuData.name?.toLowerCase().includes('bankstatement') ||
+            menuData.name?.toLowerCase().includes('bank statement') ||
+            menuData.name?.toLowerCase().includes('bank transaction') ||
+            menuData.name?.toLowerCase().includes('statement');
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('bankstatement');
-        
+
         return pathMatches || nameMatches || routeMatches;
     };
 
     // Check if menu item should route to Bank Details Page
     const isBankDetailsPage = (menuData) => {
         if (!menuData) return false;
-        
-        const pathMatches = menuData.path === '/Home/BankDetails' || 
-                           menuData.path === '/Reports/BankDetails' ||
-                           menuData.path === '/Bank/BankDetails' ||
-                           menuData.path?.toLowerCase().includes('bankdetails');
-        const nameMatches = menuData.name?.toLowerCase().includes('bankdetails') || 
-                           menuData.name?.toLowerCase().includes('bank details') ||
-                           menuData.name?.toLowerCase().includes('bank info') ||
-                           menuData.name?.toLowerCase().includes('bank information');
+
+        const pathMatches = menuData.path === '/Home/BankDetails' ||
+            menuData.path === '/Reports/BankDetails' ||
+            menuData.path === '/Bank/BankDetails' ||
+            menuData.path?.toLowerCase().includes('bankdetails');
+        const nameMatches = menuData.name?.toLowerCase().includes('bankdetails') ||
+            menuData.name?.toLowerCase().includes('bank details') ||
+            menuData.name?.toLowerCase().includes('bank info') ||
+            menuData.name?.toLowerCase().includes('bank information');
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('bankdetails');
-        
+
         return pathMatches || nameMatches || routeMatches;
     };
 
     // Check if menu item should route to Client PO Report Page
     const isClientPOReportPage = (menuData) => {
         if (!menuData) return false;
-        
-        const pathMatches = menuData.path === '/Home/ClientPOReport' || 
-                           menuData.path === '/Reports/ClientPOReport' ||
-                           menuData.path === '/Reports/GetClientPOForReport' ||
-                           menuData.path?.toLowerCase().includes('clientporeport') ||
-                           menuData.path?.toLowerCase().includes('getclientpofor');
-        const nameMatches = menuData.name?.toLowerCase().includes('clientporeport') || 
-                           menuData.name?.toLowerCase().includes('po report');
-                           
-                           
+
+        const pathMatches = menuData.path === '/Home/ClientPOReport' ||
+            menuData.path === '/Reports/ClientPOReport' ||
+            menuData.path === '/Reports/GetClientPOForReport' ||
+            menuData.path?.toLowerCase().includes('clientporeport') ||
+            menuData.path?.toLowerCase().includes('getclientpofor');
+        const nameMatches = menuData.name?.toLowerCase().includes('clientporeport') ||
+            menuData.name?.toLowerCase().includes('po report');
+
+
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('clientpoReport') ||
-                            menuData.reactRoute?.toLowerCase().includes('getclientpofor');
-        
+            menuData.reactRoute?.toLowerCase().includes('getclientpofor');
+
         return pathMatches || nameMatches || routeMatches;
     };
 
     const isTransactionLogPage = (menuData) => {
-    if (!menuData) return false;
-    
-    const pathMatches = menuData.path === '/Reports/TransactionLog' || 
-                       menuData.path === '/Home/TransactionLog' ||
-                       menuData.path === '/Reports/ViewTransactionLogGrid' ||
-                       menuData.path?.toLowerCase().includes('transactionlog');
-    const nameMatches = menuData.name?.toLowerCase().includes('transactionlog') || 
-                       menuData.name?.toLowerCase().includes('transaction log') ||
-                       menuData.name?.toLowerCase().includes('transaction report') ||
-                       menuData.name?.toLowerCase().includes('viewtransactionlog');
-    const routeMatches = menuData.reactRoute?.toLowerCase().includes('transactionlog');
-    
-    return pathMatches || nameMatches || routeMatches;
-};
+        if (!menuData) return false;
+
+        const pathMatches = menuData.path === '/Reports/TransactionLog' ||
+            menuData.path === '/Home/TransactionLog' ||
+            menuData.path === '/Reports/ViewTransactionLogGrid' ||
+            menuData.path?.toLowerCase().includes('transactionlog');
+        const nameMatches = menuData.name?.toLowerCase().includes('transactionlog') ||
+            menuData.name?.toLowerCase().includes('transaction log') ||
+            menuData.name?.toLowerCase().includes('transaction report') ||
+            menuData.name?.toLowerCase().includes('viewtransactionlog');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('transactionlog');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // Add this function with other route detection functions
+    // Check if menu item should route to Term Loan Report Page
+    const isTermLoanReportPage = (menuData) => {
+        if (!menuData) return false;
+
+        const pathMatches = menuData.path === '/Reports/TermLoanReport' ||
+            menuData.path === '/Reports/ViewTermLoan' ||
+            menuData.path === '/Purchase/GetTermLoanReportGrid' ||
+            menuData.path?.toLowerCase().includes('termloanreport') ||
+            menuData.path?.toLowerCase().includes('termloan');
+        const nameMatches = menuData.name?.toLowerCase().includes('termloanreport') ||
+            menuData.name?.toLowerCase().includes('term loan report') ||
+            menuData.name?.toLowerCase().includes('term loan') ||
+            menuData.name?.toLowerCase().includes('loan report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('termloanreport') ||
+            menuData.reactRoute?.toLowerCase().includes('termloan');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // Check if menu item should route to Asset Depreciation Report Page
+    const isAssetDepreciationReportPage = (menuData) => {
+        if (!menuData) return false;
+
+        const pathMatches = menuData.path === '/Reports/AssetDepreciationReport' ||
+            menuData.path === '/Assets/AssetDepreciationReport' ||
+            menuData.path?.toLowerCase().includes('assetdepreciation') ||
+            menuData.path?.toLowerCase().includes('assetsdepr');
+        const nameMatches = menuData.name?.toLowerCase().includes('assetdepreciation') ||
+            menuData.name?.toLowerCase().includes('asset depreciation') ||
+            menuData.name?.toLowerCase().includes('depreciation report') ||
+            menuData.name?.toLowerCase().includes('assets depreciation');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('assetdepreciation');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
 
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
-        
+
         const pathMatches = menuData.path?.toLowerCase().includes('budget');
         const nameMatches = menuData.name?.toLowerCase().includes('budget');
-        const sectionMatches = menuData.li?.toLowerCase().includes('budget') || 
-                              menuData.type?.toLowerCase().includes('budget');
-        
+        const sectionMatches = menuData.li?.toLowerCase().includes('budget') ||
+            menuData.type?.toLowerCase().includes('budget');
+
         return pathMatches || nameMatches || sectionMatches;
     };
 
@@ -216,7 +255,7 @@ const RoleBasedApplication = () => {
     const renderPageContent = () => {
         if (currentPage === 'dashboard') {
             return (
-                <DashboardContent 
+                <DashboardContent
                     onNavigate={handleNavigation}
                     linkFrequency={linkFrequency}
                     trackMenuUsage={trackMenuUsage}
@@ -262,9 +301,19 @@ const RoleBasedApplication = () => {
 
         // Check if this menu item should show Transaction Log Page
         if (currentMenuData && isTransactionLogPage(currentMenuData)) {
-             console.log('✅ Rendering TransactionLogPage for:', currentMenuData.name);
-             return <TransactionLogPage menuData={currentMenuData} />;
-}
+            console.log('✅ Rendering TransactionLogPage for:', currentMenuData.name);
+            return <TransactionLogPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Term Loan Report Page
+        if (currentMenuData && isTermLoanReportPage(currentMenuData)) {
+            console.log('✅ Rendering TermLoanReportPage for:', currentMenuData.name);
+            return <TermLoanReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Asset Depreciation Report Page
+        if (currentMenuData && isAssetDepreciationReportPage(currentMenuData)) {
+            console.log('✅ Rendering AssetDepreciationReportPage for:', currentMenuData.name);
+            return <AssetDepreciationReportPage menuData={currentMenuData} />;
+        }
 
         // For any other budget-related menu item, show a budget module placeholder
         if (currentMenuData && isBudgetModule(currentMenuData)) {
@@ -289,8 +338,8 @@ const RoleBasedApplication = () => {
     }
 
     return (
-        <TopNavbarLayout 
-            currentPage={currentPage} 
+        <TopNavbarLayout
+            currentPage={currentPage}
             onNavigate={handleNavigation}
         >
             {renderPageContent()}
@@ -303,14 +352,14 @@ const BudgetModulePlaceholder = ({ menuData }) => {
     const getBudgetModuleType = (menuData) => {
         const name = menuData.name?.toLowerCase() || '';
         const path = menuData.path?.toLowerCase() || '';
-        
+
         if (name.includes('assignment') || path.includes('assignment')) return 'Budget Assignment';
         if (name.includes('approval') || path.includes('approval')) return 'Budget Approval';
         if (name.includes('amendment') || path.includes('amendment')) return 'Budget Amendment';
         if (name.includes('verification') || path.includes('verification')) return 'Budget Verification';
         if (name.includes('transfer') || path.includes('transfer')) return 'Budget Transfer';
         if (name.includes('analysis') || path.includes('analysis')) return 'Budget Analysis';
-        
+
         return 'Budget Management';
     };
 
@@ -334,7 +383,7 @@ const BudgetModulePlaceholder = ({ menuData }) => {
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Breadcrumb */}
                 <nav className="text-sm text-gray-500 dark:text-gray-400">
                     <span>Dashboard</span>
@@ -350,7 +399,7 @@ const BudgetModulePlaceholder = ({ menuData }) => {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     {moduleType} - Implementation Required
                 </h2>
-                
+
                 {/* Budget Module Information */}
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg mb-6 transition-colors">
                     <h3 className="font-medium text-indigo-900 dark:text-indigo-300 mb-3">Budget Module Details</h3>
@@ -466,7 +515,7 @@ const MenuItemContent = ({ menuData, currentPage }) => {
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Breadcrumb */}
                 <nav className="text-sm text-gray-500 dark:text-gray-400">
                     <span>Dashboard</span>
@@ -484,7 +533,7 @@ const MenuItemContent = ({ menuData, currentPage }) => {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     {menuData.name} - Implementation Required
                 </h2>
-                
+
                 {/* Menu Information */}
                 <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6 transition-colors">
                     <h3 className="font-medium text-gray-900 dark:text-white mb-3">Menu Details</h3>

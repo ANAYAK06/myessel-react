@@ -26,7 +26,9 @@ import {
     Calendar,
     Building2,
     CreditCard,
-    BanknoteIcon
+    BanknoteIcon,
+    ThumbsDown,
+    ThumbsUp
 } from 'lucide-react';
 import {
     fetchAccruedInterestReport,
@@ -367,13 +369,13 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
                     title: 'Total Cumulative Paid Amount',
                     value: reportSummary.totalCumulativePaidAmount,
                     icon: BanknoteIcon,
-                    color: 'from-blue-500 to-cyan-600',
-                    bgColor: 'from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20'
+                    color: 'from-indigo-500 to-cyan-600',
+                    bgColor: 'from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20'
                 },
                 {
                     title: 'Total Net Cash Status',
                     value: reportSummary.finalCashStatus,
-                    icon: reportSummary.hasNegativeCashFlow ? AlertTriangle : DollarSign,
+                    icon: reportSummary.hasNegativeCashFlow ? ThumbsDown : ThumbsUp,
                     color: reportSummary.hasNegativeCashFlow ? 'from-red-500 to-red-600' : 'from-green-500 to-green-600',
                     bgColor: reportSummary.hasNegativeCashFlow 
                         ? 'from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20'
@@ -407,7 +409,7 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
                 {
                     title: 'Final Cash Status',
                     value: reportSummary.finalCashStatus,
-                    icon: reportSummary.hasNegativeCashFlow ? AlertTriangle : DollarSign,
+                    icon: reportSummary.hasNegativeCashFlow ? ThumbsDown : ThumbsUp,
                     color: reportSummary.hasNegativeCashFlow ? 'from-red-500 to-red-600' : 'from-green-500 to-green-600',
                     bgColor: reportSummary.hasNegativeCashFlow 
                         ? 'from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20'
@@ -432,10 +434,10 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
                 <div key={index} className={`bg-gradient-to-r ${card.bgColor} rounded-xl p-6 border border-gray-200 dark:border-gray-700`}>
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 text-ellipsis overflow-hidden whitespace-nowrap">
                                 {card.title}
                             </p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <p className="  font-bold text-gray-900 dark:text-white text-xl">
                                 {formatCurrency(card.value)}
                             </p>
                         </div>

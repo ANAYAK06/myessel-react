@@ -8,7 +8,8 @@ import accruedInterestReducer from "../slices/financialReportSlice/accruedIntere
 import bankStatementReducer from "../slices/bankSlice/bankStatementSlice";
 import clientPOReportReducer from "../slices/clientPOSlice/clientPOReportSlice";
 import transactionLogReducer from "../slices/financialReportSlice/transactionLogSlice";
-
+import termLoanReportReducer from "../slices/termLoanSlice/termLoanReportSlice";
+import assetDepreciationReportReducer from "../slices/assetsSlice/assetDepreciationReportSlice";
 
 const store = configureStore({
   
@@ -21,7 +22,9 @@ const store = configureStore({
     accruedinterest: accruedInterestReducer,
     bankstatement: bankStatementReducer,
     clientporeport: clientPOReportReducer,
-    transactionlog: transactionLogReducer
+    transactionlog: transactionLogReducer,
+    termloanreport: termLoanReportReducer,
+    assetdepreciationreport:assetDepreciationReportReducer
   }
 
 });

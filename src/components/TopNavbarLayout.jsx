@@ -885,7 +885,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                                     <FileText className="w-5 h-5 text-gray-400" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-300 hover:dark:text-gray-600 truncate">
                                                         {item.SUBLI || item.FirmFunctionalAreaName}
                                                     </p>
                                                     <p className="text-xs text-gray-500 mt-1">

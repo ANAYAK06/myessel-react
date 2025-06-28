@@ -238,7 +238,7 @@ const InvoiceModal = ({ isOpen, onClose, invoiceData, loading }) => {
                                         {invoice.PONumber || invoice.description || invoice.Particulars || '-'}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
-                                        {formatCurrency(invoice.InvoiceAmount || invoice.Invoiceamount || invoice.InvoiceAmount || 0)}
+                                        {formatCurrency(invoice.BasicValue || invoice.Invoiceamount || invoice.InvoiceAmount || 0)}
                                     </td>
                                     <td className="px-4 py-3 text-sm">
                                         <span className={clsx(

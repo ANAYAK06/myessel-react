@@ -12,6 +12,12 @@ import ClientPOReportPage from '../ClientPO/ClientPOReportPage';
 import TransactionLogPage from '../FinancialReports/TransactionLogPage';
 import TermLoanReportPage from '../TermLoan/TermLoanReport';
 import AssetDepreciationReportPage from '../Assets/AssetDepreciationReportPage';
+import AssetSalesReportPage from '../Assets/AssetSalesReport';
+import ViewCurrentStockPage from '../Stock/ViewCurrentStockPage';
+import SupplierPOStatusPage from '../Stock/SupplierPOStatusPage';
+import ScrapWalletReportPage from '../Stock/ScrapWalletReportPage';
+import ConsolidatedGSTReportPage from '../GST/ConsolidatedGSTReportPage';
+import ItemWiseGSTReportPage from '../GST/ItemWiseGSTReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -237,6 +243,102 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // Check if menu item should route to Asset Sales Report Page
+    const isAssetSalesReportPage = (menuData) => {
+        if (!menuData) return false;
+
+        const pathMatches = menuData.path === '/Reports/AssetSaleReport'||
+            menuData.path === '/Assets/AssetSalesReport' ||
+            menuData.path === '/Purchase/ViewAssetSaleMainGrid' ||
+            menuData.path?.toLowerCase().includes('assetsalesreport') ||
+            menuData.path?.toLowerCase().includes('assetsales');
+        const nameMatches = menuData.name?.toLowerCase().includes('assetsalesreport') ||
+            menuData.name?.toLowerCase().includes('asset sales report') ||
+            menuData.name?.toLowerCase().includes('asset sales') ||
+            menuData.name?.toLowerCase().includes('viewassetsale');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('assetsalesreport') ||
+            menuData.reactRoute?.toLowerCase().includes('assetsales');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // Check if menu item should route to View Current Stock Page
+    const isViewCurrentStockPage = (menuData) => {
+        if (!menuData) return false;
+
+        const pathMatches = menuData.path === '/Reports/ItemStockReport' ||
+            menuData.path === '/Inventory/ViewCurrentStock' ||
+            menuData.path === '/Purchase/ViewStockGrid' ||
+            menuData.path?.toLowerCase().includes('viewcurrentstock') ||
+            menuData.path?.toLowerCase().includes('viewstock') ||
+            menuData.path?.toLowerCase().includes('currentstock');
+        const nameMatches = menuData.name?.toLowerCase().includes('viewcurrentstock') ||
+            menuData.name?.toLowerCase().includes('view current stock') ||
+            menuData.name?.toLowerCase().includes('current stock') ||
+            menuData.name?.toLowerCase().includes('stock report') ||
+            menuData.name?.toLowerCase().includes('inventory stock');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('viewcurrentstock') ||
+            menuData.reactRoute?.toLowerCase().includes('viewstock');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+
+    // Check if menu item should route to Supplier PO Status Page
+    const isSupplierPOStatusPage = (menuData) => {
+        if (!menuData) return false;
+
+        const pathMatches = menuData.path === '/Reports/PurchaseStatus' ||
+            menuData.path === '/Inventory/purchaseorderstatus' ||
+            menuData.path === '/Purchase/purchaseorderstatus' ||
+            menuData.path?.toLowerCase().includes('purchaseorderstatus');
+        const nameMatches = menuData.name?.toLowerCase().includes('purchaseorderstatus') ||
+            menuData.name?.toLowerCase().includes('purchase order status');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('purchaseorderstatus');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to Scrap Wallet Report Page
+    const isScrapWalletReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/ScrapWalletBalanceItemsReport' ||
+            menuData.path === '/Inventory/ScrapWalletBalanceItemsReport' ||
+            menuData.path?.toLowerCase().includes('scrapwalletbalanceitemsreport') ||
+            menuData.path?.toLowerCase().includes('scrapwallet');
+        const nameMatches = menuData.name?.toLowerCase().includes('scrapwalletbalanceitemsreport') ||
+            menuData.name?.toLowerCase().includes('scrap wallet balance items report') ||
+            menuData.name?.toLowerCase().includes('scrap wallet') ||
+            menuData.name?.toLowerCase().includes('scrap wallet balance');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('scrapwalletbalanceitemsreport') ||
+            menuData.reactRoute?.toLowerCase().includes('scrapwallet');
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to Gst consolidated purchase report Page
+    const isGstConsolidatedPurchaseReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/StockPurchaseConsolidateReport' ||  menuData.path === '/Inventory/StockPurchaseConsolidateReport' ||
+            menuData.path?.toLowerCase().includes('stockpurchaseconsolidatereport');
+        const nameMatches = menuData.name?.toLowerCase().includes('stockpurchaseconsolidatereport') ||
+            menuData.name?.toLowerCase().includes('stock purchase consolidate report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('stockpurchaseconsolidatereport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to Item wise GST purchase report Page
+    const isItemWiseGSTPurchaseReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/StockPurchaseReport' || menuData.path === '/Inventory/ItemWiseGSTPurchaseReport' ||
+            menuData.path?.toLowerCase().includes('itemwisegstpurchasereport');
+        const nameMatches = menuData.name?.toLowerCase().includes('itemwisegstpurchasereport') ||
+            menuData.name?.toLowerCase().includes('item wise gst purchase report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('itemwisegstpurchasereport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -314,6 +416,36 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering AssetDepreciationReportPage for:', currentMenuData.name);
             return <AssetDepreciationReportPage menuData={currentMenuData} />;
         }
+        // Check if this menu item should show Asset Sales Report Page
+        if (currentMenuData && isAssetSalesReportPage(currentMenuData)) {
+            console.log('✅ Rendering AssetSalesReportPage for:', currentMenuData.name);
+            return <AssetSalesReportPage menuData={currentMenuData} />;
+        }
+
+        // Check if this menu item should show View Current Stock Page
+        if (currentMenuData && isViewCurrentStockPage(currentMenuData)) {
+            console.log('✅ Rendering ViewCurrentStockPage for:', currentMenuData.name);
+            return <ViewCurrentStockPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Supplier PO Status Page
+        if (currentMenuData && isSupplierPOStatusPage(currentMenuData)) {
+            console.log('✅ Rendering SupplierPOStatusPage for:', currentMenuData.name);
+            return <SupplierPOStatusPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Scrap Wallet Report Page
+        if (currentMenuData && isScrapWalletReportPage(currentMenuData)) {
+            console.log('✅ Rendering ScrapWalletReportPage for:', currentMenuData.name);
+            return <ScrapWalletReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Gst consolidated purchase report Page
+        if (currentMenuData && isGstConsolidatedPurchaseReportPage(currentMenuData)) {
+            console.log('✅ Rendering GstConsolidatedPurchaseReportPage for:', currentMenuData.name);
+            return <ConsolidatedGSTReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Item wise GST purchase report Page
+        if (currentMenuData && isItemWiseGSTPurchaseReportPage(currentMenuData)) {
+            return <ItemWiseGSTReportPage menuData={currentMenuData} />;
+        }   
 
         // For any other budget-related menu item, show a budget module placeholder
         if (currentMenuData && isBudgetModule(currentMenuData)) {

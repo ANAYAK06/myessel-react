@@ -467,7 +467,7 @@ const TransactionLogPage = () => {
                             disabled={transactionTypesLoading}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <option value="">Select All Transaction Types</option>
+                            <option value="">Select Transaction Type</option>
                             {Array.isArray(transactionTypes?.Data) && transactionTypes.Data.map((type, index) => {
                                 const typeId = type?.TranVal || type?.typeId || type?.id;
                                 const typeName = type?.TranVal || type?.typeName || type?.name;

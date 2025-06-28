@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import clsx from 'clsx';
 import { 
-    Building2,
-    CreditCard,
+    Package2,
+    DollarSign,
     Download,
     RotateCcw,
     Eye,
@@ -15,40 +15,36 @@ import {
     ArrowRightLeft,
     TrendingUp,
     TrendingDown,
-    DollarSign,
     X,
     Filter,
     RefreshCw,
     ChevronRight,
     Activity,
-    Banknote,
-    BanknoteArrowDown,
-    BanknoteArrowUp
-    
+    ShoppingCart,
+    Receipt,
+    Building,
+    IndianRupee
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 // Import slice actions and selectors
 import {
-    fetchAllBankDetails,
-    fetchTransactionTypes,
-    fetchBankStatementGrid,
-    fetchBankTranDetails,
+    fetchAssetSaleMainGrid,
+    fetchAssetSaleInnerDetails,
     setFilters,
     clearFilters,
-    resetBankStatementData,
-    resetSelectedBankData,
+    resetAssetSalesData,
+    resetMainGridData,
+    resetInnerDetailsData,
     clearError,
-    selectAllBankDetails,
-    selectTransactionTypes,
-    selectBankStatementGrid,
-    selectBankTranDetails,
+    selectAssetSaleMainGrid,
+    selectAssetSaleInnerDetails,
     selectLoading,
     selectErrors,
     selectFilters,
     selectIsAnyLoading,
     selectHasAnyError
-} from '../../slices/bankSlice/bankStatementSlice';
+} from '../../slices/assetsSlice/assetSalesReportSlice';
 
 // Import CustomDatePicker
 import CustomDatePicker from '../../components/CustomDatePicker';
@@ -104,7 +100,7 @@ const Tooltip = ({ children, content }) => {
     );
 };
 
-// Modal Component for Transaction Details
+// Modal Component for Asset Sale Details
 const Modal = ({ isOpen, onClose, title, children, size = 'xl' }) => {
     if (!isOpen) return null;
 
@@ -149,8 +145,9 @@ const Modal = ({ isOpen, onClose, title, children, size = 'xl' }) => {
     );
 };
 
-// Transaction Details Modal Component
-const TransactionDetailsModal = ({ isOpen, onClose, transactionData, loading }) => {
+// Asset Sale Details Modal Component
+// Asset Sale Details Modal Component
+const AssetSaleDetailsModal = ({ isOpen, onClose, detailsData, loading }) => {
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
         return new Intl.NumberFormat('en-IN', {
@@ -159,102 +156,242 @@ const TransactionDetailsModal = ({ isOpen, onClose, transactionData, loading }) 
         }).format(amount);
     };
 
-    const transactions = Array.isArray(transactionData?.Data) ? transactionData.Data : 
-                       Array.isArray(transactionData) ? transactionData : [];
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        try {
+            // Handle different date formats
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString; // Return original if invalid
+            return date.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    };
 
+    const details = Array.isArray(detailsData?.Data) ? detailsData.Data : 
+                   Array.isArray(detailsData) ? detailsData : [];
+
+    // Updated columns to match the actual API response structure
     const columns = [
         { 
-            key: 'Date',
-            fallbackKeys: ['TransactionDate', 'date'],
-            label: 'Transaction Date' 
+            key: 'RequestNo',
+            fallbackKeys: ['Reqno', 'ReferenceNo'],
+            label: 'Request No' 
         },
         { 
-            key: 'Details', 
-            fallbackKeys: ['Bank Name', 'Name','CC Code',''],
-            label: 'Description' },
+            key: 'ItemCode', 
+            fallbackKeys: ['AssetCode', 'Code'],
+            label: 'Item Code' 
+        },
         { 
-            key: 'Remarks', 
-            fallbackKeys: ['Remarks', 'Description', 'Dca Code','Loan Number'],
-            label: 'Remarks' },
+            key: 'ItemName', 
+            fallbackKeys: ['AssetName', 'Asset Name', 'Name', 'Description'],
+            label: 'Asset Name' 
+        },
         { 
-            key: 'Amount', 
-            fallbackKeys: ['Debit Amount', 'Credit Amount'],
-            label: 'Amount', align: 'right' },
+            key: 'BuyerName', 
+            fallbackKeys: ['CustomerName', 'Customer', 'Buyer'],
+            label: 'Buyer Name' 
+        },
         { 
-            key: 'Tran Number', 
-            fallbackKeys: ['TranNo', 'ReferenceNo', 'Transaction No'],
-            label: 'Reference No' }
+            key: 'CreditAmount', 
+            fallbackKeys: ['SellingAmt', 'SaleAmount', 'Amount', 'TotalAmount'],
+            label: 'Credit Amount', 
+            align: 'right',
+            format: 'currency' 
+        },
+        { 
+            key: 'BalanceAmt', 
+            fallbackKeys: ['Balance', 'RemainingAmount'],
+            label: 'Balance Amount', 
+            align: 'right',
+            format: 'currency' 
+        },
+        { 
+            key: 'PaymentDate', 
+            fallbackKeys: ['Date', 'SaleDate', 'TransactionDate'],
+            label: 'Payment Date',
+            format: 'date'
+        },
+        { 
+            key: 'BankName', 
+            fallbackKeys: ['Bank', 'BankAccount'],
+            label: 'Bank Details' 
+        },
+        { 
+            key: 'TransactionNo', 
+            fallbackKeys: ['TxnNo', 'ReferenceNo'],
+            label: 'Transaction No' 
+        },
+        { 
+            key: 'TransactionStatus', 
+            fallbackKeys: ['Status', 'PaymentStatus'],
+            label: 'Status',
+            format: 'status'
+        }
     ];
 
     const getCellValue = (data, column) => {
         let value = data[column.key];
         if ((value === undefined || value === null) && column.fallbackKeys) {
-        for (const fallbackKey of column.fallbackKeys) {
-            if (data[fallbackKey] !== undefined && data[fallbackKey] !== null) {
-                value = data[fallbackKey];
-                break;
+            for (const fallbackKey of column.fallbackKeys) {
+                if (data[fallbackKey] !== undefined && data[fallbackKey] !== null) {
+                    value = data[fallbackKey];
+                    break;
+                }
             }
         }
-    }
-    if (value !== undefined && value !== null) {
-        if (column.format === 'currency') {
-            return formatCurrency(value);
+        
+        if (value !== undefined && value !== null) {
+            if (column.format === 'currency') {
+                return formatCurrency(value);
+            } else if (column.format === 'date') {
+                return formatDate(value);
+            } else if (column.format === 'status') {
+                return (
+                    <span className={clsx(
+                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                        {
+                            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': 
+                                value === 'Approved' || value === 'Completed' || value === 'Success',
+                            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': 
+                                value === 'Pending' || value === 'Processing',
+                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': 
+                                value === 'Rejected' || value === 'Failed' || value === 'Cancelled',
+                            'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200': 
+                                !['Approved', 'Completed', 'Success', 'Pending', 'Processing', 'Rejected', 'Failed', 'Cancelled'].includes(value)
+                        }
+                    )}>
+                        {value}
+                    </span>
+                );
+            }
+            return value;
         }
-        return value;
-    }
-    
-    return '-';
-};
+        
+        return '-';
+    };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Bank Transaction Details" size="full">
+        <Modal isOpen={isOpen} onClose={onClose} title="Asset Sale Transaction Details" size="full">
             {loading ? (
                 <div className="flex items-center justify-center py-8">
                     <RotateCcw className="h-6 w-6 text-indigo-500 animate-spin mr-3" />
-                    <p className="text-indigo-700 dark:text-indigo-300">Loading transaction details...</p>
+                    <p className="text-indigo-700 dark:text-indigo-300">Loading asset sale details...</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gradient-to-r from-indigo-600 to-purple-700">
-                            <tr>
-                                {columns.map((column) => (
-                                    <th 
-                                        key={column.key}
-                                        className={clsx(
-                                            "px-4 py-3 text-xs font-bold text-white uppercase",
-                                            column.align === 'right' ? 'text-right' : 'text-left'
-                                        )}
-                                    >
-                                        {column.label}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {transactions.length > 0 ? transactions.map((transaction, index) => (
-                                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <div className="space-y-6">
+                    {/* Transaction Summary */}
+                    {details.length > 0 && (
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800">
+                            <h4 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100 mb-3">Transaction Summary</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Credit Amount</p>
+                                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                                        {formatCurrency(details.reduce((sum, item) => sum + (parseFloat(item.CreditAmount) || 0), 0))}
+                                    </p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Transactions</p>
+                                    <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                                        {details.length}
+                                    </p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Status Overview</p>
+                                    <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                                        {details.filter(item => item.TransactionStatus === 'Approved').length} Approved
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Details Table */}
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gradient-to-r from-indigo-600 to-purple-700">
+                                <tr>
                                     {columns.map((column) => (
-                                        <td 
+                                        <th 
                                             key={column.key}
                                             className={clsx(
-                                                "px-4 py-3 text-sm text-gray-900 dark:text-white",
-                                                column.align === 'right' ? 'text-right font-medium' : 'text-left'
+                                                "px-4 py-3 text-xs font-bold text-white uppercase tracking-wider",
+                                                column.align === 'right' ? 'text-right' : 'text-left'
                                             )}
                                         >
-                                            {getCellValue(transaction, column)}
-                                        </td>
+                                            {column.label}
+                                        </th>
                                     ))}
                                 </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                        No transaction details available
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {details.length > 0 ? details.map((detail, index) => (
+                                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        {columns.map((column) => (
+                                            <td 
+                                                key={column.key}
+                                                className={clsx(
+                                                    "px-4 py-3 text-sm text-gray-900 dark:text-white",
+                                                    column.align === 'right' ? 'text-right font-medium' : 'text-left'
+                                                )}
+                                            >
+                                                {getCellValue(detail, column)}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                            <div className="flex flex-col items-center">
+                                                <Package2 className="h-12 w-12 text-gray-400 mb-4" />
+                                                <p className="text-lg font-medium">No transaction details available</p>
+                                                <p className="text-sm">The selected asset sale has no detailed transaction records.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Additional Information */}
+                    {details.length > 0 && details[0] && (
+                        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            <h5 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Additional Information</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                {details[0].FromDate && (
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">From Date: </span>
+                                        <span className="text-gray-900 dark:text-white">{formatDate(details[0].FromDate)}</span>
+                                    </div>
+                                )}
+                                {details[0].ToDate && (
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">To Date: </span>
+                                        <span className="text-gray-900 dark:text-white">{formatDate(details[0].ToDate)}</span>
+                                    </div>
+                                )}
+                                {details[0].MOID && (
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">MO ID: </span>
+                                        <span className="text-gray-900 dark:text-white">{details[0].MOID}</span>
+                                    </div>
+                                )}
+                                {details[0].Rid && (
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">Reference ID: </span>
+                                        <span className="text-gray-900 dark:text-white">{details[0].Rid}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </Modal>
@@ -262,7 +399,7 @@ const TransactionDetailsModal = ({ isOpen, onClose, transactionData, loading }) 
 };
 
 // Summary Cards Component
-const SummaryCards = ({ bankStatementData, allBankDetails, selectedBankId }) => {
+const SummaryCards = ({ assetSaleData }) => {
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
         return new Intl.NumberFormat('en-IN', {
@@ -271,96 +408,64 @@ const SummaryCards = ({ bankStatementData, allBankDetails, selectedBankId }) => 
         }).format(amount);
     };
 
-     const getSelectedBankBalance = () => {
-        if (!selectedBankId || !allBankDetails?.Data || !Array.isArray(allBankDetails.Data)) {
-            return 0;
-        }
-
-        const selectedBank = allBankDetails.Data.find(bank => {
-            const bankId = bank?.Bankid || bank?.bankId || bank?.id;
-            return bankId && bankId.toString() === selectedBankId.toString();
-        });
-
-        if (!selectedBank) return 0;
-
-        // Try different possible balance field names
-        const balance = selectedBank?.OpeningBalance || 
-                       selectedBank?.balance || 
-                       selectedBank?.ClosingBalance || 
-                       selectedBank?.closingBalance ||
-                       selectedBank?.CurrentBalance ||
-                       selectedBank?.currentBalance ||
-                       0;
-
-        return parseFloat(balance) || 0;
-    };
-
-
-    if (!bankStatementData || !Array.isArray(bankStatementData.Data) || bankStatementData.Data.length === 0) {
+    if (!assetSaleData || !Array.isArray(assetSaleData.Data) || assetSaleData.Data.length === 0) {
         return null;
     }
 
-    // Calculate summary from bank statement data
-    const summary = bankStatementData.Data.reduce((acc, item) => {
-        acc.totalDebit += parseFloat(item.WithDraw || 0);
-        acc.totalCredit += parseFloat(item.Deposit || 0);
-        acc.transactionCount += 1;
-        // if (item.Balance) {
-        //     acc.closingBalance = parseFloat(item.Balance || 0);
-        // }
+    // Calculate summary from asset sale data
+    const summary = assetSaleData.Data.reduce((acc, item) => {
+        acc.totalSales += parseFloat(item.SellingAmt || item.TotalAmount || item.SaleAmount || 0);
+        acc.totalQuantity += 1;
+        acc.saleCount += 1;
+        
+        // Calculate average sale amount
+        if (acc.saleCount > 0) {
+            acc.averageSale = acc.totalSales / acc.saleCount;
+        }
+        
         return acc;
     }, {
-        totalDebit: 0,
-        totalCredit: 0,
-        transactionCount: 0,
-        closingBalance: 0
+        totalSales: 0,
+        totalQuantity: 0,
+        saleCount: 0,
+        averageSale: 0
     });
-
-    const netFlow = summary.totalCredit - summary.totalDebit;
 
     const cards = [
         {
-            title: 'Total Debit',
-            value: summary.totalDebit,
-            icon: TrendingDown,
-            color: 'from-red-500 to-pink-600',
-            bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
-        },
-        {
-            title: 'Total Credit',
-            value: summary.totalCredit,
-            icon: TrendingUp,
+            title: 'Total Sales Value',
+            value: summary.totalSales,
+            icon: IndianRupee,
             color: 'from-green-500 to-emerald-600',
             bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20'
         },
         {
-            title: 'Net Cash Flow',
-            value: netFlow,
-            icon: netFlow >= 0 ? BanknoteArrowUp : BanknoteArrowDown,
-            color: netFlow >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600',
-            bgColor: netFlow >= 0 
-                ? 'from-green-50 to-green-50 dark:from-green-900/20 dark:to-green-900/20'
-                : 'from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20'
+            title: 'Total Quantity Sold',
+            value: summary.totalQuantity,
+            icon: Package2,
+            color: 'from-indigo-500 to-cyan-600',
+            bgColor: 'from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20',
+            isCount: true
         },
         {
-            title: 'Closing Balance',
-            value: summary.closingBalance,
-            icon: Banknote,
-            color: 'from-indigo-500 to-cyan-600',
-            bgColor: 'from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20'
+            title: 'Average Sale Amount',
+            value: summary.averageSale,
+            icon: TrendingUp,
+            color: 'from-purple-500 to-indigo-600',
+            bgColor: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20'
         },
         {
             title: 'Total Transactions',
-            value: summary.transactionCount,
+            value: summary.saleCount,
             icon: ArrowRightLeft,
-            color: 'from-purple-500 to-indigo-600',
-            bgColor: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20',
+            color: 'from-orange-500 to-red-600',
+            bgColor: 'from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20',
             isCount: true
         }
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             {cards.map((card, index) => (
                 <div key={index} className={`bg-gradient-to-r ${card.bgColor} rounded-xl p-6 border border-gray-200 dark:border-gray-700`}>
                     <div className="flex items-center justify-between">
@@ -419,14 +524,12 @@ const convertToCSV = (data) => {
     return csvContent;
 };
 
-const BankStatementPage = () => {
+const AssetSalesReportPage = () => {
     const dispatch = useDispatch();
     
     // Redux selectors
-    const allBankDetails = useSelector(selectAllBankDetails);
-    const transactionTypes = useSelector(selectTransactionTypes);
-    const bankStatementGrid = useSelector(selectBankStatementGrid);
-    const bankTranDetails = useSelector(selectBankTranDetails);
+    const assetSaleMainGrid = useSelector(selectAssetSaleMainGrid);
+    const assetSaleInnerDetails = useSelector(selectAssetSaleInnerDetails);
     const loading = useSelector(selectLoading);
     const errors = useSelector(selectErrors);
     const filters = useSelector(selectFilters);
@@ -434,21 +537,13 @@ const BankStatementPage = () => {
 
     // Local state for form inputs
     const [localFilters, setLocalFilters] = useState({
-        bankVal: '',
-        fromDate: '',
-        toDate: '',
-        tranType: ''
+        Fdate: '',
+        TDate: ''
     });
 
     // Modal state
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedRowData, setSelectedRowData] = useState(null);
-
-    // Load initial data
-    useEffect(() => {
-        dispatch(fetchAllBankDetails());
-        dispatch(fetchTransactionTypes());
-    }, [dispatch]);
 
     // Sync local filters with Redux filters
     useEffect(() => {
@@ -483,7 +578,7 @@ const BankStatementPage = () => {
         }));
         
         // Reset data when filters change
-        dispatch(resetSelectedBankData());
+        dispatch(resetMainGridData());
     };
 
     // Handle date changes
@@ -494,18 +589,13 @@ const BankStatementPage = () => {
             [filterName]: dateString
         }));
         
-        dispatch(resetSelectedBankData());
+        dispatch(resetMainGridData());
     };
 
     // Handle view button click
     const handleView = async () => {
         // Validation
-        if (!localFilters.bankVal) {
-            toast.warning('Please select a bank');
-            return;
-        }
-
-        if (!localFilters.fromDate || !localFilters.toDate) {
+        if (!localFilters.Fdate || !localFilters.TDate) {
             toast.warning('Please select both from and to dates');
             return;
         }
@@ -514,52 +604,47 @@ const BankStatementPage = () => {
             // Update Redux filters
             dispatch(setFilters(localFilters));
             
-            // Fetch bank statement grid
+            // Fetch asset sale main grid
             const params = {
-                bankVal: localFilters.bankVal,
-                fromDate: localFilters.fromDate,
-                toDate: localFilters.toDate,
-                tranType: localFilters.tranType || ''
+                Fdate: localFilters.Fdate,
+                TDate: localFilters.TDate
             };
             
-            await dispatch(fetchBankStatementGrid(params)).unwrap();
-            toast.success('Bank statement loaded successfully');
+            await dispatch(fetchAssetSaleMainGrid(params)).unwrap();
+            toast.success('Asset sales report loaded successfully');
             
         } catch (error) {
-            console.error('❌ Error fetching bank statement:', error);
-            toast.error('Failed to fetch bank statement. Please try again.');
+            console.error('❌ Error fetching asset sales report:', error);
+            toast.error('Failed to fetch asset sales report. Please try again.');
         }
     };
 
     // Handle reset
     const handleReset = () => {
         setLocalFilters({
-            bankVal: '',
-            fromDate: '',
-            toDate: '',
-            tranType: ''
+            Fdate: '',
+            TDate: ''
         });
         dispatch(clearFilters());
-        dispatch(resetBankStatementData());
+        dispatch(resetAssetSalesData());
     };
 
-    // Handle row click to view transaction details
+    // Handle row click to view asset sale details
     const handleRowClick = async (rowData) => {
         try {
             setSelectedRowData(rowData);
             setIsDetailsModalOpen(true);
             
-            // Fetch transaction details using reference number and transaction type ID
+            // Fetch asset sale inner details using request number
             const params = {
-                transId: rowData.TranNo || rowData.ReferenceNo || '', // ✅ Use 'transId' (matches API)
-                typeId: rowData.Type || rowData.PaymentTypeId || rowData.TransactionTypeId || '', // ✅ Use 'typeId' and correct field names
+                Reqno: rowData.Reqno || rowData.RequestNo || rowData.ReferenceNo || ''
             };
             
-            await dispatch(fetchBankTranDetails(params)).unwrap();
+            await dispatch(fetchAssetSaleInnerDetails(params)).unwrap();
             
         } catch (error) {
-            console.error('❌ Error fetching transaction details:', error);
-            toast.error('Failed to load transaction details');
+            console.error('❌ Error fetching asset sale details:', error);
+            toast.error('Failed to load asset sale details');
             setIsDetailsModalOpen(false);
         }
     };
@@ -567,23 +652,24 @@ const BankStatementPage = () => {
     // Handle Excel download
     const handleExcelDownload = () => {
         try {
-            const data = bankStatementGrid?.Data || [];
+            const data = assetSaleMainGrid?.Data || [];
             if (!Array.isArray(data) || data.length === 0) {
                 toast.warning('No data available to download');
                 return;
             }
 
             const excelData = data.map(item => ({
-                'Transaction Date': item.Date || item.TransactionDate || '-',
-                'Description': item.Name || '-',
-                'Transaction Type': item.PaymentTypeName || item.TransactionType || '-',
-                'Debit Amount': item.WithDraw || 0,
-                'Credit Amount': item.Deposit || 0,
-                'Balance': item.Balance || 0,
-                'Reference No': item.TranNo || item.ReferenceNo || '-'
+                'Sale Date': item.Date || item.SaleDate || '-',
+                'Request No': item.Reqno || item.RequestNo || '-',
+                'Asset Description': item.ItemCode || item.Description || '-',
+                'Customer': item.CustomerName || item.Customer || '-',
+                'Sale Amount': item.SellingAmt || item.SaleAmount || 0,
+                'Quantity': item.Quantity || item.Qty || 0,
+                'Status': item.Status || '-',
+                'Remarks': item.Remarks || '-'
             }));
 
-            const filename = `Bank_Statement_${localFilters.bankVal}_${localFilters.fromDate}_to_${localFilters.toDate}_${new Date().toISOString().split('T')[0]}`;
+            const filename = `Asset_Sales_Report_${localFilters.Fdate}_to_${localFilters.TDate}_${new Date().toISOString().split('T')[0]}`;
             downloadAsExcel(excelData, filename);
             toast.success('Excel file downloaded successfully');
             
@@ -593,8 +679,8 @@ const BankStatementPage = () => {
         }
     };
 
-    // Get bank statement data for display
-    const bankStatementData = bankStatementGrid?.Data || [];
+    // Get asset sale data for display
+    const assetSaleData = assetSaleMainGrid?.Data || [];
 
     return (
         <div className="space-y-6 p-6">
@@ -603,18 +689,18 @@ const BankStatementPage = () => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                            <CreditCard className="h-8 w-8 text-indigo-600" />
-                            Bank Statement Management
+                            <Package2 className="h-8 w-8 text-indigo-600" />
+                            Asset Sales Report
                         </h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            View and analyze bank statements with detailed transaction breakdowns
+                            View and analyze asset sales transactions with detailed breakdowns
                         </p>
                     </div>
                     <div className="flex items-center space-x-3">
                         <div className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 text-indigo-800 dark:text-indigo-200 text-sm rounded-full transition-colors">
-                            Financial Reports
+                            Asset Management
                         </div>
-                        {loading.bankStatementGrid && (
+                        {loading.assetSaleMainGrid && (
                             <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
                                 <RefreshCw className="w-4 h-4 animate-spin" />
                                 <span className="text-sm">Loading...</span>
@@ -628,90 +714,24 @@ const BankStatementPage = () => {
                     <div className="flex items-center space-x-2">
                         <span>Dashboard</span>
                         <ChevronRight className="w-4 h-4" />
-                        <span>Bank and Cash</span>
+                        <span>Assets</span>
                         <ChevronRight className="w-4 h-4" />
-                        <span className="text-gray-900 dark:text-white">Bank Statement</span>
+                        <span className="text-gray-900 dark:text-white">Asset Sales Report</span>
                     </div>
                 </nav>
             </div>
 
             {/* Filters Section */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 transition-colors">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    {/* Bank Selection */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                            Bank <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={localFilters.bankVal}
-                            onChange={(e) => handleFilterChange('bankVal', e.target.value)}
-                            disabled={loading.allBankDetails}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <option value="">Select Bank</option>
-                            {Array.isArray(allBankDetails?.Data) && allBankDetails.Data.map((bank, index) => {
-                                const bankId = bank?.Bankid || bank?.bankId || bank?.id;
-                                const bankName = bank?.BankName || bank?.bankName || bank?.name;
-                                
-                                if (!bankId) return null;
-                                
-                                return (
-                                    <option key={bankId || index} value={bankId}>
-                                        {bankName || `Bank ${bankId}`}
-                                    </option>
-                                );
-                            })}
-                        </select>
-                        
-                        {loading.allBankDetails && (
-                            <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2">
-                                Loading banks...
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Transaction Type */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                            Transaction Type
-                        </label>
-                        <select
-                            value={localFilters.tranType}
-                            onChange={(e) => handleFilterChange('tranType', e.target.value)}
-                            disabled={loading.transactionTypes}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <option value="">Select Transaction Types</option>
-                            {Array.isArray(transactionTypes?.Data) && transactionTypes.Data.map((type, index) => {
-                                const typeId = type?.Tranid || type?.typeId || type?.id;
-                                const typeName = type?.TranVal || type?.typeName || type?.name;
-                                
-                                if (!typeId) return null;
-                                
-                                return (
-                                    <option key={typeId || index} value={typeId}>
-                                        {typeName || `Type ${typeId}`}
-                                    </option>
-                                );
-                            })}
-                        </select>
-                        
-                        {loading.transactionTypes && (
-                            <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2">
-                                Loading transaction types...
-                            </p>
-                        )}
-                    </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     {/* From Date */}
                     <div>
                         <CustomDatePicker
                             label="From Date"
                             placeholder="Select from date"
-                            value={formatDateForDisplay(localFilters.fromDate)}
-                            onChange={(date) => handleDateChange('fromDate', date)}
-                            maxDate={formatDateForDisplay(localFilters.toDate) || new Date()}
+                            value={formatDateForDisplay(localFilters.Fdate)}
+                            onChange={(date) => handleDateChange('Fdate', date)}
+                            maxDate={formatDateForDisplay(localFilters.TDate) || new Date()}
                             size="md"
                             required
                         />
@@ -722,9 +742,9 @@ const BankStatementPage = () => {
                         <CustomDatePicker
                             label="To Date"
                             placeholder="Select to date"
-                            value={formatDateForDisplay(localFilters.toDate)}
-                            onChange={(date) => handleDateChange('toDate', date)}
-                            minDate={formatDateForDisplay(localFilters.fromDate)}
+                            value={formatDateForDisplay(localFilters.TDate)}
+                            onChange={(date) => handleDateChange('TDate', date)}
+                            minDate={formatDateForDisplay(localFilters.Fdate)}
                             maxDate={new Date()}
                             size="md"
                             required
@@ -737,15 +757,15 @@ const BankStatementPage = () => {
                     <div className="flex gap-3">
                         <button
                             onClick={handleView}
-                            disabled={isAnyLoading || !localFilters.bankVal || !localFilters.fromDate || !localFilters.toDate}
+                            disabled={isAnyLoading || !localFilters.Fdate || !localFilters.TDate}
                             className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
                         >
-                            {loading.bankStatementGrid ? (
+                            {loading.assetSaleMainGrid ? (
                                 <RotateCcw className="h-5 w-5 animate-spin" />
                             ) : (
                                 <Eye className="h-5 w-5" />
                             )}
-                            View Statement
+                            View Report
                         </button>
                         <button
                             onClick={handleReset}
@@ -760,10 +780,10 @@ const BankStatementPage = () => {
                         <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Export:</span>
                         
                         {/* Excel Download Button */}
-                        <Tooltip content="Download bank statement as Excel file">
+                        <Tooltip content="Download asset sales report as Excel file">
                             <button
                                 onClick={handleExcelDownload}
-                                disabled={!Array.isArray(bankStatementData) || bankStatementData.length === 0}
+                                disabled={!Array.isArray(assetSaleData) || assetSaleData.length === 0}
                                 className="px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
                             >
                                 <Download className="h-5 w-5" />
@@ -775,55 +795,54 @@ const BankStatementPage = () => {
             </div>
 
             {/* Summary Cards */}
-            <SummaryCards bankStatementData={bankStatementGrid} />
+            <SummaryCards assetSaleData={assetSaleMainGrid} />
 
-            {/* Bank Statement Table */}
+            {/* Asset Sales Table */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-                {Array.isArray(bankStatementData) && bankStatementData.length > 0 ? (
+                {Array.isArray(assetSaleData) && assetSaleData.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gradient-to-r from-indigo-600 to-purple-700">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Date</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Name</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Transaction Type</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Debit Amount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Credit Amount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Balance</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Transaction No</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Sale Date</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Request No</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Item Code</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Asset Name</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Customer</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Sale Amount</th>
                                     <th className="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {bankStatementData.map((item, index) => (
+                                {assetSaleData.map((item, index) => (
                                     <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                            {item.Date || item.TransactionDate || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                                            <div className="max-w-xs truncate" title={item.Name}>
-                                                {item.Name || '-'}
-                                            </div>
+                                            {item.Date || item.SaleDate || '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                            {item.PaymentTypeName || item.TransactionType || '-'}
+                                            {item.Reqno || item.RequestNo || '-'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
-                                            <span className="text-red-600 dark:text-red-400">
-                                                {formatCurrency(item.WithDraw || 0)}
-                                            </span>
+                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                            <div className="max-w-xs truncate" title={item.AssetName || item.Description}>
+                                                {item.ItemCode  || item.Description || '-'}
+                                            </div>
+                                        </td>
+                                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                            <div className="max-w-xs truncate" title={item.AssetName || item.Description}>
+                                                {item.ItemName  || item.Description || '-'}
+                                            </div>
+                                        </td>
+
+                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                            {item.BuyerName || item.Customer || '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-medium">
                                             <span className="text-green-600 dark:text-green-400">
-                                                {formatCurrency(item.Deposit || 0)}
+                                                {formatCurrency(item.SellingAmt || item.SaleAmount || 0)}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-bold">
-                                            {formatCurrency(item.Balance || 0)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                            {item.TranNo || item.ReferenceNo || '-'}
-                                        </td>
+                                       
+                                       
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             <button
                                                 onClick={() => handleRowClick(item)}
@@ -840,30 +859,30 @@ const BankStatementPage = () => {
                 ) : (
                     <>
                         {/* Empty State */}
-                        {!loading.bankStatementGrid && (
+                        {!loading.assetSaleMainGrid && (
                             <div className="p-12 text-center">
                                 <div className="flex flex-col items-center">
                                     <div className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-full p-4 mb-4">
                                         <Search className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Bank Statement Data Found</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Asset Sales Data Found</h3>
                                     <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                                        Select your bank, date range, and optional transaction type, then click "View Statement" to load your bank statement data.
+                                        Select your date range and click "View Report" to load your asset sales data.
                                     </p>
                                 </div>
                             </div>
                         )}
 
                         {/* Loading State */}
-                        {loading.bankStatementGrid && (
+                        {loading.assetSaleMainGrid && (
                             <div className="p-12 text-center">
                                 <div className="flex flex-col items-center">
                                     <div className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-full p-4 mb-4">
                                         <RotateCcw className="h-12 w-12 text-indigo-500 animate-spin" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Loading Bank Statement</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Loading Asset Sales Report</h3>
                                     <p className="text-gray-600 dark:text-gray-400">
-                                        Fetching bank statement data for the selected period...
+                                        Fetching asset sales data for the selected period...
                                     </p>
                                 </div>
                             </div>
@@ -872,12 +891,12 @@ const BankStatementPage = () => {
                 )}
             </div>
 
-            {/* Transaction Details Modal */}
-            <TransactionDetailsModal
+            {/* Asset Sale Details Modal */}
+            <AssetSaleDetailsModal
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
-                transactionData={bankTranDetails}
-                loading={loading.bankTranDetails}
+                detailsData={assetSaleInnerDetails}
+                loading={loading.assetSaleInnerDetails}
             />
 
             {/* Information Note */}
@@ -885,16 +904,16 @@ const BankStatementPage = () => {
                 <div className="flex items-center gap-3">
                     <Info className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                     <div className="text-indigo-800 dark:text-indigo-200 text-sm">
-                        <p className="font-semibold mb-1">Bank Statement Features:</p>
+                        <p className="font-semibold mb-1">Asset Sales Report Features:</p>
                         <p className="text-gray-600 dark:text-indigo-200">
-                            1. <strong>Bank Selection:</strong> Choose from available banks in your system<br/>
-                            2. <strong>Date Range:</strong> Both from and to dates are required for statement generation<br/>
-                            3. <strong>Transaction Type:</strong> Optional filter to view specific transaction types<br/>
-                            4. <strong>Click Actions:</strong> Click the eye icon on any row to view detailed transaction information<br/>
-                            5. <strong>Summary Cards:</strong> View total debits, credits, net cash flow, closing balance, and transaction count<br/>
-                            6. <strong>Export:</strong> Download bank statement data as Excel file for offline analysis<br/>
-                            7. <strong>Real-time Loading:</strong> Visual feedback during data fetching operations<br/>
-                            8. <strong>Error Handling:</strong> Toast notifications for errors with automatic error clearing
+                            1. <strong>Date Range:</strong> Both from and to dates are required for report generation<br/>
+                            2. <strong>Click Actions:</strong> Click the eye icon on any row to view detailed asset sale information<br/>
+                            3. <strong>Summary Cards:</strong> View total sales value, quantity sold, average sale amount, and transaction count<br/>
+                            4. <strong>Export:</strong> Download asset sales data as Excel file for offline analysis<br/>
+                            5. <strong>Real-time Loading:</strong> Visual feedback during data fetching operations<br/>
+                            6. <strong>Error Handling:</strong> Toast notifications for errors with automatic error clearing<br/>
+                            7. <strong>Status Indicators:</strong> Color-coded status badges for easy identification<br/>
+                            8. <strong>Responsive Design:</strong> Optimized for both desktop and mobile viewing
                         </p>
                     </div>
                 </div>
@@ -915,7 +934,5 @@ const BankStatementPage = () => {
     );
 };
 
-
-
 // Default export  
-export default BankStatementPage;
+export default AssetSalesReportPage;

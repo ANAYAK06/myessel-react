@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as transactionLogAPI from '../../api/FinanceReportAPI/transactionLogAPI';
-import { getDateUtils } from '../../utilities/dateUtils';
+import { getDateUtils, getIndianDateTime } from '../../utilities/dateUtils';
+
+// ======================================
+// HELPER FUNCTION FOR INDIAN TIMEZONE TIMESTAMP
+// ======================================
+const getIndianTimestamp = () => {
+    const { datetime } = getIndianDateTime();
+    return datetime;
+};
 
 // ======================================
 // ASYNC THUNKS FOR TRANSACTION LOG APIs
@@ -19,7 +27,7 @@ export const fetchTransactionLogReport = createAsyncThunk(
     }
 );
 
-// 2. Today's Transaction Log with 'Select All'
+// 2. Today's Transaction Log with 'Select All' (Indian timezone)
 export const fetchTodayTransactionLog = createAsyncThunk(
     'transactionlog/fetchTodayTransactionLog',
     async (_, { rejectWithValue }) => {
@@ -30,6 +38,7 @@ export const fetchTodayTransactionLog = createAsyncThunk(
                 toDate: today,
                 tranType: 'Select All'
             };
+            console.log('Today\'s Transaction Log params (IST):', params);
             const response = await transactionLogAPI.getTransactionLogGrid(params);
             return response;
         } catch (error) {
@@ -38,7 +47,7 @@ export const fetchTodayTransactionLog = createAsyncThunk(
     }
 );
 
-// 3. Yesterday's Transaction Log with 'Select All'
+// 3. Yesterday's Transaction Log with 'Select All' (Indian timezone)
 export const fetchYesterdayTransactionLog = createAsyncThunk(
     'transactionlog/fetchYesterdayTransactionLog',
     async (_, { rejectWithValue }) => {
@@ -49,6 +58,7 @@ export const fetchYesterdayTransactionLog = createAsyncThunk(
                 toDate: yesterday,
                 tranType: 'Select All'
             };
+            console.log('Yesterday\'s Transaction Log params (IST):', params);
             const response = await transactionLogAPI.getTransactionLogGrid(params);
             return response;
         } catch (error) {
@@ -57,7 +67,7 @@ export const fetchYesterdayTransactionLog = createAsyncThunk(
     }
 );
 
-// 4. This Month's Vendor Invoice Log
+// 4. This Month's Vendor Invoice Log (Indian timezone)
 export const fetchMonthlyVendorInvoiceLog = createAsyncThunk(
     'transactionlog/fetchMonthlyVendorInvoiceLog',
     async (_, { rejectWithValue }) => {
@@ -68,6 +78,7 @@ export const fetchMonthlyVendorInvoiceLog = createAsyncThunk(
                 toDate: monthEnd,
                 tranType: 'Vendor Invoice'
             };
+            console.log('Monthly Vendor Invoice Log params (IST):', params);
             const response = await transactionLogAPI.getTransactionLogGrid(params);
             return response;
         } catch (error) {
@@ -76,7 +87,7 @@ export const fetchMonthlyVendorInvoiceLog = createAsyncThunk(
     }
 );
 
-// 5. This Month's Client Invoice Log
+// 5. This Month's Client Invoice Log (Indian timezone)
 export const fetchMonthlyClientInvoiceLog = createAsyncThunk(
     'transactionlog/fetchMonthlyClientInvoiceLog',
     async (_, { rejectWithValue }) => {
@@ -87,6 +98,7 @@ export const fetchMonthlyClientInvoiceLog = createAsyncThunk(
                 toDate: monthEnd,
                 tranType: 'Client Invoice'
             };
+            console.log('Monthly Client Invoice Log params (IST):', params);
             const response = await transactionLogAPI.getTransactionLogGrid(params);
             return response;
         } catch (error) {
@@ -95,7 +107,7 @@ export const fetchMonthlyClientInvoiceLog = createAsyncThunk(
     }
 );
 
-// 6. Previous Month's Transaction Log with 'Select All'
+// 6. Previous Month's Transaction Log with 'Select All' (Indian timezone)
 export const fetchPreviousMonthTransactionLog = createAsyncThunk(
     'transactionlog/fetchPreviousMonthTransactionLog',
     async (_, { rejectWithValue }) => {
@@ -106,6 +118,7 @@ export const fetchPreviousMonthTransactionLog = createAsyncThunk(
                 toDate: previousMonthEnd,
                 tranType: 'Select All'
             };
+            console.log('Previous Month Transaction Log params (IST):', params);
             const response = await transactionLogAPI.getTransactionLogGrid(params);
             return response;
         } catch (error) {
@@ -114,7 +127,7 @@ export const fetchPreviousMonthTransactionLog = createAsyncThunk(
     }
 );
 
-// 7. Previous Month's Vendor Invoice Log
+// 7. Previous Month's Vendor Invoice Log (Indian timezone)
 export const fetchPreviousMonthVendorInvoiceLog = createAsyncThunk(
     'transactionlog/fetchPreviousMonthVendorInvoiceLog',
     async (_, { rejectWithValue }) => {
@@ -125,6 +138,7 @@ export const fetchPreviousMonthVendorInvoiceLog = createAsyncThunk(
                 toDate: previousMonthEnd,
                 tranType: 'Vendor Invoice'
             };
+            console.log('Previous Month Vendor Invoice Log params (IST):', params);
             const response = await transactionLogAPI.getTransactionLogGrid(params);
             return response;
         } catch (error) {
@@ -133,7 +147,7 @@ export const fetchPreviousMonthVendorInvoiceLog = createAsyncThunk(
     }
 );
 
-// 8. Previous Month's Client Invoice Log
+// 8. Previous Month's Client Invoice Log (Indian timezone)
 export const fetchPreviousMonthClientInvoiceLog = createAsyncThunk(
     'transactionlog/fetchPreviousMonthClientInvoiceLog',
     async (_, { rejectWithValue }) => {
@@ -144,10 +158,51 @@ export const fetchPreviousMonthClientInvoiceLog = createAsyncThunk(
                 toDate: previousMonthEnd,
                 tranType: 'Client Invoice'
             };
+            console.log('Previous Month Client Invoice Log params (IST):', params);
             const response = await transactionLogAPI.getTransactionLogGrid(params);
             return response;
         } catch (error) {
             return rejectWithValue(error.message || 'Failed to fetch Previous Month\'s Client Invoice Log');
+        }
+    }
+);
+
+// 9. Fetch This Week's Transaction Log (Indian timezone)
+export const fetchThisWeekTransactionLog = createAsyncThunk(
+    'transactionlog/fetchThisWeekTransactionLog',
+    async (_, { rejectWithValue }) => {
+        try {
+            const { getCurrentWeekRange } = require('../../utilities/dateUtils');
+            const { weekStart, weekEnd } = getCurrentWeekRange();
+            const params = {
+                fromDate: weekStart,
+                toDate: weekEnd,
+                tranType: 'Select All'
+            };
+            console.log('This Week Transaction Log params (IST):', params);
+            const response = await transactionLogAPI.getTransactionLogGrid(params);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch This Week\'s Transaction Log');
+        }
+    }
+);
+
+// 10. Fetch Custom Date Range (for when you need specific dates)
+export const fetchCustomDateRangeTransactionLog = createAsyncThunk(
+    'transactionlog/fetchCustomDateRangeTransactionLog',
+    async ({ fromDate, toDate, tranType = 'Select All' }, { rejectWithValue }) => {
+        try {
+            const params = {
+                fromDate,
+                toDate,
+                tranType
+            };
+            console.log('Custom Date Range Transaction Log params:', params);
+            const response = await transactionLogAPI.getTransactionLogGrid(params);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch Custom Date Range Transaction Log');
         }
     }
 );
@@ -165,6 +220,8 @@ const initialState = {
     previousMonthTransactionLog: [],
     previousMonthVendorInvoiceLog: [],
     previousMonthClientInvoiceLog: [],
+    thisWeekTransactionLog: [],
+    customDateRangeTransactionLog: [],
 
     // Loading states for each API call
     loading: {
@@ -176,6 +233,8 @@ const initialState = {
         previousMonthTransactionLog: false,
         previousMonthVendorInvoiceLog: false,
         previousMonthClientInvoiceLog: false,
+        thisWeekTransactionLog: false,
+        customDateRangeTransactionLog: false,
     },
 
     // Error states for each API call
@@ -188,6 +247,8 @@ const initialState = {
         previousMonthTransactionLog: null,
         previousMonthVendorInvoiceLog: null,
         previousMonthClientInvoiceLog: null,
+        thisWeekTransactionLog: null,
+        customDateRangeTransactionLog: null,
     },
 
     // UI State for custom filters
@@ -197,7 +258,7 @@ const initialState = {
         tranType: ''
     },
 
-    // Last updated timestamps
+    // Last updated timestamps (Indian timezone)
     lastUpdated: {
         transactionLogReport: null,
         todayTransactionLog: null,
@@ -207,6 +268,21 @@ const initialState = {
         previousMonthTransactionLog: null,
         previousMonthVendorInvoiceLog: null,
         previousMonthClientInvoiceLog: null,
+        thisWeekTransactionLog: null,
+        customDateRangeTransactionLog: null,
+    },
+
+    // Current date info (Indian timezone) - useful for UI display
+    currentDateInfo: {
+        today: '',
+        yesterday: '',
+        monthStart: '',
+        monthEnd: '',
+        previousMonthStart: '',
+        previousMonthEnd: '',
+        weekStart: '',
+        weekEnd: '',
+        lastRefreshed: null
     }
 };
 
@@ -241,6 +317,8 @@ const transactionLogSlice = createSlice({
             state.previousMonthTransactionLog = [];
             state.previousMonthVendorInvoiceLog = [];
             state.previousMonthClientInvoiceLog = [];
+            state.thisWeekTransactionLog = [];
+            state.customDateRangeTransactionLog = [];
         },
 
         // Action to reset specific transaction data
@@ -264,6 +342,25 @@ const transactionLogSlice = createSlice({
             Object.keys(state.errors).forEach(key => {
                 state.errors[key] = null;
             });
+        },
+
+        // Action to refresh current date info (Indian timezone)
+        refreshCurrentDateInfo: (state) => {
+            const dateUtils = getDateUtils();
+            const { getCurrentWeekRange } = require('../../utilities/dateUtils');
+            const weekRange = getCurrentWeekRange();
+            
+            state.currentDateInfo = {
+                today: dateUtils.today,
+                yesterday: dateUtils.yesterday,
+                monthStart: dateUtils.monthStart,
+                monthEnd: dateUtils.monthEnd,
+                previousMonthStart: dateUtils.previousMonthStart,
+                previousMonthEnd: dateUtils.previousMonthEnd,
+                weekStart: weekRange.weekStart,
+                weekEnd: weekRange.weekEnd,
+                lastRefreshed: getIndianTimestamp()
+            };
         }
     },
     extraReducers: (builder) => {
@@ -276,7 +373,7 @@ const transactionLogSlice = createSlice({
             .addCase(fetchTransactionLogReport.fulfilled, (state, action) => {
                 state.loading.transactionLogReport = false;
                 state.transactionLogReport = action.payload;
-                state.lastUpdated.transactionLogReport = new Date().toISOString();
+                state.lastUpdated.transactionLogReport = getIndianTimestamp();
             })
             .addCase(fetchTransactionLogReport.rejected, (state, action) => {
                 state.loading.transactionLogReport = false;
@@ -292,7 +389,7 @@ const transactionLogSlice = createSlice({
             .addCase(fetchTodayTransactionLog.fulfilled, (state, action) => {
                 state.loading.todayTransactionLog = false;
                 state.todayTransactionLog = action.payload;
-                state.lastUpdated.todayTransactionLog = new Date().toISOString();
+                state.lastUpdated.todayTransactionLog = getIndianTimestamp();
             })
             .addCase(fetchTodayTransactionLog.rejected, (state, action) => {
                 state.loading.todayTransactionLog = false;
@@ -308,7 +405,7 @@ const transactionLogSlice = createSlice({
             .addCase(fetchYesterdayTransactionLog.fulfilled, (state, action) => {
                 state.loading.yesterdayTransactionLog = false;
                 state.yesterdayTransactionLog = action.payload;
-                state.lastUpdated.yesterdayTransactionLog = new Date().toISOString();
+                state.lastUpdated.yesterdayTransactionLog = getIndianTimestamp();
             })
             .addCase(fetchYesterdayTransactionLog.rejected, (state, action) => {
                 state.loading.yesterdayTransactionLog = false;
@@ -324,7 +421,7 @@ const transactionLogSlice = createSlice({
             .addCase(fetchMonthlyVendorInvoiceLog.fulfilled, (state, action) => {
                 state.loading.monthlyVendorInvoiceLog = false;
                 state.monthlyVendorInvoiceLog = action.payload;
-                state.lastUpdated.monthlyVendorInvoiceLog = new Date().toISOString();
+                state.lastUpdated.monthlyVendorInvoiceLog = getIndianTimestamp();
             })
             .addCase(fetchMonthlyVendorInvoiceLog.rejected, (state, action) => {
                 state.loading.monthlyVendorInvoiceLog = false;
@@ -340,7 +437,7 @@ const transactionLogSlice = createSlice({
             .addCase(fetchMonthlyClientInvoiceLog.fulfilled, (state, action) => {
                 state.loading.monthlyClientInvoiceLog = false;
                 state.monthlyClientInvoiceLog = action.payload;
-                state.lastUpdated.monthlyClientInvoiceLog = new Date().toISOString();
+                state.lastUpdated.monthlyClientInvoiceLog = getIndianTimestamp();
             })
             .addCase(fetchMonthlyClientInvoiceLog.rejected, (state, action) => {
                 state.loading.monthlyClientInvoiceLog = false;
@@ -356,7 +453,7 @@ const transactionLogSlice = createSlice({
             .addCase(fetchPreviousMonthTransactionLog.fulfilled, (state, action) => {
                 state.loading.previousMonthTransactionLog = false;
                 state.previousMonthTransactionLog = action.payload;
-                state.lastUpdated.previousMonthTransactionLog = new Date().toISOString();
+                state.lastUpdated.previousMonthTransactionLog = getIndianTimestamp();
             })
             .addCase(fetchPreviousMonthTransactionLog.rejected, (state, action) => {
                 state.loading.previousMonthTransactionLog = false;
@@ -372,7 +469,7 @@ const transactionLogSlice = createSlice({
             .addCase(fetchPreviousMonthVendorInvoiceLog.fulfilled, (state, action) => {
                 state.loading.previousMonthVendorInvoiceLog = false;
                 state.previousMonthVendorInvoiceLog = action.payload;
-                state.lastUpdated.previousMonthVendorInvoiceLog = new Date().toISOString();
+                state.lastUpdated.previousMonthVendorInvoiceLog = getIndianTimestamp();
             })
             .addCase(fetchPreviousMonthVendorInvoiceLog.rejected, (state, action) => {
                 state.loading.previousMonthVendorInvoiceLog = false;
@@ -388,11 +485,43 @@ const transactionLogSlice = createSlice({
             .addCase(fetchPreviousMonthClientInvoiceLog.fulfilled, (state, action) => {
                 state.loading.previousMonthClientInvoiceLog = false;
                 state.previousMonthClientInvoiceLog = action.payload;
-                state.lastUpdated.previousMonthClientInvoiceLog = new Date().toISOString();
+                state.lastUpdated.previousMonthClientInvoiceLog = getIndianTimestamp();
             })
             .addCase(fetchPreviousMonthClientInvoiceLog.rejected, (state, action) => {
                 state.loading.previousMonthClientInvoiceLog = false;
                 state.errors.previousMonthClientInvoiceLog = action.payload;
+            })
+
+        // 9. This Week Transaction Log
+        builder
+            .addCase(fetchThisWeekTransactionLog.pending, (state) => {
+                state.loading.thisWeekTransactionLog = true;
+                state.errors.thisWeekTransactionLog = null;
+            })
+            .addCase(fetchThisWeekTransactionLog.fulfilled, (state, action) => {
+                state.loading.thisWeekTransactionLog = false;
+                state.thisWeekTransactionLog = action.payload;
+                state.lastUpdated.thisWeekTransactionLog = getIndianTimestamp();
+            })
+            .addCase(fetchThisWeekTransactionLog.rejected, (state, action) => {
+                state.loading.thisWeekTransactionLog = false;
+                state.errors.thisWeekTransactionLog = action.payload;
+            })
+
+        // 10. Custom Date Range Transaction Log
+        builder
+            .addCase(fetchCustomDateRangeTransactionLog.pending, (state) => {
+                state.loading.customDateRangeTransactionLog = true;
+                state.errors.customDateRangeTransactionLog = null;
+            })
+            .addCase(fetchCustomDateRangeTransactionLog.fulfilled, (state, action) => {
+                state.loading.customDateRangeTransactionLog = false;
+                state.customDateRangeTransactionLog = action.payload;
+                state.lastUpdated.customDateRangeTransactionLog = getIndianTimestamp();
+            })
+            .addCase(fetchCustomDateRangeTransactionLog.rejected, (state, action) => {
+                state.loading.customDateRangeTransactionLog = false;
+                state.errors.customDateRangeTransactionLog = action.payload;
             });
     },
 });
@@ -406,7 +535,8 @@ export const {
     resetAllTransactionData,
     resetTransactionData,
     clearError,
-    clearAllErrors
+    clearAllErrors,
+    refreshCurrentDateInfo
 } = transactionLogSlice.actions;
 
 // ======================================
@@ -422,6 +552,8 @@ export const selectMonthlyClientInvoiceLog = (state) => state.transactionlog.mon
 export const selectPreviousMonthTransactionLog = (state) => state.transactionlog.previousMonthTransactionLog;
 export const selectPreviousMonthVendorInvoiceLog = (state) => state.transactionlog.previousMonthVendorInvoiceLog;
 export const selectPreviousMonthClientInvoiceLog = (state) => state.transactionlog.previousMonthClientInvoiceLog;
+export const selectThisWeekTransactionLog = (state) => state.transactionlog.thisWeekTransactionLog;
+export const selectCustomDateRangeTransactionLog = (state) => state.transactionlog.customDateRangeTransactionLog;
 
 // Loading selectors
 export const selectLoading = (state) => state.transactionlog.loading;
@@ -433,6 +565,8 @@ export const selectMonthlyClientInvoiceLogLoading = (state) => state.transaction
 export const selectPreviousMonthTransactionLogLoading = (state) => state.transactionlog.loading.previousMonthTransactionLog;
 export const selectPreviousMonthVendorInvoiceLogLoading = (state) => state.transactionlog.loading.previousMonthVendorInvoiceLog;
 export const selectPreviousMonthClientInvoiceLogLoading = (state) => state.transactionlog.loading.previousMonthClientInvoiceLog;
+export const selectThisWeekTransactionLogLoading = (state) => state.transactionlog.loading.thisWeekTransactionLog;
+export const selectCustomDateRangeTransactionLogLoading = (state) => state.transactionlog.loading.customDateRangeTransactionLog;
 
 // Error selectors
 export const selectErrors = (state) => state.transactionlog.errors;
@@ -444,12 +578,19 @@ export const selectMonthlyClientInvoiceLogError = (state) => state.transactionlo
 export const selectPreviousMonthTransactionLogError = (state) => state.transactionlog.errors.previousMonthTransactionLog;
 export const selectPreviousMonthVendorInvoiceLogError = (state) => state.transactionlog.errors.previousMonthVendorInvoiceLog;
 export const selectPreviousMonthClientInvoiceLogError = (state) => state.transactionlog.errors.previousMonthClientInvoiceLog;
+export const selectThisWeekTransactionLogError = (state) => state.transactionlog.errors.thisWeekTransactionLog;
+export const selectCustomDateRangeTransactionLogError = (state) => state.transactionlog.errors.customDateRangeTransactionLog;
 
 // Filter selectors
 export const selectFilters = (state) => state.transactionlog.filters;
 export const selectSelectedFromDate = (state) => state.transactionlog.filters.fromDate;
 export const selectSelectedToDate = (state) => state.transactionlog.filters.toDate;
 export const selectSelectedTranType = (state) => state.transactionlog.filters.tranType;
+
+// Current date info selectors (Indian timezone)
+export const selectCurrentDateInfo = (state) => state.transactionlog.currentDateInfo;
+export const selectCurrentIndianDate = (state) => state.transactionlog.currentDateInfo.today;
+export const selectCurrentIndianTime = (state) => state.transactionlog.currentDateInfo.lastRefreshed;
 
 // Last updated selectors
 export const selectLastUpdated = (state) => state.transactionlog.lastUpdated;
@@ -458,17 +599,20 @@ export const selectLastUpdated = (state) => state.transactionlog.lastUpdated;
 export const selectIsAnyLoading = (state) => Object.values(state.transactionlog.loading).some(loading => loading);
 export const selectHasAnyError = (state) => Object.values(state.transactionlog.errors).some(error => error !== null);
 
-// Dashboard summary selectors (for quick overview)
+// Enhanced dashboard summary selectors (for quick overview)
 export const selectDashboardSummary = (state) => ({
     todayCount: state.transactionlog.todayTransactionLog?.Data?.length || state.transactionlog.todayTransactionLog?.length || 0,
     yesterdayCount: state.transactionlog.yesterdayTransactionLog?.Data?.length || state.transactionlog.yesterdayTransactionLog?.length || 0,
+    thisWeekCount: state.transactionlog.thisWeekTransactionLog?.Data?.length || state.transactionlog.thisWeekTransactionLog?.length || 0,
     vendorInvoiceCount: state.transactionlog.monthlyVendorInvoiceLog?.Data?.length || state.transactionlog.monthlyVendorInvoiceLog?.length || 0,
     clientInvoiceCount: state.transactionlog.monthlyClientInvoiceLog?.Data?.length || state.transactionlog.monthlyClientInvoiceLog?.length || 0,
     previousMonthCount: state.transactionlog.previousMonthTransactionLog?.Data?.length || state.transactionlog.previousMonthTransactionLog?.length || 0,
     previousMonthVendorCount: state.transactionlog.previousMonthVendorInvoiceLog?.Data?.length || state.transactionlog.previousMonthVendorInvoiceLog?.length || 0,
     previousMonthClientCount: state.transactionlog.previousMonthClientInvoiceLog?.Data?.length || state.transactionlog.previousMonthClientInvoiceLog?.length || 0,
+    customDateRangeCount: state.transactionlog.customDateRangeTransactionLog?.Data?.length || state.transactionlog.customDateRangeTransactionLog?.length || 0,
     isLoading: Object.values(state.transactionlog.loading).some(loading => loading),
-    hasError: Object.values(state.transactionlog.errors).some(error => error !== null)
+    hasError: Object.values(state.transactionlog.errors).some(error => error !== null),
+    currentDateInfo: state.transactionlog.currentDateInfo
 });
 
 // ======================================

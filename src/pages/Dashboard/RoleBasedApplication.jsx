@@ -18,6 +18,7 @@ import SupplierPOStatusPage from '../Stock/SupplierPOStatusPage';
 import ScrapWalletReportPage from '../Stock/ScrapWalletReportPage';
 import ConsolidatedGSTReportPage from '../GST/ConsolidatedGSTReportPage';
 import ItemWiseGSTReportPage from '../GST/ItemWiseGSTReportPage';
+import SupplierPOReportPage from '../SupplierPO/SupplierPOReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -339,6 +340,19 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // check if menu item should route to Supplier PO Report Page
+
+    const isSupplierPOReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/SupplierPOReport' || menuData.path === '/Inventory/SupplierPOReport' ||
+            menuData.path?.toLowerCase().includes('supplierporeport');
+        const nameMatches = menuData.name?.toLowerCase().includes('supplierporeport') ||
+            menuData.name?.toLowerCase().includes('supplier po report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('supplierporeport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -445,7 +459,13 @@ const RoleBasedApplication = () => {
         // Check if this menu item should show Item wise GST purchase report Page
         if (currentMenuData && isItemWiseGSTPurchaseReportPage(currentMenuData)) {
             return <ItemWiseGSTReportPage menuData={currentMenuData} />;
-        }   
+        }
+
+        // Check if this menu item should show Supplier PO Report Page
+        if (currentMenuData && isSupplierPOReportPage(currentMenuData)) {
+            console.log('✅ Rendering SupplierPOReportPage for:', currentMenuData.name);
+            return <SupplierPOReportPage menuData={currentMenuData} />;
+        }
 
         // For any other budget-related menu item, show a budget module placeholder
         if (currentMenuData && isBudgetModule(currentMenuData)) {

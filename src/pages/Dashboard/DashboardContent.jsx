@@ -23,6 +23,7 @@ import {
     selectPreviousMonthClientInvoiceLog
 
 } from '../../slices/financialReportSlice/transactionLogSlice'
+import DonutChart from './DonutChart';
 
 const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) => {
     const { roleData, userData } = useSelector((state) => state.auth);
@@ -256,10 +257,24 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Sales This Month</p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{dashboardData.sales.thisMonth.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{formatCurrency(dashboardData.sales.thisMonth)}</p>
                             <div className="flex items-center mt-1">
-                                <ArrowUpRight className="w-4 h-4 text-green-600 dark:text-green-500" />
-                                <span className="text-sm text-green-600 dark:text-green-500 font-medium">+{dashboardData.sales.growth}%</span>
+                                {/* Conditional Arrow and Color based on growth */}
+                                {dashboardData.sales.growth >= 0 ? (
+                                    <>
+                                        <ArrowUpRight className="w-4 h-4 text-green-600 dark:text-green-500" />
+                                        <span className="text-sm text-green-600 dark:text-green-500 font-medium">
+                                            +{dashboardData.sales.growth}%
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ArrowDownRight className="w-4 h-4 text-red-600 dark:text-red-500" />
+                                        <span className="text-sm text-red-600 dark:text-red-500 font-medium">
+                                            {dashboardData.sales.growth}%
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
@@ -273,10 +288,24 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Purchase This Month</p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{dashboardData.purchase.thisMonth.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{formatCurrency(dashboardData.purchase.thisMonth)}</p>
                             <div className="flex items-center mt-1">
-                                <ArrowDownRight className="w-4 h-4 text-red-600 dark:text-red-500" />
-                                <span className="text-sm text-red-600 dark:text-red-500 font-medium">{dashboardData.purchase.growth}%</span>
+                                {/* Conditional Arrow and Color based on growth */}
+                                {dashboardData.purchase.growth >= 0 ? (
+                                    <>
+                                        <ArrowUpRight className="w-4 h-4 text-red-600 dark:text-red-500" />
+                                        <span className="text-sm text-red-600 dark:text-red-500 font-medium">
+                                            +{dashboardData.purchase.growth}%
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ArrowDownRight className="w-4 h-4 text-green-600 dark:text-green-500" />
+                                        <span className="text-sm text-green-600 dark:text-green-500 font-medium">
+                                            {dashboardData.purchase.growth}%
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
@@ -284,6 +313,43 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                         </div>
                     </div>
                 </div>
+                                
+                {/* <div className="fixed top-4 right-4 z-50 max-w-sm">
+                    <div className="bg-black/80 backdrop-blur-sm border border-yellow-400/50 p-4 rounded-lg shadow-2xl">
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-bold text-yellow-400 text-sm">🐛 Debug Info</h4>
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        </div>
+                        <div className="text-xs text-yellow-100 space-y-1 font-mono">
+                            <p><span className="text-yellow-400">Client Records:</span> {monthlyClientData?.Data?.length || 0}</p>
+                            <p><span className="text-yellow-400">Vendor Records:</span> {monthlyVendorData?.Data?.length || 0}</p>
+                            <div className="border-t border-yellow-400/30 pt-2 mt-2">
+                                <p><span className="text-green-400">Current Sales:</span> ₹{currentMonthSales.toLocaleString()}</p>
+                                <p><span className="text-blue-400">Current Purchase:</span> ₹{currentMonthPurchase.toLocaleString()}</p>
+                            </div>
+                            <div className="border-t border-yellow-400/30 pt-2 mt-2">
+                                <p><span className="text-green-300">Previous Sales:</span> ₹{previousMonthSales.toLocaleString()}</p>
+                                <p><span className="text-blue-300">Previous Purchase:</span> ₹{previousMonthPurchase.toLocaleString()}</p>
+                            </div>
+                            <div className="border-t border-yellow-400/30 pt-2 mt-2">
+                                <p><span className="text-purple-400">Sales Growth:</span>
+                                    <span className={salesGrowth >= 0 ? "text-green-400" : "text-red-400"}>
+                                        {salesGrowth}%
+                                    </span>
+                                </p>
+                                <p><span className="text-purple-400">Purchase Growth:</span>
+                                    <span className={purchaseGrowth >= 0 ? "text-green-400" : "text-red-400"}>
+                                        {purchaseGrowth}%
+                                    </span>
+                                </p>
+                            </div>
+                            <div className="border-t border-yellow-400/30 pt-2 mt-2">
+                                <p className="text-gray-300">Today: {new Date().toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> */}
+
 
                 {/* Pending Transactions */}
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md dark:hover:shadow-lg transition-all">
@@ -317,74 +383,20 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
             {/* Charts and Analytics Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Sales Graph */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sales Trend</h3>
-                        <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center transition-colors">
-                            <Eye className="w-4 h-4 mr-1" />
-                            View Details
-                        </button>
-                    </div>
-
-                    <div className="h-48 bg-gradient-to-r from-green-50 to-indigo-50 dark:from-green-900/20 dark:to-indigo-900/20 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 relative transition-colors">
-                        <div className="text-center">
-                            <BarChart3 className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                            <p className="text-gray-500 dark:text-gray-400 font-medium">Sales Comparison</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">
-                                This Month: ₹{currentMonthSales.toLocaleString()}
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">
-                                Last Month: ₹{previousMonthSales.toLocaleString()}
-                            </p>
-                        </div>
-                        <div className="absolute bottom-4 left-4 right-4 space-y-1">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-green-600">This Month</span>
-                                <span className="text-gray-400">Previous Month</span>
-                            </div>
-                            <div className="h-1 bg-gradient-to-r from-green-400 to-indigo-400 rounded relative">
-                                <div
-                                    className="absolute right-0 h-1 bg-gray-400 rounded"
-                                    style={{ width: `${Math.min((previousMonthSales / Math.max(currentMonthSales, previousMonthSales)) * 100, 100)}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+               <DonutChart 
+                current={currentMonthSales}
+                previous={previousMonthSales}
+                type="sales"
+                title="Sales"   
+                />
 
                 {/* Purchase Graph */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Purchase Analysis</h3>
-                        <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center transition-colors">
-                            <Eye className="w-4 h-4 mr-1" />
-                            View Details
-                        </button>
-                    </div>
-
-                    <div className="h-48 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 relative transition-colors">
-                        <div className="text-center">
-                            <PieChart className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                            <p className="text-gray-500 dark:text-gray-400 font-medium">Purchase Comparison</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">
-                                This Month: ₹{currentMonthPurchase.toLocaleString()}
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">
-                                Last Month: ₹{previousMonthPurchase.toLocaleString()}
-                            </p>
-                        </div>
-                        <div className="absolute top-4 right-4 space-y-1">
-                            <div className="flex items-center space-x-1">
-                                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">This Month</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                                <div className="w-2 h-2 bg-pink-400 rounded-full"></div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Previous Month</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <DonutChart
+                    current={currentMonthPurchase}
+                    previous={previousMonthPurchase}
+                    type="purchase"
+                    title="Purchase"
+                />
             </div>
 
             {/* Quick Access and Tracking Row - ENHANCED WITH CENTRALIZED FREQUENCY TRACKING */}

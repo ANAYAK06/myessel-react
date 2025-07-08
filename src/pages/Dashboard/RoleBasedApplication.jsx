@@ -19,6 +19,7 @@ import ScrapWalletReportPage from '../Stock/ScrapWalletReportPage';
 import ConsolidatedGSTReportPage from '../GST/ConsolidatedGSTReportPage';
 import ItemWiseGSTReportPage from '../GST/ItemWiseGSTReportPage';
 import SupplierPOReportPage from '../SupplierPO/SupplierPOReportPage';
+import SPPOReportPage from '../SPPO/SPPOReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -353,6 +354,18 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // check if menu item should route to SPPO Report Page
+    const isSPPOReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/SPPOReport' || menuData.path === '/Inventory/SPPOReport' ||
+            menuData.path?.toLowerCase().includes('spporeport');
+        const nameMatches = menuData.name?.toLowerCase().includes('spporeport') ||
+            menuData.name?.toLowerCase().includes('sp po report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('spporeport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -465,6 +478,11 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isSupplierPOReportPage(currentMenuData)) {
             console.log('✅ Rendering SupplierPOReportPage for:', currentMenuData.name);
             return <SupplierPOReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show SPPO Report Page
+        if (currentMenuData && isSPPOReportPage(currentMenuData)) {
+            console.log('✅ Rendering SPPOReportPage for:', currentMenuData.name);
+            return <SPPOReportPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

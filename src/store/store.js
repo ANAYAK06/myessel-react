@@ -16,6 +16,7 @@ import supplierPOStatusReducer from "../slices/stockSlice/supplierPOStatusSlice"
 import scrapWalletReportReducer from "../slices/stockSlice/scrapWalletReportSlice";
 import gstReportReducer from "../slices/gstSlice/gstReportSlice";
 import supplierReportReducer from "../slices/supplierPOSlice/supplierReportSlice";  
+import spPOReportReducer from "../slices/spPOSlice/spPOReportSlice"; 
 
 
 const store = configureStore({
@@ -37,7 +38,8 @@ const store = configureStore({
     supplierpostatus:supplierPOStatusReducer,
     scrapwalletreport:scrapWalletReportReducer,
     gstreport: gstReportReducer,
-    supplierreport: supplierReportReducer
+    supplierreport: supplierReportReducer,
+    spporeport: spPOReportReducer
   }
 
 });

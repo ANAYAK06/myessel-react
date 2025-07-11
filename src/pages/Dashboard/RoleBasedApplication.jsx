@@ -20,6 +20,8 @@ import ConsolidatedGSTReportPage from '../GST/ConsolidatedGSTReportPage';
 import ItemWiseGSTReportPage from '../GST/ItemWiseGSTReportPage';
 import SupplierPOReportPage from '../SupplierPO/SupplierPOReportPage';
 import SPPOReportPage from '../SPPO/SPPOReportPage';
+import CompanyOverallStatusPage from '../FinancialReports/CompanyOverallStatusPage';
+import AccountStatusPage from '../FinancialReports/AccountStatusPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -111,14 +113,13 @@ const RoleBasedApplication = () => {
 
         const pathMatches = menuData.path === '/Reports/AccruedInterestReport' ||
             menuData.path === '/Home/AccruedInterestReport' ||
-            menuData.path?.toLowerCase().includes('accruedinterest') ||
-            menuData.path?.toLowerCase().includes('liquiditystatus');
+            menuData.path?.toLowerCase().includes('accruedinterest') 
+           
         const nameMatches = menuData.name?.toLowerCase().includes('accruedinterest') ||
             menuData.name?.toLowerCase().includes('accrued interest') ||
             menuData.name?.toLowerCase().includes('liquidity status') ||
-            menuData.name?.toLowerCase().includes('liquiditystatus') ||
-            menuData.name?.toLowerCase().includes('cash flow') ||
-            menuData.name?.toLowerCase().includes('cashflow');
+            menuData.name?.toLowerCase().includes('liquiditystatus')
+            
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('accruedinterest') ||
             menuData.reactRoute?.toLowerCase().includes('liquiditystatus');
 
@@ -366,6 +367,29 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // check if menu item should route to Company Overall Status Page
+    const isCompanyOverallStatusPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/CompanyOverallStatus' || menuData.path === '/Inventory/CompanyOverallStatus' ||
+            menuData.path?.toLowerCase().includes('companyoverallstatus');
+        const nameMatches = menuData.name?.toLowerCase().includes('companyoverallstatus') ||
+            menuData.name?.toLowerCase().includes('company overall status');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('companyoverallstatus');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+    // check if menu item should route to account status page
+    const isAccountStatusPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/ITStatus' || menuData.path === '/Inventory/AccountStatus' ||
+            menuData.path?.toLowerCase().includes('accountstatus');
+        const nameMatches = menuData.name?.toLowerCase().includes('accountstatus') ||
+            menuData.name?.toLowerCase().includes('account status');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('accountstatus');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -483,6 +507,16 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isSPPOReportPage(currentMenuData)) {
             console.log('✅ Rendering SPPOReportPage for:', currentMenuData.name);
             return <SPPOReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Company Overall Status Page
+        if (currentMenuData && isCompanyOverallStatusPage(currentMenuData)) {
+            console.log('✅ Rendering CompanyOverallStatusPage for:', currentMenuData.name);
+            return <CompanyOverallStatusPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Account Status Page
+        if (currentMenuData && isAccountStatusPage(currentMenuData)) {
+            console.log('✅ Rendering AccountStatusPage for:', currentMenuData.name);
+            return <AccountStatusPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

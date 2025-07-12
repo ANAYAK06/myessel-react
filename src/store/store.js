@@ -19,6 +19,7 @@ import supplierReportReducer from "../slices/supplierPOSlice/supplierReportSlice
 import spPOReportReducer from "../slices/spPOSlice/spPOReportSlice"; 
 import companyOverallStatus from "../slices/financialReportSlice/companyOverallStatusSlice";
 import accountStatus from "../slices/financialReportSlice/accountStatusSlice";
+import stockReconciliationReducer from "../slices/stockSlice/stockReconciliationSlice";
 
 const store = configureStore({
   
@@ -42,7 +43,8 @@ const store = configureStore({
     supplierreport: supplierReportReducer,
     spporeport: spPOReportReducer,
     companyoverallstatus: companyOverallStatus,
-    accountstatus: accountStatus
+    accountstatus: accountStatus,
+    stockreconciliation: stockReconciliationReducer
   }
 
 });

@@ -22,6 +22,7 @@ import SupplierPOReportPage from '../SupplierPO/SupplierPOReportPage';
 import SPPOReportPage from '../SPPO/SPPOReportPage';
 import CompanyOverallStatusPage from '../FinancialReports/CompanyOverallStatusPage';
 import AccountStatusPage from '../FinancialReports/AccountStatusPage';
+import StockReconciliationPage from '../Stock/StockReconciliationPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -390,6 +391,18 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // check if menu item should route to Stock Reconciliation Page
+    const isStockReconciliationPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/StockReconcilation' || menuData.path === '/Inventory/StockReconciliation' ||
+            menuData.path?.toLowerCase().includes('stockreconciliation');
+        const nameMatches = menuData.name?.toLowerCase().includes('stockreconciliation') ||
+            menuData.name?.toLowerCase().includes('stock reconciliation');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('stockreconciliation');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -517,6 +530,11 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isAccountStatusPage(currentMenuData)) {
             console.log('✅ Rendering AccountStatusPage for:', currentMenuData.name);
             return <AccountStatusPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Stock Reconciliation Page
+        if (currentMenuData && isStockReconciliationPage(currentMenuData)) {
+            console.log('✅ Rendering StockReconciliationPage for:', currentMenuData.name);
+            return <StockReconciliationPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

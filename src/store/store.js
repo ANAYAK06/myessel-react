@@ -20,6 +20,10 @@ import spPOReportReducer from "../slices/spPOSlice/spPOReportSlice";
 import companyOverallStatus from "../slices/financialReportSlice/companyOverallStatusSlice";
 import accountStatus from "../slices/financialReportSlice/accountStatusSlice";
 import stockReconciliationReducer from "../slices/stockSlice/stockReconciliationSlice";
+import stockTransferReportReducer from "../slices/stockSlice/stockTransferReportSlice";
+import closingStockReportReducer from "../slices/stockSlice/closingStockReportSlice";
+import viewIndentsReportReducer from "../slices/stockSlice/viewIndentReportSlice";
+import dailyIssuedItemsReportReducer from "../slices/stockSlice/dailyIssueItemsReportSlice";
 
 const store = configureStore({
   
@@ -44,7 +48,11 @@ const store = configureStore({
     spporeport: spPOReportReducer,
     companyoverallstatus: companyOverallStatus,
     accountstatus: accountStatus,
-    stockreconciliation: stockReconciliationReducer
+    stockreconciliation: stockReconciliationReducer,
+    stocktransferreport: stockTransferReportReducer,
+    closingstockreport: closingStockReportReducer,
+    viewindentsreport: viewIndentsReportReducer,
+    dailyissueditemsreport: dailyIssuedItemsReportReducer
   }
 
 });

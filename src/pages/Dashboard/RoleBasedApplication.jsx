@@ -23,6 +23,10 @@ import SPPOReportPage from '../SPPO/SPPOReportPage';
 import CompanyOverallStatusPage from '../FinancialReports/CompanyOverallStatusPage';
 import AccountStatusPage from '../FinancialReports/AccountStatusPage';
 import StockReconciliationPage from '../Stock/StockReconciliationPage';
+import StockTransferReportPage from '../Stock/StockTransferReportPage';
+import ClosingStockReportPage from '../Stock/ClosingStockReportPage';
+import ViewIndentsReportPage from '../Stock/ViewIndentsReportPage';
+import DailyIssuedItemsReportPage from '../Stock/DailyIssuedItemsReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -279,7 +283,6 @@ const RoleBasedApplication = () => {
         const nameMatches = menuData.name?.toLowerCase().includes('viewcurrentstock') ||
             menuData.name?.toLowerCase().includes('view current stock') ||
             menuData.name?.toLowerCase().includes('current stock') ||
-            menuData.name?.toLowerCase().includes('stock report') ||
             menuData.name?.toLowerCase().includes('inventory stock');
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('viewcurrentstock') ||
             menuData.reactRoute?.toLowerCase().includes('viewstock');
@@ -399,6 +402,54 @@ const RoleBasedApplication = () => {
         const nameMatches = menuData.name?.toLowerCase().includes('stockreconciliation') ||
             menuData.name?.toLowerCase().includes('stock reconciliation');
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('stockreconciliation');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to Stock transfer report page
+    const isStockTransferReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/TransferReport' || menuData.path === '/Reports/StockTransferReport' ||
+            menuData.path?.toLowerCase().includes('stocktransferreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('stocktransferreport') ||
+            menuData.name?.toLowerCase().includes('stock transfer report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('stocktransferreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to Closing Stock Report Page
+    const isClosingStockReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/UpdateStockCloseReport' || menuData.path === '/Inventory/ClosingStockReport' ||
+            menuData.path?.toLowerCase().includes('closingstockreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('closingstockreport') ||
+            menuData.name?.toLowerCase().includes('closing stock report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('closingstockreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to View Indents Report Page
+    const isViewIndentsReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/ViewIndents' || menuData.path === '/Inventory/ViewIndentsReport' ||
+            menuData.path?.toLowerCase().includes('viewindentsreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('viewindentsreport') ||
+            menuData.name?.toLowerCase().includes('view indents report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('viewindentsreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to any daily issue items report
+    const isDailyIssueItemsReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/ViewIssues' || menuData.path === '/Inventory/DailyIssuedItemsReport' ||
+            menuData.path?.toLowerCase().includes('dailyissueditemsreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('dailyissueditemsreport') ||
+            menuData.name?.toLowerCase().includes('daily issued items report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('dailyissueditemsreport');
 
         return pathMatches || nameMatches || routeMatches;
     };
@@ -535,6 +586,26 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isStockReconciliationPage(currentMenuData)) {
             console.log('✅ Rendering StockReconciliationPage for:', currentMenuData.name);
             return <StockReconciliationPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Stock Transfer Report Page
+        if (currentMenuData && isStockTransferReportPage(currentMenuData)) {
+            console.log('✅ Rendering StockTransferReportPage for:', currentMenuData.name);
+            return <StockTransferReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Closing Stock Report Page
+        if (currentMenuData && isClosingStockReportPage(currentMenuData)) {
+            console.log('✅ Rendering ClosingStockReportPage for:', currentMenuData.name);
+            return <ClosingStockReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to View Indents Report Page
+        if (currentMenuData && isViewIndentsReportPage(currentMenuData)) {
+            console.log('✅ Rendering ViewIndentsReportPage for:', currentMenuData.name);
+            return <ViewIndentsReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Daily Issue Items Report Page
+        if (currentMenuData && isDailyIssueItemsReportPage(currentMenuData)) {
+            console.log('✅ Rendering DailyIssueItemsReportPage for:', currentMenuData.name);
+            return <DailyIssuedItemsReportPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

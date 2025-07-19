@@ -27,6 +27,10 @@ import StockTransferReportPage from '../Stock/StockTransferReportPage';
 import ClosingStockReportPage from '../Stock/ClosingStockReportPage';
 import ViewIndentsReportPage from '../Stock/ViewIndentsReportPage';
 import DailyIssuedItemsReportPage from '../Stock/DailyIssuedItemsReportPage';
+import ItemCodeReportPage from '../Stock/ItemCodeReportPage';
+import LostScrapReportPage from '../Stock/LostScrapReportPage';
+import LCBGStatusReportPage from '../FinancialReports/LCBGStatusReportPage';
+import StockSummaryPage from '../FinancialReports/StockSummaryPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -454,6 +458,54 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // check if menu item should route to Item code report page
+    const isItemCodeReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/ViewItemcodes' || menuData.path === '/Inventory/ItemCodeReport' ||
+            menuData.path?.toLowerCase().includes('itemcodereport');
+        const nameMatches = menuData.name?.toLowerCase().includes('itemcodereport') ||
+            menuData.name?.toLowerCase().includes('item code report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('itemcodereport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+    
+    // check if menu item should route to Lost Scrap Report Page
+    const isLostScrapReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/ViewLostandDamagedItems' || menuData.path === '/Inventory/LostScrapReport' ||
+            menuData.path?.toLowerCase().includes('lostscrapreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('lostscrapreport') ||
+            menuData.name?.toLowerCase().includes('lost scrap report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('lostscrapreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to any LCBG status report
+    const isLCBGStatusReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/LCBGStatusReport' || menuData.path === '/Inventory/LCBGStatusReport' ||
+            menuData.path?.toLowerCase().includes('lcbgstatusreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('lcbgstatusreport') ||
+            menuData.name?.toLowerCase().includes('lcbg status report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('lcbgstatusreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check if menu item should route to stock summary page
+    const isStockSummaryPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/StockSummary' || menuData.path === '/Inventory/StockSummary' ||
+            menuData.path?.toLowerCase().includes('stocksummary');
+        const nameMatches = menuData.name?.toLowerCase().includes('stocksummary') ||
+            menuData.name?.toLowerCase().includes('stock summary');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('stocksummary');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -606,6 +658,27 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isDailyIssueItemsReportPage(currentMenuData)) {
             console.log('✅ Rendering DailyIssueItemsReportPage for:', currentMenuData.name);
             return <DailyIssuedItemsReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Item Code Report Page
+        if (currentMenuData && isItemCodeReportPage(currentMenuData)) {
+            console.log('✅ Rendering ItemCodeReportPage for:', currentMenuData.name);
+            return <ItemCodeReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Lost Scrap Report Page
+        if (currentMenuData && isLostScrapReportPage(currentMenuData)) {
+            console.log('✅ Rendering LostScrapReportPage for:', currentMenuData.name);
+            return <LostScrapReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to LCBG Status Report Page
+        if (currentMenuData && isLCBGStatusReportPage(currentMenuData)) {
+            console.log('✅ Rendering LCBGStatusReportPage for:', currentMenuData.name);
+            return <LCBGStatusReportPage menuData={currentMenuData} />;
+        }
+
+        // Check if this menu item should route to Stock Summary Page
+        if (currentMenuData && isStockSummaryPage(currentMenuData)) {
+            console.log('✅ Rendering StockSummaryPage for:', currentMenuData.name);
+            return <StockSummaryPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

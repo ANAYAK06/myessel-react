@@ -24,6 +24,10 @@ import stockTransferReportReducer from "../slices/stockSlice/stockTransferReport
 import closingStockReportReducer from "../slices/stockSlice/closingStockReportSlice";
 import viewIndentsReportReducer from "../slices/stockSlice/viewIndentReportSlice";
 import dailyIssuedItemsReportReducer from "../slices/stockSlice/dailyIssueItemsReportSlice";
+import itemCodeReportReducer from "../slices/stockSlice/ItemCodeReportSlice";
+import lostScrapReportReducer from "../slices/stockSlice/lostScrapReportSlice";
+import lcbgReducer from "../slices/lcbgSlice/lcbgSlice";
+import stockSummaryReducer from "../slices/financialReportSlice/stockSummarySlice";
 
 const store = configureStore({
   
@@ -52,7 +56,11 @@ const store = configureStore({
     stocktransferreport: stockTransferReportReducer,
     closingstockreport: closingStockReportReducer,
     viewindentsreport: viewIndentsReportReducer,
-    dailyissueditemsreport: dailyIssuedItemsReportReducer
+    dailyissueditemsreport: dailyIssuedItemsReportReducer,
+    itemcodereport: itemCodeReportReducer,
+    lostscrapreport: lostScrapReportReducer,
+    lcbg: lcbgReducer,
+    stocksummary: stockSummaryReducer
   }
 
 });

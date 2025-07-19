@@ -19,34 +19,32 @@ import {
     Coins,
     FileText,
     Calendar,
-    ShoppingCart,
-    BarChart3
+    TrendingDown,
+    BarChart3,
+    AlertCircle
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CustomDatePicker from '../../components/CustomDatePicker';
 
-// Import the PDF download component
-import { MaterialIssueSlipDownloadButton } from './MaterialIssueSlipDocument';
-
 // Import slice actions and selectors
 import {
-    fetchViewCostCenterCodes,
-    fetchIssueGridData,
-    fetchIssueItemsDetails,
+    fetchViewldCostCenterCodes,
+    fetchLostandDamagedGridData,
+    fetchLostandDamagedItemsDetails,
     setFilters,
     clearFilters,
     resetGridData,
     resetAllData,
     clearError,
-    selectViewCostCenterCodes,
-    selectIssueGridData,
-    selectIssueItemsDetails,
+    selectViewldCostCenterCodes,
+    selectLostandDamagedGridData,
+    selectLostandDamagedItemsDetails,
     selectLoading,
     selectErrors,
     selectFilters,
     selectIsAnyLoading,
-    selectIssueSummary
-} from '../../slices/stockSlice/dailyIssueItemsReportSlice';
+    selectLostandDamagedSummary
+} from '../../slices/stockSlice/lostScrapReportSlice';
 
 // Tooltip Component
 const Tooltip = ({ children, content }) => {
@@ -69,7 +67,7 @@ const Tooltip = ({ children, content }) => {
     );
 };
 
-// Modal Component for Issue Details
+// Modal Component for Lost & Damaged Details
 const Modal = ({ isOpen, onClose, title, children, size = 'xl' }) => {
     if (!isOpen) return null;
 
@@ -114,17 +112,17 @@ const Modal = ({ isOpen, onClose, title, children, size = 'xl' }) => {
     );
 };
 
-// Issue Items Details Modal Component
-const IssueItemsModal = ({ isOpen, onClose, issueData, issueno }) => {
+// Lost & Damaged Items Details Modal Component
+const LostandDamagedItemsModal = ({ isOpen, onClose, recordData, refno, cccode }) => {
     const dispatch = useDispatch();
-    const issueItemsDetails = useSelector(selectIssueItemsDetails);
+    const lostandDamagedItemsDetails = useSelector(selectLostandDamagedItemsDetails);
     const loading = useSelector(selectLoading);
 
     useEffect(() => {
-        if (isOpen && issueno) {
-            dispatch(fetchIssueItemsDetails({ Issueno: issueno }));
+        if (isOpen && refno && cccode) {
+            dispatch(fetchLostandDamagedItemsDetails({ Refno: refno, CCCode: cccode }));
         }
-    }, [isOpen, issueno, dispatch]);
+    }, [isOpen, refno, cccode, dispatch]);
 
     const formatQuantity = (qty) => {
         if (!qty && qty !== 0) return '0.0000';
@@ -133,66 +131,64 @@ const IssueItemsModal = ({ isOpen, onClose, issueData, issueno }) => {
         }).format(qty);
     };
 
-    const itemsData = issueItemsDetails?.Data || [];
+    const formatAmount = (amount) => {
+        if (!amount && amount !== 0) return '0.00';
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 2
+        }).format(amount);
+    };
+
+    const itemsData = lostandDamagedItemsDetails?.Data || [];
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Issue Items Details - ${issueno}`} size="full">
-            {loading.issueItemsDetails ? (
+        <Modal isOpen={isOpen} onClose={onClose} title={`Lost & Damaged Items Details - ${refno}`} size="full">
+            {loading.lostandDamagedItemsDetails ? (
                 <div className="text-center py-8">
                     <RefreshCw className="h-8 w-8 animate-spin text-indigo-500 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">Loading issue items...</p>
+                    <p className="text-gray-500 dark:text-gray-400">Loading lost & damaged items...</p>
                 </div>
             ) : Array.isArray(itemsData) && itemsData.length > 0 ? (
                 <div className="space-y-6">
-                    {/* Issue Information */}
-                    {issueData && (
-                        <div className="bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 rounded-lg p-4">
+                    {/* Record Information */}
+                    {recordData && (
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Issue Information</h4>
-                                
-                                {/* PDF Download Button */}
-                                <div className="flex items-center gap-4">
-                                    <MaterialIssueSlipDownloadButton 
-                                        issueData={issueData}
-                                        itemsData={itemsData}
-                                        disabled={!itemsData || itemsData.length === 0}
-                                    />
-                                </div>
+                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Record Information</h4>
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
                                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Transaction ID</p>
-                                    <p className="text-base text-gray-900 dark:text-white">{issueData.TansactionId || '-'}</p>
+                                    <p className="text-base text-gray-900 dark:text-white">{recordData.TansactionId || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Date</p>
-                                    <p className="text-base text-gray-900 dark:text-white">{issueData.Date || '-'}</p>
+                                    <p className="text-base text-gray-900 dark:text-white">{recordData.Date || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Cost Center</p>
-                                    <p className="text-base text-gray-900 dark:text-white">{issueData.CCCode || '-'}</p>
+                                    <p className="text-base text-gray-900 dark:text-white">{recordData.CCCode || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Reference ID</p>
-                                    <p className="text-base text-gray-900 dark:text-white">{issueData.RId || '-'}</p>
+                                    <p className="text-base text-gray-900 dark:text-white">{recordData.RId || '-'}</p>
                                 </div>
                             </div>
-                            {issueData.Description && (
+                            {recordData.Description && (
                                 <div className="mt-4">
                                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Description</p>
-                                    <p className="text-sm text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">{issueData.Description}</p>
+                                    <p className="text-sm text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">{recordData.Description}</p>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    
-
                     {/* Items Table */}
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gradient-to-r from-indigo-600 to-indigo-700">
+                            <thead className="bg-gradient-to-r from-indigo-600 to-purple-700">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
                                         Item Code
@@ -203,20 +199,29 @@ const IssueItemsModal = ({ isOpen, onClose, issueData, issueno }) => {
                                     <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
                                         Specification
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                        DCA Code
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                        Sub DCA Code
-                                    </th>
                                     <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">
                                         Units
                                     </th>
                                     <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">
-                                        Quantity
+                                        Total Quantity
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">
+                                        Lost Quantity
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">
+                                        Scrapped Quantity
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">
+                                        Basic Price
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">
+                                        Lost Amount
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">
+                                        Scrapped Amount
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                        Issue Date
+                                        Receipt Date
                                     </th>
                                 </tr>
                             </thead>
@@ -236,12 +241,6 @@ const IssueItemsModal = ({ isOpen, onClose, issueData, issueno }) => {
                                                 {item.Specification || '-'}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                            <div className="font-medium">{item.DcaCode || '-'}</div>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                            <div className="font-medium">{item.SubDcaCode || '-'}</div>
-                                        </td>
                                         <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-center">
                                             <span className="text-purple-600 dark:text-purple-400 font-medium">
                                                 {item.Units || '-'}
@@ -252,8 +251,33 @@ const IssueItemsModal = ({ isOpen, onClose, issueData, issueno }) => {
                                                 {formatQuantity(item.Quantity || 0)}
                                             </span>
                                         </td>
+                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
+                                            <span className="text-orange-600 dark:text-orange-400">
+                                                {formatQuantity(item.LostQuantity || 0)}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
+                                            <span className="text-red-600 dark:text-red-400">
+                                                {formatQuantity(item.ScrappedQuantity || 0)}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
+                                            <span className="text-green-600 dark:text-green-400">
+                                                {formatAmount(item.Basicprice || 0)}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
+                                            <span className="text-orange-600 dark:text-orange-400">
+                                                {formatAmount(item.LostAmt || 0)}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
+                                            <span className="text-red-600 dark:text-red-400">
+                                                {formatAmount(item.scrappedAmt || 0)}
+                                            </span>
+                                        </td>
                                         <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                            <div className="truncate">{item.IssueDate || '-'}</div>
+                                            <div className="truncate">{item.ReciptDate || '-'}</div>
                                         </td>
                                     </tr>
                                 ))}
@@ -263,8 +287,8 @@ const IssueItemsModal = ({ isOpen, onClose, issueData, issueno }) => {
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">No issue items found</p>
+                    <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">No lost & damaged items found</p>
                 </div>
             )}
         </Modal>
@@ -273,6 +297,15 @@ const IssueItemsModal = ({ isOpen, onClose, issueData, issueno }) => {
 
 // Summary Cards Component
 const SummaryCards = ({ summary }) => {
+    const formatAmount = (amount) => {
+        if (!amount && amount !== 0) return '₹0.00';
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 2
+        }).format(amount);
+    };
+
     const formatQuantity = (qty) => {
         if (!qty && qty !== 0) return '0.0000';
         return new Intl.NumberFormat('en-IN', {
@@ -282,42 +315,42 @@ const SummaryCards = ({ summary }) => {
 
     const cards = [
         {
-            title: 'Total Issues',
-            value: summary.totalIssues,
-            icon: ShoppingCart,
-            color: 'from-indigo-500 to-indigo-600',
-            bgColor: 'from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20',
+            title: 'Total Records',
+            value: summary.totalRecords,
+            icon: FileText,
+            color: 'from-indigo-500 to-cyan-600',
+            bgColor: 'from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20',
             isCount: true,
-            subtitle: 'Issue transactions'
+            subtitle: 'Lost & damaged records'
         },
         {
             title: 'Total Quantity',
             value: summary.totalQuantity,
             icon: Package2,
-            color: 'from-green-500 to-emerald-600',
-            bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+            color: 'from-purple-500 to-pink-600',
+            bgColor: 'from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20',
             isCount: false,
-            subtitle: 'Items issued',
+            subtitle: 'Items affected',
             isQuantity: true
         },
         {
             title: 'Cost Centers',
             value: summary.uniqueCostCenters,
             icon: Building,
-            color: 'from-purple-500 to-pink-600',
-            bgColor: 'from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20',
+            color: 'from-indigo-500 to-purple-600',
+            bgColor: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
             isCount: true,
             subtitle: 'Unique locations'
         },
         {
-            title: 'Average Quantity',
-            value: summary.averageAmount,
-            icon: BarChart3,
-            color: 'from-orange-500 to-orange-600',
-            bgColor: 'from-orange-50 to-orange-50 dark:from-orange-900/20 dark:to-orange-900/20',
+            title: 'Total Amount',
+            value: summary.totalAmount,
+            icon: IndianRupee,
+            color: 'from-green-500 to-emerald-600',
+            bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
             isCount: false,
-            subtitle: 'Per issue average',
-            isQuantity: true
+            subtitle: 'Financial impact',
+            isAmount: true
         }
     ];
 
@@ -333,6 +366,7 @@ const SummaryCards = ({ summary }) => {
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
                                 {card.isCount ? card.value : 
                                  card.isQuantity ? formatQuantity(card.value) : 
+                                 card.isAmount ? formatAmount(card.value) :
                                  card.value}
                             </p>
                             {card.subtitle && (
@@ -388,17 +422,17 @@ const convertToCSV = (data) => {
     return csvContent;
 };
 
-const DailyIssuedItemsReportPage = () => {
+const LostScrapReportPage = () => {
     const dispatch = useDispatch();
 
     // Redux selectors
-    const viewCostCenterCodes = useSelector(selectViewCostCenterCodes);
-    const issueGridData = useSelector(selectIssueGridData);
+    const viewldCostCenterCodes = useSelector(selectViewldCostCenterCodes);
+    const lostandDamagedGridData = useSelector(selectLostandDamagedGridData);
     const loading = useSelector(selectLoading);
     const errors = useSelector(selectErrors);
     const filters = useSelector(selectFilters);
     const isAnyLoading = useSelector(selectIsAnyLoading);
-    const issueSummary = useSelector(selectIssueSummary);
+    const lostandDamagedSummary = useSelector(selectLostandDamagedSummary);
 
     // Get userData from auth state (includes UID and roleId)
     const { userData } = useSelector((state) => state.auth);
@@ -414,9 +448,10 @@ const DailyIssuedItemsReportPage = () => {
     });
 
     // Modal state
-    const [isIssueItemsModalOpen, setIsIssueItemsModalOpen] = useState(false);
-    const [selectedIssueData, setSelectedIssueData] = useState(null);
-    const [selectedIssueno, setSelectedIssueno] = useState('');
+    const [isLostandDamagedItemsModalOpen, setIsLostandDamagedItemsModalOpen] = useState(false);
+    const [selectedRecordData, setSelectedRecordData] = useState(null);
+    const [selectedRefno, setSelectedRefno] = useState('');
+    const [selectedCCCode, setSelectedCCCode] = useState('');
 
     // Track initialization
     const [hasInitialized, setHasInitialized] = useState(false);
@@ -430,14 +465,14 @@ const DailyIssuedItemsReportPage = () => {
                 StoreStatus: localFilters.StoreStatus
             };
 
-            dispatch(fetchViewCostCenterCodes(params))
+            dispatch(fetchViewldCostCenterCodes(params))
                 .unwrap()
                 .then((response) => {
-                    console.log('✅ View Cost Center Codes loaded successfully');
+                    console.log('✅ View Lost & Damaged Cost Center Codes loaded successfully');
                     setHasInitialized(true);
                 })
                 .catch((error) => {
-                    console.error('❌ Failed to load View Cost Center Codes:', error);
+                    console.error('❌ Failed to load View Lost & Damaged Cost Center Codes:', error);
                     toast.error('Failed to load cost center codes');
                     setHasInitialized(true);
                 });
@@ -453,15 +488,15 @@ const DailyIssuedItemsReportPage = () => {
                 StoreStatus: localFilters.StoreStatus
             };
 
-            dispatch(fetchViewCostCenterCodes(params))
+            dispatch(fetchViewldCostCenterCodes(params))
                 .unwrap()
                 .then((response) => {
-                    console.log('✅ View Cost Center Codes reloaded for status:', localFilters.StoreStatus);
+                    console.log('✅ View Lost & Damaged Cost Center Codes reloaded for status:', localFilters.StoreStatus);
                     // Clear selected cost center when status changes
                     setLocalFilters(prev => ({ ...prev, CCode: '' }));
                 })
                 .catch((error) => {
-                    console.error('❌ Failed to reload View Cost Center Codes:', error);
+                    console.error('❌ Failed to reload View Lost & Damaged Cost Center Codes:', error);
                     toast.error('Failed to reload cost center codes');
                 });
         }
@@ -551,14 +586,14 @@ const DailyIssuedItemsReportPage = () => {
                     StoreStatus: localFilters.StoreStatus
                 };
 
-                await dispatch(fetchViewCostCenterCodes(params)).unwrap();
+                await dispatch(fetchViewldCostCenterCodes(params)).unwrap();
                 toast.success('Cost center codes refreshed successfully');
             } else {
                 toast.warning('Please select store status and ensure user credentials are available.');
             }
 
         } catch (error) {
-            console.error('❌ Failed to refresh View Cost Center Codes:', error);
+            console.error('❌ Failed to refresh View Lost & Damaged Cost Center Codes:', error);
             toast.error('Failed to refresh cost center codes. Please try again.');
         }
     };
@@ -594,7 +629,7 @@ const DailyIssuedItemsReportPage = () => {
 
             dispatch(setFilters(apiFilters));
 
-            // Prepare params for issue grid - dates are optional
+            // Prepare params for lost and damaged grid - dates are optional
             const params = {
                 CCode: localFilters.CCode
             };
@@ -610,12 +645,12 @@ const DailyIssuedItemsReportPage = () => {
                 params.TDate = tdate;
             }
 
-            await dispatch(fetchIssueGridData(params)).unwrap();
-            toast.success('Issue report loaded successfully');
+            await dispatch(fetchLostandDamagedGridData(params)).unwrap();
+            toast.success('Lost & damaged report loaded successfully');
 
         } catch (error) {
-            console.error('❌ Error fetching issue report:', error);
-            toast.error('Failed to fetch issue report. Please try again.');
+            console.error('❌ Error fetching lost & damaged report:', error);
+            toast.error('Failed to fetch lost & damaged report. Please try again.');
         }
     };
 
@@ -630,22 +665,25 @@ const DailyIssuedItemsReportPage = () => {
         dispatch(resetAllData());
     };
 
-    // Handle row click to view issue items
-    const handleRowClick = (issueData) => {
-        const issueno = issueData.TansactionId;
-        if (issueno) {
-            setSelectedIssueData(issueData);
-            setSelectedIssueno(issueno);
-            setIsIssueItemsModalOpen(true);
+    // Handle row click to view lost & damaged items
+    const handleRowClick = (recordData) => {
+        // Use TansactionId as refno instead of RId
+        const refno = recordData.TansactionId;
+        const cccode = recordData.CCCode;
+        if (refno && cccode) {
+            setSelectedRecordData(recordData);
+            setSelectedRefno(refno);
+            setSelectedCCCode(cccode);
+            setIsLostandDamagedItemsModalOpen(true);
         } else {
-            toast.warning('Transaction ID not available for this issue');
+            toast.warning('Transaction ID or Cost Center Code not available for this record');
         }
     };
 
     // Handle Excel download
     const handleExcelDownload = () => {
         try {
-            const data = issueGridData?.Data || [];
+            const data = lostandDamagedGridData?.Data || [];
             if (!Array.isArray(data) || data.length === 0) {
                 toast.warning('No data available to download');
                 return;
@@ -654,9 +692,12 @@ const DailyIssuedItemsReportPage = () => {
             const excelData = data.map(item => ({
                 'Transaction ID': item.TansactionId || '-',
                 'Date': item.Date || '-',
-                'Cost Center': item.CCCode || '-',
+                'Cost Center Code': item.CCCode || '-',
+                'Cost Center Name': item.CCName || '-',
                 'Reference ID': item.RId || '-',
-                'Description': item.Description || '-'
+                'Description': item.Description || '-',
+                'Lost Amount': item.LostAmt || 0,
+                'Scrapped Amount': item.scrappedAmt || 0
             }));
 
             // Format dates for filename
@@ -667,7 +708,7 @@ const DailyIssuedItemsReportPage = () => {
                 return convertDateToString(date);
             };
 
-            const filename = `Daily_Issued_Items_Report_${localFilters.CCode || 'All'}_${formatDateForFilename(localFilters.fromDate)}_to_${formatDateForFilename(localFilters.toDate)}`;
+            const filename = `Lost_Scrap_Report_${localFilters.CCode || 'All'}_${formatDateForFilename(localFilters.fromDate)}_to_${formatDateForFilename(localFilters.toDate)}`;
             downloadAsExcel(excelData, filename);
             toast.success('Excel file downloaded successfully');
 
@@ -677,8 +718,8 @@ const DailyIssuedItemsReportPage = () => {
         }
     };
 
-    // Get issue data for display
-    const issueData = issueGridData?.Data || [];
+    // Get lost and damaged data for display
+    const lostandDamagedData = lostandDamagedGridData?.Data || [];
 
     // Helper function to check if form is valid for submission
     const isFormValid = () => {
@@ -687,18 +728,18 @@ const DailyIssuedItemsReportPage = () => {
 
     // Helper function to get cost center options
     const getCostCenterOptions = () => {
-        if (!viewCostCenterCodes) {
+        if (!viewldCostCenterCodes) {
             return [];
         }
 
         // Handle different response structures
         let data = [];
-        if (Array.isArray(viewCostCenterCodes)) {
-            data = viewCostCenterCodes;
-        } else if (viewCostCenterCodes.Data && Array.isArray(viewCostCenterCodes.Data)) {
-            data = viewCostCenterCodes.Data;
-        } else if (viewCostCenterCodes.data && Array.isArray(viewCostCenterCodes.data)) {
-            data = viewCostCenterCodes.data;
+        if (Array.isArray(viewldCostCenterCodes)) {
+            data = viewldCostCenterCodes;
+        } else if (viewldCostCenterCodes.Data && Array.isArray(viewldCostCenterCodes.Data)) {
+            data = viewldCostCenterCodes.Data;
+        } else if (viewldCostCenterCodes.data && Array.isArray(viewldCostCenterCodes.data)) {
+            data = viewldCostCenterCodes.data;
         }
 
         return data;
@@ -711,16 +752,16 @@ const DailyIssuedItemsReportPage = () => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                            <ShoppingCart className="h-8 w-8 text-indigo-600" />
-                            Daily Issued Items Report
+                            <Package className="h-8 w-8 text-indigo-600" />
+                            Lost and Scrap Report
                         </h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            Monitor daily issue of consumables, raw materials, and bought-out items
+                            Track and monitor lost, damaged, and scrapped materials with detailed analytics
                         </p>
                     </div>
                     <div className="flex items-center space-x-3">
-                        <div className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-indigo-100 dark:from-indigo-900 dark:to-indigo-900 text-indigo-800 dark:text-indigo-200 text-sm rounded-full transition-colors">
-                            Issue Management
+                        <div className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 text-indigo-800 dark:text-indigo-200 text-sm rounded-full transition-colors">
+                            Loss Management
                         </div>
                         {isAnyLoading && (
                             <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
@@ -738,7 +779,7 @@ const DailyIssuedItemsReportPage = () => {
                         <ChevronRight className="w-4 h-4" />
                         <span>Reports</span>
                         <ChevronRight className="w-4 h-4" />
-                        <span className="text-gray-900 dark:text-white">Daily Issued Items Report</span>
+                        <span className="text-gray-900 dark:text-white">Lost and Scrap Report</span>
                     </div>
                 </nav>
             </div>
@@ -769,17 +810,17 @@ const DailyIssuedItemsReportPage = () => {
                             Cost Center
                             <button
                                 onClick={handleRefreshCostCenterCodes}
-                                disabled={loading.viewCostCenterCodes}
+                                disabled={loading.viewldCostCenterCodes}
                                 className="ml-2 text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
                                 title="Refresh Cost Center Codes"
                             >
-                                <RefreshCw className={`w-4 h-4 inline ${loading.viewCostCenterCodes ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`w-4 h-4 inline ${loading.viewldCostCenterCodes ? 'animate-spin' : ''}`} />
                             </button>
                         </label>
                         <select
                             value={localFilters.CCode}
                             onChange={(e) => handleFilterChange('CCode', e.target.value)}
-                            disabled={loading.viewCostCenterCodes || !localFilters.StoreStatus}
+                            disabled={loading.viewldCostCenterCodes || !localFilters.StoreStatus}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <option value="">Select Cost Center</option>
@@ -800,14 +841,14 @@ const DailyIssuedItemsReportPage = () => {
                             })}
                         </select>
 
-                        {loading.viewCostCenterCodes && (
+                        {loading.viewldCostCenterCodes && (
                             <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2 flex items-center">
                                 <RefreshCw className="w-3 h-3 animate-spin mr-1" />
                                 Loading cost centers...
                             </p>
                         )}
 
-                        {errors.viewCostCenterCodes && (
+                        {errors.viewldCostCenterCodes && (
                             <p className="text-xs text-red-500 dark:text-red-400 mt-2">
                                 Failed to load cost centers.
                                 <button
@@ -860,9 +901,9 @@ const DailyIssuedItemsReportPage = () => {
                         <button
                             onClick={handleView}
                             disabled={!isFormValid()}
-                            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-600 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
+                            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
                         >
-                            {loading.issueGridData ? (
+                            {loading.lostandDamagedGridData ? (
                                 <RotateCcw className="h-5 w-5 animate-spin" />
                             ) : (
                                 <Eye className="h-5 w-5" />
@@ -882,10 +923,10 @@ const DailyIssuedItemsReportPage = () => {
                         <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Export:</span>
 
                         {/* Excel Download Button */}
-                        <Tooltip content="Download issue report as Excel file">
+                        <Tooltip content="Download lost & scrap report as Excel file">
                             <button
                                 onClick={handleExcelDownload}
-                                disabled={!Array.isArray(issueData) || issueData.length === 0}
+                                disabled={!Array.isArray(lostandDamagedData) || lostandDamagedData.length === 0}
                                 className="px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
                             >
                                 <Download className="h-5 w-5" />
@@ -897,14 +938,14 @@ const DailyIssuedItemsReportPage = () => {
             </div>
 
             {/* Summary Cards */}
-            <SummaryCards summary={issueSummary} />
+            <SummaryCards summary={lostandDamagedSummary} />
 
-            {/* Issue Report Table */}
+            {/* Lost & Damaged Report Table */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-                {Array.isArray(issueData) && issueData.length > 0 ? (
+                {Array.isArray(lostandDamagedData) && lostandDamagedData.length > 0 ? (
                     <div className="overflow-x-auto max-h-[600px]">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gradient-to-r from-indigo-600 to-indigo-700 sticky top-0 z-10">
+                            <thead className="bg-gradient-to-r from-indigo-600 to-purple-700 sticky top-0 z-10">
                                 <tr>
                                     <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider w-32">
                                         Transaction ID
@@ -915,11 +956,17 @@ const DailyIssuedItemsReportPage = () => {
                                     <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider w-32">
                                         Cost Center
                                     </th>
+                                    <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider w-48">
+                                        Cost Center Name
+                                    </th>
                                     <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider w-24">
                                         Reference ID
                                     </th>
-                                    <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider w-96">
-                                        Description
+                                    <th className="px-4 py-4 text-right text-xs font-bold text-white uppercase tracking-wider w-32">
+                                        Lost Amount
+                                    </th>
+                                    <th className="px-4 py-4 text-right text-xs font-bold text-white uppercase tracking-wider w-32">
+                                        Scrapped Amount
                                     </th>
                                     <th className="px-4 py-4 text-center text-xs font-bold text-white uppercase tracking-wider w-20">
                                         Actions
@@ -927,40 +974,50 @@ const DailyIssuedItemsReportPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {issueData.map((issue, index) => (
+                                {lostandDamagedData.map((record, index) => (
                                     <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
                                         <td className="px-4 py-4 text-sm text-gray-900 dark:text-white w-32">
-                                            <div className="truncate font-medium" title={issue.TansactionId}>
-                                                {issue.TansactionId || '-'}
+                                            <div className="truncate font-medium" title={record.TansactionId}>
+                                                {record.TansactionId || '-'}
                                             </div>
                                         </td>
                                         <td className="px-4 py-4 text-sm text-gray-900 dark:text-white w-28">
-                                            <div className="truncate" title={formatDate(issue.Date)}>
-                                                {formatDate(issue.Date)}
+                                            <div className="truncate" title={formatDate(record.Date)}>
+                                                {formatDate(record.Date)}
                                             </div>
                                         </td>
                                         <td className="px-4 py-4 text-sm text-gray-900 dark:text-white w-32">
-                                            <div className="truncate font-medium" title={issue.CCCode}>
+                                            <div className="truncate font-medium" title={record.CCCode}>
                                                 <span className="text-indigo-600 dark:text-indigo-400">
-                                                    {issue.CCCode || '-'}
+                                                    {record.CCCode || '-'}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4 text-sm text-gray-900 dark:text-white w-24">
-                                            <div className="truncate" title={issue.RId}>
-                                                {issue.RId || '-'}
+                                        <td className="px-4 py-4 text-sm text-gray-900 dark:text-white w-48">
+                                            <div className="truncate" title={record.CCName}>
+                                                {record.CCName || '-'}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4 text-sm text-gray-900 dark:text-white w-96">
-                                            <div className="truncate" title={issue.Description}>
-                                                {issue.Description || '-'}
+                                        <td className="px-4 py-4 text-sm text-gray-900 dark:text-white w-24">
+                                            <div className="truncate" title={record.RId}>
+                                                {record.RId || '-'}
                                             </div>
+                                        </td>
+                                        <td className="px-4 py-4 text-sm text-gray-900 dark:text-white text-right font-medium w-32">
+                                            <span className="text-orange-600 dark:text-orange-400">
+                                                {record.LostAmt ? `₹${new Intl.NumberFormat('en-IN').format(record.LostAmt)}` : '₹0.00'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 text-sm text-gray-900 dark:text-white text-right font-medium w-32">
+                                            <span className="text-red-600 dark:text-red-400">
+                                                {record.scrappedAmt ? `₹${new Intl.NumberFormat('en-IN').format(record.scrappedAmt)}` : '₹0.00'}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-center w-20">
                                             <button
-                                                onClick={() => handleRowClick(issue)}
+                                                onClick={() => handleRowClick(record)}
                                                 className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-                                                title="View Issue Items"
+                                                title="View Lost & Damaged Items"
                                             >
                                                 <Eye className="h-5 w-5" />
                                             </button>
@@ -973,30 +1030,30 @@ const DailyIssuedItemsReportPage = () => {
                 ) : (
                     <>
                         {/* Empty State */}
-                        {!loading.issueGridData && (
+                        {!loading.lostandDamagedGridData && (
                             <div className="p-12 text-center">
                                 <div className="flex flex-col items-center">
-                                    <div className="bg-gradient-to-r from-indigo-100 to-indigo-100 dark:from-indigo-900 dark:to-indigo-900 rounded-full p-4 mb-4">
+                                    <div className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-full p-4 mb-4">
                                         <Search className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Issue Data Found</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Lost & Damaged Data Found</h3>
                                     <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                                        Select store status and cost center, then click "View Report" to load issue data. Dates are optional.
+                                        Select store status and cost center, then click "View Report" to load lost & damaged data. Dates are optional.
                                     </p>
                                 </div>
                             </div>
                         )}
 
                         {/* Loading State */}
-                        {loading.issueGridData && (
+                        {loading.lostandDamagedGridData && (
                             <div className="p-12 text-center">
                                 <div className="flex flex-col items-center">
-                                    <div className="bg-gradient-to-r from-indigo-100 to-indigo-100 dark:from-indigo-900 dark:to-indigo-900 rounded-full p-4 mb-4">
+                                    <div className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-full p-4 mb-4">
                                         <RotateCcw className="h-12 w-12 text-indigo-500 animate-spin" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Loading Issue Report</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Loading Lost & Damaged Report</h3>
                                     <p className="text-gray-600 dark:text-gray-400">
-                                        Fetching issue data...
+                                        Fetching lost & damaged data...
                                     </p>
                                 </div>
                             </div>
@@ -1005,31 +1062,32 @@ const DailyIssuedItemsReportPage = () => {
                 )}
             </div>
 
-            {/* Issue Items Modal */}
-            <IssueItemsModal
-                isOpen={isIssueItemsModalOpen}
-                onClose={() => setIsIssueItemsModalOpen(false)}
-                issueData={selectedIssueData}
-                issueno={selectedIssueno}
+            {/* Lost & Damaged Items Modal */}
+            <LostandDamagedItemsModal
+                isOpen={isLostandDamagedItemsModalOpen}
+                onClose={() => setIsLostandDamagedItemsModalOpen(false)}
+                recordData={selectedRecordData}
+                refno={selectedRefno}
+                cccode={selectedCCCode}
             />
 
             {/* Information Note */}
-            <div className="bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
                 <div className="flex items-center gap-3">
                     <Info className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                     <div className="text-indigo-800 dark:text-indigo-200">
-                        <p className="font-semibold mb-1">Daily Issued Items Report Features:</p>
+                        <p className="font-semibold mb-1">Lost and Scrap Report Features:</p>
                         <p className="text-gray-600 dark:text-indigo-200">
                             1. <strong>Store Status Filter:</strong> Choose between Active or Closed stores to load relevant cost centers<br />
                             2. <strong>Cost Center Filter:</strong> Select specific cost centers based on selected store status<br />
-                            3. <strong>Optional Date Range:</strong> Filter issues within specific date periods - dates can be left blank<br />
-                            4. <strong>Issue Details:</strong> Click the eye icon to view detailed issued items with quantities and specifications<br />
-                            5. <strong>Summary Analytics:</strong> Overview of total issues, quantities, cost centers, and averages<br />
-                            6. <strong>Flexible Filtering:</strong> Cost center is required, but date filters are optional for broader searches<br />
-                            7. <strong>Export Functionality:</strong> Download complete issue data as Excel file<br />
-                            8. <strong>PDF Issue Slip:</strong> Generate professional Material Issue Slip with company branding and signatures<br />
-                            9. <strong>Real-time Data:</strong> Current issue status with approval workflow tracking<br />
-                            10. <strong>Consumables Tracking:</strong> Monitor raw materials, consumables, and bought-out items issued daily
+                            3. <strong>Optional Date Range:</strong> Filter records within specific date periods - dates can be left blank<br />
+                            4. <strong>Detailed Items View:</strong> Click the eye icon to view detailed lost & damaged items with quantities, amounts, and specifications<br />
+                            5. <strong>Financial Analytics:</strong> Overview of total records, quantities, amounts, and cost center distribution<br />
+                            6. <strong>Loss vs Scrap Tracking:</strong> Separate tracking of lost items and scrapped materials with individual amounts<br />
+                            7. <strong>Export Functionality:</strong> Download complete lost & scrap data as Excel file for further analysis<br />
+                            8. <strong>Cost Impact Analysis:</strong> Track financial impact of losses and scrap with basic price calculations<br />
+                            9. <strong>Material Specifications:</strong> Detailed item information including DCA codes, specifications, and receipt dates<br />
+                            10. <strong>Audit Trail:</strong> Complete tracking of lost and scrapped materials for compliance and reporting purposes
                         </p>
                     </div>
                 </div>
@@ -1050,4 +1108,4 @@ const DailyIssuedItemsReportPage = () => {
     );
 };
 
-export default DailyIssuedItemsReportPage;
+export default LostScrapReportPage;

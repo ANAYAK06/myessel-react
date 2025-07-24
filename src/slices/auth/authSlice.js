@@ -121,6 +121,7 @@ export const validateUser = createAsyncThunk(
         }
     }
 );
+
 // Get Employee Details
 export const getEmployeeDetails = createAsyncThunk(
     'auth/getEmployeeDetails',
@@ -233,7 +234,7 @@ export const getMenu = createAsyncThunk(
     }
 );
 
-// Load user from localStorage - UPDATED TO HANDLE NEW MENU STRUCTURE
+// Load user from localStorage - UPDATED TO HANDLE NEW MENU STRUCTURE AND ROUTING
 export const loadUserFromStorage = createAsyncThunk(
     'auth/loadUserFromStorage',
     async (_, { rejectWithValue }) => {
@@ -242,18 +243,19 @@ export const loadUserFromStorage = createAsyncThunk(
             const employeeData = localStorage.getItem('employeeData');
             const roleData = localStorage.getItem('roleData');
             const roleId = localStorage.getItem('roleId');
-            const userData = localStorage.getItem('userData'); // Load userData
+            const userData = localStorage.getItem('userData');
+            const loginType = localStorage.getItem('loginType'); // NEW: Load loginType
             
             if (employeeId) {
                 const userInfo = {
                     employeeId,
-                    loginType: null,
+                    loginType: loginType || null, // Use stored loginType
                     isAuthenticated: false
                 };
 
-                if (employeeData) {
+                if (employeeData && loginType === 'employee') {
                     try {
-                        userInfo.userData = JSON.parse(employeeData);
+                        userInfo.employeeData = JSON.parse(employeeData); // Fixed: was userData
                         userInfo.loginType = 'employee';
                         userInfo.isAuthenticated = true;
                     } catch (e) {
@@ -261,7 +263,7 @@ export const loadUserFromStorage = createAsyncThunk(
                     }
                 }
 
-                if (roleData && roleId) {
+                if (roleData && roleId && loginType === 'role') {
                     try {
                         userInfo.roleData = JSON.parse(roleData);
                         userInfo.roleId = roleId;
@@ -295,7 +297,7 @@ export const loadUserFromStorage = createAsyncThunk(
 const initialState = {
     isAuthenticated: false,
     employeeValidated: false,
-    showLoginOptions: false,
+    // showLoginOptions: false, // Removed since we're using routing instead of popup
     loginType: null,
     employeeId: null,
     employeeData: null,
@@ -339,6 +341,7 @@ const authSlice = createSlice({
             state.lastActivity = new Date().toISOString();
         },
         setShowLoginOptions: (state, action) => {
+            // Keeping for backward compatibility, but not used in new routing approach
             state.showLoginOptions = action.payload;
         },
         logout: (state) => {
@@ -347,6 +350,7 @@ const authSlice = createSlice({
             localStorage.removeItem('userData');
             localStorage.removeItem('roleData');
             localStorage.removeItem('roleId');
+            localStorage.removeItem('loginType'); // NEW: Clear loginType
             return initialState;
         },
         resetAuth: (state) => {
@@ -355,6 +359,7 @@ const authSlice = createSlice({
             localStorage.removeItem('roleData');
             localStorage.removeItem('roleId');
             localStorage.removeItem('userData');
+            localStorage.removeItem('loginType'); // NEW: Clear loginType
             return initialState;
         },
         // NEW: Action to manually update role data if needed
@@ -369,7 +374,7 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Validate Employee
+            // Validate Employee - UPDATED FOR ROUTING APPROACH
             .addCase(validateEmployee.pending, (state) => {
                 state.loading.validateEmployee = true;
                 state.error.validateEmployee = null;
@@ -379,16 +384,23 @@ const authSlice = createSlice({
                 state.loading.validateEmployee = false;
                 state.success.validateEmployee = true;
                 state.employeeValidated = true;
-                state.showLoginOptions = true;
+                
+                // NEW: Set isAuthenticated to true so user can access /login-options
+                state.isAuthenticated = true;
+                
                 state.employeeId = action.meta.arg.employeeId;
                 state.lastActivity = new Date().toISOString();
                 state.error.validateEmployee = null;
+                
+                // REMOVED: showLoginOptions - using routing instead
+                // state.showLoginOptions = true;
             })
             .addCase(validateEmployee.rejected, (state, action) => {
                 state.loading.validateEmployee = false;
                 state.error.validateEmployee = action.payload;
                 state.success.validateEmployee = false;
                 state.employeeValidated = false;
+                state.isAuthenticated = false;
             })
             
             // Validate User/Role
@@ -416,7 +428,7 @@ const authSlice = createSlice({
                 state.success.validateUser = false;
             })
             
-            // Get Employee Details
+            // Get Employee Details - UPDATED FOR ROUTING APPROACH
             .addCase(getEmployeeDetails.pending, (state) => {
                 state.loading.getEmployeeDetails = true;
                 state.error.getEmployeeDetails = null;
@@ -428,8 +440,14 @@ const authSlice = createSlice({
                 state.isAuthenticated = true;
                 state.loginType = 'employee';
                 state.employeeData = action.payload.data;
-                state.showLoginOptions = false;
                 state.error.getEmployeeDetails = null;
+                
+                // NEW: Save loginType to localStorage for persistence
+                localStorage.setItem('loginType', 'employee');
+                localStorage.setItem('employeeData', JSON.stringify(action.payload.data));
+                
+                // REMOVED: showLoginOptions - using routing instead
+                // state.showLoginOptions = false;
             })
             .addCase(getEmployeeDetails.rejected, (state, action) => {
                 state.loading.getEmployeeDetails = false;
@@ -437,7 +455,7 @@ const authSlice = createSlice({
                 state.success.getEmployeeDetails = false;
             })
             
-            // Get Menu - UPDATED TO HANDLE NEW STRUCTURE
+            // Get Menu - UPDATED FOR ROUTING APPROACH
             .addCase(getMenu.pending, (state) => {
                 state.loading.getMenu = true;
                 state.error.getMenu = null;
@@ -451,9 +469,15 @@ const authSlice = createSlice({
                 state.loginType = 'role';
                 state.roleData = action.payload.data; // This now contains organized menu data
                 state.roleId = action.meta.arg;
-                state.showLoginOptions = false;
                 state.error.getMenu = null;
                 state.lastActivity = new Date().toISOString();
+                
+                // NEW: Save loginType to localStorage for persistence
+                localStorage.setItem('loginType', 'role');
+                localStorage.setItem('roleData', JSON.stringify(action.payload.data));
+                
+                // REMOVED: showLoginOptions - using routing instead
+                // state.showLoginOptions = false;
             })
             .addCase(getMenu.rejected, (state, action) => {
                 state.loading.getMenu = false;
@@ -462,7 +486,7 @@ const authSlice = createSlice({
                 console.log('❌ getMenu.rejected:', action.payload);
             })
             
-            // Load User from Storage
+            // Load User from Storage - UPDATED FOR ROUTING APPROACH
             .addCase(loadUserFromStorage.pending, (state) => {
                 state.loading.loadFromStorage = true;
                 state.error.loadFromStorage = null;
@@ -495,7 +519,7 @@ export const {
     clearErrors, 
     clearSuccess, 
     updateLastActivity, 
-    setShowLoginOptions,
+    setShowLoginOptions, // Keeping for backward compatibility
     logout,
     resetAuth,
     updateRoleData,

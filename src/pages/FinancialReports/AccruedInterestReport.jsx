@@ -336,6 +336,7 @@ const TransactionDetailsModal = ({ isOpen, onClose, transactionData, loading, mo
 };
 
 // Report Summary Cards Component
+// Report Summary Cards Component
 const ReportSummaryCards = ({ reportSummary, reportType }) => {
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
@@ -429,20 +430,20 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
     const cards = getSummaryCards();
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-6">
             {cards.map((card, index) => (
-                <div key={index} className={`bg-gradient-to-r ${card.bgColor} rounded-xl p-6 border border-gray-200 dark:border-gray-700`}>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 text-ellipsis overflow-hidden whitespace-nowrap">
+                <div key={index} className={`bg-gradient-to-r ${card.bgColor} rounded-xl p-4 border border-gray-200 dark:border-gray-700 min-h-[120px] flex flex-col justify-between`}>
+                    <div className="flex items-start justify-between h-full">
+                        <div className="flex-1 pr-3 min-w-0">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3 leading-tight break-words">
                                 {card.title}
                             </p>
-                            <p className="  font-bold text-gray-900 dark:text-white text-xl">
+                            <p className="font-bold text-gray-900 dark:text-white text-base sm:text-lg leading-tight break-all">
                                 {formatCurrency(card.value)}
                             </p>
                         </div>
-                        <div className={`bg-gradient-to-r ${card.color} p-3 rounded-lg`}>
-                            <card.icon className="h-6 w-6 text-white" />
+                        <div className={`bg-gradient-to-r ${card.color} p-2.5 rounded-lg flex-shrink-0`}>
+                            <card.icon className="h-5 w-5 text-white" />
                         </div>
                     </div>
                 </div>
@@ -860,11 +861,7 @@ const AccruedInterestReport = ({ menuData }) => {
                         <div className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 text-indigo-800 dark:text-indigo-200 text-sm rounded-full transition-colors">
                             Financial Reports
                         </div>
-                        {roleId && (
-                            <div className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-cyan-100 dark:from-indigo-900 dark:to-cyan-900 text-indigo-800 dark:text-indigo-200 text-sm rounded-full transition-colors">
-                                Role: {roleId}
-                            </div>
-                        )}
+                       
                         {canShowSummaryReport && (
                             <div className="px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900 text-green-800 dark:text-green-200 text-sm rounded-full transition-colors">
                                 Summary Access

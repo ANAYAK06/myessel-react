@@ -31,6 +31,7 @@ import ItemCodeReportPage from '../Stock/ItemCodeReportPage';
 import LostScrapReportPage from '../Stock/LostScrapReportPage';
 import LCBGStatusReportPage from '../FinancialReports/LCBGStatusReportPage';
 import StockSummaryPage from '../FinancialReports/StockSummaryPage';
+import UnsecuredLoanReportPage from '../TermLoan/UnsecuredLoanReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -506,6 +507,18 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // check if menu item should route to any Unsecured Loan Report Page
+    const isUnsecuredLoanReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Reports/UnsecuredLoanReport' || menuData.path === '/Inventory/UnsecuredLoanReport' ||
+            menuData.path?.toLowerCase().includes('unsecuredloanreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('unsecuredloanreport') ||
+            menuData.name?.toLowerCase().includes('unsecured loan report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('unsecuredloanreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -679,6 +692,11 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isStockSummaryPage(currentMenuData)) {
             console.log('✅ Rendering StockSummaryPage for:', currentMenuData.name);
             return <StockSummaryPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Unsecured Loan Report Page
+        if (currentMenuData && isUnsecuredLoanReportPage(currentMenuData)) {
+            console.log('✅ Rendering UnsecuredLoanReportPage for:', currentMenuData.name);
+            return <UnsecuredLoanReportPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

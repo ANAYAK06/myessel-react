@@ -1,11 +1,11 @@
 // App.js
-
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Login from './pages/Login/Login';
+import LoginOptions from './pages/Login/LoginOptions'; // New component
 import EmployeeDashboard from './pages/Dashboard/EmployeeDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedApplication from './pages/Dashboard/RoleBasedApplication';
@@ -21,6 +21,9 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Login />} />
+            
+            {/* Login Options Route - After successful employee validation */}
+            <Route path="/login-options" element={<LoginOptions />} />
             
             {/* Protected Routes */}
             <Route 

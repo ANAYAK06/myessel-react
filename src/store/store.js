@@ -28,6 +28,7 @@ import itemCodeReportReducer from "../slices/stockSlice/ItemCodeReportSlice";
 import lostScrapReportReducer from "../slices/stockSlice/lostScrapReportSlice";
 import lcbgReducer from "../slices/lcbgSlice/lcbgSlice";
 import stockSummaryReducer from "../slices/financialReportSlice/stockSummarySlice";
+import unsecuredLoanReportReducer from "../slices/termLoanSlice/unsecuredLoanReportSlice";
 
 const store = configureStore({
   
@@ -60,7 +61,8 @@ const store = configureStore({
     itemcodereport: itemCodeReportReducer,
     lostscrapreport: lostScrapReportReducer,
     lcbg: lcbgReducer,
-    stocksummary: stockSummaryReducer
+    stocksummary: stockSummaryReducer,
+    unsecuredloanreport: unsecuredLoanReportReducer
   }
 
 });

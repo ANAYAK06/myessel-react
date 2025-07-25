@@ -1,23 +1,24 @@
-// src/pages/Login/LoginOptions.js
+// src/pages/Login/LoginOptions.js - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { 
+import sessionManager from '../../utilities/SessionManager'; // FIXED: Removed 's' from SessionsManager
+import {
     ArrowLeft,
-    User, 
-    Shield, 
-    Eye, 
-    EyeOff, 
+    User,
+    Shield,
+    Eye,
+    EyeOff,
     Loader2,
     UserCheck,
     Settings
 } from 'lucide-react';
-import { 
-    validateUser, 
-    getEmployeeDetails, 
+import {
+    validateUser,
+    getEmployeeDetails,
     getMenu,
     clearErrors,
     clearSuccess,
@@ -36,18 +37,23 @@ const LoginOptions = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [showRolePassword, setShowRolePassword] = useState(false);
-    
-    const { 
+    const [isProcessingLogin, setIsProcessingLogin] = useState(false); // ADDED: Track login processing
+
+    const {
         employeeId,
-        loading, 
-        error, 
+        loading,
+        error,
         success,
-        isAuthenticated 
+        isAuthenticated,
+        roleData,
+        roleId,
+        userData
     } = useSelector((state) => state.auth);
 
     // Redirect if not authenticated (shouldn't happen, but good safeguard)
     useEffect(() => {
         if (!isAuthenticated || !employeeId) {
+            console.log('❌ No authentication found on login options page - redirecting to login');
             navigate('/');
         }
     }, [isAuthenticated, employeeId, navigate]);
@@ -59,57 +65,105 @@ const LoginOptions = () => {
         },
         validationSchema: roleValidationSchema,
         onSubmit: async (values) => {
+            setIsProcessingLogin(true); // ADDED: Set processing state
+            
             const credentials = {
                 employeeId: employeeId,
                 password: values.password
             };
-            
+
             try {
                 console.log('🔍 Attempting role validation...');
                 const userResult = await dispatch(validateUser(credentials)).unwrap();
-                
+
                 console.log('✅ User validation result:', userResult);
                 console.log('🎯 Extracted roleId:', userResult.roleId);
-                
+
                 if (userResult.roleId) {
                     console.log('🔍 Calling getMenu with roleId:', userResult.roleId);
                     await dispatch(getMenu(userResult.roleId)).unwrap();
                     toast.success('Role login successful!');
                 } else {
                     toast.error('Role ID not found in response');
+                    setIsProcessingLogin(false); // ADDED: Reset processing state on error
                 }
             } catch (error) {
                 console.error('❌ Role login error:', error);
+                setIsProcessingLogin(false); // ADDED: Reset processing state on error
                 // Error is already handled by the thunk and shown in UI
             }
         }
     });
 
-    // Handle success states
+    // Handle success states - IMPROVED: Better session timing
     useEffect(() => {
-        if (success.getEmployeeDetails) {
+        if (success.getEmployeeDetails && !isProcessingLogin) {
+            console.log('✅ Employee login successful - setting up session');
             dispatch(clearSuccess());
-            navigate('/employee-dashboard');
+
+            // IMPROVED: Setup session data properly before navigation
+            setTimeout(() => {
+                const authData = {
+                    employeeId: employeeId,
+                    loginType: 'employee'
+                };
+
+                sessionManager.login(authData);
+                console.log('✅ Employee session setup complete - navigating to dashboard');
+                navigate('/employee-dashboard');
+            }, 100); // Small delay to ensure Redux state is updated
         }
-    }, [success.getEmployeeDetails, dispatch, navigate]);
+    }, [success.getEmployeeDetails, dispatch, navigate, employeeId, isProcessingLogin]);
 
     useEffect(() => {
-        if (success.getMenu) {
+        if (success.getMenu && isProcessingLogin) {
+            console.log('✅ Role login successful - setting up session');
             dispatch(clearSuccess());
-            navigate('/role-dashboard');
-        }
-    }, [success.getMenu, dispatch, navigate]);
 
+            // IMPROVED: Manually sync session data BEFORE navigation
+            const syncSessionAndNavigate = () => {
+                const authData = {
+                    employeeId: employeeId,
+                    loginType: 'role',
+                    roleData: roleData,
+                    roleId: roleId,
+                    userData: userData
+                };
+
+                // Manually call sessionManager.login to ensure immediate sync
+                sessionManager.login(authData);
+                console.log('✅ Session manually synced before navigation');
+                
+                // Navigate after session is definitely set up
+                setTimeout(() => {
+                    console.log('✅ Role session setup complete - navigating to dashboard');
+                    setIsProcessingLogin(false);
+                    navigate('/role-dashboard');
+                }, 50); // Minimal delay just to ensure sessionManager.login completes
+            };
+
+            // Small delay to ensure Redux state is fully updated first
+            setTimeout(syncSessionAndNavigate, 100);
+        }
+    }, [success.getMenu, dispatch, navigate, isProcessingLogin, employeeId, roleData, roleId, userData]);
+
+    // IMPROVED: Handle employee login with better session management
     const handleEmployeeLogin = async () => {
+        setIsProcessingLogin(true); // ADDED: Set processing state
+        
         try {
             await dispatch(getEmployeeDetails(employeeId)).unwrap();
             toast.success('Employee login successful!');
+            // Processing state will be reset in useEffect above
         } catch (error) {
             console.error('Employee details error:', error);
+            setIsProcessingLogin(false); // ADDED: Reset processing state on error
         }
     };
 
     const handleBackToLogin = () => {
+        console.log('🔄 Going back to login - clearing session');
+        sessionManager.clearSession();
         dispatch(logout());
         dispatch(clearErrors());
         dispatch(clearSuccess());
@@ -118,7 +172,7 @@ const LoginOptions = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
-            
+
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-20 dark:opacity-10">
                 <div className="absolute top-0 left-0 w-full h-full" style={{
@@ -141,7 +195,8 @@ const LoginOptions = () => {
             {/* Back Button */}
             <button
                 onClick={handleBackToLogin}
-                className="absolute top-4 left-4 z-10 flex items-center space-x-2 px-3 py-2 bg-white/20 dark:bg-gray-900/40 backdrop-blur-sm rounded-lg text-gray-700 dark:text-gray-200 hover:bg-white/30 dark:hover:bg-gray-900/60 transition-all duration-200 border border-white/30 dark:border-gray-600"
+                disabled={isProcessingLogin} // ADDED: Disable during processing
+                className="absolute top-4 left-4 z-10 flex items-center space-x-2 px-3 py-2 bg-white/20 dark:bg-gray-900/40 backdrop-blur-sm rounded-lg text-gray-700 dark:text-gray-200 hover:bg-white/30 dark:hover:bg-gray-900/60 transition-all duration-200 border border-white/30 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <ArrowLeft className="w-4 h-4" />
                 <span className="text-sm">Back to Login</span>
@@ -149,7 +204,7 @@ const LoginOptions = () => {
 
             {/* Main Container Card - Made more compact */}
             <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-gray-600 backdrop-blur-sm transition-colors">
-                
+
                 {/* Header - Made more compact */}
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white text-center">
                     <h1 className="text-2xl font-bold mb-1">Choose Your Access Level</h1>
@@ -163,7 +218,7 @@ const LoginOptions = () => {
 
                 {/* Options Grid - Reduced padding and spacing */}
                 <div className="grid grid-cols-1 lg:grid-cols-2">
-                    
+
                     {/* Left Side - Employee Portal */}
                     <div className="p-6 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-600 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
                         <div className="text-center mb-6">
@@ -203,10 +258,10 @@ const LoginOptions = () => {
 
                             <button
                                 onClick={handleEmployeeLogin}
-                                disabled={loading.getEmployeeDetails}
+                                disabled={loading.getEmployeeDetails || isProcessingLogin} // IMPROVED: Better disabled state
                                 className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                             >
-                                {loading.getEmployeeDetails ? (
+                                {(loading.getEmployeeDetails || isProcessingLogin) ? (
                                     <div className="flex items-center justify-center space-x-2">
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                         <span className="text-sm">Loading...</span>
@@ -284,19 +339,18 @@ const LoginOptions = () => {
                                             value={roleFormik.values.password}
                                             onChange={roleFormik.handleChange}
                                             onBlur={roleFormik.handleBlur}
-                                            className={`w-full pl-3 pr-10 py-3 border-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm ${
-                                                roleFormik.touched.password && roleFormik.errors.password 
-                                                    ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20' 
-                                                    : 'border-gray-300 dark:border-gray-500'
-                                            }`}
+                                            className={`w-full pl-3 pr-10 py-3 border-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm ${roleFormik.touched.password && roleFormik.errors.password
+                                                ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
+                                                : 'border-gray-300 dark:border-gray-500'
+                                                }`}
                                             placeholder="Enter your role password"
-                                            disabled={loading.validateUser || loading.getMenu}
+                                            disabled={loading.validateUser || loading.getMenu || isProcessingLogin} // IMPROVED: Better disabled state
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowRolePassword(!showRolePassword)}
                                             className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                            disabled={loading.validateUser || loading.getMenu}
+                                            disabled={loading.validateUser || loading.getMenu || isProcessingLogin} // IMPROVED: Better disabled state
                                         >
                                             {showRolePassword ? (
                                                 <EyeOff className="h-4 w-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
@@ -312,10 +366,10 @@ const LoginOptions = () => {
 
                                 <button
                                     onClick={roleFormik.handleSubmit}
-                                    disabled={loading.validateUser || loading.getMenu || !roleFormik.isValid}
+                                    disabled={loading.validateUser || loading.getMenu || !roleFormik.isValid || isProcessingLogin} // IMPROVED: Better disabled state
                                     className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    {(loading.validateUser || loading.getMenu) ? (
+                                    {(loading.validateUser || loading.getMenu || isProcessingLogin) ? (
                                         <div className="flex items-center justify-center space-x-2">
                                             <Loader2 className="w-4 h-4 animate-spin" />
                                             <span className="text-sm">Authenticating...</span>

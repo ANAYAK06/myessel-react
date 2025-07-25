@@ -1,6 +1,18 @@
+// slices/auth/authSlice.js - OPTIMIZED VERSION - Improved performance and reduced localStorage operations
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as authAPI from '../../api/securityAPI/authAPI';
 import { updateUser } from '../../api/businessinfoAPI/businessinfoAPI';
+
+// IMPROVED: Helper function to batch localStorage operations
+const batchLocalStorageUpdate = (updates) => {
+    Object.entries(updates).forEach(([key, value]) => {
+        if (value === null) {
+            localStorage.removeItem(key);
+        } else {
+            localStorage.setItem(key, typeof value === 'object' ? JSON.stringify(value) : value);
+        }
+    });
+};
 
 // Employee Authentication
 export const validateEmployee = createAsyncThunk(
@@ -16,10 +28,10 @@ export const validateEmployee = createAsyncThunk(
             console.log('🎯 Response.Data.isValidUser:', response.Data?.isValidUser);
             console.log('🎯 IsSuccessful:', response.IsSuccessful);
             
-            
             if (response && response.Data && response.Data.isValidUser === true) {
-                console.log('✅ Employee validation successful ');
-                localStorage.setItem('employeeId', credentials.employeeId);
+                console.log('✅ Employee validation successful');
+                // IMPROVED: Only update localStorage once
+                batchLocalStorageUpdate({ employeeId: credentials.employeeId });
                 return {
                     success: true,
                     data: response.Data,
@@ -29,7 +41,7 @@ export const validateEmployee = createAsyncThunk(
             // Fallback to original pattern: check IsSuccessful
             else if (response && response.IsSuccessful === true) {
                 console.log('✅ Employee validation successful (Original pattern)');
-                localStorage.setItem('employeeId', credentials.employeeId);
+                batchLocalStorageUpdate({ employeeId: credentials.employeeId });
                 return {
                     success: true,
                     data: response.Data,
@@ -86,25 +98,33 @@ export const validateUser = createAsyncThunk(
                     console.log('✅ Found roleId:', roleId);
                     console.log('✅ Storing complete user data:', response.Data);
                     
+                    // IMPROVED: Extract key fields for easy access
+                    const userData = {
+                        firstName: response.Data.FirstName,
+                        lastName: response.Data.LastName,
+                        userName: response.Data.userName || response.Data.UserName,
+                        mailId: response.Data.MailId,
+                        roleCode: response.Data.UserRoleCode,
+                        roleId: roleId,
+                        employeeId: credentials.employeeId,
+                        ccCodes: response.Data.ccCodes,
+                        isFirstTimeLogin: response.Data.IsFirstTimeLogin,
+                        isExist: response.Data.IsExist,
+                        UID: response.Data.UID,
+                    };
+
+                    // IMPROVED: Batch localStorage updates
+                    batchLocalStorageUpdate({
+                        userData: userData,
+                        roleId: roleId
+                    });
+                    
                     return {
                         success: true,
                         data: response.Data, // Store complete user data
                         roleId: roleId,
                         message: response.Message,
-                        // Extract key fields for easy access
-                        userData: {
-                            firstName: response.Data.FirstName,
-                            lastName: response.Data.LastName,
-                            userName: response.Data.userName || response.Data.UserName,
-                            mailId: response.Data.MailId,
-                            roleCode: response.Data.UserRoleCode,
-                            roleId: roleId,
-                            employeeId: credentials.employeeId,
-                            ccCodes: response.Data.ccCodes,
-                            isFirstTimeLogin: response.Data.IsFirstTimeLogin,
-                            isExist: response.Data.IsExist,
-                            UID: response.Data.UID,
-                        }
+                        userData: userData
                     };
                 } else {
                     console.log('❌ No roleId found in response');
@@ -134,7 +154,11 @@ export const getEmployeeDetails = createAsyncThunk(
             console.log('🎯 Employee Details Response:', response);
             
             if (response && response.IsSuccessful === true) {
-                localStorage.setItem('employeeData', JSON.stringify(response.Data));
+                // IMPROVED: Batch localStorage update
+                batchLocalStorageUpdate({
+                    employeeData: response.Data,
+                    loginType: 'employee'
+                });
                 return {
                     success: true,
                     data: response.Data,
@@ -181,8 +205,12 @@ export const getMenu = createAsyncThunk(
                     accessLevel: 'Standard'
                 };
                 
-                localStorage.setItem('roleData', JSON.stringify(organizedMenuData));
-                localStorage.setItem('roleId', roleId);
+                // IMPROVED: Batch localStorage updates
+                batchLocalStorageUpdate({
+                    roleData: organizedMenuData,
+                    roleId: roleId,
+                    loginType: 'role'
+                });
                 
                 return {
                     success: true,
@@ -203,8 +231,11 @@ export const getMenu = createAsyncThunk(
                     accessLevel: 'Standard'
                 };
                 
-                localStorage.setItem('roleData', JSON.stringify(organizedMenuData));
-                localStorage.setItem('roleId', roleId);
+                batchLocalStorageUpdate({
+                    roleData: organizedMenuData,
+                    roleId: roleId,
+                    loginType: 'role'
+                });
                 
                 return {
                     success: true,
@@ -234,7 +265,7 @@ export const getMenu = createAsyncThunk(
     }
 );
 
-// Load user from localStorage - UPDATED TO HANDLE NEW MENU STRUCTURE AND ROUTING
+// IMPROVED: Load user from localStorage with better error handling
 export const loadUserFromStorage = createAsyncThunk(
     'auth/loadUserFromStorage',
     async (_, { rejectWithValue }) => {
@@ -244,44 +275,45 @@ export const loadUserFromStorage = createAsyncThunk(
             const roleData = localStorage.getItem('roleData');
             const roleId = localStorage.getItem('roleId');
             const userData = localStorage.getItem('userData');
-            const loginType = localStorage.getItem('loginType'); // NEW: Load loginType
+            const loginType = localStorage.getItem('loginType');
             
             if (employeeId) {
                 const userInfo = {
                     employeeId,
-                    loginType: loginType || null, // Use stored loginType
+                    loginType: loginType || null,
                     isAuthenticated: false
                 };
 
-                if (employeeData && loginType === 'employee') {
-                    try {
-                        userInfo.employeeData = JSON.parse(employeeData); // Fixed: was userData
+                // IMPROVED: Better error handling for JSON parsing
+                try {
+                    if (employeeData && loginType === 'employee') {
+                        userInfo.employeeData = JSON.parse(employeeData);
                         userInfo.loginType = 'employee';
                         userInfo.isAuthenticated = true;
-                    } catch (e) {
-                        console.warn('Failed to parse employee data from localStorage');
                     }
-                }
 
-                if (roleData && roleId && loginType === 'role') {
-                    try {
+                    if (roleData && roleId && loginType === 'role') {
                         userInfo.roleData = JSON.parse(roleData);
                         userInfo.roleId = roleId;
                         userInfo.loginType = 'role';
                         userInfo.isAuthenticated = true;
-                    } catch (e) {
-                        console.warn('Failed to parse role data from localStorage');
                     }
-                }
 
-                // Load userData if available
-                if (userData) {
-                    try {
+                    if (userData) {
                         userInfo.userData = JSON.parse(userData);
                         console.log('✅ Loaded userData from storage:', userInfo.userData);
-                    } catch (e) {
-                        console.warn('Failed to parse user data from localStorage');
                     }
+                } catch (parseError) {
+                    console.warn('Failed to parse stored data:', parseError);
+                    // Clear corrupted data
+                    batchLocalStorageUpdate({
+                        employeeData: null,
+                        roleData: null,
+                        userData: null,
+                        roleId: null,
+                        loginType: null
+                    });
+                    return rejectWithValue('Corrupted stored data found and cleared');
                 }
 
                 return userInfo;
@@ -297,7 +329,6 @@ export const loadUserFromStorage = createAsyncThunk(
 const initialState = {
     isAuthenticated: false,
     employeeValidated: false,
-    // showLoginOptions: false, // Removed since we're using routing instead of popup
     loginType: null,
     employeeId: null,
     employeeData: null,
@@ -345,24 +376,30 @@ const authSlice = createSlice({
             state.showLoginOptions = action.payload;
         },
         logout: (state) => {
-            localStorage.removeItem('employeeId');
-            localStorage.removeItem('employeeData');
-            localStorage.removeItem('userData');
-            localStorage.removeItem('roleData');
-            localStorage.removeItem('roleId');
-            localStorage.removeItem('loginType'); // NEW: Clear loginType
+            // IMPROVED: Batch localStorage clear
+            batchLocalStorageUpdate({
+                employeeId: null,
+                employeeData: null,
+                userData: null,
+                roleData: null,
+                roleId: null,
+                loginType: null
+            });
             return initialState;
         },
         resetAuth: (state) => {
-            localStorage.removeItem('employeeId');
-            localStorage.removeItem('employeeData');
-            localStorage.removeItem('roleData');
-            localStorage.removeItem('roleId');
-            localStorage.removeItem('userData');
-            localStorage.removeItem('loginType'); // NEW: Clear loginType
+            // IMPROVED: Batch localStorage clear
+            batchLocalStorageUpdate({
+                employeeId: null,
+                employeeData: null,
+                roleData: null,
+                roleId: null,
+                userData: null,
+                loginType: null
+            });
             return initialState;
         },
-        // NEW: Action to manually update role data if needed
+        // IMPROVED: Optimized role data update
         updateRoleData: (state, action) => {
             state.roleData = action.payload;
             localStorage.setItem('roleData', JSON.stringify(action.payload));
@@ -384,16 +421,10 @@ const authSlice = createSlice({
                 state.loading.validateEmployee = false;
                 state.success.validateEmployee = true;
                 state.employeeValidated = true;
-                
-                // NEW: Set isAuthenticated to true so user can access /login-options
-                state.isAuthenticated = true;
-                
+                state.isAuthenticated = true; // Set to true so user can access /login-options
                 state.employeeId = action.meta.arg.employeeId;
                 state.lastActivity = new Date().toISOString();
                 state.error.validateEmployee = null;
-                
-                // REMOVED: showLoginOptions - using routing instead
-                // state.showLoginOptions = true;
             })
             .addCase(validateEmployee.rejected, (state, action) => {
                 state.loading.validateEmployee = false;
@@ -415,12 +446,9 @@ const authSlice = createSlice({
                 state.loading.validateUser = false;
                 state.success.validateUser = true;
                 state.error.validateUser = null;
-                // Store the roleId for the next step
                 state.roleId = action.payload.roleId;
-                state.userData = action.payload.userData; // Store complete user data
-
-                localStorage.setItem('userData', JSON.stringify(action.payload.userData));
-                localStorage.setItem('roleId', action.payload.roleId);
+                state.userData = action.payload.userData;
+                // IMPROVED: No redundant localStorage operations (handled in thunk)
             })
             .addCase(validateUser.rejected, (state, action) => {
                 state.loading.validateUser = false;
@@ -441,13 +469,7 @@ const authSlice = createSlice({
                 state.loginType = 'employee';
                 state.employeeData = action.payload.data;
                 state.error.getEmployeeDetails = null;
-                
-                // NEW: Save loginType to localStorage for persistence
-                localStorage.setItem('loginType', 'employee');
-                localStorage.setItem('employeeData', JSON.stringify(action.payload.data));
-                
-                // REMOVED: showLoginOptions - using routing instead
-                // state.showLoginOptions = false;
+                // IMPROVED: No redundant localStorage operations (handled in thunk)
             })
             .addCase(getEmployeeDetails.rejected, (state, action) => {
                 state.loading.getEmployeeDetails = false;
@@ -467,17 +489,11 @@ const authSlice = createSlice({
                 state.success.getMenu = true;
                 state.isAuthenticated = true;
                 state.loginType = 'role';
-                state.roleData = action.payload.data; // This now contains organized menu data
+                state.roleData = action.payload.data;
                 state.roleId = action.meta.arg;
                 state.error.getMenu = null;
                 state.lastActivity = new Date().toISOString();
-                
-                // NEW: Save loginType to localStorage for persistence
-                localStorage.setItem('loginType', 'role');
-                localStorage.setItem('roleData', JSON.stringify(action.payload.data));
-                
-                // REMOVED: showLoginOptions - using routing instead
-                // state.showLoginOptions = false;
+                // IMPROVED: No redundant localStorage operations (handled in thunk)
             })
             .addCase(getMenu.rejected, (state, action) => {
                 state.loading.getMenu = false;
@@ -519,7 +535,7 @@ export const {
     clearErrors, 
     clearSuccess, 
     updateLastActivity, 
-    setShowLoginOptions, // Keeping for backward compatibility
+    setShowLoginOptions,
     logout,
     resetAuth,
     updateRoleData,

@@ -1,4 +1,4 @@
-// src/pages/Login/Login.js
+// src/pages/Login/Login.js - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -6,13 +6,15 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import { Eye, EyeOff, Building2, Shield, User, Loader2, CheckCircle, BarChart3, Users, HardHat } from 'lucide-react';
-import { 
-    validateEmployee, 
-    clearErrors, 
-    clearSuccess, 
-    loadUserFromStorage 
+import {
+    validateEmployee,
+    clearErrors,
+    clearSuccess,
+    loadUserFromStorage,
+    logout
 } from '../../slices/auth/authSlice';
 import ThemeToggle from '../../components/ThemeToggle';
+import sessionManager from '../../utilities/SessionManager'; // FIXED: Removed 's' from SessionsManager
 
 // Validation Schema
 const validationSchema = Yup.object({
@@ -29,18 +31,20 @@ const Login = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState('');
-    
+
     // Redux state
-    const { 
-        loading, 
-        error, 
-        success, 
+    const {
+        loading,
+        error,
+        success,
         isAuthenticated,
         loginType
     } = useSelector((state) => state.auth);
 
     // Check for existing session on component mount
     useEffect(() => {
+        console.log('🔄 Login page mounted - clearing any existing sessions');
+        sessionManager.clearSession();
         dispatch(loadUserFromStorage());
     }, [dispatch]);
 
@@ -59,7 +63,7 @@ const Login = () => {
                 password: values.password
             };
             console.log('Dispatching validateEmployee with:', credentials);
-            
+
             dispatch(validateEmployee(credentials));
         }
     });
@@ -97,16 +101,25 @@ const Login = () => {
         }
     }, [error.validateEmployee, dispatch]);
 
-    // Redirect if already authenticated
+    // Redirect if already authenticated (with session validation)
     useEffect(() => {
         if (isAuthenticated && loginType) {
-            if (loginType === 'employee') {
-                navigate('/employee-dashboard');
-            } else if (loginType === 'role') {
-                navigate('/role-dashboard');
+            // Check if session is still valid
+            const isSessionValid = sessionManager.isAuthenticated();
+            
+            if (isSessionValid) {
+                console.log('✅ Valid session found - redirecting to dashboard');
+                if (loginType === 'employee') {
+                    navigate('/employee-dashboard');
+                } else if (loginType === 'role') {
+                    navigate('/role-dashboard');
+                }
+            } else {
+                console.log('❌ Session invalid - clearing auth state');
+                dispatch(logout());
             }
         }
-    }, [isAuthenticated, loginType, navigate]);
+    }, [isAuthenticated, loginType, navigate, dispatch]);
 
     // Clear errors when user starts typing
     useEffect(() => {
@@ -132,7 +145,7 @@ const Login = () => {
             <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center transition-colors">
                 <div className="text-center">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-indigo-600 dark:text-indigo-400" />
-                    <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+                    <p className="text-gray-600 dark:text-gray-300">Checking session...</p>
                 </div>
             </div>
         );
@@ -140,7 +153,7 @@ const Login = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
-            
+
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-20 dark:opacity-10">
                 <div className="absolute top-0 left-0 w-full h-full" style={{
@@ -163,20 +176,15 @@ const Login = () => {
             {/* Main Container Card */}
             <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-white/20 dark:border-gray-700 backdrop-blur-sm transition-colors">
                 <div className="grid md:grid-cols-2 min-h-[600px]">
-                    
+
                     {/* Left Side - Login Form */}
                     <div className="p-8 md:p-12 flex flex-col justify-center bg-white dark:bg-gray-800 transition-colors">
-                        
+
                         {/* Logo Section */}
                         <div className="text-center mb-8">
                             <div className="flex items-center justify-center mb-4">
                                 <div className="relative">
                                     <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
-                                        {/* <img 
-                                            src="/logo.jpg" 
-                                            alt="Essel Projects Pvt Ltd Logo" 
-                                            className="w-10 h-10 object-contain"
-                                        /> */}
                                         <User className="w-10 h-10 text-white" />
                                     </div>
                                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800">
@@ -184,7 +192,7 @@ const Login = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
                                 Log In
                             </h1>
@@ -195,7 +203,7 @@ const Login = () => {
 
                         {/* Login Form */}
                         <div className="space-y-6">
-                            
+
                             {/* General Error */}
                             {error.validateEmployee && (
                                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-3">
@@ -215,24 +223,22 @@ const Login = () => {
                                     onBlur={formik.handleBlur}
                                     onFocus={() => setFocusedField('employeeId')}
                                     onKeyPress={handleKeyPress}
-                                    className={`w-full px-4 py-4 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${
-                                        focusedField === 'employeeId' || formik.values.employeeId
-                                            ? 'border-purple-500 focus:border-purple-600' 
+                                    className={`w-full px-4 py-4 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${focusedField === 'employeeId' || formik.values.employeeId
+                                            ? 'border-purple-500 focus:border-purple-600'
                                             : formik.touched.employeeId && formik.errors.employeeId
-                                            ? 'border-red-300 dark:border-red-600'
-                                            : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
-                                    }`}
+                                                ? 'border-red-300 dark:border-red-600'
+                                                : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
+                                        }`}
                                     placeholder="Employee ID"
                                     disabled={loading.validateEmployee}
                                     required
                                 />
-                                <label 
+                                <label
                                     htmlFor="employeeId"
-                                    className={`absolute left-4 transition-all duration-200 pointer-events-none ${
-                                        shouldShowFloatingLabel('employeeId')
+                                    className={`absolute left-4 transition-all duration-200 pointer-events-none ${shouldShowFloatingLabel('employeeId')
                                             ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-purple-600 dark:text-purple-400 font-medium'
                                             : 'top-4 text-gray-500 dark:text-gray-400'
-                                    }`}
+                                        }`}
                                 >
                                     Employee ID
                                 </label>
@@ -252,24 +258,22 @@ const Login = () => {
                                     onBlur={formik.handleBlur}
                                     onFocus={() => setFocusedField('password')}
                                     onKeyPress={handleKeyPress}
-                                    className={`w-full px-4 py-4 pr-12 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${
-                                        focusedField === 'password' || formik.values.password
-                                            ? 'border-purple-500 focus:border-purple-600' 
+                                    className={`w-full px-4 py-4 pr-12 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${focusedField === 'password' || formik.values.password
+                                            ? 'border-purple-500 focus:border-purple-600'
                                             : formik.touched.password && formik.errors.password
-                                            ? 'border-red-300 dark:border-red-600'
-                                            : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
-                                    }`}
+                                                ? 'border-red-300 dark:border-red-600'
+                                                : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
+                                        }`}
                                     placeholder="Password"
                                     disabled={loading.validateEmployee}
                                     required
                                 />
-                                <label 
+                                <label
                                     htmlFor="password"
-                                    className={`absolute left-4 transition-all duration-200 pointer-events-none ${
-                                        shouldShowFloatingLabel('password')
+                                    className={`absolute left-4 transition-all duration-200 pointer-events-none ${shouldShowFloatingLabel('password')
                                             ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-purple-600 dark:text-purple-400 font-medium'
                                             : 'top-4 text-gray-500 dark:text-gray-400'
-                                    }`}
+                                        }`}
                                 >
                                     Password
                                 </label>
@@ -338,7 +342,7 @@ const Login = () => {
 
                     {/* Right Side - Compact Visual Content */}
                     <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 p-8 md:p-12 flex flex-col justify-center items-center text-white relative overflow-hidden">
-                        
+
                         {/* Background decorative elements */}
                         <div className="absolute inset-0 opacity-10">
                             <div className="absolute top-10 right-10 w-20 h-20 border-2 border-white rounded-full animate-bounce"></div>
@@ -350,14 +354,13 @@ const Login = () => {
                             {/* Main Visual Element */}
                             <div className="mb-8">
                                 <div className="w-32 h-32 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-white/30">
-                                    {/* <HardHat className="w-16 h-16 text-white" /> */}
                                     <img src="/logo.jpg" alt="" />
                                 </div>
-                                
+
                                 <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
                                     Essel Projects Pvt Ltd
                                 </h2>
-                               
+
                                 <p className="text-purple-200 text-lg">
                                     Building Tomorrow's Infrastructure
                                 </p>

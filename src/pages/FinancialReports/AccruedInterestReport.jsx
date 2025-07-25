@@ -336,7 +336,6 @@ const TransactionDetailsModal = ({ isOpen, onClose, transactionData, loading, mo
 };
 
 // Report Summary Cards Component
-// Report Summary Cards Component
 const ReportSummaryCards = ({ reportSummary, reportType }) => {
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
@@ -391,7 +390,7 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
                 }
             ];
         } else {
-            // Detail report cards (original)
+            // Detail report cards - now includes Total Cumulative Paid Amount
             return [
                 {
                     title: 'Total Net Received',
@@ -406,6 +405,13 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
                     icon: TrendingDown,
                     color: 'from-red-500 to-pink-600',
                     bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
+                },
+                {
+                    title: 'Total Cumulative Paid Amount',
+                    value: reportSummary.totalCumulativePaidAmount,
+                    icon: BanknoteIcon,
+                    color: 'from-indigo-500 to-cyan-600',
+                    bgColor: 'from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20'
                 },
                 {
                     title: 'Final Cash Status',
@@ -832,10 +838,47 @@ const AccruedInterestReport = ({ menuData }) => {
         };
     };
 
+    // Calculate summary totals for Detail reports using last row values
+    const calculateDetailSummaryTotals = () => {
+        if (!Array.isArray(currentReportData) || currentReportData.length === 0 || localFilters.reportType !== 'Detail') {
+            return null;
+        }
+
+        // Get the last row (most recent cumulative values)
+        const lastRow = currentReportData[currentReportData.length - 1];
+        
+        // Sum all net received and net paid amounts
+        const totals = currentReportData.reduce((acc, item) => {
+            acc.totalNetReceived += parseFloat(item.netrecieved || item.NetReceived || 0);
+            acc.totalNetPaid += parseFloat(item.netpaid || item.NetPaid || 0);
+            return acc;
+        }, {
+            totalNetReceived: 0,
+            totalNetPaid: 0
+        });
+
+        return {
+            totalNetReceived: totals.totalNetReceived,
+            totalNetPaid: totals.totalNetPaid,
+            finalCashStatus: parseFloat(lastRow.cashstatus || lastRow.CashStatus || 0),
+            totalAccumulatedInterest: parseFloat(lastRow.NewAccumulatedInterst || lastRow.AccumulatedInterest || 0),
+            hasNegativeCashFlow: parseFloat(lastRow.cashstatus || lastRow.CashStatus || 0) < 0,
+            // Get the cumulative paid amount from the last row (final cumulative value)
+            totalCumulativePaidAmount: parseFloat(lastRow.Cupaidamount || lastRow.CumulativePaidAmount || 0)
+        };
+    };
+
     // Get the appropriate summary data
     const getSummaryData = () => {
         if (localFilters.reportType === 'Summary') {
             return calculateSummaryTotals();
+        } else if (localFilters.reportType === 'Detail') {
+            // For Detail reports, try to use calculated totals first, fallback to reportSummary
+            const calculatedSummary = calculateDetailSummaryTotals();
+            if (calculatedSummary) {
+                return calculatedSummary;
+            }
+            return reportSummary;
         }
         return reportSummary;
     };
@@ -1267,8 +1310,10 @@ const AccruedInterestReport = ({ menuData }) => {
                                     <strong>5. Role 100 users can access both Detail and Summary reports</strong><br/>
                                     <strong>6. Summary Report:</strong> Requires only CC Status, shows multiple cost centers with aggregated totals<br/>
                                     <strong>7. Detail Report:</strong> Requires Sub Type, CC Status, and Cost Center selection for single CC analysis<br/>
-                                    <strong>8. Summary Report columns:</strong> Cost Center, Date, Cumulative Received, Cumulative Net Paid Amount, Cumulative Paid Amount, Net Cash Status, Accumulated Interest<br/>
-                                    <strong>9. Detail Report columns:</strong> Date, Net Received Amount, Cumulative Received, Net Paid Amount, Cumulative Net Paid Amount, Paid Amount, Cumulative Paid Amount, Net Cash Status, Interest On (-Ve) Cash Flow, Accumulated Interest<br/>
+                                    <strong>8. Summary Report cards:</strong> Total Cumulative Received, Total Cumulative Net Paid, Total Cumulative Paid Amount, Total Net Cash Status, Total Accumulated Interest<br/>
+                                    <strong>9. Detail Report cards:</strong> Total Net Received, Total Net Paid, Total Cumulative Paid Amount, Final Cash Status, Accumulated Interest<br/>
+                                    <strong>10. Summary Report columns:</strong> Cost Center, Date, Cumulative Received, Cumulative Net Paid Amount, Cumulative Paid Amount, Net Cash Status, Accumulated Interest<br/>
+                                    <strong>11. Detail Report columns:</strong> Date, Net Received Amount, Cumulative Received, Net Paid Amount, Cumulative Net Paid Amount, Paid Amount, Cumulative Paid Amount, Net Cash Status, Interest On (-Ve) Cash Flow, Accumulated Interest<br/>
                                 </>
                             )}
                             <strong>Cost Center Type is fixed to "Performing" as per business requirements.</strong>

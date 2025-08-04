@@ -353,8 +353,8 @@ const Login = () => {
                         <div className="relative z-10 text-center">
                             {/* Main Visual Element */}
                             <div className="mb-8">
-                                <div className="w-32 h-32 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-white/30">
-                                    <img src="/logo.jpg" alt="" />
+                                <div className="w-32 h-32 mx-auto bg-white/75 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-white/30">
+                                    <img src="/sllogo.png" alt="logo" className='w-28  h-28 object-contain rounded-full' />
                                 </div>
 
                                 <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">

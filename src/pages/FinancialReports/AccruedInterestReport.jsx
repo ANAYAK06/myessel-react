@@ -358,13 +358,13 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
                     color: 'from-green-500 to-emerald-600',
                     bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20'
                 },
-                {
-                    title: 'Total Cumulative Net Paid',
-                    value: reportSummary.totalNetPaid,
-                    icon: TrendingDown,
-                    color: 'from-red-500 to-pink-600',
-                    bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
-                },
+                // {
+                //     title: 'Total Cumulative Net Paid',
+                //     value: reportSummary.totalNetPaid,
+                //     icon: TrendingDown,
+                //     color: 'from-red-500 to-pink-600',
+                //     bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
+                // },
                 {
                     title: 'Total Cumulative Paid Amount',
                     value: reportSummary.totalCumulativePaidAmount,
@@ -399,13 +399,13 @@ const ReportSummaryCards = ({ reportSummary, reportType }) => {
                     color: 'from-green-500 to-emerald-600',
                     bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20'
                 },
-                {
-                    title: 'Total Net Paid',
-                    value: reportSummary.totalNetPaid,
-                    icon: TrendingDown,
-                    color: 'from-red-500 to-pink-600',
-                    bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
-                },
+                // {
+                //     title: 'Total Net Paid',
+                //     value: reportSummary.totalNetPaid,
+                //     icon: TrendingDown,
+                //     color: 'from-red-500 to-pink-600',
+                //     bgColor: 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20'
+                // },
                 {
                     title: 'Total Cumulative Paid Amount',
                     value: reportSummary.totalCumulativePaidAmount,

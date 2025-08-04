@@ -3,6 +3,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import TopNavbarLayout from '../../components/TopNavbarLayout';
 import DashboardContent from './DashboardContent';
+import InboxRouter from '../../components/Inbox/InboxRouter';
+
+// ============================================================================
+// REPORT COMPONENTS 
+// ============================================================================
 import BasicBusinessInfoSetup from '../BusinessInfo/BusinessInfoSetup';
 import BudgetReport from '../Budget/BudgetReport';
 import AccruedInterestReport from '../FinancialReports/AccruedInterestReport';
@@ -32,6 +37,7 @@ import LostScrapReportPage from '../Stock/LostScrapReportPage';
 import LCBGStatusReportPage from '../FinancialReports/LCBGStatusReportPage';
 import StockSummaryPage from '../FinancialReports/StockSummaryPage';
 import UnsecuredLoanReportPage from '../TermLoan/UnsecuredLoanReportPage';
+import CMSPaymentReportPage from '../HRReports/CMSPaymentReportPage';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -104,6 +110,32 @@ const RoleBasedApplication = () => {
         setCurrentPage(route);
         setCurrentMenuData(menuData);
     };
+
+     const isInboxItem = (menuData) => {
+        if (!menuData) return false;
+
+        // Check for notification-specific properties
+        const hasNotificationProps = !!(
+            menuData.type === 'notification' || 
+            menuData.type === 'inbox-item' ||
+            menuData.masterId || 
+            menuData.MasterId ||
+            menuData.NavigationPath ||
+            menuData.InboxTitle ||
+            menuData.TotalPendingCount !== undefined
+        );
+
+        console.log('🔍 Inbox item detection:', {
+            type: menuData.type,
+            hasNotificationProps,
+            navigationPath: menuData.NavigationPath,
+            inboxTitle: menuData.InboxTitle,
+            masterId: menuData.masterId || menuData.MasterId
+        });
+
+        return hasNotificationProps;
+    };
+
 
     // Check if menu item should route to BasicBusinessInfoSetup
     const isBasicBusinessInfoSetup = (menuData) => {
@@ -519,6 +551,18 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    // check if menu item should route to any cms payment report page
+    const isCMSPaymentReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/CMSPayReport' || menuData.path === '/Inventory/CMSPaymentReport' ||
+            menuData.path?.toLowerCase().includes('cmspaymentreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('cmspaymentreport') ||
+            menuData.name?.toLowerCase().includes('cms payment report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('cmspaymentreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
         if (!menuData) return false;
@@ -543,6 +587,15 @@ const RoleBasedApplication = () => {
                     trackMenuUsage={trackMenuUsage}
                 />
             );
+        }
+        if (currentMenuData && isInboxItem(currentMenuData)) {
+            console.log('✅ Routing to InboxRouter for notification:', {
+                inboxTitle: currentMenuData.InboxTitle,
+                moduleDisplayName: currentMenuData.ModuleDisplayName,
+                navigationPath: currentMenuData.NavigationPath,
+                type: currentMenuData.type
+            });
+            return <InboxRouter notificationData={currentMenuData} onNavigate={handleNavigation} />;
         }
 
         // Check if this menu item should show BasicBusinessInfoSetup
@@ -697,6 +750,11 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isUnsecuredLoanReportPage(currentMenuData)) {
             console.log('✅ Rendering UnsecuredLoanReportPage for:', currentMenuData.name);
             return <UnsecuredLoanReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to CMS Payment Report Page
+        if (currentMenuData && isCMSPaymentReportPage(currentMenuData)) {
+            console.log('✅ Rendering CMSPaymentReportPage for:', currentMenuData.name);
+            return <CMSPaymentReportPage menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

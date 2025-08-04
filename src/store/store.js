@@ -29,6 +29,9 @@ import lostScrapReportReducer from "../slices/stockSlice/lostScrapReportSlice";
 import lcbgReducer from "../slices/lcbgSlice/lcbgSlice";
 import stockSummaryReducer from "../slices/financialReportSlice/stockSummarySlice";
 import unsecuredLoanReportReducer from "../slices/termLoanSlice/unsecuredLoanReportSlice";
+import cmspaymentreportReducer from "../slices/HrReportSlice/cmsPaymentReportSlice";
+import inboxNotificationReducer from "../slices/notificationSlice/userInboxNotificationSlice";
+import staffRegistrationSlice from "../slices/HRSlice/staffRegistrationSlice";
 
 const store = configureStore({
   
@@ -62,7 +65,10 @@ const store = configureStore({
     lostscrapreport: lostScrapReportReducer,
     lcbg: lcbgReducer,
     stocksummary: stockSummaryReducer,
-    unsecuredloanreport: unsecuredLoanReportReducer
+    unsecuredloanreport: unsecuredLoanReportReducer,
+    cmspaymentreport:cmspaymentreportReducer,
+    inboxnotifications: inboxNotificationReducer,
+    staffregistration: staffRegistrationSlice
   }
 
 });

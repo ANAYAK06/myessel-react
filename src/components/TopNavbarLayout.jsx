@@ -2,11 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
     LogOut, Shield, Building2, Users, BarChart3, Settings, ChevronDown,
-    Search, Bell, Home, FileText, Package, Warehouse, ShoppingCart,
+    Search, Mail, Home, FileText, Package, Warehouse, ShoppingCart,
     Database, TrendingUp, Calculator, CreditCard, Briefcase, FolderOpen, X
 } from 'lucide-react';
 import { useLogout } from '../hooks/useLogout';
 import ThemeToggle from './ThemeToggle';
+
+// Import inbox notification actions and selectors
+import { 
+    fetchUserInboxNotifications,
+    selectNotificationsSummary,
+    selectNotificationsLoading,
+    selectTotalPendingCount,
+    selectNotificationsByCategory
+} from '../slices/notificationSlice/userInboxNotificationSlice';
 
 const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
     // UPDATED: Get userData from Redux state
@@ -18,20 +27,60 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         employeeData,
         userData  // Get complete user data
     } = useSelector((state) => state.auth);
+
+    // Inbox notifications selectors
+    const notificationsSummary = useSelector(selectNotificationsSummary);
+    const notificationsLoading = useSelector(selectNotificationsLoading);
+    const totalPendingCount = useSelector(selectTotalPendingCount);
+    const notificationsByCategory = useSelector(selectNotificationsByCategory);
     
     const { logout } = useLogout();
     
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const notificationDropdownRef = useRef(null);
     const searchModalRef = useRef(null);
     const searchInputRef = useRef(null);
     const logoutButtonRef = useRef(null);
     const dispatch = useDispatch();
+
+    // Get user data for notifications
+    const notificationRoleId = userData?.roleId || userData?.RID;
+    const notificationUid = userData?.UID || userData?.uid;
+
+    // Fetch notifications on component mount
+    useEffect(() => {
+        if (notificationUid && notificationRoleId) {
+            console.log('🔔 Fetching inbox notifications for:', { 
+                userId: notificationUid, 
+                roleId: notificationRoleId 
+            });
+            dispatch(fetchUserInboxNotifications({ 
+                userId: notificationUid, 
+                roleId: notificationRoleId 
+            }));
+        }
+    }, [dispatch, notificationUid, notificationRoleId]);
+
+    // Auto-refresh notifications every 5 minutes
+    useEffect(() => {
+        if (notificationUid && notificationRoleId) {
+            const interval = setInterval(() => {
+                dispatch(fetchUserInboxNotifications({ 
+                    userId: notificationUid, 
+                    roleId: notificationRoleId 
+                }));
+            }, 5 * 60 * 1000); // 5 minutes
+
+            return () => clearInterval(interval);
+        }
+    }, [dispatch, notificationUid, notificationRoleId]);
 
     // Icon mapping for main menu items (UL)
     const menuIcons = {
@@ -46,6 +95,98 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         'Warehouse': Warehouse,
         'Finance': Calculator,
         'Accounts': CreditCard
+    };
+
+    // Get priority badge color for notifications
+    const getPriorityColor = (notification) => {
+        if (notification.Status === 1) return 'bg-red-500'; // High priority
+        if (notification.Priority === 'High') return 'bg-orange-500';
+        return 'bg-indigo-500'; // Normal priority
+    };
+
+    // Get category icon for notifications
+    const getCategoryIcon = (category) => {
+        console.log('🔍 Category for icon:', category); // Debug log
+        
+        const iconMap = {
+            'HR': Users,
+            'Finance': Calculator,
+            'Accounts': CreditCard,
+            'Purchase': ShoppingCart,
+            'Sales': TrendingUp,
+            'Inventory': Package,
+            'General': FileText,
+            'Warehouse': Warehouse,
+            'Reports': BarChart3
+        };
+        
+        const selectedIcon = iconMap[category] || FileText;
+        console.log('🎯 Selected icon for', category, ':', selectedIcon.name || 'FileText'); // Debug log
+        
+        return selectedIcon;
+    };
+
+    // Handle notification item click
+   const handleNotificationClick = (notification) => {
+    console.log('🔔 Notification clicked:', notification);
+    
+    if (notification.NavigationPath && onNavigate) {
+        // Close notification dropdown
+        setIsNotificationMenuOpen(false);
+        
+        // ✅ NEW: Navigate to inbox-item route with complete notification data
+        onNavigate('inbox-item', {
+            // ========================================================================
+            // ESSENTIAL NOTIFICATION DATA FOR INBOXROUTER
+            // ========================================================================
+            type: 'notification',                           // Identifies this as notification
+            InboxTitle: notification.InboxTitle,            // Main title for verification page
+            ModuleDisplayName: notification.ModuleDisplayName, // Module/feature name
+            ModuleCategory: notification.ModuleCategory,    // HR, Finance, Purchase, etc.
+            NavigationPath: notification.NavigationPath,    // Original path from API
+            MasterId: notification.MasterId,               // Unique identifier
+            RoleId: notification.RoleId,                   // User's role ID
+            TotalPendingCount: notification.TotalPendingCount, // Number of pending items
+            Status: notification.Status,                   // Urgency status (1=Urgent, 2=Active, etc.)
+            Priority: notification.Priority,               // High, Medium, Low
+            CCCodes: notification.CCCodes || [],           // Cost center codes
+            CreatedDate: notification.CreatedDate,         // When notification was created
+            WorkflowType: notification.WorkflowType || notification.Type, // Workflow identifier
+            
+            // ========================================================================
+            // ADDITIONAL METADATA FOR TRACKING AND COMPATIBILITY
+            // ========================================================================
+            id: notification.MasterId,                     // For compatibility
+            name: notification.InboxTitle || notification.ModuleDisplayName, // Display name
+            path: notification.NavigationPath,             // Original path
+            ccCode: notification.CCCode,                   // Single CC code (if exists)
+            pendingCount: notification.TotalPendingCount,  // For compatibility
+            
+            // ========================================================================
+            // ORIGINAL NOTIFICATION OBJECT (For debugging and future use)
+            // ========================================================================
+            _originalNotification: notification            // Complete original data
+        });
+        
+        console.log('✅ Navigated to inbox-item with data:', {
+            inboxTitle: notification.InboxTitle,
+            moduleCategory: notification.ModuleCategory,
+            navigationPath: notification.NavigationPath,
+            masterId: notification.MasterId
+        });
+    } else {
+        console.warn('⚠️ Navigation failed - missing NavigationPath or onNavigate function');
+    }
+};
+
+    // Refresh notifications manually
+    const handleRefreshNotifications = () => {
+        if (notificationUid && notificationRoleId) {
+            dispatch(fetchUserInboxNotifications({ 
+                userId: notificationUid, 
+                roleId: notificationRoleId 
+            }));
+        }
     };
 
     // Transform API menu data using actual UL, LI, SUBLI structure
@@ -238,6 +379,11 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                 setActiveDropdown(null);
                 setIsUserMenuOpen(false);
             }
+
+            // Handle notification dropdown
+            if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(event.target)) {
+                setIsNotificationMenuOpen(false);
+            }
             
             // Close search modal if clicking outside
             if (searchModalRef.current && !searchModalRef.current.contains(event.target)) {
@@ -253,12 +399,18 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
             if (activeDropdown) {
                 setActiveDropdown(null);
             }
+            if (isNotificationMenuOpen) {
+                setIsNotificationMenuOpen(false);
+            }
         };
 
         const handleScroll = () => {
             // Close dropdown on scroll to prevent positioning issues
             if (activeDropdown) {
                 setActiveDropdown(null);
+            }
+            if (isNotificationMenuOpen) {
+                setIsNotificationMenuOpen(false);
             }
         };
 
@@ -271,7 +423,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('scroll', handleScroll);
         };
-    }, [activeDropdown]);
+    }, [activeDropdown, isNotificationMenuOpen]);
 
     // Handle search modal open
     const handleSearchModalOpen = () => {
@@ -302,13 +454,15 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                     setActiveDropdown(null);
                 } else if (isUserMenuOpen) {
                     setIsUserMenuOpen(false);
+                } else if (isNotificationMenuOpen) {
+                    setIsNotificationMenuOpen(false);
                 }
             }
         };
 
         document.addEventListener('keydown', handleEscKey);
         return () => document.removeEventListener('keydown', handleEscKey);
-    }, [isSearchModalOpen, activeDropdown, isUserMenuOpen]);
+    }, [isSearchModalOpen, activeDropdown, isUserMenuOpen, isNotificationMenuOpen]);
 
     const handleMenuClick = (item) => {
         if (onNavigate) {
@@ -339,6 +493,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         const newActiveDropdown = activeDropdown === menuKey ? null : menuKey;
         setActiveDropdown(newActiveDropdown);
         setIsUserMenuOpen(false);
+        setIsNotificationMenuOpen(false);
         
         // Small delay to ensure button ref is ready for positioning calculations
         if (newActiveDropdown) {
@@ -454,7 +609,12 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         console.log('employeeId:', employeeId);
         console.log('roleId:', roleId);
         console.log('Final display values:', getUserDetails());
-    }, [userData, employeeData, roleData, employeeId, roleId]);
+        console.log('🔔 Notifications Debug:', {
+            notificationsSummary,
+            totalPendingCount,
+            notificationsLoading
+        });
+    }, [userData, employeeData, roleData, employeeId, roleId, notificationsSummary, totalPendingCount, notificationsLoading]);
 
     const userDetails = getUserDetails();
 
@@ -705,13 +865,145 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                             {/* Theme Toggle */}
                             <ThemeToggle variant="dropdown" showLabel={false} />
 
-                            {/* Notifications */}
-                            <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative transition-colors" title="Notifications">
-                                <Bell className="w-5 h-5" />
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                                    1
-                                </span>
-                            </button>
+                            {/* Inbox Notifications */}
+                            <div className="relative" ref={notificationDropdownRef}>
+                                <button 
+                                    onClick={() => setIsNotificationMenuOpen(!isNotificationMenuOpen)}
+                                    className={`p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative transition-colors ${
+                                        isNotificationMenuOpen ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : ''
+                                    }`}
+                                    title="Inbox Notifications"
+                                >
+                                    <Mail className="w-5 h-5" />
+                                    {totalPendingCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 min-w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1">
+                                            {totalPendingCount > 99 ? '99+' : totalPendingCount}
+                                        </span>
+                                    )}
+                                    {notificationsLoading && (
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full animate-pulse"></div>
+                                    )}
+                                </button>
+
+                                {/* Notifications Dropdown */}
+                                {isNotificationMenuOpen && (
+                                    <div className="absolute right-0 top-full mt-1 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 transition-colors max-h-96 overflow-hidden">
+                                        {/* Notifications Header */}
+                                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-500 to-purple-600">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-2">
+                                                    <Mail className="w-5 h-5 text-white" />
+                                                    <h3 className="text-sm font-semibold text-white">Inbox Notifications</h3>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-xs text-white/80">
+                                                        {totalPendingCount} pending
+                                                    </span>
+                                                    <button
+                                                        onClick={handleRefreshNotifications}
+                                                        className="p-1 text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+                                                        title="Refresh notifications"
+                                                        disabled={notificationsLoading}
+                                                    >
+                                                        <svg className={`w-4 h-4 ${notificationsLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Notifications Content */}
+                                        <div className="max-h-80 overflow-y-auto">
+                                            {notificationsLoading ? (
+                                                <div className="p-6 text-center">
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
+                                                </div>
+                                            ) : notificationsSummary.length === 0 ? (
+                                                <div className="p-6 text-center">
+                                                    <Mail className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">No pending notifications</p>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">All caught up!</p>
+                                                </div>
+                                            ) : (
+                                                <div className="p-2 space-y-1">
+                                                    {notificationsSummary.map((notification, index) => {
+                                                        const CategoryIcon = getCategoryIcon(notification.ModuleCategory);
+                                                        console.log('🔔 Rendering notification:', notification.ModuleDisplayName, 'Category:', notification.ModuleCategory, 'Icon:', CategoryIcon?.name);
+                                                        
+                                                        return (
+                                                            <button
+                                                                key={index}
+                                                                onClick={() => handleNotificationClick(notification)}
+                                                                className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200 group"
+                                                                title={`Click to navigate to ${notification.ModuleDisplayName}`}
+                                                            >
+                                                                <div className="flex items-center space-x-3">
+                                                                    <div className="flex-shrink-0">
+                                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getPriorityColor(notification)}`}>
+                                                                            {CategoryIcon ? (
+                                                                                <CategoryIcon className="w-4 h-4 text-white" />
+                                                                            ) : (
+                                                                                <FileText className="w-4 h-4 text-white" />
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                                                {notification.InboxTitle}
+                                                                            </p>
+                                                                            <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(notification)} text-white`}>
+                                                                                {notification.TotalPendingCount}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center space-x-2 mt-1">
+                                                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                                                {notification.ModuleCategory}
+                                                                            </span>
+                                                                            {notification.CCCodes && notification.CCCodes.length > 0 && (
+                                                                                <>
+                                                                                    <span className="text-xs text-gray-400">•</span>
+                                                                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">
+                                                                                        {notification.CCCodes.length} CC{notification.CCCodes.length > 1 ? 's' : ''}
+                                                                                    </span>
+                                                                                </>
+                                                                            )}
+                                                                            <span className="text-xs text-gray-400">•</span>
+                                                                            <span className={`text-xs px-1.5 py-0.5 rounded text-white ${
+                                                                                notification.Status === 1 ? 'bg-red-500' : 
+                                                                                notification.Status === 2 ? 'bg-orange-500' : 'bg-indigo-500'
+                                                                            }`}>
+                                                                                {notification.Status === 1 ? 'Urgent' : 
+                                                                                 notification.Status === 2 ? 'Active' : 'Pending'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Notifications Footer */}
+                                        {notificationsSummary.length > 0 && (
+                                            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-lg transition-colors">
+                                                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                                    <span>Click any notification to view details</span>
+                                                    <span className="flex items-center space-x-1">
+                                                        <span>{notificationsSummary.length} modules</span>
+                                                        <span>•</span>
+                                                        <span>{totalPendingCount} total pending</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             {/* User Menu - UPDATED WITH REAL USER DATA */}
                             <div className="relative">
@@ -720,6 +1012,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         setIsUserMenuOpen(!isUserMenuOpen);
+                                        setIsNotificationMenuOpen(false);
                                     }}
                                     className="flex items-center space-x-2 p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                 >
@@ -781,6 +1074,10 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                                 <div className="flex justify-between">
                                                     <span>Menu Items:</span>
                                                     <span>{roleData?.menuItems?.length || 0}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Notifications:</span>
+                                                    <span className="text-red-600 font-semibold">{totalPendingCount}</span>
                                                 </div>
                                                 {userDetails.ccCodes && userDetails.ccCodes !== 'N/A' && (
                                                     <div className="flex justify-between">

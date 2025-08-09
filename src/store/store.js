@@ -32,6 +32,8 @@ import unsecuredLoanReportReducer from "../slices/termLoanSlice/unsecuredLoanRep
 import cmspaymentreportReducer from "../slices/HrReportSlice/cmsPaymentReportSlice";
 import inboxNotificationReducer from "../slices/notificationSlice/userInboxNotificationSlice";
 import staffRegistrationSlice from "../slices/HRSlice/staffRegistrationSlice";
+import approvalReducer from "../slices/CommonSlice/getStatusSlice";
+import VendorPaymentReducer from "../slices/VendorPaymentSlice/vendorPaymentSlice"
 
 const store = configureStore({
   
@@ -68,7 +70,9 @@ const store = configureStore({
     unsecuredloanreport: unsecuredLoanReportReducer,
     cmspaymentreport:cmspaymentreportReducer,
     inboxnotifications: inboxNotificationReducer,
-    staffregistration: staffRegistrationSlice
+    staffregistration: staffRegistrationSlice,
+    approval: approvalReducer,
+    vendorpayment: VendorPaymentReducer
   }
 
 });

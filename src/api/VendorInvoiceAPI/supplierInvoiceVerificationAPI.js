@@ -3,16 +3,16 @@ import axios from "axios";
 import { API_BASE_URL } from '../../config/apiConfig';
 
 // ==============================================
-// STAFF REGISTRATION & APPROVAL RELATED APIs
+// SUPPLIER INVOICE VERIFICATION RELATED APIs
 // ==============================================
 
-// 1. Get Verification Staff by Role ID
-export const getVerificationStaff = async (roleId) => {
+// 1. Get Verification Supplier Invoices by Role ID and User ID
+export const getVerificationSupplierInvoice = async (roleId, userId) => {
     try {
-        console.log('👥 Getting Verification Staff for Role ID:', roleId); // DEBUG
+        console.log('📋 Getting Verification Supplier Invoices for Role ID:', roleId, 'User ID:', userId); // DEBUG
         
         const response = await axios.get(
-            `${API_BASE_URL}/HR/GetVerificationStaff?Roleid=${roleId}`,
+            `${API_BASE_URL}/Purchase/GetVerificationSupplierInvoice?Roleid=${roleId}&Userid=${userId}`,
             {
                 headers: {
                     'Content-Type': 'application/json'
@@ -20,10 +20,10 @@ export const getVerificationStaff = async (roleId) => {
             }
         );
         
-        console.log('✅ Verification Staff Response:', response.data); // DEBUG
+        console.log('✅ Verification Supplier Invoices Response:', response.data); // DEBUG
         return response.data;
     } catch (error) {
-        console.error('❌ Verification Staff API Error:', error.response || error);
+        console.error('❌ Verification Supplier Invoices API Error:', error.response || error);
         if (error.response?.data) {
             throw error.response.data;
         }
@@ -31,14 +31,13 @@ export const getVerificationStaff = async (roleId) => {
     }
 };
 
-// 2. Get Verification Staff Data by ID
-export const getVerificationStaffDataById = async (params) => {
+// 2. Get Supplier Invoice by Invoice Number
+export const getSupplierInvoiceByNo = async (invoiceNo) => {
     try {
-        const { empRefNo, roleId } = params;
-        console.log('🔍 Getting Verification Staff Data for:', { empRefNo, roleId }); // DEBUG
+        console.log('🔍 Getting Supplier Invoice for Invoice No:', invoiceNo); // DEBUG
         
         const response = await axios.get(
-            `${API_BASE_URL}/HR/GetStaffMainDatabyId?EmpRefNo=${empRefNo}&RoleId=${roleId}`,
+            `${API_BASE_URL}/Purchase/GetSupplierInvoiceByNo?InvoiceNo=${invoiceNo}`,
             {
                 headers: {
                     'Content-Type': 'application/json'
@@ -46,10 +45,10 @@ export const getVerificationStaffDataById = async (params) => {
             }
         );
         
-        console.log('✅ Verification Staff Data Response:', response.data); // DEBUG
+        console.log('✅ Supplier Invoice Data Response:', response.data); // DEBUG
         return response.data;
     } catch (error) {
-        console.error('❌ Verification Staff Data API Error:', error.response || error);
+        console.error('❌ Supplier Invoice Data API Error:', error.response || error);
         if (error.response?.data) {
             throw error.response.data;
         }
@@ -57,32 +56,33 @@ export const getVerificationStaffDataById = async (params) => {
     }
 };
 
-// 3. Approve Staff Registration
-// Enhanced API function in StaffRegistrationVerificationAPI.js
-export const approveStaffRegistration = async (approvalData) => {
+// 3. Approve Supplier Invoice
+export const approveSupplierInvoice = async (approvalData) => {
     try {
-        console.log('🎯 Approving Staff Registration...');
+        console.log('🎯 Approving Supplier Invoice...');
         console.log('📊 Payload Summary:', {
-            EmpRefNo: approvalData.EmpRefNo,
+            InvoiceNo: approvalData.InvoiceNo,
             Action: approvalData.Action,
             Roleid: approvalData.Roleid,
+            Userid: approvalData.Userid,
+            SupplierCode: approvalData.SupplierCode,
             Createdby: approvalData.Createdby,
             totalParameters: Object.keys(approvalData).length
         });
         
         // Log a sample of the data being sent
         console.log('🔍 Sample Data Check:', {
-            hasFirstName: !!approvalData.FirstName,
-            hasLastName: !!approvalData.LastName,
-            hasJoiningType: !!approvalData.JoiningType,
-            hasEmpCategory: !!approvalData.EmpCategory,
-            designationIdType: typeof approvalData.DesignationId,
-            transitdaysType: typeof approvalData.Transitdays,
-            uanexistType: typeof approvalData.Uanexist
+            hasInvoiceNo: !!approvalData.InvoiceNo,
+            hasSupplierCode: !!approvalData.SupplierCode,
+            hasAction: !!approvalData.Action,
+            hasUserid: !!approvalData.Userid,
+            amountType: typeof approvalData.Amount,
+            invoiceDateType: typeof approvalData.InvoiceDate,
+            approvalStatusType: typeof approvalData.ApprovalStatus
         });
         
         const response = await axios.put(
-            `${API_BASE_URL}/HR/ApproveStaffRegistration`,
+            `${API_BASE_URL}/Purchase/ApproveSupplierInvoice`,
             approvalData,
             {
                 headers: {
@@ -93,7 +93,7 @@ export const approveStaffRegistration = async (approvalData) => {
             }
         );
         
-        console.log('✅ Staff Registration Approval Response:', {
+        console.log('✅ Supplier Invoice Approval Response:', {
             status: response.status,
             data: response.data
         });
@@ -101,7 +101,7 @@ export const approveStaffRegistration = async (approvalData) => {
         return response.data;
         
     } catch (error) {
-        console.group('❌ Staff Registration Approval API Error');
+        console.group('❌ Supplier Invoice Approval API Error');
         
         if (error.response) {
             // Server responded with error status
@@ -139,30 +139,6 @@ export const approveStaffRegistration = async (approvalData) => {
             throw new Error('Server Error: Please contact administrator');
         }
         
-        throw error;
-    }
-};
-// 4. Get Employee Documents
-export const getEmployeeDocuments = async (empRefNo) => {
-    try {
-        console.log('📄 Getting Employee Documents for EmpRefNo:', empRefNo); // DEBUG
-        
-        const response = await axios.get(
-            `${API_BASE_URL}/HR/GetEmployeeDocuments?EmpRefno=${empRefNo}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        
-        console.log('✅ Employee Documents Response:', response.data); // DEBUG
-        return response.data;
-    } catch (error) {
-        console.error('❌ Employee Documents API Error:', error.response || error);
-        if (error.response?.data) {
-            throw error.response.data;
-        }
         throw error;
     }
 };

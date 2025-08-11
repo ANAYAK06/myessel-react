@@ -34,6 +34,7 @@ import inboxNotificationReducer from "../slices/notificationSlice/userInboxNotif
 import staffRegistrationSlice from "../slices/HRSlice/staffRegistrationSlice";
 import approvalReducer from "../slices/CommonSlice/getStatusSlice";
 import VendorPaymentReducer from "../slices/VendorPaymentSlice/vendorPaymentSlice"
+import SuppplierInvoiceReducer from "../slices/vendorInvoiceSlice/supplierInvoiceSlice";
 
 const store = configureStore({
   
@@ -72,7 +73,8 @@ const store = configureStore({
     inboxnotifications: inboxNotificationReducer,
     staffregistration: staffRegistrationSlice,
     approval: approvalReducer,
-    vendorpayment: VendorPaymentReducer
+    vendorpayment: VendorPaymentReducer,
+    supplierinvoice: SuppplierInvoiceReducer  
   }
 
 });

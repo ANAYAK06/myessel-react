@@ -6,6 +6,7 @@ import React from 'react';
 // ============================================================================
 import VerifyStaffRegistration from '../../pages/HR/VerifyStaffRegistration';
 import VerifyVendorPayment from '../../pages/VendorPayment/VerifyVendorPayment';
+import VerifySupplierInvoice from '../../pages/VendorInvoice/VerifySupplierInvoice';
 
 // ============================================================================
 // FALLBACK COMPONENT - For unimplemented verification types
@@ -72,6 +73,14 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
 
+       if(isSupplierInvoiceVerification(path, category, title, displayName, workflowType)) {
+           console.log('✅ Routing to VerifySupplierInvoice');
+           return <VerifySupplierInvoice
+               notificationData={notification}
+               onNavigate={onNavigate}
+           />;
+       }
+
         // ====================================================================
         // ADD MORE VERIFICATION TYPES HERE
         // ====================================================================
@@ -108,10 +117,10 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
     const isVendorPaymentVerification = (path, category, title, displayName, workflowType) => {
         // ✅ FIXED: Use lowercase strings for comparison since path is already lowercase
         const pathMatches = [
-            '/purchase/verifyvendorpayment?paytype=bank',  // Exact match
-            '/VendorPayment/VerifyVendorPayment',               // Partial match
-            'verifyvendorpayment',                         // Contains check
-            'vendor payment'                               // Generic check
+            '/purchase/verifyvendorpayment?paytype=bank',  
+            '/VendorPayment/VerifyVendorPayment',               
+            'verifyvendorpayment',                         
+            'vendor payment'                               
         ];
 
         const isMatch = pathMatches.some(match => path.includes(match)) ||
@@ -134,6 +143,45 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             });
         } else {
             console.log('❌ Vendor Payment not detected. Details:', {
+                path,
+                category,
+                title,
+                displayName,
+                workflowType
+            });
+        }
+
+        return isMatch;
+    };
+
+    const isSupplierInvoiceVerification = (path, category, title, displayName, workflowType) => {
+        const pathMatches = [
+            '/VendorInvoice/VerifySupplierInvoice',
+            '/purchase/verifysupplierinvoice',
+            'verifysupplierinvoice',
+            'supplier invoice'
+        ];
+
+        const isMatch = pathMatches.some(match => path.includes(match)) ||
+            category.includes('supplier invoice') ||
+            category.includes('verifysupplierinvoice') ||
+            title.includes('supplier invoice') ||
+            title.includes('verifysupplierinvoice') ||
+            displayName.includes('supplier invoice') ||
+            displayName.includes('verifysupplierinvoice') ||
+            workflowType.includes('supplier invoice') ||
+            workflowType.includes('verifysupplierinvoice');
+
+        if (isMatch) {
+            console.log('✅ Supplier Invoice detected by:', {
+                path,
+                category,
+                title,
+                displayName,
+                workflowType
+            });
+        } else {
+            console.log('❌ Supplier Invoice not detected. Details:', {
                 path,
                 category,
                 title,

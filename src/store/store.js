@@ -35,6 +35,9 @@ import staffRegistrationSlice from "../slices/HRSlice/staffRegistrationSlice";
 import approvalReducer from "../slices/CommonSlice/getStatusSlice";
 import VendorPaymentReducer from "../slices/VendorPaymentSlice/vendorPaymentSlice"
 import SuppplierInvoiceReducer from "../slices/vendorInvoiceSlice/supplierInvoiceSlice";
+import SupplierPOReducer from "../slices/supplierPOSlice/supplierPOSlice";
+import purchaseHelperReducer from "../slices/supplierPOSlice/purcahseHelperSlice";
+
 
 const store = configureStore({
   
@@ -74,7 +77,9 @@ const store = configureStore({
     staffregistration: staffRegistrationSlice,
     approval: approvalReducer,
     vendorpayment: VendorPaymentReducer,
-    supplierinvoice: SuppplierInvoiceReducer  
+    supplierinvoice: SuppplierInvoiceReducer,
+    supplierpo: SupplierPOReducer,
+    purchaseHelper: purchaseHelperReducer
   }
 
 });

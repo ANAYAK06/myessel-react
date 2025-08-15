@@ -1,4 +1,4 @@
-// VerifySupplierPO.jsx - Complete Enhanced component with price editing, previous purchase details, and remarks
+// VerifySupplierPO.jsx - Enhanced with collapsible panel and item checkboxes
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -12,7 +12,8 @@ import {
     CreditCard, FileSpreadsheet, Clipboard,
     Landmark, CheckSquare, ArrowRightLeft, Layers, ExternalLink,
     AlertTriangle, Download, ClipboardList, Receipt, Edit3,
-    BarChart3, History, MousePointer, Info, ChevronDown, ChevronUp
+    BarChart3, History, MousePointer, Info, ChevronDown, ChevronUp,
+    ChevronRight, ChevronLeft, Maximize2, Minimize2, Square, CheckBox
 } from 'lucide-react';
 
 // ✅ SUPPLIER PO SLICE IMPORTS
@@ -146,6 +147,11 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
     const [selectedItemCodeLocal, setSelectedItemCodeLocal] = useState(null);
     const [showRemarksHistory, setShowRemarksHistory] = useState(false);
 
+    // ✅ NEW: UI Enhancement States
+    const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
+    const [checkedItems, setCheckedItems] = useState({});
+    const [isLeftPanelHovered, setIsLeftPanelHovered] = useState(false);
+
     // ✅ EXTRACT NOTIFICATION DATA (FOR UI DISPLAY ONLY)
     const {
         InboxTitle,
@@ -218,6 +224,24 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             dispatch(fetchRemarks({ trno: selectedPO.PONo, moid: selectedPOData.MOID }));
         }
     }, [selectedPO?.PONo, selectedPOData?.MOID, dispatch]);
+
+    // ✅ NEW: Auto-collapse left panel when PO is selected
+    useEffect(() => {
+        if (selectedPO) {
+            setIsLeftPanelCollapsed(true);
+        }
+    }, [selectedPO]);
+
+    // ✅ NEW: Initialize checked items when PO data is loaded
+    useEffect(() => {
+        if (selectedPOData?.PODataList) {
+            const initialCheckedState = {};
+            selectedPOData.PODataList.forEach(item => {
+                initialCheckedState[item.itemcode] = false;
+            });
+            setCheckedItems(initialCheckedState);
+        }
+    }, [selectedPOData]);
 
     // ✅ HELPER FUNCTIONS
     const getCurrentUser = () => {
@@ -393,6 +417,33 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         };
     };
 
+    // ✅ NEW: Item Checkbox Functions
+    const handleItemCheck = (itemCode, checked) => {
+        setCheckedItems(prev => ({
+            ...prev,
+            [itemCode]: checked
+        }));
+    };
+
+    const handleSelectAllItems = (checked) => {
+        if (selectedPOData?.PODataList) {
+            const newCheckedState = {};
+            selectedPOData.PODataList.forEach(item => {
+                newCheckedState[item.itemcode] = checked;
+            });
+            setCheckedItems(newCheckedState);
+        }
+    };
+
+    const areAllItemsChecked = () => {
+        if (!selectedPOData?.PODataList) return false;
+        return selectedPOData.PODataList.every(item => checkedItems[item.itemcode]);
+    };
+
+    const getCheckedItemsCount = () => {
+        return Object.values(checkedItems).filter(Boolean).length;
+    };
+
     // ✅ EVENT HANDLERS
     const handleBackToInbox = () => {
         if (onNavigate) {
@@ -420,6 +471,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         setEditablePrices({});
         setShowPreviousDetails(null);
         setShowRemarksHistory(false);
+        setCheckedItems({});
     };
 
     const buildPOApprovalPayload = (actionValue, selectedPO, selectedPOData, verificationComment) => {
@@ -477,7 +529,10 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         console.log('🎬 Action Click Started:', {
             'Action': action,
             'Selected PO': selectedPO?.PONo,
-            'Comment Length': verificationComment.trim().length
+            'Comment Length': verificationComment.trim().length,
+            'All Items Checked': areAllItemsChecked(),
+            'Checked Items': getCheckedItemsCount(),
+            'Total Items': selectedPOData?.PODataList?.length || 0
         });
 
         if (!selectedPO) {
@@ -489,6 +544,13 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         if (!verificationComment || verificationComment.trim() === '') {
             console.log('❌ No verification comment provided');
             toast.error('Verification comment is mandatory. Please add your comments before proceeding.');
+            return;
+        }
+
+        // ✅ NEW: Check if all items are verified (checked)
+        if (!areAllItemsChecked()) {
+            console.log('❌ Not all items checked');
+            toast.error(`Please verify all items before proceeding. ${getCheckedItemsCount()}/${selectedPOData?.PODataList?.length || 0} items verified.`);
             return;
         }
 
@@ -542,6 +604,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 setEditablePrices({});
                 setShowPreviousDetails(null);
                 setShowRemarksHistory(false);
+                setCheckedItems({});
+                setIsLeftPanelCollapsed(false); // ✅ NEW: Reset panel state
                 dispatch(resetSupplierPOData());
                 dispatch(resetApprovalData());
             }, 1000);
@@ -821,12 +885,25 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 actionCount === 3 ? 'grid-cols-1 md:grid-cols-3' :
                     'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
 
+        const isDisabled = approvalLoading || verificationComment.trim() === '' || !areAllItemsChecked();
+
         return (
             <div className="space-y-4">
                 <div className="text-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                         Available Actions ({filteredActions.length})
                     </p>
+                    {/* ✅ NEW: Items verification status */}
+                    <div className="flex items-center justify-center space-x-4 mb-4">
+                        <div className={`flex items-center space-x-1 text-sm ${areAllItemsChecked() ? 'text-green-600' : 'text-orange-600'}`}>
+                            <CheckCircle className={`w-4 h-4 ${areAllItemsChecked() ? 'text-green-600' : 'text-orange-600'}`} />
+                            <span>Items Verified: {getCheckedItemsCount()}/{selectedPOData?.PODataList?.length || 0}</span>
+                        </div>
+                        <div className={`flex items-center space-x-1 text-sm ${verificationComment.trim() ? 'text-green-600' : 'text-orange-600'}`}>
+                            <FileText className={`w-4 h-4 ${verificationComment.trim() ? 'text-green-600' : 'text-orange-600'}`} />
+                            <span>Comments: {verificationComment.trim() ? 'Added' : 'Required'}</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className={`grid ${gridCols} gap-4`}>
@@ -837,7 +914,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                             <button
                                 key={`${action.type}-${index}`}
                                 onClick={() => onActionClick(action)}
-                                disabled={approvalLoading || verificationComment.trim() === ''}
+                                disabled={isDisabled}
                                 className={`
                                 flex items-center justify-center space-x-2 px-6 py-4 
                                 ${action.className} 
@@ -846,7 +923,11 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                 font-medium shadow-lg hover:shadow-xl
                                 min-h-[60px]
                             `}
-                                title={verificationComment.trim() === '' ? 'Please add verification comments first' : `${action.text} (${action.type}: ${action.value})`}
+                                title={
+                                    verificationComment.trim() === '' ? 'Please add verification comments first' :
+                                        !areAllItemsChecked() ? `Please verify all items (${getCheckedItemsCount()}/${selectedPOData?.PODataList?.length || 0} verified)` :
+                                            `${action.text} (${action.type}: ${action.value})`
+                                }
                             >
                                 <IconComponent className="w-5 h-5 flex-shrink-0" />
                                 <span className="truncate">
@@ -1017,60 +1098,113 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Supplier POs List */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors overflow-hidden">
+            {/* ✅ ENHANCED: Main Content with Dynamic Grid Layout */}
+            <div className={`grid gap-6 transition-all duration-300 ${
+                isLeftPanelCollapsed && !isLeftPanelHovered 
+                    ? 'grid-cols-1 lg:grid-cols-12' 
+                    : 'grid-cols-1 lg:grid-cols-3'
+            }`}>
+                {/* ✅ ENHANCED: Collapsible Supplier POs List */}
+                <div className={`transition-all duration-300 ${
+                    isLeftPanelCollapsed && !isLeftPanelHovered 
+                        ? 'lg:col-span-1' 
+                        : 'lg:col-span-1'
+                }`}>
+                    <div 
+                        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${
+                            isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
+                        }`}
+                        onMouseEnter={() => setIsLeftPanelHovered(true)}
+                        onMouseLeave={() => setIsLeftPanelHovered(false)}
+                    >
                         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
-                                        <Clock className="w-4 h-4 text-white" />
+                                {/* ✅ NEW: Collapsible Header */}
+                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
+                                    <div className="flex flex-col items-center space-y-2">
+                                        <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
+                                            <Clock className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-xs text-purple-600 dark:text-purple-400 font-bold transform -rotate-90 whitespace-nowrap">
+                                            {filteredPOs.length}
+                                        </span>
+                                        <button
+                                            onClick={() => setIsLeftPanelCollapsed(false)}
+                                            className="p-1 text-purple-600 hover:text-purple-800 rounded hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
+                                            title="Expand Panel"
+                                        >
+                                            <ChevronRight className="w-3 h-3" />
+                                        </button>
                                     </div>
-                                    <span>Pending ({filteredPOs.length})</span>
-                                </h2>
-                                <button
-                                    onClick={() => {
-                                        console.log('🔄 Refresh Button Clicked with values:', { roleId, uid, selectedRoleId });
-                                        dispatch(fetchVerificationSupplierPOs({ roleId: roleId || selectedRoleId, userId: uid, ccType: 'PCC' }));
-                                    }}
-                                    className="p-2 text-purple-600 hover:text-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
-                                    title="Refresh"
-                                    disabled={posLoading}
-                                >
-                                    <RefreshCw className={`w-4 h-4 ${posLoading ? 'animate-spin' : ''}`} />
-                                </button>
+                                ) : (
+                                    <>
+                                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+                                            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
+                                                <Clock className="w-4 h-4 text-white" />
+                                            </div>
+                                            <span>Pending ({filteredPOs.length})</span>
+                                        </h2>
+                                        <div className="flex items-center space-x-2">
+                                            {selectedPO && (
+                                                <button
+                                                    onClick={() => setIsLeftPanelCollapsed(true)}
+                                                    className="p-2 text-purple-600 hover:text-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
+                                                    title="Collapse Panel"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    console.log('🔄 Refresh Button Clicked with values:', { roleId, uid, selectedRoleId });
+                                                    dispatch(fetchVerificationSupplierPOs({ roleId: roleId || selectedRoleId, userId: uid, ccType: 'PCC' }));
+                                                }}
+                                                className="p-2 text-purple-600 hover:text-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
+                                                title="Refresh"
+                                                disabled={posLoading}
+                                            >
+                                                <RefreshCw className={`w-4 h-4 ${posLoading ? 'animate-spin' : ''}`} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
-                        <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+                        {/* ✅ PO List Content */}
+                        <div className={`p-4 max-h-[calc(100vh-300px)] overflow-y-auto transition-all duration-300 ${
+                            isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
+                        }`}>
                             {posLoading ? (
                                 <div className="text-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                                    <p className="text-gray-500">Loading...</p>
+                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">Loading...</p>}
                                 </div>
                             ) : posError ? (
                                 <div className="text-center py-8">
                                     <XCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-                                    <p className="text-red-500 mb-2">Error loading data</p>
-                                    <button
-                                        onClick={() => {
-                                            console.log('🔄 Retry Button Clicked with values:', { roleId, uid, selectedRoleId });
-                                            dispatch(fetchVerificationSupplierPOs({ roleId: roleId || selectedRoleId, userId: uid, ccType: 'PCC' }));
-                                        }}
-                                        className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                                    >
-                                        Retry
-                                    </button>
+                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && (
+                                        <>
+                                            <p className="text-red-500 mb-2">Error loading data</p>
+                                            <button
+                                                onClick={() => {
+                                                    console.log('🔄 Retry Button Clicked with values:', { roleId, uid, selectedRoleId });
+                                                    dispatch(fetchVerificationSupplierPOs({ roleId: roleId || selectedRoleId, userId: uid, ccType: 'PCC' }));
+                                                }}
+                                                className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                                            >
+                                                Retry
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             ) : filteredPOs.length === 0 ? (
                                 <div className="text-center py-8">
                                     <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                                    <p className="text-gray-500">No POs found!</p>
+                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">No POs found!</p>}
                                 </div>
                             ) : (
-                                <div className="space-y-3">
+                                <div className={`space-y-3 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'flex flex-col items-center' : ''}`}>
                                     {filteredPOs.map((po) => {
                                         const priority = getPriority(po);
                                         const totalAmount = calculatePOTotalAmount(po);
@@ -1079,53 +1213,61 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                         return (
                                             <div
                                                 key={po.PONo}
-                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedPO?.PONo === po.PONo
-                                                    ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg'
-                                                    : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 bg-white dark:bg-gray-800'
-                                                    }`}
+                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${
+                                                    selectedPO?.PONo === po.PONo
+                                                        ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg'
+                                                        : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 bg-white dark:bg-gray-800'
+                                                } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
                                                 onClick={() => handlePOSelect(po)}
+                                                title={isLeftPanelCollapsed && !isLeftPanelHovered ? `${po.VendorName} - ${po.PONo}` : ''}
                                             >
-                                                <div className="p-4">
-                                                    <div className="flex items-center space-x-3 mb-3">
-                                                        <div className="relative">
-                                                            <div className="w-12 h-12 rounded-full border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
-                                                                <ShoppingCart className="w-5 h-5 text-purple-600" />
+                                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
+                                                    <div className="w-full h-full rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+                                                        <ShoppingCart className="w-4 h-4 text-purple-600" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-4">
+                                                        <div className="flex items-center space-x-3 mb-3">
+                                                            <div className="relative">
+                                                                <div className="w-12 h-12 rounded-full border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+                                                                    <ShoppingCart className="w-5 h-5 text-purple-600" />
+                                                                </div>
+                                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                                                             </div>
-                                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                                                                    {po.VendorName}
+                                                                </h3>
+                                                                <p className="text-xs text-gray-500 truncate">{po.VendorCode}</p>
+                                                            </div>
+                                                            <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
+                                                                {priority}
+                                                            </span>
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                                                {po.VendorName}
-                                                            </h3>
-                                                            <p className="text-xs text-gray-500 truncate">{po.VendorCode}</p>
+                                                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="flex items-center space-x-1">
+                                                                    <Hash className="w-3 h-3" />
+                                                                    <span className="truncate">{po.PONo}</span>
+                                                                </span>
+                                                                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{po.CCType}</span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-purple-600 dark:text-purple-400 font-medium">₹{amountDisplay.formatted}</span>
+                                                                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{po.CCCode}</span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-gray-500 text-xs">
+                                                                    <ClipboardList className="w-3 h-3 inline mr-1" />
+                                                                    Indent: {po.IndentNo?.slice(-6) || 'N/A'}
+                                                                </span>
+                                                                <span className="text-gray-500 text-xs">
+                                                                    Ref: {po.RefNo || 'N/A'}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
-                                                            {priority}
-                                                        </span>
                                                     </div>
-                                                    <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="flex items-center space-x-1">
-                                                                <Hash className="w-3 h-3" />
-                                                                <span className="truncate">{po.PONo}</span>
-                                                            </span>
-                                                            <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{po.CCType}</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-purple-600 dark:text-purple-400 font-medium">₹{amountDisplay.formatted}</span>
-                                                            <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{po.CCCode}</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-gray-500 text-xs">
-                                                                <ClipboardList className="w-3 h-3 inline mr-1" />
-                                                                Indent: {po.IndentNo?.slice(-6) || 'N/A'}
-                                                            </span>
-                                                            <span className="text-gray-500 text-xs">
-                                                                Ref: {po.RefNo || 'N/A'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -1135,8 +1277,12 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                     </div>
                 </div>
 
-                {/* Enhanced PO Details Panel */}
-                <div className="lg:col-span-2">
+                {/* ✅ ENHANCED: PO Details Panel with Dynamic Width */}
+                <div className={`transition-all duration-300 ${
+                    isLeftPanelCollapsed && !isLeftPanelHovered 
+                        ? 'lg:col-span-11' 
+                        : 'lg:col-span-2'
+                }`}>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors sticky top-6">
                         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
@@ -1279,185 +1425,270 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                 </div>
                                             )}
 
-                                            {/* ✅ ENHANCED: Item Details with Price Editing */}
+                                            {/* ✅ ENHANCED: Item Details with Checkboxes and Price Editing */}
                                             {selectedPOData.PODataList && selectedPOData.PODataList.length > 0 && (
                                                 <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-700">
-                                                    <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-4 flex items-center">
-                                                        <FileSpreadsheet className="w-5 h-5 mr-2" />
-                                                        Item Details ({selectedPOData.PODataList.length} Items) - Price Editable
-                                                    </h4>
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h4 className="font-semibold text-purple-800 dark:text-purple-200 flex items-center">
+                                                            <FileSpreadsheet className="w-5 h-5 mr-2" />
+                                                            Item Details ({selectedPOData.PODataList.length} Items) - Verification Required
+                                                        </h4>
+                                                        {/* ✅ NEW: Select All Checkbox */}
+                                                        <div className="flex items-center space-x-2">
+                                                            <label className="flex items-center space-x-2 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={areAllItemsChecked()}
+                                                                    onChange={(e) => handleSelectAllItems(e.target.checked)}
+                                                                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                                                />
+                                                                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                                                                    Select All ({getCheckedItemsCount()}/{selectedPOData.PODataList.length})
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
 
                                                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                                                        {/* Enhanced Table Header */}
-                                                        <div className="bg-purple-100 dark:bg-purple-900/30 p-3 border-b border-gray-200 dark:border-gray-600">
-                                                            <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-purple-800 dark:text-purple-200">
-                                                                <div className="col-span-3">Item Details</div>
-                                                                <div className="col-span-1 text-center">Qty</div>
-                                                                <div className="col-span-2 text-center">Standard Price</div>
-                                                                <div className="col-span-2 text-center">Quoted Price</div>
-                                                                <div className="col-span-2 text-center">New Price (Editable)</div>
-                                                                <div className="col-span-2 text-right">Amount & GST</div>
-                                                            </div>
-                                                        </div>
+                                                        {/* Enhanced Table Structure */}
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full">
+                                                                {/* Table Header */}
+                                                                <thead className="bg-purple-100 dark:bg-purple-900/30 border-b border-gray-200 dark:border-gray-600">
+                                                                    <tr>
+                                                                        <th className="w-16 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            Verify
+                                                                        </th>
+                                                                        <th className="w-80 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-left">
+                                                                            Item Details
+                                                                        </th>
+                                                                        <th className="w-20 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            Qty
+                                                                        </th>
+                                                                        <th className="w-32 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            Standard Price
+                                                                        </th>
+                                                                        <th className="w-32 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            Quoted Price
+                                                                        </th>
+                                                                        <th className="w-36 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            New Price (Editable)
+                                                                        </th>
+                                                                        <th className="w-48 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-right">
+                                                                            Amount & GST
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                
+                                                                {/* Table Body with Items */}
+                                                                <tbody className="max-h-80 overflow-y-auto">
+                                                                    {selectedPOData.PODataList.map((item, index) => {
+                                                                        const currentEditablePrice = editablePrices[item.itemcode] || item.NewBasicprice;
+                                                                        const itemTotalAmount = parseFloat(currentEditablePrice) * parseFloat(item.quantity || 0);
+                                                                        const cgstAmount = itemTotalAmount * (parseFloat(item.CGSTPercent || 0) / 100);
+                                                                        const sgstAmount = itemTotalAmount * (parseFloat(item.SGSTPercent || 0) / 100);
+                                                                        const igstAmount = itemTotalAmount * (parseFloat(item.IGSTPercent || 0) / 100);
+                                                                        const totalWithGST = itemTotalAmount + cgstAmount + sgstAmount + igstAmount;
+                                                                        const isChecked = checkedItems[item.itemcode] || false;
 
-                                                        {/* Items List with Price Editing */}
-                                                        <div className="max-h-80 overflow-y-auto">
-                                                            {selectedPOData.PODataList.map((item, index) => {
-                                                                const currentEditablePrice = editablePrices[item.itemcode] || item.NewBasicprice;
-                                                                const itemTotalAmount = parseFloat(currentEditablePrice) * parseFloat(item.quantity || 0);
-                                                                const cgstAmount = itemTotalAmount * (parseFloat(item.CGSTPercent || 0) / 100);
-                                                                const sgstAmount = itemTotalAmount * (parseFloat(item.SGSTPercent || 0) / 100);
-                                                                const igstAmount = itemTotalAmount * (parseFloat(item.IGSTPercent || 0) / 100);
-                                                                const totalWithGST = itemTotalAmount + cgstAmount + sgstAmount + igstAmount;
+                                                                        return (
+                                                                            <tr key={index} className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                                                                                isChecked ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-600' : ''
+                                                                            }`}>
+                                                                                {/* ✅ NEW: Checkbox Column */}
+                                                                                <td className="p-3 text-center">
+                                                                                    <div className="flex flex-col items-center space-y-2">
+                                                                                        <label className="flex items-center justify-center cursor-pointer">
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                checked={isChecked}
+                                                                                                onChange={(e) => handleItemCheck(item.itemcode, e.target.checked)}
+                                                                                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                                                                            />
+                                                                                        </label>
+                                                                                        {isChecked && (
+                                                                                            <CheckCircle className="w-4 h-4 text-green-600" />
+                                                                                        )}
+                                                                                    </div>
+                                                                                </td>
 
-                                                                return (
-                                                                    <div key={index} className="p-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                                                        <div className="grid grid-cols-12 gap-2 text-sm">
-                                                                            {/* Item Details with Click Handler */}
-                                                                            <div className="col-span-3">
-                                                                                <div className="flex items-center space-x-2">
-                                                                                    <button
-                                                                                        onClick={() => handleItemCodeClick(item.itemcode)}
-                                                                                        className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-purple-200 dark:hover:bg-purple-800/50 transition-colors group"
-                                                                                        title="View previous purchase history"
-                                                                                    >
-                                                                                        <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
-                                                                                    </button>
-                                                                                    <div className="min-w-0 flex-1">
-                                                                                        {/* ✅ NEW: Item Name with Tooltip */}
-                                                                                        <div className="relative group">
-                                                                                            <p className="font-semibold text-gray-900 dark:text-gray-100 truncate cursor-help">
-                                                                                                {item.itemname}
-                                                                                            </p>
-                                                                                            {/* Smart positioned tooltip - above for items after first, below for first item */}
-                                                                                            <div className={`absolute left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap max-w-xs ${index === 0
-                                                                                                    ? 'top-full mt-2' // Position below for first item
-                                                                                                    : 'bottom-full mb-2' // Position above for other items
-                                                                                                }`}>
-                                                                                                <div className="break-words whitespace-normal">{item.itemname}</div>
-                                                                                                {/* Arrow pointer - points up for first item, down for others */}
-                                                                                                <div className={`absolute left-4 w-0 h-0 border-l-4 border-r-4 border-transparent ${index === 0
-                                                                                                        ? 'bottom-full border-b-4 border-b-gray-900' // Arrow pointing up
-                                                                                                        : 'top-full border-t-4 border-t-gray-900' // Arrow pointing down
-                                                                                                    }`}></div>
-                                                                                            </div>
-                                                                                        </div>
+                                                                                {/* Item Details with Click Handler */}
+                                                                                <td className="p-3">
+                                                                                    <div className="flex items-start space-x-3">
                                                                                         <button
                                                                                             onClick={() => handleItemCodeClick(item.itemcode)}
-                                                                                            className="text-xs text-purple-600 dark:text-purple-400 font-mono hover:underline cursor-pointer"
+                                                                                            className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-purple-200 dark:hover:bg-purple-800/50 transition-colors group mt-1"
+                                                                                            title="View previous purchase history"
                                                                                         >
-                                                                                            {item.itemcode}
+                                                                                            <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
                                                                                         </button>
-                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">HSN: {item.HSNCode}</p>
-                                                                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{item.specification}</p>
+                                                                                        <div className="min-w-0 flex-1">
+                                                                                            {/* ✅ NEW: Item Name with Tooltip */}
+                                                                                            <div className="relative group">
+                                                                                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-tight mb-1">
+                                                                                                    {item.itemname}
+                                                                                                </p>
+                                                                                                {/* Smart positioned tooltip - above for items after first, below for first item */}
+                                                                                                <div className={`absolute left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap max-w-xs ${index === 0
+                                                                                                        ? 'top-full mt-2' // Position below for first item
+                                                                                                        : 'bottom-full mb-2' // Position above for other items
+                                                                                                    }`}>
+                                                                                                    <div className="break-words whitespace-normal">{item.itemname}</div>
+                                                                                                    {/* Arrow pointer - points up for first item, down for others */}
+                                                                                                    <div className={`absolute left-4 w-0 h-0 border-l-4 border-r-4 border-transparent ${index === 0
+                                                                                                            ? 'bottom-full border-b-4 border-b-gray-900' // Arrow pointing up
+                                                                                                            : 'top-full border-t-4 border-t-gray-900' // Arrow pointing down
+                                                                                                        }`}></div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <button
+                                                                                                onClick={() => handleItemCodeClick(item.itemcode)}
+                                                                                                className="text-xs text-purple-600 dark:text-purple-400 font-mono hover:underline cursor-pointer block mb-1"
+                                                                                            >
+                                                                                                {item.itemcode}
+                                                                                            </button>
+                                                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">HSN: {item.HSNCode}</p>
+                                                                                            <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">{item.specification}</p>
+                                                                                        </div>
                                                                                     </div>
-                                                                                </div>
-                                                                            </div>
+                                                                                </td>
 
-                                                                            {/* Quantity */}
-                                                                            <div className="col-span-1 text-center">
-                                                                                <p className="font-bold text-purple-700 dark:text-purple-300">{item.quantity}</p>
-                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">{item.units}</p>
-                                                                            </div>
-
-                                                                            {/* Standard Price */}
-                                                                            <div className="col-span-2 text-center">
-                                                                                <p className="font-medium text-gray-600 dark:text-gray-400">₹{formatIndianCurrency(item.basicprice)}</p>
-                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">Standard</p>
-                                                                            </div>
-
-                                                                            {/* Quoted Price */}
-                                                                            <div className="col-span-2 text-center">
-                                                                                <p className="font-medium text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(item.QuotedPrice)}</p>
-                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">Quoted</p>
-                                                                            </div>
-
-                                                                            {/* ✅ ENHANCED: Editable New Price with Color Coding */}
-                                                                            <div className="col-span-2 text-center">
-                                                                                <div className="flex items-center space-x-1">
-                                                                                    <span className="text-xs">₹</span>
-                                                                                    <input
-                                                                                        type="number"
-                                                                                        value={currentEditablePrice}
-                                                                                        onChange={(e) => handlePriceEdit(item.itemcode, e.target.value, item.QuotedPrice)}
-                                                                                        className={`w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center transition-all ${getPriceColorClass(currentEditablePrice, item.basicprice)}`}
-                                                                                        step="0.01"
-                                                                                        min="0"
-                                                                                        max={item.QuotedPrice}
-                                                                                        title={`Current: ₹${formatIndianCurrency(currentEditablePrice)} | Standard: ₹${formatIndianCurrency(item.basicprice)} | ${parseFloat(currentEditablePrice) > parseFloat(item.basicprice) ? 'Above Standard (Red)' : parseFloat(currentEditablePrice) < parseFloat(item.basicprice) ? 'Below Standard (Green)' : 'Equal to Standard'}`}
-                                                                                    />
-                                                                                    <Edit3 className="w-3 h-3 text-gray-400" />
-                                                                                </div>
-                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">Editable</p>
-                                                                                {parseFloat(currentEditablePrice) < parseFloat(item.QuotedPrice) && (
-                                                                                    <p className="text-xs text-green-600">
-                                                                                        Saved: ₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * item.quantity)}
-                                                                                    </p>
-                                                                                )}
-                                                                                {/* ✅ NEW: Price Status Indicator */}
-                                                                                <div className="text-xs mt-1">
-                                                                                    {parseFloat(currentEditablePrice) > parseFloat(item.basicprice) && (
-                                                                                        <span className="text-red-600 dark:text-red-400">Above Standard</span>
-                                                                                    )}
-                                                                                    {parseFloat(currentEditablePrice) < parseFloat(item.basicprice) && (
-                                                                                        <span className="text-green-600 dark:text-green-400">Below Standard</span>
-                                                                                    )}
-                                                                                    {parseFloat(currentEditablePrice) === parseFloat(item.basicprice) && (
-                                                                                        <span className="text-gray-600 dark:text-gray-400">Standard Price</span>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Amount & GST */}
-                                                                            <div className="col-span-2">
-                                                                                <div className="text-right mb-2">
-                                                                                    <p className="font-bold text-lg text-green-700 dark:text-green-300">₹{formatIndianCurrency(totalWithGST)}</p>
-                                                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Total with GST</p>
-                                                                                </div>
-
-                                                                                {/* GST Breakdown */}
-                                                                                <div className="grid grid-cols-3 gap-1 text-xs">
-                                                                                    <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
-                                                                                        <p className="text-gray-500 dark:text-gray-400">CGST</p>
-                                                                                        <p className="font-medium text-gray-800 dark:text-gray-200">{item.CGSTPercent}%</p>
-                                                                                        <p className="text-xs text-green-600">₹{formatIndianCurrency(cgstAmount)}</p>
+                                                                                {/* Quantity */}
+                                                                                <td className="p-3 text-center">
+                                                                                    <div>
+                                                                                        <p className="font-bold text-purple-700 dark:text-purple-300 text-lg">{item.quantity}</p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.units}</p>
                                                                                     </div>
-                                                                                    <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
-                                                                                        <p className="text-gray-500 dark:text-gray-400">SGST</p>
-                                                                                        <p className="font-medium text-gray-800 dark:text-gray-200">{item.SGSTPercent}%</p>
-                                                                                        <p className="text-xs text-green-600">₹{formatIndianCurrency(sgstAmount)}</p>
+                                                                                </td>
+
+                                                                                {/* Standard Price */}
+                                                                                <td className="p-3 text-center">
+                                                                                    <div>
+                                                                                        <p className="font-medium text-gray-600 dark:text-gray-400">₹{formatIndianCurrency(item.basicprice)}</p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Standard</p>
                                                                                     </div>
-                                                                                    <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
-                                                                                        <p className="text-gray-500 dark:text-gray-400">IGST</p>
-                                                                                        <p className="font-medium text-gray-800 dark:text-gray-200">{item.IGSTPercent}%</p>
-                                                                                        <p className="text-xs text-green-600">₹{formatIndianCurrency(igstAmount)}</p>
+                                                                                </td>
+
+                                                                                {/* Quoted Price */}
+                                                                                <td className="p-3 text-center">
+                                                                                    <div>
+                                                                                        <p className="font-medium text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(item.QuotedPrice)}</p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Quoted</p>
                                                                                     </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                                                </td>
+
+                                                                                {/* ✅ ENHANCED: Editable New Price with Color Coding and Disable on Check */}
+                                                                                <td className="p-3 text-center">
+                                                                                    <div className="space-y-2">
+                                                                                        <div className="flex items-center justify-center space-x-1">
+                                                                                            <span className="text-xs">₹</span>
+                                                                                            <input
+                                                                                                type="number"
+                                                                                                value={currentEditablePrice}
+                                                                                                onChange={(e) => handlePriceEdit(item.itemcode, e.target.value, item.QuotedPrice)}
+                                                                                                disabled={isChecked}
+                                                                                                className={`w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center transition-all ${
+                                                                                                    isChecked 
+                                                                                                        ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60' 
+                                                                                                        : getPriceColorClass(currentEditablePrice, item.basicprice)
+                                                                                                }`}
+                                                                                                step="0.01"
+                                                                                                min="0"
+                                                                                                max={item.QuotedPrice}
+                                                                                                title={
+                                                                                                    isChecked 
+                                                                                                        ? 'Price locked after verification'
+                                                                                                        : `Current: ₹${formatIndianCurrency(currentEditablePrice)} | Standard: ₹${formatIndianCurrency(item.basicprice)} | ${parseFloat(currentEditablePrice) > parseFloat(item.basicprice) ? 'Above Standard (Red)' : parseFloat(currentEditablePrice) < parseFloat(item.basicprice) ? 'Below Standard (Green)' : 'Equal to Standard'}`
+                                                                                                }
+                                                                                            />
+                                                                                            {isChecked ? (
+                                                                                                <CheckCircle className="w-3 h-3 text-green-600" />
+                                                                                            ) : (
+                                                                                                <Edit3 className="w-3 h-3 text-gray-400" />
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                                            {isChecked ? 'Verified' : 'Editable'}
+                                                                                        </p>
+                                                                                        {parseFloat(currentEditablePrice) < parseFloat(item.QuotedPrice) && (
+                                                                                            <p className="text-xs text-green-600">
+                                                                                                Saved: ₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * item.quantity)}
+                                                                                            </p>
+                                                                                        )}
+                                                                                        {/* ✅ NEW: Price Status Indicator */}
+                                                                                        <div className="text-xs">
+                                                                                            {parseFloat(currentEditablePrice) > parseFloat(item.basicprice) && (
+                                                                                                <span className="text-red-600 dark:text-red-400">Above Standard</span>
+                                                                                            )}
+                                                                                            {parseFloat(currentEditablePrice) < parseFloat(item.basicprice) && (
+                                                                                                <span className="text-green-600 dark:text-green-400">Below Standard</span>
+                                                                                            )}
+                                                                                            {parseFloat(currentEditablePrice) === parseFloat(item.basicprice) && (
+                                                                                                <span className="text-gray-600 dark:text-gray-400">Standard Price</span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </td>
+
+                                                                                {/* Amount & GST */}
+                                                                                <td className="p-3">
+                                                                                    <div className="space-y-3">
+                                                                                        <div className="text-right">
+                                                                                            <p className="font-bold text-lg text-green-700 dark:text-green-300">₹{formatIndianCurrency(totalWithGST)}</p>
+                                                                                            <p className="text-xs text-gray-500 dark:text-gray-400">Total with GST</p>
+                                                                                        </div>
+
+                                                                                        {/* GST Breakdown */}
+                                                                                        <div className="grid grid-cols-3 gap-1 text-xs">
+                                                                                            <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
+                                                                                                <p className="text-gray-500 dark:text-gray-400">CGST</p>
+                                                                                                <p className="font-medium text-gray-800 dark:text-gray-200">{item.CGSTPercent}%</p>
+                                                                                                <p className="text-xs text-green-600">₹{formatIndianCurrency(cgstAmount)}</p>
+                                                                                            </div>
+                                                                                            <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
+                                                                                                <p className="text-gray-500 dark:text-gray-400">SGST</p>
+                                                                                                <p className="font-medium text-gray-800 dark:text-gray-200">{item.SGSTPercent}%</p>
+                                                                                                <p className="text-xs text-green-600">₹{formatIndianCurrency(sgstAmount)}</p>
+                                                                                            </div>
+                                                                                            <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
+                                                                                                <p className="text-gray-500 dark:text-gray-400">IGST</p>
+                                                                                                <p className="font-medium text-gray-800 dark:text-gray-200">{item.IGSTPercent}%</p>
+                                                                                                <p className="text-xs text-green-600">₹{formatIndianCurrency(igstAmount)}</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                                </tbody>
+                                                            </table>
                                                         </div>
 
-                                                        {/* Enhanced Summary Footer with Total Savings */}
+                                                        {/* Enhanced Summary Footer with Total Savings and Verification Status */}
                                                         <div className="bg-purple-100 dark:bg-purple-900/30 p-4 border-t border-gray-200 dark:border-gray-600">
                                                             <div className="flex justify-between items-center">
                                                                 <div className="space-y-1">
                                                                     <span className="font-semibold text-purple-800 dark:text-purple-200">
                                                                         Total Items ({selectedPOData.PODataList.length} items):
                                                                     </span>
-                                                                    {Object.keys(editablePrices).length > 0 && (
-                                                                        <p className="text-sm text-green-600 dark:text-green-400">
-                                                                            Total Savings: ₹{formatIndianCurrency(
-                                                                                selectedPOData.PODataList.reduce((total, item) => {
-                                                                                    const originalPrice = parseFloat(item.QuotedPrice) * parseFloat(item.quantity || 0);
-                                                                                    const newPrice = parseFloat(editablePrices[item.itemcode] || item.QuotedPrice) * parseFloat(item.quantity || 0);
-                                                                                    return total + (originalPrice - newPrice);
-                                                                                }, 0)
-                                                                            )}
-                                                                        </p>
-                                                                    )}
+                                                                    <div className="flex items-center space-x-4">
+                                                                        <div className={`flex items-center space-x-1 text-sm ${areAllItemsChecked() ? 'text-green-600' : 'text-orange-600'}`}>
+                                                                            <CheckSquare className="w-4 h-4" />
+                                                                            <span>Verified: {getCheckedItemsCount()}/{selectedPOData.PODataList.length}</span>
+                                                                        </div>
+                                                                        {Object.keys(editablePrices).length > 0 && (
+                                                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                                                                Total Savings: ₹{formatIndianCurrency(
+                                                                                    selectedPOData.PODataList.reduce((total, item) => {
+                                                                                        const originalPrice = parseFloat(item.QuotedPrice) * parseFloat(item.quantity || 0);
+                                                                                        const newPrice = parseFloat(editablePrices[item.itemcode] || item.QuotedPrice) * parseFloat(item.quantity || 0);
+                                                                                        return total + (originalPrice - newPrice);
+                                                                                    }, 0)
+                                                                                )}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                                 <span className="font-bold text-lg text-purple-900 dark:text-purple-100">
                                                                     ₹{formatIndianCurrency(calculatePOTotalAmount(selectedPOData))}

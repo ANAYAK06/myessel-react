@@ -1,4 +1,4 @@
-// VerifySupplierPO.jsx - Enhanced with collapsible panel and item checkboxes
+// VerifySupplierPO.jsx - Enhanced with Price Update Functionality
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -13,7 +13,8 @@ import {
     Landmark, CheckSquare, ArrowRightLeft, Layers, ExternalLink,
     AlertTriangle, Download, ClipboardList, Receipt, Edit3,
     BarChart3, History, MousePointer, Info, ChevronDown, ChevronUp,
-    ChevronRight, ChevronLeft, Maximize2, Minimize2, Square, CheckBox
+    ChevronRight, ChevronLeft, Maximize2, Minimize2, Square, CheckBox,
+    DollarSign, TrendingDown, RefreshCcw, AlertOctagon
 } from 'lucide-react';
 
 // ✅ SUPPLIER PO SLICE IMPORTS
@@ -141,16 +142,29 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
     const [filterVendor, setFilterVendor] = useState('All');
     const [filterCCType, setFilterCCType] = useState('All');
 
-    // ✅ NEW STATE FOR ENHANCED FEATURES
+    // ✅ ENHANCED STATE FOR PRICE MANAGEMENT
     const [editablePrices, setEditablePrices] = useState({});
     const [showPreviousDetails, setShowPreviousDetails] = useState(null);
     const [selectedItemCodeLocal, setSelectedItemCodeLocal] = useState(null);
     const [showRemarksHistory, setShowRemarksHistory] = useState(false);
 
-    // ✅ NEW: UI Enhancement States
+    // ✅ UI Enhancement States
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [checkedItems, setCheckedItems] = useState({});
     const [isLeftPanelHovered, setIsLeftPanelHovered] = useState(false);
+
+    // ✅ NEW: Price Update Management States
+    const [priceUpdateModal, setPriceUpdateModal] = useState({
+        show: false,
+        itemCode: null,
+        itemName: '',
+        basicPrice: 0,
+        newBasicPrice: 0,
+        onConfirm: null,
+        onCancel: null
+    });
+    const [updatedStandardPrices, setUpdatedStandardPrices] = useState({});
+    const [recentPriceChanges, setRecentPriceChanges] = useState({});
 
     // ✅ EXTRACT NOTIFICATION DATA (FOR UI DISPLAY ONLY)
     const {
@@ -232,16 +246,94 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         }
     }, [selectedPO]);
 
-    // ✅ NEW: Initialize checked items when PO data is loaded
+    // ✅ NEW: Initialize checked items and check for recent price changes when PO data is loaded
     useEffect(() => {
         if (selectedPOData?.PODataList) {
             const initialCheckedState = {};
+            const priceChanges = {};
+
             selectedPOData.PODataList.forEach(item => {
                 initialCheckedState[item.itemcode] = false;
+
+                // ✅ NEW: Check for recent price changes
+                const basicPrice = parseFloat(item.basicprice || 0);
+                const itemNewPrice = parseFloat(item.ItemNewPrice || 0);
+
+                if (basicPrice !== itemNewPrice && itemNewPrice > 0) {
+                    priceChanges[item.itemcode] = {
+                        basicPrice,
+                        itemNewPrice,
+                        hasRecentChange: true
+                    };
+                }
             });
+
             setCheckedItems(initialCheckedState);
+            setRecentPriceChanges(priceChanges);
+
+            // Show notification if there are recent price changes
+            const changedItemsCount = Object.keys(priceChanges).length;
+            if (changedItemsCount > 0) {
+                toast.info(
+                    `⚠️ ${changedItemsCount} item(s) have recent price changes. Check item details for updated prices.`,
+                    { autoClose: 8000 }
+                );
+            }
         }
     }, [selectedPOData]);
+
+    // ✅ NEW: Price Comparison and Update Functions
+    const checkPriceDifference = (item) => {
+        const basicPrice = parseFloat(item.basicprice || 0);
+        const newBasicPrice = parseFloat(item.NewBasicprice || 0);
+        return basicPrice !== newBasicPrice;
+    };
+
+    const hasRecentPriceChange = (itemCode) => {
+        return recentPriceChanges[itemCode]?.hasRecentChange || false;
+    };
+
+    const showPriceUpdateConfirmation = (item, onConfirm, onCancel) => {
+        setPriceUpdateModal({
+            show: true,
+            itemCode: item.itemcode,
+            itemName: item.itemname,
+            basicPrice: parseFloat(item.basicprice || 0),
+            newBasicPrice: parseFloat(item.NewBasicprice || 0),
+            onConfirm,
+            onCancel
+        });
+    };
+
+    const handlePriceUpdate = (itemCode, shouldUpdate) => {
+        if (shouldUpdate) {
+            const item = selectedPOData.PODataList.find(i => i.itemcode === itemCode);
+            if (item) {
+                const newPrice = parseFloat(item.NewBasicprice);
+
+                // Update the standard price and ItemNewPrice
+                setUpdatedStandardPrices(prev => ({
+                    ...prev,
+                    [itemCode]: {
+                        oldBasicPrice: parseFloat(item.basicprice),
+                        newBasicPrice: newPrice,
+                        updatedAt: new Date().toISOString()
+                    }
+                }));
+
+                console.log('💰 Price Update Applied:', {
+                    itemCode,
+                    oldBasicPrice: item.basicprice,
+                    newBasicPrice: newPrice,
+                    itemName: item.itemname
+                });
+
+                toast.success(`✅ Standard price updated for ${item.itemname} from ₹${formatIndianCurrency(item.basicprice)} to ₹${formatIndianCurrency(newPrice)}`);
+            }
+        }
+
+        setPriceUpdateModal({ show: false, itemCode: null, itemName: '', basicPrice: 0, newBasicPrice: 0, onConfirm: null, onCancel: null });
+    };
 
     // ✅ HELPER FUNCTIONS
     const getCurrentUser = () => {
@@ -351,7 +443,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         }).filter(item => item.comment);
     };
 
-    // ✅ NEW FUNCTIONS FOR ENHANCED FEATURES
+    // ✅ ENHANCED FUNCTIONS FOR PRICE MANAGEMENT
 
     // Price Editing Functions
     const handlePriceEdit = (itemCode, newPrice, originalPrice) => {
@@ -417,16 +509,84 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         };
     };
 
-    // ✅ NEW: Item Checkbox Functions
+    // ✅ ENHANCED: Item Checkbox Functions with Price Update Logic
     const handleItemCheck = (itemCode, checked) => {
-        setCheckedItems(prev => ({
-            ...prev,
-            [itemCode]: checked
-        }));
+        const item = selectedPOData?.PODataList?.find(i => i.itemcode === itemCode);
+
+        if (!item) {
+            console.error('Item not found:', itemCode);
+            return;
+        }
+
+        if (checked) {
+            // ✅ NEW: Check for price difference when item is being checked
+            if (checkPriceDifference(item)) {
+                // Show price update confirmation
+                showPriceUpdateConfirmation(
+                    item,
+                    (shouldUpdate) => {
+                        // Handle the price update decision
+                        handlePriceUpdate(itemCode, shouldUpdate);
+
+                        // Complete the item check
+                        setCheckedItems(prev => ({
+                            ...prev,
+                            [itemCode]: true
+                        }));
+
+                        console.log('✅ Item Checked with Price Update Decision:', {
+                            itemCode,
+                            itemName: item.itemname,
+                            priceUpdated: shouldUpdate,
+                            basicPrice: item.basicprice,
+                            newBasicPrice: item.NewBasicprice
+                        });
+                    },
+                    () => {
+                        // User cancelled, don't check the item
+                        console.log('❌ Item Check Cancelled due to Price Update Refusal:', itemCode);
+                    }
+                );
+            } else {
+                // No price difference, directly check the item
+                setCheckedItems(prev => ({
+                    ...prev,
+                    [itemCode]: checked
+                }));
+
+                console.log('✅ Item Checked (No Price Difference):', {
+                    itemCode,
+                    itemName: item.itemname,
+                    basicPrice: item.basicprice,
+                    newBasicPrice: item.NewBasicprice
+                });
+            }
+        } else {
+            // Unchecking item
+            setCheckedItems(prev => ({
+                ...prev,
+                [itemCode]: checked
+            }));
+
+            console.log('⬜ Item Unchecked:', itemCode);
+        }
     };
 
     const handleSelectAllItems = (checked) => {
         if (selectedPOData?.PODataList) {
+            if (checked) {
+                // Check if any items have price differences
+                const itemsWithPriceDiff = selectedPOData.PODataList.filter(item => checkPriceDifference(item));
+
+                if (itemsWithPriceDiff.length > 0) {
+                    toast.warning(
+                        `${itemsWithPriceDiff.length} item(s) have price differences. Please verify each item individually to handle price updates.`,
+                        { autoClose: 5000 }
+                    );
+                    return;
+                }
+            }
+
             const newCheckedState = {};
             selectedPOData.PODataList.forEach(item => {
                 newCheckedState[item.itemcode] = checked;
@@ -472,6 +632,9 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         setShowPreviousDetails(null);
         setShowRemarksHistory(false);
         setCheckedItems({});
+        setUpdatedStandardPrices({});
+        setRecentPriceChanges({});
+        setPriceUpdateModal({ show: false, itemCode: null, itemName: '', basicPrice: 0, newBasicPrice: 0, onConfirm: null, onCancel: null });
     };
 
     const buildPOApprovalPayload = (actionValue, selectedPO, selectedPOData, verificationComment) => {
@@ -485,11 +648,21 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             verificationComment
         );
 
-        // Include updated prices in payload
-        const updatedPODataList = selectedPOData?.PODataList?.map(item => ({
-            ...item,
-            NewBasicprice: editablePrices[item.itemcode] || item.NewBasicprice
-        }));
+        // ✅ ENHANCED: Include updated prices and standard price changes in payload
+        const updatedPODataList = selectedPOData?.PODataList?.map(item => {
+            const baseItem = {
+                ...item,
+                NewBasicprice: editablePrices[item.itemcode] || item.NewBasicprice
+            };
+
+            // Apply standard price updates
+            if (updatedStandardPrices[item.itemcode]) {
+                baseItem.basicprice = updatedStandardPrices[item.itemcode].newBasicPrice;
+                baseItem.ItemNewPrice = updatedStandardPrices[item.itemcode].newBasicPrice;
+            }
+
+            return baseItem;
+        });
 
         const payload = {
             PONo: selectedPO.PONo,
@@ -509,16 +682,22 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             ...(selectedPOData?.MOID && { MOID: selectedPOData.MOID }),
             ...(selectedPOData?.CCCode && { CCCode: selectedPOData.CCCode }),
             ...(selectedPOData?.CCType && { CCType: selectedPOData.CCType }),
-            ...(updatedPODataList && { PODataList: updatedPODataList })
+            ...(updatedPODataList && { PODataList: updatedPODataList }),
+
+            // ✅ NEW: Include price update information
+            ...(Object.keys(updatedStandardPrices).length > 0 && {
+                UpdatedStandardPrices: updatedStandardPrices
+            })
         };
 
-        console.log('🎯 Built PO Approval Payload:', {
+        console.log('🎯 Built PO Approval Payload with Price Updates:', {
             'Action': actionValue,
             'PO No': selectedPO.PONo,
             'Indent No': selectedPO.IndentNo,
             'RoleId Used': roleId || selectedRoleId,
             'UserId Used': uid,
             'Updated Prices': Object.keys(editablePrices).length,
+            'Standard Price Updates': Object.keys(updatedStandardPrices).length,
             'Full Payload': payload
         });
 
@@ -532,7 +711,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             'Comment Length': verificationComment.trim().length,
             'All Items Checked': areAllItemsChecked(),
             'Checked Items': getCheckedItemsCount(),
-            'Total Items': selectedPOData?.PODataList?.length || 0
+            'Total Items': selectedPOData?.PODataList?.length || 0,
+            'Price Updates': Object.keys(updatedStandardPrices).length
         });
 
         if (!selectedPO) {
@@ -547,7 +727,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             return;
         }
 
-        // ✅ NEW: Check if all items are verified (checked)
+        // ✅ Check if all items are verified (checked)
         if (!areAllItemsChecked()) {
             console.log('❌ Not all items checked');
             toast.error(`Please verify all items before proceeding. ${getCheckedItemsCount()}/${selectedPOData?.PODataList?.length || 0} items verified.`);
@@ -596,6 +776,14 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 toast.success(`✅ ${action.text} completed successfully!`);
             }
 
+            // Show price update summary if any
+            const priceUpdateCount = Object.keys(updatedStandardPrices).length;
+            if (priceUpdateCount > 0) {
+                setTimeout(() => {
+                    toast.info(`💰 ${priceUpdateCount} standard price(s) updated successfully!`, { autoClose: 5000 });
+                }, 1000);
+            }
+
             console.log('🔄 Refreshing data after successful approval...');
             setTimeout(() => {
                 dispatch(fetchVerificationSupplierPOs({ roleId: roleId || selectedRoleId, userId: uid, ccType: 'PCC' }));
@@ -605,7 +793,9 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 setShowPreviousDetails(null);
                 setShowRemarksHistory(false);
                 setCheckedItems({});
-                setIsLeftPanelCollapsed(false); // ✅ NEW: Reset panel state
+                setUpdatedStandardPrices({});
+                setRecentPriceChanges({});
+                setIsLeftPanelCollapsed(false);
                 dispatch(resetSupplierPOData());
                 dispatch(resetApprovalData());
             }, 1000);
@@ -639,6 +829,84 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
     const vendors = [...new Set(verificationPOs.map(po => po.VendorName).filter(Boolean))];
     const ccTypes = [...new Set(verificationPOs.map(po => po.CCType).filter(Boolean))];
+
+    // ✅ NEW: Price Update Confirmation Modal
+    const renderPriceUpdateModal = () => {
+        if (!priceUpdateModal.show) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+                    <div className="flex items-center mb-4">
+                        <div className="p-3 bg-orange-100 dark:bg-orange-900/50 rounded-lg mr-3">
+                            <DollarSign className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Price Update Confirmation
+                        </h3>
+                    </div>
+
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg mb-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                            {priceUpdateModal.itemName}
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Current Standard Price:</span>
+                                <span className="font-medium text-gray-900 dark:text-white">
+                                    ₹{formatIndianCurrency(priceUpdateModal.basicPrice)}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">New Purchase Price:</span>
+                                <span className="font-medium text-green-600 dark:text-green-400">
+                                    ₹{formatIndianCurrency(priceUpdateModal.newBasicPrice)}
+                                </span>
+                            </div>
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Price Difference:</span>
+                                    <span className={`font-medium ${priceUpdateModal.newBasicPrice > priceUpdateModal.basicPrice
+                                            ? 'text-red-600 dark:text-red-400'
+                                            : 'text-green-600 dark:text-green-400'
+                                        }`}>
+                                        {priceUpdateModal.newBasicPrice > priceUpdateModal.basicPrice ? '+' : ''}
+                                        ₹{formatIndianCurrency(Math.abs(priceUpdateModal.newBasicPrice - priceUpdateModal.basicPrice))}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg mb-6">
+                        <p className="text-sm text-indigo-800 dark:text-indigo-200 font-medium mb-2">
+                            📢 Do you want to update the standard price as the new price?
+                        </p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                            This will update the item's standard price for future PO approvals to ensure consistency.
+                        </p>
+                    </div>
+
+                    <div className="flex space-x-3">
+                        <button
+                            onClick={() => priceUpdateModal.onConfirm?.(true)}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                        >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Yes, Update Price
+                        </button>
+                        <button
+                            onClick={() => priceUpdateModal.onConfirm?.(false)}
+                            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                        >
+                            <X className="w-4 h-4 mr-2" />
+                            No, Keep Current
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     // ✅ RENDER PREVIOUS PURCHASE DETAILS POPUP
     const renderPreviousDetailsPopup = () => {
@@ -718,7 +986,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                                     return (
                                         <div key={index} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                                            <div className="grid grid-cols-4 gap-4">
+                                            <div className="grid grid-cols-5 gap-4">
                                                 <div>
                                                     <span className="text-xs text-gray-500">Date</span>
                                                     <p className="font-medium text-gray-900 dark:text-white">{detail.PODate}</p>
@@ -726,6 +994,10 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                 <div>
                                                     <span className="text-xs text-gray-500">Vendor</span>
                                                     <p className="font-medium text-gray-900 dark:text-white">{detail.VendorName}</p>
+                                                </div>
+                                                <div>
+                                                    <span className="text-xs text-gray-500">CC Code</span>
+                                                    <p className="font-medium text-gray-900 dark:text-white">{detail.CCCode}</p>
                                                 </div>
                                                 <div>
                                                     <span className="text-xs text-gray-500">Previous Price</span>
@@ -893,7 +1165,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                         Available Actions ({filteredActions.length})
                     </p>
-                    {/* ✅ NEW: Items verification status */}
+                    {/* ✅ ENHANCED: Items verification status with price update info */}
                     <div className="flex items-center justify-center space-x-4 mb-4">
                         <div className={`flex items-center space-x-1 text-sm ${areAllItemsChecked() ? 'text-green-600' : 'text-orange-600'}`}>
                             <CheckCircle className={`w-4 h-4 ${areAllItemsChecked() ? 'text-green-600' : 'text-orange-600'}`} />
@@ -903,6 +1175,12 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                             <FileText className={`w-4 h-4 ${verificationComment.trim() ? 'text-green-600' : 'text-orange-600'}`} />
                             <span>Comments: {verificationComment.trim() ? 'Added' : 'Required'}</span>
                         </div>
+                        {Object.keys(updatedStandardPrices).length > 0 && (
+                            <div className="flex items-center space-x-1 text-sm text-indigo-600">
+                                <RefreshCcw className="w-4 h-4" />
+                                <span>Price Updates: {Object.keys(updatedStandardPrices).length}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -1099,27 +1377,24 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             </div>
 
             {/* ✅ ENHANCED: Main Content with Dynamic Grid Layout */}
-            <div className={`grid gap-6 transition-all duration-300 ${
-                isLeftPanelCollapsed && !isLeftPanelHovered 
-                    ? 'grid-cols-1 lg:grid-cols-12' 
+            <div className={`grid gap-6 transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
+                    ? 'grid-cols-1 lg:grid-cols-12'
                     : 'grid-cols-1 lg:grid-cols-3'
-            }`}>
-                {/* ✅ ENHANCED: Collapsible Supplier POs List */}
-                <div className={`transition-all duration-300 ${
-                    isLeftPanelCollapsed && !isLeftPanelHovered 
-                        ? 'lg:col-span-1' 
-                        : 'lg:col-span-1'
                 }`}>
-                    <div 
-                        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${
-                            isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
-                        }`}
+                {/* ✅ ENHANCED: Collapsible Supplier POs List */}
+                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
+                        ? 'lg:col-span-1'
+                        : 'lg:col-span-1'
+                    }`}>
+                    <div
+                        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
+                            }`}
                         onMouseEnter={() => setIsLeftPanelHovered(true)}
                         onMouseLeave={() => setIsLeftPanelHovered(false)}
                     >
                         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
                             <div className="flex items-center justify-between">
-                                {/* ✅ NEW: Collapsible Header */}
+                                {/* ✅ Collapsible Header */}
                                 {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
                                     <div className="flex flex-col items-center space-y-2">
                                         <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
@@ -1172,9 +1447,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                         </div>
 
                         {/* ✅ PO List Content */}
-                        <div className={`p-4 max-h-[calc(100vh-300px)] overflow-y-auto transition-all duration-300 ${
-                            isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
-                        }`}>
+                        <div className={`p-4 max-h-[calc(100vh-300px)] overflow-y-auto transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
+                            }`}>
                             {posLoading ? (
                                 <div className="text-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
@@ -1213,11 +1487,10 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                         return (
                                             <div
                                                 key={po.PONo}
-                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${
-                                                    selectedPO?.PONo === po.PONo
+                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedPO?.PONo === po.PONo
                                                         ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg'
                                                         : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 bg-white dark:bg-gray-800'
-                                                } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
+                                                    } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
                                                 onClick={() => handlePOSelect(po)}
                                                 title={isLeftPanelCollapsed && !isLeftPanelHovered ? `${po.VendorName} - ${po.PONo}` : ''}
                                             >
@@ -1278,11 +1551,10 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 </div>
 
                 {/* ✅ ENHANCED: PO Details Panel with Dynamic Width */}
-                <div className={`transition-all duration-300 ${
-                    isLeftPanelCollapsed && !isLeftPanelHovered 
-                        ? 'lg:col-span-11' 
+                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
+                        ? 'lg:col-span-11'
                         : 'lg:col-span-2'
-                }`}>
+                    }`}>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors sticky top-6">
                         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
@@ -1373,7 +1645,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                     </div>
                                                 </div>
 
-                                                {/* ✅ NEW: Delivery and Invoice Addresses */}
+                                                {/* ✅ Delivery and Invoice Addresses */}
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                                                     {/* Invoice Address */}
                                                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -1425,7 +1697,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                 </div>
                                             )}
 
-                                            {/* ✅ ENHANCED: Item Details with Checkboxes and Price Editing */}
+                                            {/* ✅ ENHANCED: Item Details with Checkboxes, Price Editing, and Price Update Indicators */}
                                             {selectedPOData.PODataList && selectedPOData.PODataList.length > 0 && (
                                                 <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-700">
                                                     <div className="flex items-center justify-between mb-4">
@@ -1433,8 +1705,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                             <FileSpreadsheet className="w-5 h-5 mr-2" />
                                                             Item Details ({selectedPOData.PODataList.length} Items) - Verification Required
                                                         </h4>
-                                                        {/* ✅ NEW: Select All Checkbox */}
-                                                        <div className="flex items-center space-x-2">
+                                                        {/* ✅ ENHANCED: Select All Checkbox with Price Update Warning */}
+                                                        <div className="flex items-center space-x-4">
                                                             <label className="flex items-center space-x-2 cursor-pointer">
                                                                 <input
                                                                     type="checkbox"
@@ -1446,6 +1718,12 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                     Select All ({getCheckedItemsCount()}/{selectedPOData.PODataList.length})
                                                                 </span>
                                                             </label>
+                                                            {Object.keys(recentPriceChanges).length > 0 && (
+                                                                <div className="flex items-center space-x-1 text-xs text-orange-600 bg-orange-100 dark:bg-orange-900/50 px-2 py-1 rounded-full">
+                                                                    <AlertOctagon className="w-3 h-3" />
+                                                                    <span>{Object.keys(recentPriceChanges).length} Recent Price Changes</span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
 
@@ -1479,7 +1757,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                         </th>
                                                                     </tr>
                                                                 </thead>
-                                                                
+
                                                                 {/* Table Body with Items */}
                                                                 <tbody className="max-h-80 overflow-y-auto">
                                                                     {selectedPOData.PODataList.map((item, index) => {
@@ -1490,12 +1768,16 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                         const igstAmount = itemTotalAmount * (parseFloat(item.IGSTPercent || 0) / 100);
                                                                         const totalWithGST = itemTotalAmount + cgstAmount + sgstAmount + igstAmount;
                                                                         const isChecked = checkedItems[item.itemcode] || false;
+                                                                        const hasPriceDifference = checkPriceDifference(item);
+                                                                        const hasRecentChange = hasRecentPriceChange(item.itemcode);
+                                                                        const isStandardPriceUpdated = updatedStandardPrices[item.itemcode];
 
                                                                         return (
-                                                                            <tr key={index} className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                                                                                isChecked ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-600' : ''
-                                                                            }`}>
-                                                                                {/* ✅ NEW: Checkbox Column */}
+                                                                            <tr key={index} className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${isChecked ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-600' :
+                                                                                    hasPriceDifference ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-600' :
+                                                                                        hasRecentChange ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-600' : ''
+                                                                                }`}>
+                                                                                {/* ✅ ENHANCED: Checkbox Column with Price Difference Indicators */}
                                                                                 <td className="p-3 text-center">
                                                                                     <div className="flex flex-col items-center space-y-2">
                                                                                         <label className="flex items-center justify-center cursor-pointer">
@@ -1508,6 +1790,15 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                         </label>
                                                                                         {isChecked && (
                                                                                             <CheckCircle className="w-4 h-4 text-green-600" />
+                                                                                        )}
+                                                                                        {hasPriceDifference && !isChecked && (
+                                                                                            <AlertTriangle className="w-4 h-4 text-orange-600" title="Price difference detected" />
+                                                                                        )}
+                                                                                        {hasRecentChange && (
+                                                                                            <TrendingDown className="w-4 h-4 text-indigo-600" title="Recent price change detected" />
+                                                                                        )}
+                                                                                        {isStandardPriceUpdated && (
+                                                                                            <RefreshCcw className="w-4 h-4 text-purple-600" title="Standard price updated" />
                                                                                         )}
                                                                                     </div>
                                                                                 </td>
@@ -1523,21 +1814,50 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                             <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
                                                                                         </button>
                                                                                         <div className="min-w-0 flex-1">
-                                                                                            {/* ✅ NEW: Item Name with Tooltip */}
+                                                                                            {/* ✅ Item Name with Tooltip */}
                                                                                             <div className="relative group">
                                                                                                 <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-tight mb-1">
                                                                                                     {item.itemname}
+                                                                                                    {/* ✅ NEW: Price Status Indicators */}
+                                                                                                    {hasPriceDifference && (
+                                                                                                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300">
+                                                                                                            <DollarSign className="w-3 h-3 mr-1" />
+                                                                                                            Price Diff
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                    {hasRecentChange && (
+                                                                                                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
+                                                                                                            <TrendingDown className="w-3 h-3 mr-1" />
+                                                                                                            Recent Change
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                    {isStandardPriceUpdated && (
+                                                                                                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+                                                                                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                                                                                            Updated
+                                                                                                        </span>
+                                                                                                    )}
                                                                                                 </p>
-                                                                                                {/* Smart positioned tooltip - above for items after first, below for first item */}
+                                                                                                {/* Smart positioned tooltip */}
                                                                                                 <div className={`absolute left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap max-w-xs ${index === 0
-                                                                                                        ? 'top-full mt-2' // Position below for first item
-                                                                                                        : 'bottom-full mb-2' // Position above for other items
+                                                                                                    ? 'top-full mt-2'
+                                                                                                    : 'bottom-full mb-2'
                                                                                                     }`}>
                                                                                                     <div className="break-words whitespace-normal">{item.itemname}</div>
-                                                                                                    {/* Arrow pointer - points up for first item, down for others */}
+                                                                                                    {hasPriceDifference && (
+                                                                                                        <div className="text-xs text-orange-300 mt-1">
+                                                                                                            Standard: ₹{formatIndianCurrency(item.basicprice)} | Purchase: ₹{formatIndianCurrency(item.NewBasicprice)}
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                    {hasRecentChange && (
+                                                                                                        <div className="text-xs text-indigo-300 mt-1">
+                                                                                                            Recent price change: ₹{formatIndianCurrency(recentPriceChanges[item.itemcode]?.itemNewPrice)}
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                    {/* Arrow pointer */}
                                                                                                     <div className={`absolute left-4 w-0 h-0 border-l-4 border-r-4 border-transparent ${index === 0
-                                                                                                            ? 'bottom-full border-b-4 border-b-gray-900' // Arrow pointing up
-                                                                                                            : 'top-full border-t-4 border-t-gray-900' // Arrow pointing down
+                                                                                                        ? 'bottom-full border-b-4 border-b-gray-900'
+                                                                                                        : 'top-full border-t-4 border-t-gray-900'
                                                                                                         }`}></div>
                                                                                                 </div>
                                                                                             </div>
@@ -1561,11 +1881,25 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                     </div>
                                                                                 </td>
 
-                                                                                {/* Standard Price */}
+                                                                                {/* ✅ ENHANCED: Standard Price with Update Status */}
                                                                                 <td className="p-3 text-center">
                                                                                     <div>
-                                                                                        <p className="font-medium text-gray-600 dark:text-gray-400">₹{formatIndianCurrency(item.basicprice)}</p>
-                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Standard</p>
+                                                                                        <p className={`font-medium ${isStandardPriceUpdated ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                                                                            ₹{formatIndianCurrency(isStandardPriceUpdated ? updatedStandardPrices[item.itemcode].newBasicPrice : item.basicprice)}
+                                                                                        </p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                                            {isStandardPriceUpdated ? 'Updated' : 'Standard'}
+                                                                                        </p>
+                                                                                        {isStandardPriceUpdated && (
+                                                                                            <p className="text-xs text-purple-600 dark:text-purple-400">
+                                                                                                Was: ₹{formatIndianCurrency(updatedStandardPrices[item.itemcode].oldBasicPrice)}
+                                                                                            </p>
+                                                                                        )}
+                                                                                        {hasRecentChange && (
+                                                                                            <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                                                                                                Latest: ₹{formatIndianCurrency(recentPriceChanges[item.itemcode]?.itemNewPrice)}
+                                                                                            </p>
+                                                                                        )}
                                                                                     </div>
                                                                                 </td>
 
@@ -1574,10 +1908,15 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                     <div>
                                                                                         <p className="font-medium text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(item.QuotedPrice)}</p>
                                                                                         <p className="text-xs text-gray-500 dark:text-gray-400">Quoted</p>
+                                                                                        {hasPriceDifference && (
+                                                                                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                                                                                                Diff: ₹{formatIndianCurrency(Math.abs(parseFloat(item.QuotedPrice) - parseFloat(item.basicprice)))}
+                                                                                            </p>
+                                                                                        )}
                                                                                     </div>
                                                                                 </td>
 
-                                                                                {/* ✅ ENHANCED: Editable New Price with Color Coding and Disable on Check */}
+                                                                                {/* ✅ ENHANCED: Editable New Price with Enhanced Status Indicators */}
                                                                                 <td className="p-3 text-center">
                                                                                     <div className="space-y-2">
                                                                                         <div className="flex items-center justify-center space-x-1">
@@ -1587,16 +1926,15 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                                 value={currentEditablePrice}
                                                                                                 onChange={(e) => handlePriceEdit(item.itemcode, e.target.value, item.QuotedPrice)}
                                                                                                 disabled={isChecked}
-                                                                                                className={`w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center transition-all ${
-                                                                                                    isChecked 
-                                                                                                        ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60' 
+                                                                                                className={`w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center transition-all ${isChecked
+                                                                                                        ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
                                                                                                         : getPriceColorClass(currentEditablePrice, item.basicprice)
-                                                                                                }`}
+                                                                                                    }`}
                                                                                                 step="0.01"
                                                                                                 min="0"
                                                                                                 max={item.QuotedPrice}
                                                                                                 title={
-                                                                                                    isChecked 
+                                                                                                    isChecked
                                                                                                         ? 'Price locked after verification'
                                                                                                         : `Current: ₹${formatIndianCurrency(currentEditablePrice)} | Standard: ₹${formatIndianCurrency(item.basicprice)} | ${parseFloat(currentEditablePrice) > parseFloat(item.basicprice) ? 'Above Standard (Red)' : parseFloat(currentEditablePrice) < parseFloat(item.basicprice) ? 'Below Standard (Green)' : 'Equal to Standard'}`
                                                                                                 }
@@ -1615,7 +1953,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                                 Saved: ₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * item.quantity)}
                                                                                             </p>
                                                                                         )}
-                                                                                        {/* ✅ NEW: Price Status Indicator */}
+                                                                                        {/* ✅ ENHANCED: Price Status Indicator */}
                                                                                         <div className="text-xs">
                                                                                             {parseFloat(currentEditablePrice) > parseFloat(item.basicprice) && (
                                                                                                 <span className="text-red-600 dark:text-red-400">Above Standard</span>
@@ -1627,6 +1965,11 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                                 <span className="text-gray-600 dark:text-gray-400">Standard Price</span>
                                                                                             )}
                                                                                         </div>
+                                                                                        {hasPriceDifference && !isChecked && (
+                                                                                            <div className="text-xs text-orange-600 dark:text-orange-400">
+                                                                                                ⚠️ Price update required
+                                                                                            </div>
+                                                                                        )}
                                                                                     </div>
                                                                                 </td>
 
@@ -1665,7 +2008,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                             </table>
                                                         </div>
 
-                                                        {/* Enhanced Summary Footer with Total Savings and Verification Status */}
+                                                        {/* ✅ ENHANCED: Summary Footer with Price Update Information */}
                                                         <div className="bg-purple-100 dark:bg-purple-900/30 p-4 border-t border-gray-200 dark:border-gray-600">
                                                             <div className="flex justify-between items-center">
                                                                 <div className="space-y-1">
@@ -1686,6 +2029,11 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                         return total + (originalPrice - newPrice);
                                                                                     }, 0)
                                                                                 )}
+                                                                            </p>
+                                                                        )}
+                                                                        {Object.keys(updatedStandardPrices).length > 0 && (
+                                                                            <p className="text-sm text-purple-600 dark:text-purple-400">
+                                                                                Price Updates: {Object.keys(updatedStandardPrices).length}
                                                                             </p>
                                                                         )}
                                                                     </div>
@@ -1709,14 +2057,17 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                                                         <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                                                             {selectedPOData.Remarks.split('|').map((term, index) => (
-                                                                <p key={index} className="mb-2">{term.trim()}</p>
+                                                                <div key={index} className="flex items-start space-x-2">
+                                                                    <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                                                                    <span>{term.trim()}</span>
+                                                                </div>
                                                             ))}
                                                         </div>
                                                     </div>
                                                 </div>
                                             )}
 
-                                            {/* ✅ NEW: Approval History Toggle */}
+                                            {/* ✅ Approval History Toggle */}
                                             <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
                                                 <button
                                                     onClick={() => setShowRemarksHistory(!showRemarksHistory)}
@@ -1792,6 +2143,9 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                     </div>
                 </div>
             </div>
+
+            {/* ✅ NEW: Price Update Confirmation Modal */}
+            {renderPriceUpdateModal()}
 
             {/* ✅ Previous Purchase Details Popup */}
             {showPreviousDetails && renderPreviousDetailsPopup()}

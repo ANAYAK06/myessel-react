@@ -8,6 +8,8 @@ import VerifyStaffRegistration from '../../pages/HR/VerifyStaffRegistration';
 import VerifyVendorPayment from '../../pages/VendorPayment/VerifyVendorPayment';
 import VerifySupplierInvoice from '../../pages/VendorInvoice/VerifySupplierInvoice';
 import VerifySupplierPO from '../../pages/SupplierPO/VerifySupplierPO';
+import VerifySPPO from '../../pages/SPPO/VerifySPPO';
+
 
 // ============================================================================
 // FALLBACK COMPONENT - For unimplemented verification types
@@ -125,6 +127,33 @@ const isSupplierPOVerification = (path, category, title, displayName, workflowTy
     return isMatch;
 };
 
+const isSPPOVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/sppo/verifySppo',
+        '/purchase/verifysppo',
+        'verify sppo',
+        'sppo'
+    ];
+
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('sppo') ||
+        title.includes('sppo') ||
+        displayName.includes('sppo') ||
+        workflowType.includes('sppo');
+
+    if (isMatch) {
+        console.log('✅ SPPO detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ SPPO not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+
+    return isMatch;
+};
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -195,6 +224,8 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
 
+
+
         // ====================================================================
         // SUPPLIER PO VERIFICATION
         // ====================================================================
@@ -206,6 +237,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
 
+        // =====================================================================
+        // SPPO VERIFICATION
+        //=====================================================================
+
+        if (isSPPOVerification(path, category, title, displayName, workflowType)) { 
+            console.log('✅ Routing to VerifySPPO');
+            return <VerifySPPO
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />; 
+        }
         // ====================================================================
         // ADD MORE VERIFICATION TYPES HERE
         // ====================================================================

@@ -867,8 +867,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                 <div className="flex justify-between">
                                     <span className="text-gray-600 dark:text-gray-400">Price Difference:</span>
                                     <span className={`font-medium ${priceUpdateModal.newBasicPrice > priceUpdateModal.basicPrice
-                                            ? 'text-red-600 dark:text-red-400'
-                                            : 'text-green-600 dark:text-green-400'
+                                        ? 'text-red-600 dark:text-red-400'
+                                        : 'text-green-600 dark:text-green-400'
                                         }`}>
                                         {priceUpdateModal.newBasicPrice > priceUpdateModal.basicPrice ? '+' : ''}
                                         ₹{formatIndianCurrency(Math.abs(priceUpdateModal.newBasicPrice - priceUpdateModal.basicPrice))}
@@ -1378,13 +1378,13 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
             {/* ✅ ENHANCED: Main Content with Dynamic Grid Layout */}
             <div className={`grid gap-6 transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                    ? 'grid-cols-1 lg:grid-cols-12'
-                    : 'grid-cols-1 lg:grid-cols-3'
+                ? 'grid-cols-1 lg:grid-cols-12'
+                : 'grid-cols-1 lg:grid-cols-3'
                 }`}>
                 {/* ✅ ENHANCED: Collapsible Supplier POs List */}
                 <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'lg:col-span-1'
-                        : 'lg:col-span-1'
+                    ? 'lg:col-span-1'
+                    : 'lg:col-span-1'
                     }`}>
                     <div
                         className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
@@ -1488,8 +1488,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                             <div
                                                 key={po.PONo}
                                                 className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedPO?.PONo === po.PONo
-                                                        ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg'
-                                                        : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 bg-white dark:bg-gray-800'
+                                                    ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg'
+                                                    : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 bg-white dark:bg-gray-800'
                                                     } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
                                                 onClick={() => handlePOSelect(po)}
                                                 title={isLeftPanelCollapsed && !isLeftPanelHovered ? `${po.VendorName} - ${po.PONo}` : ''}
@@ -1552,8 +1552,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                 {/* ✅ ENHANCED: PO Details Panel with Dynamic Width */}
                 <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'lg:col-span-11'
-                        : 'lg:col-span-2'
+                    ? 'lg:col-span-11'
+                    : 'lg:col-span-2'
                     }`}>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors sticky top-6">
                         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
@@ -1752,8 +1752,16 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                         <th className="w-36 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
                                                                             New Price (Editable)
                                                                         </th>
-                                                                        <th className="w-48 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-right">
-                                                                            Amount & GST
+                                                                        <th className="w-32 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            Basic Value
+                                                                        </th>
+                                                                        {/* ✅ NEW: Tax Amount Column */}
+                                                                        <th className="w-32 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            Tax Amount
+                                                                        </th>
+                                                                        {/* ✅ NEW: Total Column */}
+                                                                        <th className="w-32 p-3 text-xs font-semibold text-purple-800 dark:text-purple-200 text-center">
+                                                                            Total Amount
                                                                         </th>
                                                                     </tr>
                                                                 </thead>
@@ -1762,11 +1770,16 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                 <tbody className="max-h-80 overflow-y-auto">
                                                                     {selectedPOData.PODataList.map((item, index) => {
                                                                         const currentEditablePrice = editablePrices[item.itemcode] || item.NewBasicprice;
-                                                                        const itemTotalAmount = parseFloat(currentEditablePrice) * parseFloat(item.quantity || 0);
-                                                                        const cgstAmount = itemTotalAmount * (parseFloat(item.CGSTPercent || 0) / 100);
-                                                                        const sgstAmount = itemTotalAmount * (parseFloat(item.SGSTPercent || 0) / 100);
-                                                                        const igstAmount = itemTotalAmount * (parseFloat(item.IGSTPercent || 0) / 100);
-                                                                        const totalWithGST = itemTotalAmount + cgstAmount + sgstAmount + igstAmount;
+                                                                        const quantity = parseFloat(item.quantity || 0);
+
+                                                                        // ✅ UPDATED: Separate calculations for Basic Value, Tax Amount, and Total
+                                                                        const basicValue = parseFloat(currentEditablePrice) * quantity;
+                                                                        const cgstAmount = basicValue * (parseFloat(item.CGSTPercent || 0) / 100);
+                                                                        const sgstAmount = basicValue * (parseFloat(item.SGSTPercent || 0) / 100);
+                                                                        const igstAmount = basicValue * (parseFloat(item.IGSTPercent || 0) / 100);
+                                                                        const totalTaxAmount = cgstAmount + sgstAmount + igstAmount;
+                                                                        const totalAmount = basicValue + totalTaxAmount;
+
                                                                         const isChecked = checkedItems[item.itemcode] || false;
                                                                         const hasPriceDifference = checkPriceDifference(item);
                                                                         const hasRecentChange = hasRecentPriceChange(item.itemcode);
@@ -1774,8 +1787,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                                                                         return (
                                                                             <tr key={index} className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${isChecked ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-600' :
-                                                                                    hasPriceDifference ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-600' :
-                                                                                        hasRecentChange ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-600' : ''
+                                                                                hasPriceDifference ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-600' :
+                                                                                    hasRecentChange ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-600' : ''
                                                                                 }`}>
                                                                                 {/* ✅ ENHANCED: Checkbox Column with Price Difference Indicators */}
                                                                                 <td className="p-3 text-center">
@@ -1927,8 +1940,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                                 onChange={(e) => handlePriceEdit(item.itemcode, e.target.value, item.QuotedPrice)}
                                                                                                 disabled={isChecked}
                                                                                                 className={`w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center transition-all ${isChecked
-                                                                                                        ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
-                                                                                                        : getPriceColorClass(currentEditablePrice, item.basicprice)
+                                                                                                    ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
+                                                                                                    : getPriceColorClass(currentEditablePrice, item.basicprice)
                                                                                                     }`}
                                                                                                 step="0.01"
                                                                                                 min="0"
@@ -1972,32 +1985,62 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                                         )}
                                                                                     </div>
                                                                                 </td>
+                                                                                <td className="p-3 text-center">
+                                                                                    <div>
+                                                                                        <p className="font-bold text-indigo-700 dark:text-indigo-300 text-lg">
+                                                                                            ₹{formatIndianCurrency(basicValue)}
+                                                                                        </p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                                            {quantity} × ₹{formatIndianCurrency(currentEditablePrice)}
+                                                                                        </p>
+                                                                                        {parseFloat(currentEditablePrice) < parseFloat(item.QuotedPrice) && (
+                                                                                            <p className="text-xs text-green-600 dark:text-green-400">
+                                                                                                Saved: ₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * quantity)}
+                                                                                            </p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </td>
 
                                                                                 {/* Amount & GST */}
-                                                                                <td className="p-3">
-                                                                                    <div className="space-y-3">
-                                                                                        <div className="text-right">
-                                                                                            <p className="font-bold text-lg text-green-700 dark:text-green-300">₹{formatIndianCurrency(totalWithGST)}</p>
-                                                                                            <p className="text-xs text-gray-500 dark:text-gray-400">Total with GST</p>
-                                                                                        </div>
+                                                                                <td className="p-3 text-center">
+                                                                                    <div className="space-y-2">
+                                                                                        <p className="font-bold text-orange-700 dark:text-orange-300">
+                                                                                            ₹{formatIndianCurrency(totalTaxAmount)}
+                                                                                        </p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Total GST</p>
 
                                                                                         {/* GST Breakdown */}
-                                                                                        <div className="grid grid-cols-3 gap-1 text-xs">
-                                                                                            <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
-                                                                                                <p className="text-gray-500 dark:text-gray-400">CGST</p>
-                                                                                                <p className="font-medium text-gray-800 dark:text-gray-200">{item.CGSTPercent}%</p>
-                                                                                                <p className="text-xs text-green-600">₹{formatIndianCurrency(cgstAmount)}</p>
-                                                                                            </div>
-                                                                                            <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
-                                                                                                <p className="text-gray-500 dark:text-gray-400">SGST</p>
-                                                                                                <p className="font-medium text-gray-800 dark:text-gray-200">{item.SGSTPercent}%</p>
-                                                                                                <p className="text-xs text-green-600">₹{formatIndianCurrency(sgstAmount)}</p>
-                                                                                            </div>
-                                                                                            <div className="text-center bg-green-50 dark:bg-green-900/20 rounded p-1">
-                                                                                                <p className="text-gray-500 dark:text-gray-400">IGST</p>
-                                                                                                <p className="font-medium text-gray-800 dark:text-gray-200">{item.IGSTPercent}%</p>
-                                                                                                <p className="text-xs text-green-600">₹{formatIndianCurrency(igstAmount)}</p>
-                                                                                            </div>
+                                                                                        <div className="space-y-1 text-xs">
+                                                                                            {parseFloat(item.CGSTPercent || 0) > 0 && (
+                                                                                                <div className="flex justify-between">
+                                                                                                    <span className="text-gray-500">CGST {item.CGSTPercent}%:</span>
+                                                                                                    <span className="text-orange-600">₹{formatIndianCurrency(cgstAmount)}</span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {parseFloat(item.SGSTPercent || 0) > 0 && (
+                                                                                                <div className="flex justify-between">
+                                                                                                    <span className="text-gray-500">SGST {item.SGSTPercent}%:</span>
+                                                                                                    <span className="text-orange-600">₹{formatIndianCurrency(sgstAmount)}</span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {parseFloat(item.IGSTPercent || 0) > 0 && (
+                                                                                                <div className="flex justify-between">
+                                                                                                    <span className="text-gray-500">IGST {item.IGSTPercent}%:</span>
+                                                                                                    <span className="text-orange-600">₹{formatIndianCurrency(igstAmount)}</span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="p-3 text-center">
+                                                                                    <div>
+                                                                                        <p className="font-bold text-green-700 dark:text-green-300 text-xl">
+                                                                                            ₹{formatIndianCurrency(totalAmount)}
+                                                                                        </p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Final Amount</p>
+                                                                                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                                                                            <div>Basic: ₹{formatIndianCurrency(basicValue)}</div>
+                                                                                            <div>Tax: ₹{formatIndianCurrency(totalTaxAmount)}</div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </td>
@@ -2010,12 +2053,13 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                                                         {/* ✅ ENHANCED: Summary Footer with Price Update Information */}
                                                         <div className="bg-purple-100 dark:bg-purple-900/30 p-4 border-t border-gray-200 dark:border-gray-600">
-                                                            <div className="flex justify-between items-center">
-                                                                <div className="space-y-1">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                {/* Left side - Item verification status */}
+                                                                <div className="space-y-2">
                                                                     <span className="font-semibold text-purple-800 dark:text-purple-200">
                                                                         Total Items ({selectedPOData.PODataList.length} items):
                                                                     </span>
-                                                                    <div className="flex items-center space-x-4">
+                                                                    <div className="flex items-center space-x-4 flex-wrap">
                                                                         <div className={`flex items-center space-x-1 text-sm ${areAllItemsChecked() ? 'text-green-600' : 'text-orange-600'}`}>
                                                                             <CheckSquare className="w-4 h-4" />
                                                                             <span>Verified: {getCheckedItemsCount()}/{selectedPOData.PODataList.length}</span>
@@ -2038,9 +2082,63 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                         )}
                                                                     </div>
                                                                 </div>
-                                                                <span className="font-bold text-lg text-purple-900 dark:text-purple-100">
-                                                                    ₹{formatIndianCurrency(calculatePOTotalAmount(selectedPOData))}
-                                                                </span>
+
+                                                                {/* ✅ NEW: Right side - Amount breakdown */}
+                                                                <div className="space-y-2">
+                                                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                                                        <div className="grid grid-cols-3 gap-4 text-center">
+                                                                            {/* Basic Amount Total */}
+                                                                            <div className="space-y-1">
+                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">Basic Amount</p>
+                                                                                <p className="font-bold text-indigo-700 dark:text-indigo-300 text-lg">
+                                                                                    ₹{formatIndianCurrency(
+                                                                                        selectedPOData.PODataList.reduce((total, item) => {
+                                                                                            const currentPrice = editablePrices[item.itemcode] || item.NewBasicprice;
+                                                                                            return total + (parseFloat(currentPrice) * parseFloat(item.quantity || 0));
+                                                                                        }, 0)
+                                                                                    )}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            {/* Tax Amount Total */}
+                                                                            <div className="space-y-1">
+                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">Tax Amount</p>
+                                                                                <p className="font-bold text-orange-700 dark:text-orange-300 text-lg">
+                                                                                    ₹{formatIndianCurrency(
+                                                                                        selectedPOData.PODataList.reduce((total, item) => {
+                                                                                            const currentPrice = editablePrices[item.itemcode] || item.NewBasicprice;
+                                                                                            const basicValue = parseFloat(currentPrice) * parseFloat(item.quantity || 0);
+                                                                                            const cgst = basicValue * (parseFloat(item.CGSTPercent || 0) / 100);
+                                                                                            const sgst = basicValue * (parseFloat(item.SGSTPercent || 0) / 100);
+                                                                                            const igst = basicValue * (parseFloat(item.IGSTPercent || 0) / 100);
+                                                                                            return total + cgst + sgst + igst;
+                                                                                        }, 0)
+                                                                                    )}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            {/* Grand Total */}
+                                                                            <div className="space-y-1">
+                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">Grand Total</p>
+                                                                                <p className="font-bold text-green-700 dark:text-green-300 text-xl">
+                                                                                    ₹{formatIndianCurrency(calculatePOTotalAmount(selectedPOData))}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Additional breakdown row */}
+                                                                        <div className="border-t border-gray-200 dark:border-gray-600 mt-3 pt-3">
+                                                                            <div className="flex justify-between items-center text-sm">
+                                                                                <span className="text-gray-600 dark:text-gray-400">
+                                                                                    PO Total: Basic + Tax = Grand Total
+                                                                                </span>
+                                                                                <span className="font-semibold text-purple-700 dark:text-purple-300">
+                                                                                    {selectedPOData.PODataList.length} Items Verified
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

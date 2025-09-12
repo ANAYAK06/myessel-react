@@ -1,4 +1,4 @@
-// VerifyVendorPayment.jsx - Main component for vendor payment verification (Purple/Indigo Theme)
+// VerifyVendorPayment.jsx - Fixed version with proper null checking
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -11,7 +11,6 @@ import {
     Timer, UserCheck, CircleIndianRupee, FileBarChart, Gift,
     FileX, ArrowUpCircle,
     ReceiptIndianRupee,
-
 } from 'lucide-react';
 
 // ✅ VENDOR PAYMENT SLICE IMPORTS
@@ -101,7 +100,11 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterVendor, setFilterVendor] = useState('All');
     const [filterTransType, setFilterTransType] = useState('All');
+
+    const [invoiceExpanded, setInvoiceExpanded] = useState(false);
     
+    // ✅ FIX: Add null check for selectedPaymentData
+    const isAdvancePayment = selectedPaymentData?.PaymentTypeName === 'Vendor Advance';
 
     // ✅ EXTRACT NOTIFICATION DATA
     const {
@@ -131,8 +134,6 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
     }, [selectedPaymentData?.MOID, RoleId, dispatch]);
 
     // ✅ HELPER FUNCTIONS
-
-
     const getCurrentUser = () => {
         return userData?.userName || userDetails?.userName || 'system';
     };
@@ -144,17 +145,17 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
             'Payment Verifier';
     };
 
-      const formatApprovalComment = (roleName, userName, comment) => {
+    const formatApprovalComment = (roleName, userName, comment) => {
         return `${roleName} : ${userName} : ${comment}`;
     };
 
     const updateRemarksHistory = (existingRemarks, newRoleName, newUserName, newComment) => {
         const formattedNewComment = formatApprovalComment(newRoleName, newUserName, newComment);
-        
+
         if (!existingRemarks || existingRemarks.trim() === '') {
             return formattedNewComment;
         }
-        
+
         return `${existingRemarks.trim()}||${formattedNewComment}`;
     };
 
@@ -207,8 +208,10 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
         }
     };
 
-    // ✅ NEW HELPER FUNCTIONS FOR PAYMENT TYPE
+    // ✅ FIX: Add null checks for payment type functions
     const getPaymentTypeColor = (paymentType) => {
+        if (!paymentType) return 'bg-gray-100 text-gray-800 border-gray-200';
+        
         switch (paymentType) {
             case 'Vendor Invoice':
                 return 'bg-indigo-100 text-indigo-800 border-indigo-200';
@@ -220,6 +223,8 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
     };
 
     const getPaymentTypeIcon = (paymentType) => {
+        if (!paymentType) return FileText;
+        
         switch (paymentType) {
             case 'Vendor Invoice':
                 return ReceiptIndianRupee;
@@ -268,10 +273,9 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
     };
 
     const buildPaymentApprovalPayload = (actionValue, selectedPayment, selectedPaymentData, verificationComment) => {
-
-         const currentUser = getCurrentUser();
+        const currentUser = getCurrentUser();
         const currentRoleName = getCurrentRoleName();
-        
+
         // ✅ INSIDE: Create updatedRemarks
         const updatedRemarks = updateRemarksHistory(
             selectedPaymentData?.Remarks,
@@ -279,27 +283,28 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
             currentUser,
             verificationComment
         );
-    return {
-        TransactionRefNo: selectedPayment.TransactionRefNo,
-        ApprovalNote: verificationComment,
-        Remarks: updatedRemarks,                    // ← THIS WAS MISSING IN YOUR VERSION
-        Action: actionValue,
-        PaymentType: selectedPaymentData?.PaymentTypeName || selectedPayment.PaymentTypeName || "Vendor Invoice",
-        Roleid: RoleId || selectedRoleId,
-        VendorCode: selectedPayment.VendorCode,
-        TransactionType: selectedPayment.TransactionType,
-        Amount: selectedPaymentData?.TransactionAmount || selectedPayment.TransactionAmount,
-        Createdby: getCurrentUser(),
-        PaymentDate: selectedPaymentData?.TransactionDate || selectedPayment.TransactionDate,
-        DueDate: selectedPaymentData?.TransactionDate || selectedPayment.TransactionDate,
-        ApprovalStatus: actionValue,
-        
-        // Additional fields
-        ...(selectedPaymentData?.MOID && { MOID: selectedPaymentData.MOID }),
-        ...(selectedPaymentData?.BankName && { BankName: selectedPaymentData.BankName }),
-        ...(selectedPaymentData?.ModeofPay && { ModeofPay: selectedPaymentData.ModeofPay })
+        return {
+            TransactionRefNo: selectedPayment.TransactionRefNo,
+            ApprovalNote: verificationComment,
+            Remarks: updatedRemarks,
+            Action: actionValue,
+            PaymentType: selectedPaymentData?.PaymentTypeName || selectedPayment?.PaymentTypeName || "Vendor Invoice",
+            Roleid: RoleId || selectedRoleId,
+            VendorCode: selectedPayment.VendorCode,
+            TransactionType: selectedPayment.TransactionType,
+            Amount: selectedPaymentData?.TransactionAmount || selectedPayment?.TransactionAmount,
+            Createdby: getCurrentUser(),
+            PaymentDate: selectedPaymentData?.TransactionDate || selectedPayment?.TransactionDate,
+            DueDate: selectedPaymentData?.TransactionDate || selectedPayment?.TransactionDate,
+            ApprovalStatus: actionValue,
+
+            // Additional fields
+            ...(selectedPaymentData?.MOID && { MOID: selectedPaymentData.MOID }),
+            ...(selectedPaymentData?.BankName && { BankName: selectedPaymentData.BankName }),
+            ...(selectedPaymentData?.ModeofPay && { ModeofPay: selectedPaymentData.ModeofPay })
+        };
     };
-};
+    
     const onActionClick = async (action) => {
         // Basic validations
         if (!selectedPayment) {
@@ -766,9 +771,18 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
                         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
                                 <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
-                                    {selectedPaymentData ? React.createElement(getPaymentTypeIcon(selectedPaymentData.PaymentTypeName), { className: "w-4 h-4 text-white" }) : <Receipt className="w-4 h-4 text-white" />}
+                                    {/* ✅ FIX: Add proper null checking for icon rendering */}
+                                    {selectedPaymentData && selectedPaymentData.PaymentTypeName ? 
+                                        React.createElement(getPaymentTypeIcon(selectedPaymentData.PaymentTypeName), { className: "w-4 h-4 text-white" }) : 
+                                        <Receipt className="w-4 h-4 text-white" />
+                                    }
                                 </div>
-                                <span>{selectedPayment ? `${selectedPaymentData?.PaymentTypeName || 'Payment'} Verification` : 'Select a Payment'}</span>
+                                <span>
+                                    {selectedPayment ? 
+                                        `${selectedPaymentData?.PaymentTypeName || 'Payment'} Verification` : 
+                                        'Select a Payment'
+                                    }
+                                </span>
                             </h2>
                         </div>
 
@@ -782,246 +796,374 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
                                         </div>
                                     ) : selectedPaymentData ? (
                                         <>
-                                            {/* Payment Header */}
                                             {(() => {
-                                                const isAdvancePayment = selectedPaymentData.PaymentTypeName === 'Vendor Advance';
-                                                const PaymentIcon = getPaymentTypeIcon(selectedPaymentData.PaymentTypeName);
                                                 return (
-                                                    <div className={`p-6 rounded-xl border-2 ${isAdvancePayment
-                                                            ? 'bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 dark:from-orange-900/20 dark:via-amber-900/20 dark:to-orange-900/20 border-orange-200 dark:border-orange-700'
-                                                            : 'bg-gradient-to-r from-indigo-50 via-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-indigo-200 dark:border-indigo-700'
-                                                        }`}>
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <div className="flex items-center space-x-4">
-                                                                <div className="relative">
-                                                                    <div className={`w-16 h-16 rounded-full border-4 bg-gradient-to-br flex items-center justify-center shadow-lg ${isAdvancePayment
-                                                                            ? 'border-orange-200 dark:border-orange-600 from-orange-100 to-amber-100 dark:from-orange-800/50 dark:to-amber-800/50'
-                                                                            : 'border-indigo-200 dark:border-indigo-600 from-indigo-100 to-indigo-100 dark:from-indigo-800/50 dark:to-indigo-800/50'
-                                                                        }`}>
-                                                                        <PaymentIcon className={`w-8 h-8 ${isAdvancePayment ? 'text-orange-600 dark:text-orange-400' : 'text-indigo-600 dark:text-indigo-400'
-                                                                            }`} />
+                                                    <div className="space-y-6">
+                                                        {/* Realistic Cheque Design - Compact & Authentic */}
+                                                        <div className="bg-yellow-100 dark:bg-gray-50 border-2 border-purple-400 dark:border-purple-500 rounded-lg shadow-lg overflow-hidden relative max-w-4xl">
+
+                                                            {/* ✅ FIX: Add null check for PaymentTypeName */}
+                                                            {selectedPaymentData?.PaymentTypeName === 'Vendor Advance' && (
+                                                                <div className="absolute top-2 right-2 z-10">
+                                                                    <div className="bg-orange-500 text-white px-3 py-1 rounded text-xs font-semibold">
+                                                                        ADVANCE
                                                                     </div>
-                                                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
-                                                                        <CheckCircle className="w-3 h-3 text-white" />
-                                                                    </div>
-                                                                </div>
-                                                                <div>
-                                                                    <h3 className="font-bold text-xl text-gray-900 dark:text-white">{selectedPaymentData.VendorName}</h3>
-                                                                    <p className={`font-semibold text-lg ${isAdvancePayment ? 'text-orange-600 dark:text-orange-400' : 'text-indigo-600 dark:text-indigo-400'
-                                                                        }`}>
-                                                                        #{selectedPaymentData.TransactionRefNo}
-                                                                    </p>
-                                                                    <div className="flex items-center space-x-2 mt-1">
-                                                                        <span className={`px-3 py-1 text-sm rounded-full border ${getPaymentTypeColor(selectedPaymentData.PaymentTypeName)} dark:bg-opacity-20 dark:border-opacity-50`}>
-                                                                            {selectedPaymentData.PaymentTypeName}
-                                                                        </span>
-                                                                        <span className="text-sm text-gray-600 dark:text-gray-400">via {selectedPaymentData.BankName}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <p className={`text-3xl font-bold ${isAdvancePayment ? 'text-orange-700 dark:text-orange-300' : 'text-indigo-700 dark:text-indigo-300'
-                                                                    }`}>
-                                                                    ₹{formatIndianCurrency(selectedPaymentData.TransactionAmount)}
-                                                                </p>
-                                                                <p className="text-sm text-gray-600 dark:text-gray-400">{selectedPaymentData.ModeofPay}</p>
-                                                                {selectedPaymentData.Number && selectedPaymentData.Number !== 'Online' && (
-                                                                    <p className="text-xs text-gray-500 dark:text-gray-500 font-mono">Ref: {selectedPaymentData.Number}</p>
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                            <p className="text-sm text-gray-700 dark:text-gray-300 italic">
-                                                                {selectedPaymentData.AmountInWords}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })()}
-
-                                            {/* Payment Details Grid */}
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                {/* Vendor Information */}
-                                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-5 rounded-xl border border-indigo-200 dark:border-indigo-700">
-                                                    <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
-                                                        <Building className="w-5 h-5 mr-2" />
-                                                        Vendor Information
-                                                    </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div>
-                                                                <span className="text-indigo-600 dark:text-indigo-400 block text-xs">Vendor Name</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPaymentData.VendorName}</span>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-indigo-600 dark:text-indigo-400 block text-xs">Vendor Code</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPaymentData.VendorCode}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        {selectedPaymentData.VendorType && (
-                                                            <div>
-                                                                <span className="text-indigo-600 dark:text-indigo-400 block text-xs">Vendor Type</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPaymentData.VendorType}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {selectedPaymentData.PaymentTypeName === 'Vendor Advance' && selectedPaymentData.PoNo && (
-                                                            <div>
-                                                                <span className="text-indigo-600 dark:text-indigo-400 block text-xs">Related PO Number</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200 font-mono">{selectedPaymentData.PoNo}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Payment Method */}
-                                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border border-green-200 dark:border-green-700">
-                                                    <h4 className="font-semibold text-green-800 dark:text-green-200 mb-4 flex items-center">
-                                                        <CreditCard className="w-5 h-5 mr-2" />
-                                                        Payment Method
-                                                    </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div>
-                                                                <span className="text-green-600 dark:text-green-400 block text-xs">Bank</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPaymentData.BankName}</span>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-green-600 dark:text-green-400 block text-xs">Mode</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPaymentData.ModeofPay}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div>
-                                                                <span className="text-green-600 dark:text-green-400 block text-xs">Transaction Date</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPaymentData.TransactionDate}</span>
-                                                            </div>
-                                                            {selectedPaymentData.Number && (
-                                                                <div>
-                                                                    <span className="text-green-600 dark:text-green-400 block text-xs">Reference</span>
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200 font-mono">{selectedPaymentData.Number}</span>
                                                                 </div>
                                                             )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
 
-                                            {/* Invoice/Advance Breakdown */}
-                                            {selectedPaymentData.lstPayInvoiceData && selectedPaymentData.lstPayInvoiceData.length > 0 && (
-                                                <div className={`p-6 rounded-xl border ${selectedPaymentData.PaymentTypeName === 'Vendor Advance'
-                                                        ? 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-orange-200 dark:border-orange-700'
-                                                        : 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700'
-                                                    }`}>
-                                                    <h4 className={`font-semibold mb-4 flex items-center ${selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? 'text-orange-800 dark:text-orange-200' : 'text-purple-800 dark:text-purple-200'
-                                                        }`}>
-                                                        <FileBarChart className="w-5 h-5 mr-2" />
-                                                        {selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? 'Advance Payment Details' : 'Invoice Breakdown'}
-                                                        ({selectedPaymentData.lstPayInvoiceData.length} {selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? 'Entry' : 'Items'})
-                                                    </h4>
+                                                            {/* Bank Header - Compact */}
+                                                            <div className="relative bg-white dark:bg-gray-50 p-3 border-b border-purple-300 dark:border-purple-400">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <div className="w-6 h-6 bg-purple-100 dark:bg-purple-200 rounded flex items-center justify-center">
+                                                                            <Landmark className="w-4 h-4 text-purple-600" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <h2 className="text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-200 p-1 rounded">
+                                                                                {selectedPaymentData?.BankName || 'Bank Name'}
+                                                                            </h2>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-right text-xs">
+                                                                        <p className="text-gray-500 dark:text-gray-600">IFSC: BANK001234</p>
+                                                                        <p className="text-gray-500 dark:text-gray-600">Branch Code: 001</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
 
-                                                    <div className="space-y-3">
-                                                        {selectedPaymentData.lstPayInvoiceData.map((item, index) => (
-                                                            <div key={index} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow">
-                                                                {selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? (
-                                                                    // Advance Payment Layout
-                                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                                                        <div>
-                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block">Amount</span>
-                                                                            <span className="font-bold text-lg text-orange-700 dark:text-orange-300">₹{formatIndianCurrency(item.Amount)}</span>
-                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">Advance Payment</span>
+                                                            {/* Cheque Body - Authentic Layout */}
+                                                            <div className="relative p-4" style={{
+                                                                backgroundColor: '#fefefe',
+                                                                backgroundImage: `
+                                                                      linear-gradient(45deg, transparent 25%, rgba(139, 92, 246, 0.1) 25%, rgba(139, 92, 246, 0.1) 75%, transparent 75%),
+                                                                       linear-gradient(-45deg, transparent 25%, rgba(139, 92, 246, 0.1) 25%, rgba(139, 92, 246, 0.1) 75%, transparent 75%)
+                                                                                                  `,
+                                                                backgroundSize: '20px 20px'
+                                                            }}>
+
+                                                                {/* Top Row - Cheque Number and Date */}
+                                                                <div className="flex justify-between items-start mb-4">
+                                                                    <div className="text-xs">
+                                                                        <p className="text-gray-600 dark:text-gray-700 mb-1">Cheque No.</p>
+                                                                        <p className="text-gray-800 dark:text-gray-600 font-mono text-sm">
+                                                                            {selectedPaymentData?.TransactionRefNo || 'N/A'}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="text-right text-xs">
+                                                                        <p className="text-gray-600 dark:text-gray-700 mb-1">Date</p>
+                                                                        <div className="border border-gray-400 dark:border-gray-500 px-2 py-1 min-w-[100px]">
+                                                                            <p className="text-gray-800 dark:text-gray-600 text-sm">
+                                                                                {selectedPaymentData?.TransactionDate || 'N/A'}
+                                                                            </p>
                                                                         </div>
-                                                                        <div>
-                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block">Cost Center</span>
-                                                                            <span className="font-semibold text-gray-900 dark:text-gray-100">{item.CCCode}</span>
-                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">CC Code</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Pay To Line */}
+                                                                <div className="mb-4">
+                                                                    <div className="flex items-center space-x-2 mb-2">
+                                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-600">Pay</span>
+                                                                        <div className="flex-1 border-b border-gray-400 dark:border-gray-500 pb-1 flex items-center justify-between">
+                                                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-800">
+                                                                                {selectedPaymentData?.VendorName || 'Vendor Name'}
+                                                                            </span>
+                                                                            <span className="text-xs text-purple-600 dark:text-purple-700 bg-purple-50 dark:bg-purple-100 px-2 py-0.5 rounded">
+                                                                                ID: {selectedPaymentData?.VendorCode || 'N/A'}
+                                                                            </span>
                                                                         </div>
-                                                                        <div>
-                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block">DCA Code</span>
-                                                                            <span className="font-medium text-gray-900 dark:text-gray-100">{item.DCACode}</span>
-                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">Account Head</span>
+                                                                        <span className="text-sm text-gray-600 dark:text-gray-700">Or Bearer</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Amount Section - Traditional Layout */}
+                                                                <div className="grid grid-cols-4 gap-4 mb-4">
+                                                                    {/* Rupees in Words */}
+                                                                    <div className="col-span-3">
+                                                                        <div className="flex items-center space-x-2 mb-2">
+                                                                            <span className="text-sm text-gray-700 dark:text-gray-600">Rupees</span>
+                                                                            <div className="flex-1 border-b border-gray-400 dark:border-gray-500 pb-1 min-h-[2rem] flex items-center">
+                                                                                <span className="text-sm text-gray-800 dark:text-gray-700 italic">
+                                                                                    {selectedPaymentData?.AmountInWords || 'Amount in words'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <span className="text-sm text-gray-600 dark:text-gray-700">Only</span>
                                                                         </div>
-                                                                        <div>
-                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block">Type</span>
-                                                                            <span className="px-2 py-1 text-xs rounded-full bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-600">
-                                                                                {item.Type}
+                                                                    </div>
+
+                                                                    {/* Amount Box */}
+                                                                    <div className="text-right">
+                                                                        <div className="border-2 border-gray-500 dark:border-gray-600 bg-yellow-50 dark:bg-yellow-100 p-2 rounded">
+                                                                            <div className="text-center">
+                                                                                <span className="text-lg font-bold text-gray-900 dark:text-gray-800">₹</span>
+                                                                                <span className="text-base font-semibold text-gray-900 dark:text-gray-800 font-mono">
+                                                                                    {selectedPaymentData?.TransactionAmount ? 
+                                                                                        formatIndianCurrency(selectedPaymentData.TransactionAmount) : 
+                                                                                        '0.00'
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Account Number and Additional Details */}
+                                                                <div className="grid grid-cols-2 gap-4 mb-2">
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <span className="text-xs text-gray-600 dark:text-gray-700">A/c No.</span>
+                                                                        <div className="border-b border-gray-400 dark:border-gray-500 flex-1 pb-1">
+                                                                            <span className="text-sm font-mono text-gray-800 dark:text-gray-700">
+                                                                                {selectedPaymentData?.MOID || '1234567890123456'}
                                                                             </span>
                                                                         </div>
                                                                     </div>
-                                                                ) : (
-                                                                    // Invoice Payment Layout
-                                                                    <div>
-                                                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
-                                                                            <div>
-                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block">Invoice No.</span>
-                                                                                <span className="font-semibold text-gray-900 dark:text-gray-100">{item.InvoiceNo}</span>
-                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">Bill Reference</span>
-                                                                            </div>
-                                                                            <div>
-                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block">Amount</span>
-                                                                                <span className="font-semibold text-gray-900 dark:text-gray-100">₹{formatIndianCurrency(item.Amount)}</span>
-                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">{item.Type} Component</span>
-                                                                            </div>
-                                                                            <div>
-                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block">Cost Center</span>
-                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.CCCode}</span>
-                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">Department</span>
-                                                                            </div>
-                                                                            <div>
-                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block">IT Code</span>
-                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.ITCode}</span>
-                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">Item Code</span>
+                                                                    <div className="text-right">
+                                                                        <div className="bg-green-50 dark:bg-green-100 px-2 py-1 rounded border border-green-200 dark:border-green-300 inline-block">
+                                                                            <div className="flex items-center space-x-1">
+                                                                                <CreditCard className="w-3 h-3 text-green-600 dark:text-green-700" />
+                                                                                <span className="text-xs font-medium text-green-700 dark:text-green-800">
+                                                                                    {selectedPaymentData?.ModeofPay || 'Online'}
+                                                                                </span>
                                                                             </div>
                                                                         </div>
-                                                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                                                                            <div>
-                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block">DCA Code</span>
-                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.DCACode}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Payment Details Row */}
+                                                                <div className="grid grid-cols-3 gap-3 mb-2 text-xs">
+                                                                    {selectedPaymentData?.Number && selectedPaymentData.Number !== 'Online' && (
+                                                                        <div className="bg-purple-50 dark:bg-purple-100 p-2 rounded border border-purple-200 dark:border-purple-300">
+                                                                            <p className="text-purple-600 dark:text-purple-700 font-medium mb-1">Reference</p>
+                                                                            <span className="text-purple-800 dark:text-purple-900 font-mono text-xs">
+                                                                                {selectedPaymentData.Number}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* ✅ FIX: Add null check for PaymentTypeName */}
+                                                                    {selectedPaymentData?.PaymentTypeName === 'Vendor Advance' && selectedPaymentData?.PoNo && (
+                                                                        <div className="bg-orange-50 dark:bg-orange-100 p-2 rounded border border-orange-200 dark:border-orange-300">
+                                                                            <p className="text-orange-600 dark:text-orange-700 font-medium mb-1">PO Reference</p>
+                                                                            <span className="text-orange-800 dark:text-orange-900 font-mono text-xs">
+                                                                                {selectedPaymentData.PoNo}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Signature Section - Based on Approval History */}
+                                                                {(() => {
+                                                                    const approvalComments = parseApprovalComments(selectedPaymentData?.Remarks);
+                                                                    const currentUser = getCurrentUser();
+                                                                    const currentRoleName = getCurrentRoleName();
+
+                                                                    const signatureAreas = [
+                                                                        ...approvalComments.map(approval => ({
+                                                                            name: approval.name,
+                                                                            role: approval.role,
+                                                                            status: 'approved'
+                                                                        })),
+                                                                        {
+                                                                            name: currentUser,
+                                                                            role: currentRoleName,
+                                                                            status: 'pending'
+                                                                        }
+                                                                    ];
+
+                                                                    const gridCols = signatureAreas.length === 1 ? 'grid-cols-1' :
+                                                                        signatureAreas.length === 2 ? 'grid-cols-2' :
+                                                                            signatureAreas.length === 3 ? 'grid-cols-3' :
+                                                                                'grid-cols-2 lg:grid-cols-4';
+
+                                                                    return (
+                                                                        <div className={`grid ${gridCols} gap-4 mt-6 pt-1 border-gray-300 dark:border-gray-400`}>
+                                                                            {signatureAreas.map((signer, index) => (
+                                                                                <div key={index} className="text-center">
+                                                                                    <div className="h-8 border-b border-gray-400 dark:border-gray-500 mb-1 relative">
+                                                                                        {signer.status === 'approved' && (
+                                                                                            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-green-600 dark:text-green-700 text-xs">
+                                                                                                ✓
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <p className="text-xs text-gray-600 dark:text-gray-700 font-medium">
+                                                                                        {signer.name}
+                                                                                    </p>
+                                                                                    <p className="text-xs text-gray-500 dark:text-gray-600">
+                                                                                        {signer.role}
+                                                                                    </p>
+                                                                                    {signer.status === 'approved' && (
+                                                                                        <div className="mt-1">
+                                                                                            <span className="px-2 py-0.5 bg-green-100 dark:bg-green-200 text-green-700 dark:text-green-800 text-xs rounded border border-green-200 dark:border-green-300">
+                                                                                                Approved
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {signer.status === 'pending' && (
+                                                                                        <div className="mt-1">
+                                                                                            <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-200 text-orange-700 dark:text-orange-800 text-xs rounded border border-orange-200 dark:border-orange-300">
+                                                                                                Pending
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    );
+                                                                })()}
+                                                            </div>
+
+                                                            {/* Bottom MICR Code Section */}
+                                                            <div className="bg-gray-100 dark:bg-gray-200 p-3">
+                                                                <div className="flex justify-between items-center text-purple-100 dark:text-purple-200 text-xs">
+                                                                    <p className="text-gray-800 dark:text-gray-600 text-sm" style={{ fontFamily: "'JetBrains Mono', 'Courier New', monospace", fontWeight: 600, letterSpacing: '2px', fontVariantNumeric: 'tabular-nums' }}>
+                                                                        {selectedPaymentData?.TransactionRefNo || 'N/A'}
+                                                                    </p>
+                                                                    <span>Generated: {new Date().toLocaleDateString()}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Rest of invoice breakdown */}
+                                                        {selectedPaymentData?.lstPayInvoiceData && selectedPaymentData.lstPayInvoiceData.length > 0 && (
+                                                            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                                                <button
+                                                                    onClick={() => setInvoiceExpanded(!invoiceExpanded)}
+                                                                    className="w-full p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-gray-200 dark:border-gray-700 hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-colors"
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center space-x-3">
+                                                                            <div className={`p-2 rounded-lg ${isAdvancePayment ? 'bg-orange-500' : 'bg-purple-500'}`}>
+                                                                                <FileBarChart className="w-5 h-5 text-white" />
                                                                             </div>
-                                                                            <div>
-                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block">Sub DCA</span>
-                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.SubDcaCode}</span>
+                                                                            <div className="text-left">
+                                                                                <h4 className="font-semibold text-gray-900 dark:text-white">
+                                                                                    {isAdvancePayment ? 'Advance Payment Details' : 'Invoice Breakdown'}
+                                                                                </h4>
+                                                                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                                                    {selectedPaymentData.lstPayInvoiceData.length} {isAdvancePayment ? 'Entry' : 'Items'} •
+                                                                                    Total: ₹{formatIndianCurrency(selectedPaymentData.lstPayInvoiceData.reduce((sum, item) => sum + parseFloat(item.Amount || 0), 0))}
+                                                                                </p>
                                                                             </div>
-                                                                            <div>
-                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block">Type</span>
-                                                                                <span className={`px-2 py-1 text-xs rounded-full border ${item.Type === 'GST'
-                                                                                        ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-600'
-                                                                                        : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-600'
+                                                                        </div>
+                                                                        <div className="flex items-center space-x-2">
+                                                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                                                {invoiceExpanded ? 'Hide' : 'Show'} Details
+                                                                            </span>
+                                                                            <div className={`transform transition-transform ${invoiceExpanded ? 'rotate-180' : ''}`}>
+                                                                                <ArrowUpCircle className="w-5 h-5 text-gray-500" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </button>
+
+                                                                {invoiceExpanded && (
+                                                                    <div className="p-6 space-y-4">
+                                                                        {selectedPaymentData.lstPayInvoiceData.map((item, index) => (
+                                                                            <div key={index} className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                                                {isAdvancePayment ? (
+                                                                                    // Advance Payment Layout
+                                                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                                        <div>
+                                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block font-semibold">Amount</span>
+                                                                                            <span className="font-bold text-lg text-orange-700 dark:text-orange-300">
+                                                                                                ₹{formatIndianCurrency(item.Amount || 0)}
+                                                                                            </span>
+                                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">Advance Payment</span>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block font-semibold">Cost Center</span>
+                                                                                            <span className="font-semibold text-gray-900 dark:text-gray-100">{item.CCCode || 'N/A'}</span>
+                                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">CC Code</span>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block font-semibold">DCA Code</span>
+                                                                                            <span className="font-medium text-gray-900 dark:text-gray-100">{item.DCACode || 'N/A'}</span>
+                                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 block">Account Head</span>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <span className="text-xs text-orange-600 dark:text-orange-400 block font-semibold">Type</span>
+                                                                                            <span className="px-2 py-1 text-xs rounded-full bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-600">
+                                                                                                {item.Type || 'N/A'}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    // Invoice Payment Layout
+                                                                                    <div>
+                                                                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+                                                                                            <div>
+                                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block font-semibold">Invoice No.</span>
+                                                                                                <span className="font-semibold text-gray-900 dark:text-gray-100">{item.InvoiceNo || 'N/A'}</span>
+                                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">Bill Reference</span>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block font-semibold">Amount</span>
+                                                                                                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                                                                    ₹{formatIndianCurrency(item.Amount || 0)}
+                                                                                                </span>
+                                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">{item.Type || 'N/A'} Component</span>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block font-semibold">Cost Center</span>
+                                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.CCCode || 'N/A'}</span>
+                                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">Department</span>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block font-semibold">IT Code</span>
+                                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.ITCode || 'N/A'}</span>
+                                                                                                <span className="text-xs text-gray-500 dark:text-gray-400 block">Item Code</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                                                                            <div>
+                                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block font-semibold">DCA Code</span>
+                                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.DCACode || 'N/A'}</span>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block font-semibold">Sub DCA</span>
+                                                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{item.SubDcaCode || 'N/A'}</span>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <span className="text-xs text-purple-600 dark:text-purple-400 block font-semibold">Type</span>
+                                                                                                <span className={`px-2 py-1 text-xs rounded-full border ${(item.Type || '').toLowerCase() === 'gst'
+                                                                                                    ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-600'
+                                                                                                    : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-600'
+                                                                                                    }`}>
+                                                                                                    {item.Type || 'N/A'}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+
+                                                                        {/* Summary */}
+                                                                        <div className={`p-4 rounded-lg border-2 ${isAdvancePayment
+                                                                            ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-600'
+                                                                            : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-600'
+                                                                            }`}>
+                                                                            <div className="flex justify-between items-center">
+                                                                                <span className={`font-semibold ${isAdvancePayment ? 'text-orange-800 dark:text-orange-200' : 'text-purple-800 dark:text-purple-200'
                                                                                     }`}>
-                                                                                    {item.Type}
+                                                                                    Total {isAdvancePayment ? 'Advance' : 'Invoice'} Amount:
+                                                                                </span>
+                                                                                <span className={`font-bold text-xl ${isAdvancePayment ? 'text-orange-900 dark:text-orange-100' : 'text-purple-900 dark:text-purple-100'
+                                                                                    }`}>
+                                                                                    ₹{formatIndianCurrency(selectedPaymentData.lstPayInvoiceData.reduce((sum, item) => sum + parseFloat(item.Amount || 0), 0))}
                                                                                 </span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                        ))}
-
-                                                        {/* Summary */}
-                                                        <div className={`p-4 rounded-lg ${selectedPaymentData.PaymentTypeName === 'Vendor Advance'
-                                                                ? 'bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700'
-                                                                : 'bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700'
-                                                            }`}>
-                                                            <div className="flex justify-between items-center">
-                                                                <span className={`font-semibold ${selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? 'text-orange-800 dark:text-orange-200' : 'text-purple-800 dark:text-purple-200'
-                                                                    }`}>
-                                                                    Total {selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? 'Advance' : 'Invoice'} Amount:
-                                                                </span>
-                                                                <span className={`font-bold text-lg ${selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? 'text-orange-900 dark:text-orange-100' : 'text-purple-900 dark:text-purple-100'
-                                                                    }`}>
-                                                                    ₹{formatIndianCurrency(selectedPaymentData.lstPayInvoiceData.reduce((sum, item) => sum + parseFloat(item.Amount), 0))}
-                                                                </span>
-                                                            </div>
-                                                        </div>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            )}
+                                                );
+                                            })()}
 
                                             {/* Approval History */}
-                                            {selectedPaymentData.Remarks && (() => {
+                                            {selectedPaymentData?.Remarks && (() => {
                                                 const approvalComments = parseApprovalComments(selectedPaymentData.Remarks);
                                                 return approvalComments.length > 0 && (
                                                     <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -1060,17 +1202,17 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
                                                     <span className="text-red-600 dark:text-red-400">*</span> Verification Comments (Mandatory)
                                                 </label>
                                                 <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                                                    Please provide your verification decision and comments for this {selectedPaymentData.PaymentTypeName === 'Vendor Advance' ? 'advance' : 'invoice'} payment.
+                                                    Please provide your verification decision and comments for this {selectedPaymentData?.PaymentTypeName === 'Vendor Advance' ? 'advance' : 'invoice'} payment.
                                                 </p>
                                                 <textarea
                                                     value={verificationComment}
                                                     onChange={(e) => setVerificationComment(e.target.value)}
                                                     className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${verificationComment.trim() === ''
-                                                            ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                                                            : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                                                        ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                                                        : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
                                                         }`}
                                                     rows="4"
-                                                    placeholder={`Please verify ${selectedPaymentData.PaymentTypeName === 'Vendor Advance'
+                                                    placeholder={`Please verify ${selectedPaymentData?.PaymentTypeName === 'Vendor Advance'
                                                         ? 'the advance amount, cost center allocation, and PO reference...'
                                                         : 'all invoice details, amounts, GST calculations, and cost center allocations...'
                                                         }`}
@@ -1115,4 +1257,4 @@ const VerifyVendorPayment = ({ notificationData, onNavigate }) => {
     );
 };
 
-export default VerifyVendorPayment;
+export default VerifyVendorPayment; 

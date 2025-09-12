@@ -38,6 +38,7 @@ import SuppplierInvoiceReducer from "../slices/vendorInvoiceSlice/supplierInvoic
 import SupplierPOReducer from "../slices/supplierPOSlice/supplierPOSlice";
 import purchaseHelperReducer from "../slices/supplierPOSlice/purcahseHelperSlice";
 import SppoReducer from "../slices/spPOSlice/spPoSlice"
+import costCenterSlice from "../slices/costCenterSlice/costCenterAppprovalSlice";
 
 
 const store = configureStore({
@@ -81,7 +82,9 @@ const store = configureStore({
     supplierinvoice: SuppplierInvoiceReducer,
     supplierpo: SupplierPOReducer,
     purchaseHelper: purchaseHelperReducer,
-    sppo: SppoReducer
+    sppo: SppoReducer,
+    costCenter: costCenterSlice,
+
   }
 
 });

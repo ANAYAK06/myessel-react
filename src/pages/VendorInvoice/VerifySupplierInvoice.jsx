@@ -99,7 +99,7 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
         isOpen: false,
         title: '',
         url: '',
-        type: '' // 'invoice' or 'mrr'
+        type: ''
     });
 
 

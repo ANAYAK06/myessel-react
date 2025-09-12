@@ -15,6 +15,7 @@ import VerifySPPO from '../../pages/SPPO/VerifySPPO';
 // FALLBACK COMPONENT - For unimplemented verification types
 // ============================================================================
 import InboxItemPlaceholder from './InboxItemPlaceholder';
+import CostCenterApproval from '../../pages/CostCenter/CostCenterApproval';
 
 // ============================================================================
 // HELPER FUNCTIONS - Pure utility functions for route detection
@@ -154,6 +155,36 @@ const isSPPOVerification = (path, category, title, displayName, workflowType) =>
     return isMatch;
 };
 
+
+const isCostCenterApproval = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/costcenter/approvecostcenter',
+        '/accounts/approvecostcenter',
+        'approvecostcenter',
+        'cost center approval',
+        'costcenterapproval'
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('cost center approval') ||
+        category.includes('costcenterapproval') ||
+        title.includes('cost center approval') ||
+        title.includes('costcenterapproval') ||
+        displayName.includes('cost center approval') ||
+        displayName.includes('costcenterapproval') ||
+        workflowType.includes('cost center approval') ||
+        workflowType.includes('costcenterapproval');
+    if (isMatch) {
+        console.log('✅ Cost Center Approval detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Cost Center Approval not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+    return isMatch;
+};
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -249,12 +280,16 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />; 
         }
         // ====================================================================
-        // ADD MORE VERIFICATION TYPES HERE
-        // ====================================================================
-        // Example for future additions:
-        // if (isPayrollApproval(path, category, title, displayName, workflowType)) {
-        //     return <VerifyPayrollApproval notificationData={notification} onNavigate={onNavigate} />;
-        // }
+        // COST CENTER APPROVAL VERIFICATION
+        // ==================================================================== 
+        if (isCostCenterApproval(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to Cost Center Approval Component');
+            return <CostCenterApproval
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />; 
+        }   
+
 
         // ✅ USAGE #2: When no specific component matches the notification
         console.log('⚠️ No specific component found, using placeholder');

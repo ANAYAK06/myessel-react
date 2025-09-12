@@ -3,16 +3,16 @@ import axios from "axios";
 import { API_BASE_URL } from '../../config/apiConfig';
 
 // ==============================================
-// SPPO VERIFICATION RELATED APIs
+// COST CENTER APPROVAL RELATED APIs
 // ==============================================
 
-// 1. Get Verification SPPO by Role ID and User ID
-export const getVerificationSPPO = async (roleId, userId) => {
+// 1. Get Approval Cost Center Details by Role ID and User ID
+export const getApprovalCostCenterDetails = async (roleId, uid) => {
     try {
-        console.log('📋 Getting Verification SPPO for Role ID:', roleId, 'User ID:', userId); // DEBUG
+        console.log('📋 Getting Approval Cost Center Details for Role ID:', roleId, 'UID:', uid); // DEBUG
         
         const response = await axios.get(
-            `${API_BASE_URL}/Purchase/GetVerificationSPPO?RoleId=${roleId}&Userid=${userId}`,
+            `${API_BASE_URL}/Accounts/GetApprovalCostCenterDetails?Roleid=${roleId}&UID=${uid}`,
             {
                 headers: {
                     'Content-Type': 'application/json'
@@ -20,10 +20,10 @@ export const getVerificationSPPO = async (roleId, userId) => {
             }
         );
         
-        console.log('✅ Verification SPPO Response:', response.data); // DEBUG
+        console.log('✅ Approval Cost Center Details Response:', response.data); // DEBUG
         return response.data;
     } catch (error) {
-        console.error('❌ Verification SPPO API Error:', error.response || error);
+        console.error('❌ Approval Cost Center Details API Error:', error.response || error);
         if (error.response?.data) {
             throw error.response.data;
         }
@@ -31,13 +31,13 @@ export const getVerificationSPPO = async (roleId, userId) => {
     }
 };
 
-// 2. Get SPPO by Number for Verification
-export const getSPPObyNoForVerify = async (sppono, ccCode, vendorCode, amendId) => {
+// 2. Get Approval Cost Center by CC Code and User ID
+export const getApprovalCCbyCC = async (ccCode, userId) => {
     try {
-        console.log('🔍 Getting SPPO for Verification - SPPO No:', sppono, 'CC Code:', ccCode, 'Vendor Code:', vendorCode, 'Amend ID:', amendId); // DEBUG
+        console.log('🔍 Getting Approval CC by CC Code:', ccCode, 'User ID:', userId); // DEBUG
         
         const response = await axios.get(
-            `${API_BASE_URL}/Purchase/GetSPPObyNoForVerify?Sppono=${sppono}&CCCode=${ccCode}&VendorCode=${vendorCode}&AmendId=${amendId}`,
+            `${API_BASE_URL}/Accounts/GetApprovalCCbyCC?CCCode=${ccCode}&userid=${userId}`,
             {
                 headers: {
                     'Content-Type': 'application/json'
@@ -45,10 +45,10 @@ export const getSPPObyNoForVerify = async (sppono, ccCode, vendorCode, amendId) 
             }
         );
         
-        console.log('✅ SPPO Verification Data Response:', response.data); // DEBUG
+        console.log('✅ Approval CC by CC Response:', response.data); // DEBUG
         return response.data;
     } catch (error) {
-        console.error('❌ SPPO Verification Data API Error:', error.response || error);
+        console.error('❌ Approval CC by CC API Error:', error.response || error);
         if (error.response?.data) {
             throw error.response.data;
         }
@@ -56,38 +56,32 @@ export const getSPPObyNoForVerify = async (sppono, ccCode, vendorCode, amendId) 
     }
 };
 
-// 3. Approve SPPO
-export const approveSPPO = async (approvalData) => {
+// 3. Approve Cost Center
+export const approveCostCenter = async (approvalData) => {
     try {
-        console.log('🎯 Approving SPPO...');
+        console.log('🎯 Approving Cost Center...');
         console.log('📊 Payload Summary:', {
-            SppoPONo: approvalData.SppoPONo,
+            CCCode: approvalData.CCCode,
             Action: approvalData.Action,
             RoleId: approvalData.RoleId,
             Userid: approvalData.Userid,
-            VendorCode: approvalData.VendorCode,
-            CCCode: approvalData.CCCode,
-            AmendId: approvalData.AmendId,
             Createdby: approvalData.Createdby,
             totalParameters: Object.keys(approvalData).length
         });
         
         // Log a sample of the data being sent
         console.log('🔍 Sample Data Check:', {
-            hasSppoPONo: !!approvalData.SppoPONo,
             hasCCCode: !!approvalData.CCCode,
-            hasVendorCode: !!approvalData.VendorCode,
-            hasAmendId: !!approvalData.AmendId,
             hasAction: !!approvalData.Action,
             hasUserid: !!approvalData.Userid,
             hasRoleId: !!approvalData.RoleId,
-            amountType: typeof approvalData.Amount,
-            dateType: typeof approvalData.SPPODate,
-            approvalStatusType: typeof approvalData.ApprovalStatus
+            hasCreatedby: !!approvalData.Createdby,
+            approvalStatusType: typeof approvalData.ApprovalStatus,
+            dateType: typeof approvalData.ApprovalDate
         });
         
         const response = await axios.put(
-            `${API_BASE_URL}/Purchase/ApproveSPPO`,
+            `${API_BASE_URL}/Accounts/ApproveCostCenter`,
             approvalData,
             {
                 headers: {
@@ -98,7 +92,7 @@ export const approveSPPO = async (approvalData) => {
             }
         );
         
-        console.log('✅ SPPO Approval Response:', {
+        console.log('✅ Cost Center Approval Response:', {
             status: response.status,
             data: response.data
         });
@@ -106,7 +100,7 @@ export const approveSPPO = async (approvalData) => {
         return response.data;
         
     } catch (error) {
-        console.group('❌ SPPO Approval API Error');
+        console.group('❌ Cost Center Approval API Error');
         
         if (error.response) {
             // Server responded with error status

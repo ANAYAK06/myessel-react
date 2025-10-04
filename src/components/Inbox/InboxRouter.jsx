@@ -9,13 +9,10 @@ import VerifyVendorPayment from '../../pages/VendorPayment/VerifyVendorPayment';
 import VerifySupplierInvoice from '../../pages/VendorInvoice/VerifySupplierInvoice';
 import VerifySupplierPO from '../../pages/SupplierPO/VerifySupplierPO';
 import VerifySPPO from '../../pages/SPPO/VerifySPPO';
-
-
-// ============================================================================
-// FALLBACK COMPONENT - For unimplemented verification types
-// ============================================================================
 import InboxItemPlaceholder from './InboxItemPlaceholder';
 import CostCenterApproval from '../../pages/CostCenter/CostCenterApproval';
+import GeneralInvoiceApproval from '../../pages/GeneralInvoice/GeneralInvoiceApproval';
+
 
 // ============================================================================
 // HELPER FUNCTIONS - Pure utility functions for route detection
@@ -155,7 +152,6 @@ const isSPPOVerification = (path, category, title, displayName, workflowType) =>
     return isMatch;
 };
 
-
 const isCostCenterApproval = (path, category, title, displayName, workflowType) => {
     const pathMatches = [
         '/costcenter/approvecostcenter',
@@ -182,6 +178,49 @@ const isCostCenterApproval = (path, category, title, displayName, workflowType) 
             path, category, title, displayName, workflowType
         });
     }
+    return isMatch;
+};
+
+const isGeneralInvoiceApproval = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/accounts/approvegeneralinvoice',
+        '/generalinvoice/approvegeneralinvoice',
+        '/invoice/approvegeneralinvoice',
+        'approvegeneralinvoice',
+        'general invoice approval',
+        'generalinvoiceapproval',
+        'general invoice',
+        'generalinvoice'
+    ];
+
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('general invoice approval') ||
+        category.includes('generalinvoiceapproval') ||
+        category.includes('general invoice') ||
+        category.includes('generalinvoice') ||
+        title.includes('general invoice approval') ||
+        title.includes('generalinvoiceapproval') ||
+        title.includes('general invoice') ||
+        title.includes('generalinvoice') ||
+        displayName.includes('general invoice approval') ||
+        displayName.includes('generalinvoiceapproval') ||
+        displayName.includes('general invoice') ||
+        displayName.includes('generalinvoice') ||
+        workflowType.includes('general invoice approval') ||
+        workflowType.includes('generalinvoiceapproval') ||
+        workflowType.includes('general invoice') ||
+        workflowType.includes('generalinvoice');
+
+    if (isMatch) {
+        console.log('✅ General Invoice Approval detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ General Invoice Approval not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+
     return isMatch;
 };
 
@@ -231,7 +270,7 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
                 notificationData={notification} 
                 onNavigate={onNavigate} 
             />;
-        }
+        }   
 
         // ====================================================================
         // VENDOR PAYMENT VERIFICATION
@@ -255,8 +294,6 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
 
-
-
         // ====================================================================
         // SUPPLIER PO VERIFICATION
         // ====================================================================
@@ -271,7 +308,6 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         // =====================================================================
         // SPPO VERIFICATION
         //=====================================================================
-
         if (isSPPOVerification(path, category, title, displayName, workflowType)) { 
             console.log('✅ Routing to VerifySPPO');
             return <VerifySPPO
@@ -279,6 +315,7 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
                 onNavigate={onNavigate}
             />; 
         }
+
         // ====================================================================
         // COST CENTER APPROVAL VERIFICATION
         // ==================================================================== 
@@ -288,8 +325,18 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
                 notificationData={notification}
                 onNavigate={onNavigate}
             />; 
-        }   
+        }
 
+        // ====================================================================
+        // GENERAL INVOICE APPROVAL VERIFICATION
+        // ====================================================================
+        if (isGeneralInvoiceApproval(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to General Invoice Approval Component');
+            return <GeneralInvoiceApproval
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
 
         // ✅ USAGE #2: When no specific component matches the notification
         console.log('⚠️ No specific component found, using placeholder');

@@ -26,6 +26,7 @@ import {
     selectActiveTab
 } from '../../slices/businessinfosetup/businessInfoSlice';
 import WorkflowManagement from './WorkflowManagement';
+import RolesDesignTab from './RolesDesignTab';
 
 const BasicBusinessInfoSetup = () => {
     const dispatch = useDispatch();
@@ -361,89 +362,7 @@ const RoleChangeTab = ({ userRoles, loading, onRefresh }) => {
 };
 
 
-const RolesDesignTab = ({ masterOperations, loading, onRefresh }) => {
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-purple-600" />
-                <span className="ml-3 text-gray-600 dark:text-gray-300">Loading master operations...</span>
-            </div>
-        );
-    }
 
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Roles Design</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Design and configure role permissions</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <button
-                        onClick={onRefresh}
-                        disabled={loading}
-                        className="flex items-center space-x-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        <span>Refresh</span>
-                    </button>
-                    <button className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
-                        <Plus className="w-4 h-4" />
-                        <span>New Role</span>
-                    </button>
-                </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                {!masterOperations || masterOperations.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Layers className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Operations Found</h3>
-                        <p className="text-gray-500 dark:text-gray-400">No master operations have been configured yet.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                            <thead className="bg-indigo-600 text-white">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Operation ID</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Operation Description</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                                {masterOperations.map((operation, index) => (
-                                    <tr key={operation.MasterOperationID || index} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                                            {operation.MasterOperationID || 'N/A'}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                                            {operation.MasterOperationDescription || 'No Description'}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                                            <span className="px-2 py-1 text-xs font-medium rounded-md bg-green-100 text-green-800">
-                                                Active
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <select className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
-                                                <option>Select</option>
-                                                <option>Edit</option>
-                                                <option>Duplicate</option>
-                                                <option>Delete</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
 
 // FIXED: Role Operations Tab Component - Using correct API data structure
 const RoleOperationsTab = ({ workflowOperations, loading, saving, onRefresh, onSave }) => {

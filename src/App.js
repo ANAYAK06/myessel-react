@@ -9,7 +9,7 @@ import LoginOptions from './pages/Login/LoginOptions';
 import EmployeeDashboard from './pages/Dashboard/EmployeeDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedApplication from './pages/Dashboard/RoleBasedApplication';
-import SessionProvider from './components/SessionProvider'; // ADD THIS IMPORT
+import SessionProvider from './components/SessionProvider'; 
 
 // Import ThemeProvider
 import { ThemeProvider } from './contexts/ThemeContext';

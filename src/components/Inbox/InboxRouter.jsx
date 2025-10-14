@@ -12,6 +12,7 @@ import VerifySPPO from '../../pages/SPPO/VerifySPPO';
 import InboxItemPlaceholder from './InboxItemPlaceholder';
 import CostCenterApproval from '../../pages/CostCenter/CostCenterApproval';
 import GeneralInvoiceApproval from '../../pages/GeneralInvoice/GeneralInvoiceApproval';
+import VerifyCCBudgetAmendment from '../../pages/Budget/VerifyCCBudgetAmendment';
 
 
 // ============================================================================
@@ -224,6 +225,34 @@ const isGeneralInvoiceApproval = (path, category, title, displayName, workflowTy
     return isMatch;
 };
 
+const isCCBudgetAmendmentVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/budget/verifyccbudgetamendment',
+        '/accounts/verifyccbudgetamendment',
+        '/accountsapproval/verifyccamendbudget',
+        'verifyccbudgetamendment',
+        'cc budget amendment'
+    ];  
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('cc budget amendment') ||
+        category.includes('verifyccbudgetamendment') ||     
+        title.includes('cc budget amendment') ||
+        title.includes('verifyccbudgetamendment') ||        
+        displayName.includes('cc budget amendment') ||
+        displayName.includes('cost center budget amend(pcc)') ||  
+        workflowType.includes('cc budget amendment') ||
+        workflowType.includes('verifyccbudgetamendment');
+    if (isMatch) {
+        console.log('✅ CC Budget Amendment detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ CC Budget Amendment not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }   
+    return isMatch;
+};
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -333,6 +362,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isGeneralInvoiceApproval(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to General Invoice Approval Component');
             return <GeneralInvoiceApproval
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // CC BUDGET AMENDMENT VERIFICATION
+        // ====================================================================
+        if (isCCBudgetAmendmentVerification(path, category, title, displayName, workflowType)) {        
+            console.log('✅ Routing to VerifyCCBudgetAmendment');
+            return <VerifyCCBudgetAmendment
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

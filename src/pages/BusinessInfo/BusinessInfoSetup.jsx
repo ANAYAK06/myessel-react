@@ -27,6 +27,8 @@ import {
 } from '../../slices/businessinfosetup/businessInfoSlice';
 import WorkflowManagement from './WorkflowManagement';
 import RolesDesignTab from './RolesDesignTab';
+import RoleChangeTab from './RoleChangeTab';
+import RoleOperationsTab from './RoleOperationsTab';
 
 const BasicBusinessInfoSetup = () => {
     const dispatch = useDispatch();
@@ -50,7 +52,7 @@ const BasicBusinessInfoSetup = () => {
             id: 'approval-hierarchy',
             label: 'Approval Hierarchy',
             icon: CheckCircle,
-            color: 'indigo',
+            color: 'blue',
             mid: null,
             alwaysVisible: true
         },
@@ -58,7 +60,7 @@ const BasicBusinessInfoSetup = () => {
             id: 'firm-info',
             label: 'Firm Info',
             icon: Building2,
-            color: 'blue',
+            color: 'indigo',
             mid: 190
         },
         'role-change': {
@@ -137,9 +139,9 @@ const BasicBusinessInfoSetup = () => {
                 active: 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border-indigo-500',
                 inactive: 'text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
             },
-            blue: {
-                active: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-500',
-                inactive: 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+            indigo: {
+                active: 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border-indigo-500',
+                inactive: 'text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
             },
             green: {
                 active: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-500',
@@ -276,256 +278,7 @@ const ApprovalHierarchyTab = ({ workflowLevels, loading, onRefresh, onSave }) =>
         </div>
     );
 };
-// FIXED: Role Change Tab Component - Using correct API data structure
-const RoleChangeTab = ({ userRoles, loading, onRefresh }) => {
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-green-600" />
-                <span className="ml-3 text-gray-600 dark:text-gray-300">Loading user roles...</span>
-            </div>
-        );
-    }
 
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Role Change</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Manage user roles and permissions</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <button
-                        onClick={onRefresh}
-                        disabled={loading}
-                        className="flex items-center space-x-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        <span>Refresh</span>
-                    </button>
-                </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                {!userRoles || userRoles.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Users Found</h3>
-                        <p className="text-gray-500 dark:text-gray-400">No user roles have been configured yet.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                            <thead className="bg-indigo-600 text-white">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Role ID</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Role Code</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Role Description</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Level Verification</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Applicable For CC</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                                {userRoles.map((role, index) => (
-                                    <tr key={role.RoleID || index} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
-                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{role.RoleID || 'N/A'}</td>
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{role.RoleCode || 'N/A'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{role.RoleDescription || 'No Description'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{role.LevelOfVerification || 'N/A'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 text-xs font-medium rounded-md ${
-                                                role.ApplicableForCC 
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {role.ApplicableForCC ? 'Yes' : 'No'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <select className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
-                                                <option>-Select-</option>
-                                                <option>Edit Role</option>
-                                                <option>View Details</option>
-                                                <option>Deactivate</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-
-
-
-// FIXED: Role Operations Tab Component - Using correct API data structure
-const RoleOperationsTab = ({ workflowOperations, loading, saving, onRefresh, onSave }) => {
-    const [selectedOperation, setSelectedOperation] = useState('');
-    const [permissions, setPermissions] = useState({});
-
-    // Set default operation when data loads
-    useEffect(() => {
-        if (workflowOperations && workflowOperations.length > 0 && !selectedOperation) {
-            setSelectedOperation(workflowOperations[0].MasterOperationDescription || workflowOperations[0].MasterOperationID || '');
-        }
-    }, [workflowOperations, selectedOperation]);
-
-    const handlePermissionChange = (roleIndex, permission, value) => {
-        setPermissions(prev => ({
-            ...prev,
-            [`${roleIndex}_${permission}`]: value
-        }));
-    };
-
-    const handleSaveOperations = async () => {
-        try {
-            const operationData = {
-                operationName: selectedOperation,
-                permissions: permissions
-            };
-            await onSave(operationData);
-            toast.success('Role operations saved successfully');
-        } catch (error) {
-            toast.error('Error saving role operations');
-            console.error('Error:', error);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-orange-600" />
-                <span className="ml-3 text-gray-600 dark:text-gray-300">Loading workflow operations...</span>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Role Operations</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Configure operational permissions for roles</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <button
-                        onClick={onRefresh}
-                        disabled={loading}
-                        className="flex items-center space-x-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        <span>Refresh</span>
-                    </button>
-                </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                {!workflowOperations || workflowOperations.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Cog className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Operations Found</h3>
-                        <p className="text-gray-500 dark:text-gray-400">No workflow operations have been configured yet.</p>
-                    </div>
-                ) : (
-                    <>
-                        {/* Role Operations Dropdown */}
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Role Operations
-                            </label>
-                            <select
-                                value={selectedOperation}
-                                onChange={(e) => setSelectedOperation(e.target.value)}
-                                className="w-full max-w-md px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            >
-                                {workflowOperations.map((operation, index) => (
-                                    <option key={index} value={operation.MasterOperationDescription || operation.MasterOperationID || ''}>
-                                        {operation.MasterOperationDescription || `Operation ${operation.MasterOperationID}` || `Operation ${index + 1}`}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Permissions Matrix */}
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                                <thead className="bg-indigo-600 text-white">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider">Operation</th>
-                                        <th className="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Master ID</th>
-                                        <th className="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Max Pending Level</th>
-                                        <th className="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Verification Pending</th>
-                                        <th className="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                                    {workflowOperations.map((operation, index) => (
-                                        <tr key={index} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
-                                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                                                {operation.MasterOperationDescription || `Operation ${operation.MasterOperationID}`}
-                                            </td>
-                                            <td className="px-6 py-4 text-center text-sm text-gray-900 dark:text-white">
-                                                {operation.MasterOperationID || 'N/A'}
-                                            </td>
-                                            <td className="px-6 py-4 text-center text-sm text-gray-900 dark:text-white">
-                                                {operation.MaxPendingLevel || 0}
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`px-2 py-1 text-xs font-medium rounded-md ${
-                                                    operation.VerificationPendingExist 
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-green-100 text-green-800'
-                                                }`}>
-                                                    {operation.VerificationPendingExist ? 'Pending' : 'Clear'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <select className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
-                                                    <option>Select</option>
-                                                    <option>Edit</option>
-                                                    <option>View Details</option>
-                                                    <option>Configure</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="mt-6 flex items-center space-x-4">
-                            <button
-                                onClick={handleSaveOperations}
-                                disabled={saving}
-                                className="flex items-center space-x-2 px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                {saving ? (
-                                    <RefreshCw className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Save className="w-4 h-4" />
-                                )}
-                                <span>{saving ? 'Saving...' : 'Add Role Operations'}</span>
-                            </button>
-                            <button 
-                                onClick={() => setPermissions({})}
-                                className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                            >
-                                Reset
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-};
 
 // Firm Info Tab Component (for non-super admin users)
 const FirmInfoTab = () => {
@@ -536,7 +289,7 @@ const FirmInfoTab = () => {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Firm Information</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Manage basic firm information and settings</p>
                 </div>
-                <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <button className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
                     <Save className="w-4 h-4" />
                     <span>Save Changes</span>
                 </button>

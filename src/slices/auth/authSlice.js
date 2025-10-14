@@ -1,7 +1,7 @@
 // slices/auth/authSlice.js - OPTIMIZED VERSION - Improved performance and reduced localStorage operations
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as authAPI from '../../api/securityAPI/authAPI';
-import { updateUser } from '../../api/businessinfoAPI/businessinfoAPI';
+
 
 // IMPROVED: Helper function to batch localStorage operations
 const batchLocalStorageUpdate = (updates) => {

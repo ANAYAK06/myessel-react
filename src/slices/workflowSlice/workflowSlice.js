@@ -101,12 +101,13 @@ export const fetchRoleOperationRoles = createAsyncThunk(
         try {
             console.log('🔍 Fetching role operation roles, masterOperationId:', masterOperationId);
             const response = await workflowAPI.getRoleOperationRoles(masterOperationId);
-            console.log('✅ Role operation roles data:', response.Data);
+            console.log('✅ Role operation roles response:', response);
             
-            if (response && response.IsSuccessful === true && response.Data) {
+            // Check if data exists, regardless of IsSuccessful flag
+            if (response && response.Data) {
                 return response.Data;
-            } else if (response && response.Data && Array.isArray(response.Data)) {
-                return response.Data;
+            } else if (response && Array.isArray(response)) {
+                return response;
             } else {
                 const errorMessage = response?.Message || 'No role operation roles data available';
                 return rejectWithValue(errorMessage);

@@ -112,8 +112,6 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
     // ✅ APPROVAL STATE (Generic/Reusable)
     const statusLoading = useSelector(selectStatusListLoading);
     const statusError = useSelector(selectStatusListError);
-    const statusList = useSelector(selectStatusList);
-    const availableActions = useSelector(selectAvailableActions);
     const enabledActions = useSelector(selectEnabledActions);
     const hasActions = useSelector(selectHasActions);
 

@@ -9,7 +9,7 @@ import {
     FileCheck, UserCheck,
     FileX, Calculator,
     Clipboard, ChevronDown, ChevronUp,
-    ChevronRight, ChevronLeft,  TrendingDown,
+    ChevronRight, ChevronLeft, TrendingDown,
     Briefcase, FileDown, Eye, X
 } from 'lucide-react';
 
@@ -24,10 +24,10 @@ import {
     selectDocsExistData,
     selectApprovalCCAmendBudgetDetailsLoading,
     selectCCAmendBudgetDataLoading,
-  
+
     selectApproveCCBudgetAmendLoading,
     selectApprovalCCAmendBudgetDetailsError,
-   
+
     selectSelectedRoleId,
     setSelectedRoleId,
     setSelectedUID,
@@ -64,7 +64,7 @@ import {
     getAmountDisplay,
 } from '../../utilities/amountToTextHelper';
 
-import { buildCCBudgetAmendmentUrl,  isImageFile, isPdfFile } from '../../config/s3Config';
+import { buildCCBudgetAmendmentUrl, isImageFile, isPdfFile } from '../../config/s3Config';
 
 const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
     const dispatch = useDispatch();
@@ -119,9 +119,9 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
         }
     }, [roleId, uid, selectedRoleId, dispatch]);
 
-    useEffect(() => { 
+    useEffect(() => {
         dispatch(setShowReturnButton('Yes'));
-    }, [dispatch]); 
+    }, [dispatch]);
 
     // ✅ FETCH STATUS LIST
     useEffect(() => {
@@ -226,7 +226,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
         }
     };
 
-    // ✅ ATTACHMENT MODAL FUNCTIONS (like SPPO but with modal)
+
     const handleViewAttachment = (filePath) => {
         if (!filePath) {
             toast.error('No attachment available');
@@ -234,7 +234,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
         }
         const fullUrl = buildCCBudgetAmendmentUrl(filePath);
 
-        if(!fullUrl){
+        if (!fullUrl) {
             toast.error('Invalid file path')
             return
         }
@@ -273,34 +273,34 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
             }));
         }
 
-        // Reset states when new amendment is selected (like SPPO)
+
         setIsVerified(false);
         setShowRemarksHistory(false);
     };
 
     const buildAmendmentApprovalPayload = (actionValue) => {
-    const currentUser = getCurrentUser();
-    const currentRoleName = getCurrentRoleName();
+        const currentUser = getCurrentUser();
+        const currentRoleName = getCurrentRoleName();
 
-    const updatedRemarks = updateRemarksHistory(
-        selectedAmendmentData?.Remarks,
-        currentRoleName,
-        currentUser,
-        verificationComment
-    );
+        const updatedRemarks = updateRemarksHistory(
+            selectedAmendmentData?.Remarks,
+            currentRoleName,
+            currentUser,
+            verificationComment
+        );
 
-    return {
-        AmendedValue: selectedAmendmentData?.AmendedValue || "0",    
-        AmendmentType: selectedAmendment.AmendmentType,               
-        ApprovalNote: verificationComment,                            
-        BudgetId: selectedAmendmentData?.BudgetId?.toString() || "",  
-        CCBudgetAmendmentid: selectedAmendment.CCBudgetAmendmentid.toString(), 
-        CCCode: selectedAmendmentData?.CCCode || selectedAmendment.CCCode,     
-        CreatedBy: currentUser,                                       
-        Roleid: (roleId || selectedRoleId).toString(),              
-        VerificationType: actionValue                                                 
+        return {
+            AmendedValue: selectedAmendmentData?.AmendedValue || "0",
+            AmendmentType: selectedAmendment.AmendmentType,
+            ApprovalNote: verificationComment,
+            BudgetId: selectedAmendmentData?.BudgetId?.toString() || "",
+            CCBudgetAmendmentid: selectedAmendment.CCBudgetAmendmentid.toString(),
+            CCCode: selectedAmendmentData?.CCCode || selectedAmendment.CCCode,
+            CreatedBy: currentUser,
+            Roleid: (roleId || selectedRoleId).toString(),
+            VerificationType: actionValue
+        };
     };
-};
 
     const onActionClick = async (action) => {
         if (!selectedAmendment) {
@@ -471,7 +471,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
 
                     {/* Modal Body */}
                     <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
-                        {isImage? (
+                        {isImage ? (
                             <div className="flex items-center justify-center">
                                 <img
                                     src={attachmentUrl}
@@ -479,7 +479,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                                     className="max-w-full h-auto rounded-lg shadow-lg"
                                 />
                             </div>
-                        ) : isPdf? (
+                        ) : isPdf ? (
                             <iframe
                                 src={attachmentUrl}
                                 className="w-full h-[calc(90vh-120px)] rounded-lg border border-gray-300 dark:border-gray-600"
@@ -898,8 +898,8 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                                             <div
                                                 key={amendment.CCBudgetAmendmentid}
                                                 className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedAmendment?.CCBudgetAmendmentid === amendment.CCBudgetAmendmentid
-                                                        ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 shadow-lg'
-                                                        : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300 bg-white dark:bg-gray-800'
+                                                    ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 shadow-lg'
+                                                    : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300 bg-white dark:bg-gray-800'
                                                     } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
                                                 onClick={() => handleAmendmentSelect(amendment)}
                                                 title={isLeftPanelCollapsed && !isLeftPanelHovered ? `${amendment.CCName} - ${amendment.CCBudgetAmendmentid}` : ''}
@@ -1195,8 +1195,8 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                                                     value={verificationComment}
                                                     onChange={(e) => setVerificationComment(e.target.value)}
                                                     className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${verificationComment.trim() === ''
-                                                            ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                                                            : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                                                        ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                                                        : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
                                                         }`}
                                                     rows="4"
                                                     placeholder="Please verify budget amendment amounts, justification, supporting documents, and approval requirements..."

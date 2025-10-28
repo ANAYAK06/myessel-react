@@ -13,7 +13,7 @@ export const UPLOAD_DOCS_PATH = 'Upload+docs';
 
 // Module-specific folder names
 export const S3_FOLDERS = {
-    CC_BUDGET_AMENDMENT: 'AmendCCBudgetTEST',
+    CC_BUDGET_AMENDMENT: 'AmendCCBudgetPROD',
     PURCHASE_ORDER: 'PurchaseOrders',
     SUPPLIER_PO: 'SupplierPO',
     STAFF_DOCUMENTS: 'StaffDocuments',

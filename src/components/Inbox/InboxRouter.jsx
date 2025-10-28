@@ -13,6 +13,7 @@ import InboxItemPlaceholder from './InboxItemPlaceholder';
 import CostCenterApproval from '../../pages/CostCenter/CostCenterApproval';
 import GeneralInvoiceApproval from '../../pages/GeneralInvoice/GeneralInvoiceApproval';
 import VerifyCCBudgetAmendment from '../../pages/Budget/VerifyCCBudgetAmendment';
+import VerifyDCABudgetAmendment from '../../pages/Budget/VerifyDCABudgetAmendment';
 
 
 // ============================================================================
@@ -253,6 +254,36 @@ const isCCBudgetAmendmentVerification = (path, category, title, displayName, wor
     }   
     return isMatch;
 };
+
+const isDCABudgetAmendmentVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/AccountsApproval/VerifyDCABudgetAmend',
+        '/accountsapproval/verifydcabudgetamend',
+        '/accountsapproval/verifydcaamendbudget',   
+        'verifydcabudgetamendment',
+        'dca budget amendment'
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('dca budget amendment') ||
+        category.includes('/accountsapproval/verifydcabudgetamend') ||
+        title.includes('Account Head Amend') ||
+        title.includes('account head amend') ||
+        displayName.includes('dca budget amendment') ||
+        displayName.includes('account head amend(pcc)') ||
+        workflowType.includes('dca budget amendment') ||
+        workflowType.includes('verifydcabudgetamendment');
+    if (isMatch) {
+        console.log('✅ DCA Budget Amendment detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ DCA Budget Amendment not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }   
+    return isMatch;
+};
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -377,6 +408,19 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
                 onNavigate={onNavigate}
             />;
         }
+
+        // ====================================================================
+        // DCA BUDGET AMENDMENT VERIFICATION
+        // ==================================================================== 
+        if (isDCABudgetAmendmentVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyDCABudgetAmendment');
+            return <VerifyDCABudgetAmendment
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }   
+        // ====================================================================
+
 
         // ✅ USAGE #2: When no specific component matches the notification
         console.log('⚠️ No specific component found, using placeholder');

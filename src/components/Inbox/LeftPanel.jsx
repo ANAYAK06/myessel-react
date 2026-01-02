@@ -1,4 +1,4 @@
-// LeftPanel.jsx - Reusable Collapsible List Panel Component
+// LeftPanel.jsx - Reusable Collapsible List Panel Component (FIXED)
 import React from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw, Clock, CheckCircle, XCircle } from 'lucide-react';
 
@@ -14,6 +14,8 @@ import { ChevronLeft, ChevronRight, RefreshCw, Clock, CheckCircle, XCircle } fro
  * @param {function} renderItem - Custom render function for list items
  * @param {boolean} isCollapsed - Collapse state
  * @param {function} onCollapseToggle - Toggle collapse handler
+ * @param {boolean} isHovered - Hover state (EXTERNAL - from parent)
+ * @param {function} onHoverChange - Hover state change handler (EXTERNAL - from parent)
  * @param {boolean} loading - Loading state
  * @param {string} error - Error message
  * @param {function} onRefresh - Refresh handler
@@ -34,6 +36,10 @@ const LeftPanel = ({
     isCollapsed = false,
     onCollapseToggle,
     
+    // Hover control (EXTERNAL - managed by parent)
+    isHovered = false,
+    onHoverChange,
+    
     // States
     loading = false,
     error = null,
@@ -52,8 +58,6 @@ const LeftPanel = ({
         headerGradient: 'from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20'
     }
 }) => {
-    const [isHovered, setIsHovered] = React.useState(false);
-    
     // Merge config with defaults
     const mergedConfig = {
         title: 'Pending',
@@ -71,13 +75,27 @@ const LeftPanel = ({
     const IconComponent = mergedConfig.icon;
     const shouldExpand = !isCollapsed || (mergedConfig.enableHover && isHovered);
 
+    // Handle mouse enter - notify parent
+    const handleMouseEnter = () => {
+        if (mergedConfig.enableHover && onHoverChange) {
+            onHoverChange(true);
+        }
+    };
+
+    // Handle mouse leave - notify parent
+    const handleMouseLeave = () => {
+        if (mergedConfig.enableHover && onHoverChange) {
+            onHoverChange(false);
+        }
+    };
+
     return (
         <div
             className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${
                 isCollapsed && !isHovered ? 'w-16' : 'w-full'
             }`}
-            onMouseEnter={() => mergedConfig.enableHover && setIsHovered(true)}
-            onMouseLeave={() => mergedConfig.enableHover && setIsHovered(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
         >
             {/* Header */}
             <div className={`bg-gradient-to-r ${mergedConfig.headerGradient} p-4 border-b border-gray-200 dark:border-gray-700`}>
@@ -141,9 +159,10 @@ const LeftPanel = ({
                 className={`p-4 overflow-y-auto transition-all duration-300 ${
                     isCollapsed && !isHovered ? 'w-16' : 'w-full'
                 }`}
-                style={{ height: mergedConfig.maxHeight,
+                style={{ 
+                    height: mergedConfig.maxHeight,
                     minHeight: '200px'
-                 }}
+                }}
             >
                 {/* Loading State */}
                 {loading ? (

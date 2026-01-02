@@ -172,7 +172,7 @@ const VerifyDCABudgetAmendment = ({ notificationData, onNavigate }) => {
 
             dispatch(fetchVerifyDCABudgetAmendById({
                 ccCode: selectedAmendment.CCCode,
-                fyear: selectedAmendment.FYYear || 'N/A',
+                 fyear: selectedAmendment.FYYear || 'N/A',
                 ctype: selectedAmendment.cc_Type || 'Performing',
                 status: selectedAmendment.Status || '1'
             }));

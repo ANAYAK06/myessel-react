@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import clsx from 'clsx';
-import { 
+import {
     Users,
     Building2,
     Calendar,
@@ -61,12 +61,14 @@ import {
     selectHasAnyError
 } from '../../slices/HrReportSlice/cmsPaymentReportSlice';
 
+import PaySlipModal from './PaySlipModal';
+
 // Tooltip Component
 const Tooltip = ({ children, content }) => {
     const [showTooltip, setShowTooltip] = useState(false);
 
     return (
-        <div 
+        <div
             className="relative inline-block"
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
@@ -98,9 +100,9 @@ const Modal = ({ isOpen, onClose, title, children, size = 'xl' }) => {
         <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose}></div>
-                
+
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-                
+
                 <div className={clsx(
                     "inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full",
                     sizeClasses[size]
@@ -128,6 +130,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'xl' }) => {
 };
 
 // Pay Slip Details Modal Component
+// Pay Slip Details Modal Component - FIXED
 const PaySlipDetailsModal = ({ isOpen, onClose, paySlipData, loading }) => {
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
@@ -137,7 +140,50 @@ const PaySlipDetailsModal = ({ isOpen, onClose, paySlipData, loading }) => {
         }).format(amount);
     };
 
-    const paySlipDetails = paySlipData?.Data || paySlipData || {};
+    // 🔧 FIX: The API response structure is different than expected
+    // Based on the error, the response contains: EmpRefno, SalaryHead, HeadType, HeadAmount, PerDayAmount, PayDays
+
+    console.log('💳 Pay Slip Data received:', paySlipData);
+
+    // Extract the actual data - it might be nested
+    const actualData = paySlipData?.Data || paySlipData;
+
+    // Check if it's an array or object
+    let earnings = [];
+    let deductions = [];
+    let employeeInfo = {};
+
+    if (Array.isArray(actualData)) {
+        // If it's an array, separate earnings and deductions
+        earnings = actualData.filter(item => item.HeadType === 'Earning' || item.HeadType === 'E');
+        deductions = actualData.filter(item => item.HeadType === 'Deduction' || item.HeadType === 'D');
+
+        // Get employee info from first item
+        if (actualData.length > 0) {
+            employeeInfo = {
+                empRefno: actualData[0].EmpRefno,
+                // Add other fields if available
+            };
+        }
+    } else if (typeof actualData === 'object' && actualData !== null) {
+        // If it's an object, it might have lstEarnings and lstDeductions
+        earnings = actualData.lstEarnings || actualData.Earnings || [];
+        deductions = actualData.lstDeductions || actualData.Deductions || [];
+        employeeInfo = {
+            empRefno: actualData.EmpRefno || actualData.empRefno,
+            ccCode: actualData.CurrentCC || actualData.CCCode,
+            transactionRefno: actualData.TransactionRefno
+        };
+    }
+
+    console.log('👤 Employee Info:', employeeInfo);
+    console.log('💰 Earnings:', earnings);
+    console.log('💸 Deductions:', deductions);
+
+    // Calculate totals
+    const totalEarnings = earnings.reduce((sum, item) => sum + (parseFloat(item.HeadAmount || item.Amount || 0)), 0);
+    const totalDeductions = deductions.reduce((sum, item) => sum + (parseFloat(item.HeadAmount || item.Amount || 0)), 0);
+    const netPay = totalEarnings - totalDeductions;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Employee Pay Slip Details" size="full">
@@ -153,61 +199,121 @@ const PaySlipDetailsModal = ({ isOpen, onClose, paySlipData, loading }) => {
                         <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Employee Information</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                             <div>
-                                <span className="font-medium text-gray-600 dark:text-gray-400">Employee Name:</span>
-                                <p className="text-gray-900 dark:text-white">{paySlipDetails.employeeName || '-'}</p>
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Employee Code:</span>
+                                <p className="text-gray-900 dark:text-white">{employeeInfo.empRefno || '-'}</p>
                             </div>
                             <div>
                                 <span className="font-medium text-gray-600 dark:text-gray-400">Cost Centre:</span>
-                                <p className="text-gray-900 dark:text-white">{paySlipDetails.ccCode || '-'}</p>
+                                <p className="text-gray-900 dark:text-white">{employeeInfo.ccCode || '-'}</p>
                             </div>
                             <div>
-                                <span className="font-medium text-gray-600 dark:text-gray-400">Pay Roll Date:</span>
-                                <p className="text-gray-900 dark:text-white">{paySlipDetails.payRollDate || '-'}</p>
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Transaction Reference:</span>
+                                <p className="text-gray-900 dark:text-white">{employeeInfo.transactionRefno || '-'}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Pay Slip Details Table */}
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gradient-to-r from-indigo-600 to-purple-700">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase">Description</th>
-                                    <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase">Amount</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase">Type</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase">Reference</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {paySlipDetails && Object.keys(paySlipDetails).length > 0 ? (
-                                    Object.entries(paySlipDetails).map(([key, value], index) => (
-                                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{key}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
-                                                {typeof value === 'number' ? formatCurrency(value) : value || '-'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">Detail</td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                                {paySlipDetails.transactionRefno || '-'}
-                                            </td>
-                                        </tr>
-                                    ))
+                    {/* Earnings and Deductions in Two Columns */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Earnings */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3">
+                                <h5 className="text-lg font-bold text-white">Earnings</h5>
+                            </div>
+                            <div className="p-4">
+                                {earnings.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {earnings.map((item, index) => (
+                                            <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                                                <div>
+                                                    <p className="font-medium text-gray-900 dark:text-white">
+                                                        {item.SalaryHead || item.Description || 'Earning'}
+                                                    </p>
+                                                    {item.PayDays && (
+                                                        <p className="text-xs text-gray-500">
+                                                            {item.PayDays} days @ ₹{formatCurrency(item.PerDayAmount || 0)}/day
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <p className="font-bold text-green-600 dark:text-green-400">
+                                                    ₹{formatCurrency(item.HeadAmount || item.Amount || 0)}
+                                                </p>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between items-center pt-3 border-t-2 border-green-600">
+                                            <p className="font-bold text-gray-900 dark:text-white">Total Earnings:</p>
+                                            <p className="font-bold text-green-600 dark:text-green-400 text-lg">
+                                                ₹{formatCurrency(totalEarnings)}
+                                            </p>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                            No pay slip details available
-                                        </td>
-                                    </tr>
+                                    <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                                        No earnings data available
+                                    </p>
                                 )}
-                            </tbody>
-                        </table>
+                            </div>
+                        </div>
+
+                        {/* Deductions */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="bg-gradient-to-r from-red-600 to-rose-600 px-4 py-3">
+                                <h5 className="text-lg font-bold text-white">Deductions</h5>
+                            </div>
+                            <div className="p-4">
+                                {deductions.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {deductions.map((item, index) => (
+                                            <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                                                <div>
+                                                    <p className="font-medium text-gray-900 dark:text-white">
+                                                        {item.SalaryHead || item.Description || 'Deduction'}
+                                                    </p>
+                                                    {item.PayDays && (
+                                                        <p className="text-xs text-gray-500">
+                                                            {item.PayDays} days @ ₹{formatCurrency(item.PerDayAmount || 0)}/day
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <p className="font-bold text-red-600 dark:text-red-400">
+                                                    ₹{formatCurrency(item.HeadAmount || item.Amount || 0)}
+                                                </p>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between items-center pt-3 border-t-2 border-red-600">
+                                            <p className="font-bold text-gray-900 dark:text-white">Total Deductions:</p>
+                                            <p className="font-bold text-red-600 dark:text-red-400 text-lg">
+                                                ₹{formatCurrency(totalDeductions)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                                        No deductions data available
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Net Pay Summary */}
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-6 text-white">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="text-sm opacity-90">Net Salary</p>
+                                <p className="text-3xl font-bold">₹{formatCurrency(netPay)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm opacity-90">Earnings - Deductions</p>
+                                <p className="text-lg">₹{formatCurrency(totalEarnings)} - ₹{formatCurrency(totalDeductions)}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
         </Modal>
     );
 };
-
 // Summary Cards Component
 const SummaryCards = ({ reportData, reportType }) => {
     const formatCurrency = (amount) => {
@@ -324,24 +430,24 @@ const downloadAsExcel = (data, filename) => {
 
 const convertToCSV = (data) => {
     if (!Array.isArray(data) || data.length === 0) return '';
-    
+
     const headers = Object.keys(data[0]);
     const csvContent = [
         headers.join(','),
-        ...data.map(row => 
+        ...data.map(row =>
             headers.map(header => {
                 const value = row[header];
                 return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
             }).join(',')
         )
     ].join('\n');
-    
+
     return csvContent;
 };
 
 const CMSPaymentReportPage = () => {
     const dispatch = useDispatch();
-    
+
     // Redux selectors
     const cmsYears = useSelector(selectCMSYears);
     const cmsMonths = useSelector(selectCMSMonths);
@@ -389,6 +495,63 @@ const CMSPaymentReportPage = () => {
         }
     }, [localFilters.selectedYear, dispatch]);
 
+    // 🔧 FIX: Automatically fetch employee list when year AND month are selected
+    useEffect(() => {
+        const shouldFetchEmployees =
+            localFilters.selectedYear &&
+            localFilters.selectedYear !== '0' &&
+            localFilters.selectedYear !== '' &&
+            localFilters.selectedMonth &&
+            localFilters.selectedMonth !== '0' &&
+            localFilters.selectedMonth !== '';
+
+        console.log('🔍 Employee Fetch Check:', {
+            year: localFilters.selectedYear,
+            month: localFilters.selectedMonth,
+            shouldFetch: shouldFetchEmployees,
+            reportType
+        });
+
+        if (shouldFetchEmployees) {
+            const params = {
+                year: localFilters.selectedYear,
+                month: localFilters.selectedMonth
+            };
+
+            console.log('🚀 Fetching employees with params:', params);
+            dispatch(fetchCMSPaidEmployee(params));
+        }
+    }, [localFilters.selectedYear, localFilters.selectedMonth, dispatch, reportType]);
+
+    // 🔧 FIX: Fetch cost centres when year and month are selected for costcentre report
+    useEffect(() => {
+        const shouldFetchCostCentres =
+            reportType === 'costcentre' &&
+            localFilters.selectedYear &&
+            localFilters.selectedYear !== '0' &&
+            localFilters.selectedYear !== '' &&
+            localFilters.selectedMonth &&
+            localFilters.selectedMonth !== '0' &&
+            localFilters.selectedMonth !== '';
+
+        console.log('🔍 Cost Centre Fetch Check:', {
+            year: localFilters.selectedYear,
+            month: localFilters.selectedMonth,
+            shouldFetch: shouldFetchCostCentres,
+            reportType
+        });
+
+        if (shouldFetchCostCentres) {
+            const params = {
+                month: localFilters.selectedMonth,
+                year: localFilters.selectedYear
+            };
+
+            console.log('🚀 Fetching cost centres with params:', params);
+            dispatch(fetchCMSPaidCCbyMonth(params));
+        }
+    }, [localFilters.selectedYear, localFilters.selectedMonth, reportType, dispatch]);
+
     // Sync local filters with Redux filters
     useEffect(() => {
         setLocalFilters(filters);
@@ -415,11 +578,13 @@ const CMSPaymentReportPage = () => {
 
     // Handle filter changes
     const handleFilterChange = (filterName, value) => {
+        console.log('🔄 Filter Change:', { filterName, value });
+
         setLocalFilters(prev => ({
             ...prev,
             [filterName]: value
         }));
-        
+
         // Reset dependent data when key filters change
         if (filterName === 'selectedYear') {
             setLocalFilters(prev => ({
@@ -430,14 +595,14 @@ const CMSPaymentReportPage = () => {
             }));
             dispatch(resetSelectedData());
         }
-        
+
         if (filterName === 'selectedMonth') {
             setLocalFilters(prev => ({
                 ...prev,
                 emprefNo: '',
                 ccCode: ''
             }));
-            dispatch(resetSelectedData());
+            // Don't reset employee data here, it will be fetched automatically by useEffect
         }
     };
 
@@ -461,7 +626,7 @@ const CMSPaymentReportPage = () => {
             return;
         }
 
-        if (reportType !== 'employee' && !localFilters.selectedMonth) {
+        if (!localFilters.selectedMonth) {
             toast.warning('Please select a month');
             return;
         }
@@ -469,47 +634,48 @@ const CMSPaymentReportPage = () => {
         try {
             // Update Redux filters
             dispatch(setFilters(localFilters));
-            
+
             // Prepare parameters for API calls
             const baseParams = {
                 year: localFilters.selectedYear === '0' ? '' : localFilters.selectedYear,
                 month: localFilters.selectedMonth === '0' ? '' : localFilters.selectedMonth
             };
 
-            // Call appropriate APIs based on report type
+            console.log('📊 Viewing report with params:', { reportType, ...baseParams });
+
+            // Call appropriate APIs based on report type and filters
             if (reportType === 'employee') {
-                // First get paid employees
-                await dispatch(fetchCMSPaidEmployee(baseParams)).unwrap();
-                
-                // Then get detailed data if specific employee selected
-                if (localFilters.emprefNo && localFilters.emprefNo !== '0') {
+                // Employee list already fetched by useEffect
+
+                // Get detailed data if specific employee selected
+                if (localFilters.emprefNo && localFilters.emprefNo !== '0' && localFilters.emprefNo !== '') {
                     const detailParams = {
                         ...baseParams,
                         emprefNo: localFilters.emprefNo,
                         ccCode: localFilters.ccCode === '0' ? '' : localFilters.ccCode
                     };
+                    console.log('📊 Fetching detailed employee data:', detailParams);
                     await dispatch(fetchCMSPayReportEmployeeData(detailParams)).unwrap();
                 }
             } else if (reportType === 'costcentre') {
-                // Get cost centre data
-                await dispatch(fetchCMSPaidCCbyMonth(baseParams)).unwrap();
-                
+                // Cost centres already fetched by useEffect
+
                 // Get detailed employee data for the cost centre
-                if (localFilters.ccCode && localFilters.ccCode !== '0') {
+                if (localFilters.ccCode && localFilters.ccCode !== '0' && localFilters.ccCode !== '') {
                     const detailParams = {
                         ...baseParams,
                         emprefNo: localFilters.emprefNo === '0' ? '' : localFilters.emprefNo,
                         ccCode: localFilters.ccCode
                     };
+                    console.log('📊 Fetching cost centre employee data:', detailParams);
                     await dispatch(fetchCMSPayReportEmployeeData(detailParams)).unwrap();
                 }
             } else if (reportType === 'month') {
-                // Get month-wise data
-                await dispatch(fetchCMSPaidEmployee(baseParams)).unwrap();
+                // Employee list already fetched by useEffect
             }
-            
+
             toast.success('CMS Payment Report loaded successfully');
-            
+
         } catch (error) {
             console.error('❌ Error fetching CMS Payment Report:', error);
             toast.error('Failed to fetch CMS Payment Report. Please try again.');
@@ -533,20 +699,21 @@ const CMSPaymentReportPage = () => {
         try {
             setSelectedRowData(rowData);
             setIsPaySlipModalOpen(true);
-            
+
             // Prepare pay slip parameters
             const paySlipData = {
-                ccCode: rowData.CCCode || '',
-                categoryId: 0,
-                consolidateTransNo: rowData.ConslidateTransNo || rowData.CMSConsolidateNo || '',
-                employeeName: rowData.EmpRefNo || '',
-                payRollDate: rowData.PayRollFortheDate || rowData.PayRollDate || '',
-                transactionRefno: rowData.PayrollRefno || ''
+                CCCode: rowData.CCCode || '',
+                CategoryId: 0,
+                ConslidateTransNo: rowData.ConslidateTransNo || rowData.CMSConsolidateNo || '',
+                EmployeeName: rowData.EmpRefNo || '',
+                PayRollDate: rowData.PayRollFortheDate || rowData.PayRollDate || '',
+                TransactionRefno: rowData.PayrollRefno || ''
             };
-            
+
+            console.log('💰 Fetching pay slip with params:', paySlipData);
             dispatch(setPaySlipParams(paySlipData));
             await dispatch(fetchEmpPaySlipData(paySlipData)).unwrap();
-            
+
         } catch (error) {
             console.error('❌ Error fetching pay slip details:', error);
             toast.error('Failed to load pay slip details');
@@ -593,7 +760,7 @@ const CMSPaymentReportPage = () => {
 
             downloadAsExcel(excelData, filename);
             toast.success('Excel file downloaded successfully');
-            
+
         } catch (error) {
             console.error('❌ Excel Download Error:', error);
             toast.error('Excel download failed. Please try again.');
@@ -615,6 +782,16 @@ const CMSPaymentReportPage = () => {
     };
 
     const currentReportData = getCurrentReportData();
+
+    // 🔧 DEBUG: Log employee data
+    useEffect(() => {
+        console.log('👥 Employee Data Updated:', {
+            hasData: !!cmsPaidEmployees,
+            dataArray: cmsPaidEmployees?.Data,
+            count: cmsPaidEmployees?.Data?.length || 0,
+            loading: loading.cmsPaidEmployees
+        });
+    }, [cmsPaidEmployees, loading.cmsPaidEmployees]);
 
     return (
         <div className="space-y-6 p-6">
@@ -642,7 +819,7 @@ const CMSPaymentReportPage = () => {
                         )}
                     </div>
                 </div>
-                
+
                 {/* Breadcrumb */}
                 <nav className="text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-2">
@@ -681,9 +858,9 @@ const CMSPaymentReportPage = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 transition-colors">
                 <div className={clsx(
                     "grid gap-6 mb-6",
-                    reportType === 'employee' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" :
-                    reportType === 'costcentre' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" :
-                    "grid-cols-1 md:grid-cols-2"
+                    reportType === 'employee' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" :
+                        reportType === 'costcentre' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" :
+                            "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                 )}>
                     {/* Year Selection */}
                     <div>
@@ -697,14 +874,13 @@ const CMSPaymentReportPage = () => {
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <option value="">Select Year</option>
-                            <option value="0">All Years</option>
                             {Array.isArray(cmsYears?.Data) && cmsYears.Data.map((year, index) => (
                                 <option key={year.Year || index} value={year.Year}>
                                     {year.Year}
                                 </option>
                             ))}
                         </select>
-                        
+
                         {loading.cmsYears && (
                             <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2">
                                 Loading years...
@@ -712,55 +888,69 @@ const CMSPaymentReportPage = () => {
                         )}
                     </div>
 
-                    {/* Month Selection */}
-                    {reportType !== 'employee' && (
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                                Month <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                value={localFilters.selectedMonth}
-                                onChange={(e) => handleFilterChange('selectedMonth', e.target.value)}
-                                disabled={loading.cmsMonths || !localFilters.selectedYear}
-                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <option value="">Select Month</option>
-                                <option value="0">All Months</option>
-                                {Array.isArray(cmsMonths?.Data) && cmsMonths.Data.map((month, index) => (
-                                    <option key={month.MonthNo || index} value={month.MonthNo}>
-                                        {month.MonthName || `Month ${month.MonthNo}`}
-                                    </option>
-                                ))}
-                            </select>
-                            
-                            {loading.cmsMonths && (
-                                <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2">
-                                    Loading months...
-                                </p>
-                            )}
-                        </div>
-                    )}
+                    {/* Month Selection - Now required for all report types */}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                            Month <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={localFilters.selectedMonth}
+                            onChange={(e) => handleFilterChange('selectedMonth', e.target.value)}
+                            disabled={loading.cmsMonths || !localFilters.selectedYear}
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <option value="">Select Month</option>
+                            {Array.isArray(cmsMonths?.Data) && cmsMonths.Data.map((month, index) => (
+                                <option key={month.MonthNo || index} value={month.MonthNo}>
+                                    {month.MonthName || `Month ${month.MonthNo}`}
+                                </option>
+                            ))}
+                        </select>
 
-                    {/* Employee Selection - For Employee and Cost Centre wise */}
-                    {(reportType === 'employee' || reportType === 'costcentre') && (
+                        {loading.cmsMonths && (
+                            <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2">
+                                Loading months...
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Employee Selection - For all report types */}
+                    {(reportType === 'employee' || reportType === 'costcentre' || reportType === 'month') && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                                Employee
+                                Employee {reportType === 'employee' && <span className="text-gray-400">(Optional)</span>}
                             </label>
                             <select
                                 value={localFilters.emprefNo}
                                 onChange={(e) => handleFilterChange('emprefNo', e.target.value)}
-                                disabled={loading.cmsPaidEmployees}
+                                disabled={loading.cmsPaidEmployees || !localFilters.selectedMonth}
                                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                <option value="">Select Employee</option>
-                                <option value="0">All Employees</option>
-                                {Array.isArray(cmsPaidEmployees?.Data) && cmsPaidEmployees.Data.map((emp, index) => (
-                                    <option key={emp.EmpRefNo || index} value={emp.EmpRefNo}>
-                                        {emp.EmpName || emp.EmpRefNo}
-                                    </option>
-                                ))}
+                                <option value="">All Employees</option>
+                                {Array.isArray(cmsPaidEmployees?.Data) && cmsPaidEmployees.Data.length > 0 ? (
+                                    cmsPaidEmployees.Data.map((emp, index) => (
+                                        <option key={emp.EmpRefNo || index} value={emp.EmpRefNo}>
+                                            {emp.EmpName || emp.EmpRefNo}
+                                        </option>
+                                    ))
+                                ) : (
+                                    !loading.cmsPaidEmployees && localFilters.selectedMonth && (
+                                        <option value="" disabled>No employees found</option>
+                                    )
+                                )}
                             </select>
+
+                            {loading.cmsPaidEmployees && (
+                                <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2">
+                                    Loading employees...
+                                </p>
+                            )}
+
+                            {!loading.cmsPaidEmployees && localFilters.selectedMonth && cmsPaidEmployees?.Data && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    {cmsPaidEmployees.Data.length} employee(s) available
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -768,22 +958,27 @@ const CMSPaymentReportPage = () => {
                     {reportType === 'costcentre' && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                                Cost Centre
+                                Cost Centre <span className="text-gray-400">(Optional)</span>
                             </label>
                             <select
                                 value={localFilters.ccCode}
                                 onChange={(e) => handleFilterChange('ccCode', e.target.value)}
-                                disabled={loading.cmsPaidCostCentres}
+                                disabled={loading.cmsPaidCostCentres || !localFilters.selectedMonth}
                                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                <option value="">Select Cost Centre</option>
-                                <option value="0">All Cost Centres</option>
+                                <option value="">All Cost Centres</option>
                                 {Array.isArray(cmsPaidCostCentres?.Data) && cmsPaidCostCentres.Data.map((cc, index) => (
-                                    <option key={cc.CCCode || index} value={cc.CCCode}>
-                                        {cc.CCName || cc.CCCode}
+                                    <option key={cc.CC_Code || index} value={cc.CC_Code}>
+                                        {cc.CC_Name || cc.CC_Code}
                                     </option>
                                 ))}
                             </select>
+
+                            {loading.cmsPaidCostCentres && (
+                                <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-2">
+                                    Loading cost centres...
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
@@ -793,7 +988,7 @@ const CMSPaymentReportPage = () => {
                     <div className="flex gap-3">
                         <button
                             onClick={handleView}
-                            disabled={isAnyLoading || !localFilters.selectedYear}
+                            disabled={isAnyLoading || !localFilters.selectedYear || !localFilters.selectedMonth}
                             className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
                         >
                             {isAnyLoading ? (
@@ -811,10 +1006,10 @@ const CMSPaymentReportPage = () => {
                             Reset
                         </button>
                     </div>
-                    
+
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Export:</span>
-                        
+
                         {/* Excel Download Button */}
                         <Tooltip content="Download CMS payment report as Excel file">
                             <button
@@ -912,7 +1107,7 @@ const CMSPaymentReportPage = () => {
                                     </div>
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No CMS Payment Data Found</h3>
                                     <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                                        Select your report type, year, and other filters, then click "View Report" to load your CMS payment data.
+                                        Select your report type, year, month, and other filters, then click "View Report" to load your CMS payment data.
                                     </p>
                                 </div>
                             </div>
@@ -937,12 +1132,15 @@ const CMSPaymentReportPage = () => {
             </div>
 
             {/* Pay Slip Details Modal */}
-            <PaySlipDetailsModal
+          
+            <PaySlipModal
                 isOpen={isPaySlipModalOpen}
                 onClose={() => setIsPaySlipModalOpen(false)}
                 paySlipData={empPaySlipData}
                 loading={loading.empPaySlipData}
+                employeeData={selectedRowData}
             />
+
 
             {/* Information Note */}
             <div className="bg-gradient-to-r from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
@@ -951,14 +1149,14 @@ const CMSPaymentReportPage = () => {
                     <div className="text-indigo-800 dark:text-indigo-200 text-sm">
                         <p className="font-semibold mb-1">CMS Payment Report Features:</p>
                         <p className="text-gray-600 dark:text-indigo-200">
-                            1. <strong>Employee Wise:</strong> View payments by year, month, and specific employees<br/>
-                            2. <strong>Cost Centre Wise:</strong> Analyze payments by cost centres with employee breakdown<br/>
-                            3. <strong>Month Wise:</strong> Get monthly payment summaries across all employees<br/>
-                            4. <strong>Select All Options:</strong> Use "All" options (value 0) to include all data in that category<br/>
-                            5. <strong>Pay Slip Details:</strong> Click the eye icon to view detailed pay slip information<br/>
-                            6. <strong>Summary Analytics:</strong> View total amounts, employee counts, and cost centre distribution<br/>
-                            7. <strong>Export Functionality:</strong> Download detailed reports as Excel files<br/>
-                            8. <strong>Real-time Data:</strong> All data is fetched in real-time from the CMS system
+                            1. <strong>Year & Month Selection:</strong> Required for all report types - employees will load automatically<br />
+                            2. <strong>Employee Selection:</strong> Optional filter to view specific employee data<br />
+                            3. <strong>Cost Centre Wise:</strong> Analyze payments by cost centres with employee breakdown<br />
+                            4. <strong>Month Wise:</strong> Get monthly payment summaries across all employees<br />
+                            5. <strong>Pay Slip Details:</strong> Click the eye icon to view detailed pay slip information<br />
+                            6. <strong>Summary Analytics:</strong> View total amounts, employee counts, and cost centre distribution<br />
+                            7. <strong>Export Functionality:</strong> Download detailed reports as Excel files<br />
+                            8. <strong>Real-time Data:</strong> All data is fetched automatically when you select year and month
                         </p>
                     </div>
                 </div>

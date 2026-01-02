@@ -18,6 +18,7 @@ export const S3_FOLDERS = {
     SUPPLIER_PO: 'SupplierPO',
     STAFF_DOCUMENTS: 'StaffDocuments',
     LEAVE_ATTACHMENTS: 'LeaveAttachments',
+    SPPO_AMENDMENTS: 'SPPOAmendPROD',
     // Add more folders as needed
 };
 

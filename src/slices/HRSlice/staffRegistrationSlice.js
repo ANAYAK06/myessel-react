@@ -9,9 +9,11 @@ export const fetchVerificationStaff = createAsyncThunk(
     'staffregistration/fetchVerificationStaff',
     async (roleId, { rejectWithValue }) => {
         try {
+            console.log('🔄 Thunk: Fetching Verification Staff for RoleID:', roleId);
             const response = await staffAPI.getVerificationStaff(roleId);
             return response;
         } catch (error) {
+            console.error('❌ Thunk Error:', error);
             return rejectWithValue(error.message || 'Failed to fetch Verification Staff');
         }
     }
@@ -22,9 +24,11 @@ export const fetchVerificationStaffDataById = createAsyncThunk(
     'staffregistration/fetchVerificationStaffDataById',
     async (params, { rejectWithValue }) => {
         try {
+            console.log('🔄 Thunk: Fetching Staff Data for:', params);
             const response = await staffAPI.getVerificationStaffDataById(params);
             return response;
         } catch (error) {
+            console.error('❌ Thunk Error:', error);
             return rejectWithValue(error.message || 'Failed to fetch Verification Staff Data');
         }
     }
@@ -35,9 +39,15 @@ export const approveStaffRegistration = createAsyncThunk(
     'staffregistration/approveStaffRegistration',
     async (approvalData, { rejectWithValue }) => {
         try {
+            console.log('🔄 Thunk: Approving Staff Registration with data:', {
+                EmpRefNo: approvalData.EmpRefNo,
+                Action: approvalData.Action,
+                hasDocuments: approvalData.DocumentData?.length > 0
+            });
             const response = await staffAPI.approveStaffRegistration(approvalData);
             return response;
         } catch (error) {
+            console.error('❌ Thunk Error:', error);
             return rejectWithValue(error.message || 'Failed to approve Staff Registration');
         }
     }
@@ -48,9 +58,11 @@ export const fetchEmployeeDocuments = createAsyncThunk(
     'staffregistration/fetchEmployeeDocuments',
     async (empRefNo, { rejectWithValue }) => {
         try {
+            console.log('🔄 Thunk: Fetching Employee Documents for:', empRefNo);
             const response = await staffAPI.getEmployeeDocuments(empRefNo);
             return response;
         } catch (error) {
+            console.error('❌ Thunk Error:', error);
             return rejectWithValue(error.message || 'Failed to fetch Employee Documents');
         }
     }
@@ -63,14 +75,14 @@ const initialState = {
     verificationStaff: [],
     verificationStaffData: null,
     approvalResult: null,
-    employeeDocuments: [], // NEW: Employee documents data
+    employeeDocuments: [],
 
     // Loading states for each API
     loading: {
         verificationStaff: false,
         verificationStaffData: false,
         approveStaffRegistration: false,
-        employeeDocuments: false, // NEW: Loading state for employee documents
+        employeeDocuments: false,
     },
 
     // Error states for each API
@@ -78,7 +90,7 @@ const initialState = {
         verificationStaff: null,
         verificationStaffData: null,
         approveStaffRegistration: null,
-        employeeDocuments: null, // NEW: Error state for employee documents
+        employeeDocuments: null,
     },
 
     // UI State
@@ -112,9 +124,10 @@ const staffRegistrationSlice = createSlice({
         resetVerificationStaffData: (state) => {
             state.verificationStaffData = null;
             state.approvalResult = null;
+            state.employeeDocuments = []; // Also reset documents when resetting staff data
         },
 
-        // NEW: Action to reset employee documents
+        // Action to reset employee documents
         resetEmployeeDocuments: (state) => {
             state.employeeDocuments = [];
         },
@@ -132,19 +145,27 @@ const staffRegistrationSlice = createSlice({
             state.verificationStaff = [];
             state.verificationStaffData = null;
             state.approvalResult = null;
-            state.employeeDocuments = []; // NEW: Reset employee documents
+            state.employeeDocuments = [];
             state.selectedRoleId = null;
             state.selectedEmpRefNo = null;
             state.approvalStatus = null;
+            // Also reset all errors
+            state.errors = {
+                verificationStaff: null,
+                verificationStaffData: null,
+                approveStaffRegistration: null,
+                employeeDocuments: null,
+            };
         },
 
         // Action to clear approval result
         clearApprovalResult: (state) => {
             state.approvalResult = null;
+            state.approvalStatus = null; // Also reset approval status
         }
     },
     extraReducers: (builder) => {
-        // 1. Verification Staff - UPDATED TO HANDLE API RESPONSE STRUCTURE
+        // 1. Verification Staff - HANDLE API RESPONSE STRUCTURE
         builder
             .addCase(fetchVerificationStaff.pending, (state) => {
                 state.loading.verificationStaff = true;
@@ -155,6 +176,7 @@ const staffRegistrationSlice = createSlice({
                 // 🔧 FIXED: Extract Data array from API response
                 // API returns: { Data: [...], IsSuccessful: false, ResponseCode: 200 }
                 state.verificationStaff = action.payload?.Data || [];
+                console.log('✅ Verification Staff loaded:', state.verificationStaff.length, 'records');
             })
             .addCase(fetchVerificationStaff.rejected, (state, action) => {
                 state.loading.verificationStaff = false;
@@ -163,7 +185,7 @@ const staffRegistrationSlice = createSlice({
                 state.verificationStaff = [];
             })
 
-        // 2. Verification Staff Data by ID - UPDATED TO HANDLE API RESPONSE STRUCTURE
+        // 2. Verification Staff Data by ID - HANDLE API RESPONSE STRUCTURE
         builder
             .addCase(fetchVerificationStaffDataById.pending, (state) => {
                 state.loading.verificationStaffData = true;
@@ -174,6 +196,7 @@ const staffRegistrationSlice = createSlice({
                 // 🔧 FIXED: Extract Data object from API response
                 // API returns: { Data: {...}, IsSuccessful: false, ResponseCode: 200 }
                 state.verificationStaffData = action.payload?.Data || null;
+                console.log('✅ Verification Staff Data loaded for:', state.verificationStaffData?.EmpRefNo);
             })
             .addCase(fetchVerificationStaffDataById.rejected, (state, action) => {
                 state.loading.verificationStaffData = false;
@@ -192,13 +215,15 @@ const staffRegistrationSlice = createSlice({
                 state.loading.approveStaffRegistration = false;
                 state.approvalResult = action.payload;
                 state.approvalStatus = 'approved';
+                console.log('✅ Staff Registration Approval successful');
             })
             .addCase(approveStaffRegistration.rejected, (state, action) => {
                 state.loading.approveStaffRegistration = false;
                 state.errors.approveStaffRegistration = action.payload;
+                state.approvalStatus = 'failed';
             })
 
-        // 4. NEW: Employee Documents
+        // 4. Employee Documents
         builder
             .addCase(fetchEmployeeDocuments.pending, (state) => {
                 state.loading.employeeDocuments = true;
@@ -206,8 +231,9 @@ const staffRegistrationSlice = createSlice({
             })
             .addCase(fetchEmployeeDocuments.fulfilled, (state, action) => {
                 state.loading.employeeDocuments = false;
-                // Extract Data array from API response, following same pattern
+                // Extract Data array from API response
                 state.employeeDocuments = action.payload?.Data || [];
+                console.log('✅ Employee Documents loaded:', state.employeeDocuments.length, 'documents');
             })
             .addCase(fetchEmployeeDocuments.rejected, (state, action) => {
                 state.loading.employeeDocuments = false;
@@ -224,7 +250,7 @@ export const {
     setSelectedEmpRefNo,
     setApprovalStatus,
     resetVerificationStaffData,
-    resetEmployeeDocuments, // NEW: Export new action
+    resetEmployeeDocuments,
     clearError,
     resetStaffRegistrationData,
     clearApprovalResult
@@ -237,7 +263,7 @@ export const {
 export const selectVerificationStaff = (state) => state.staffregistration.verificationStaff;
 export const selectVerificationStaffData = (state) => state.staffregistration.verificationStaffData;
 export const selectApprovalResult = (state) => state.staffregistration.approvalResult;
-export const selectEmployeeDocuments = (state) => state.staffregistration.employeeDocuments; // NEW: Employee documents selector
+export const selectEmployeeDocuments = (state) => state.staffregistration.employeeDocuments;
 
 // 🔧 Helper selectors to get arrays safely - PREVENTS FILTER ERRORS
 export const selectVerificationStaffArray = (state) => {
@@ -245,7 +271,7 @@ export const selectVerificationStaffArray = (state) => {
     return Array.isArray(staff) ? staff : [];
 };
 
-export const selectEmployeeDocumentsArray = (state) => { // NEW: Safe array selector for employee documents
+export const selectEmployeeDocumentsArray = (state) => {
     const documents = state.staffregistration.employeeDocuments;
     return Array.isArray(documents) ? documents : [];
 };
@@ -255,14 +281,14 @@ export const selectLoading = (state) => state.staffregistration.loading;
 export const selectVerificationStaffLoading = (state) => state.staffregistration.loading.verificationStaff;
 export const selectVerificationStaffDataLoading = (state) => state.staffregistration.loading.verificationStaffData;
 export const selectApproveStaffRegistrationLoading = (state) => state.staffregistration.loading.approveStaffRegistration;
-export const selectEmployeeDocumentsLoading = (state) => state.staffregistration.loading.employeeDocuments; // NEW: Employee documents loading
+export const selectEmployeeDocumentsLoading = (state) => state.staffregistration.loading.employeeDocuments;
 
 // Error selectors
 export const selectErrors = (state) => state.staffregistration.errors;
 export const selectVerificationStaffError = (state) => state.staffregistration.errors.verificationStaff;
 export const selectVerificationStaffDataError = (state) => state.staffregistration.errors.verificationStaffData;
 export const selectApproveStaffRegistrationError = (state) => state.staffregistration.errors.approveStaffRegistration;
-export const selectEmployeeDocumentsError = (state) => state.staffregistration.errors.employeeDocuments; // NEW: Employee documents error
+export const selectEmployeeDocumentsError = (state) => state.staffregistration.errors.employeeDocuments;
 
 // UI State selectors
 export const selectSelectedRoleId = (state) => state.staffregistration.selectedRoleId;
@@ -275,22 +301,42 @@ export const selectHasAnyError = (state) => Object.values(state.staffregistratio
 
 // 🔧 UPDATED: Specific combined selectors with safe array handling
 export const selectStaffRegistrationSummary = (state) => {
-    const staffArray = Array.isArray(state.staffregistration.verificationStaff) ? state.staffregistration.verificationStaff : [];
-    const documentsArray = Array.isArray(state.staffregistration.employeeDocuments) ? state.staffregistration.employeeDocuments : [];
+    const staffArray = Array.isArray(state.staffregistration.verificationStaff) 
+        ? state.staffregistration.verificationStaff 
+        : [];
+    const documentsArray = Array.isArray(state.staffregistration.employeeDocuments) 
+        ? state.staffregistration.employeeDocuments 
+        : [];
     
     return {
         totalStaff: staffArray.length,
         selectedStaff: state.staffregistration.verificationStaffData,
         approvalStatus: state.staffregistration.approvalStatus,
         isProcessing: state.staffregistration.loading.approveStaffRegistration,
-        totalDocuments: documentsArray.length, // NEW: Include document count
-        hasDocuments: documentsArray.length > 0 // NEW: Helper for UI conditional rendering
+        totalDocuments: documentsArray.length,
+        hasDocuments: documentsArray.length > 0,
+        hasStaffItems: staffArray.length > 0,
+        isEmpty: staffArray.length === 0 && !state.staffregistration.loading.verificationStaff
     };
 };
 
-// NEW: Employee Documents specific selectors
+// Staff Data specific selector
+export const selectVerificationStaffDataSummary = (state) => {
+    return {
+        data: state.staffregistration.verificationStaffData,
+        isLoading: state.staffregistration.loading.verificationStaffData,
+        error: state.staffregistration.errors.verificationStaffData,
+        hasData: state.staffregistration.verificationStaffData !== null,
+        isEmpty: state.staffregistration.verificationStaffData === null 
+            && !state.staffregistration.loading.verificationStaffData
+    };
+};
+
+// Employee Documents specific selector
 export const selectEmployeeDocumentsSummary = (state) => {
-    const documentsArray = Array.isArray(state.staffregistration.employeeDocuments) ? state.staffregistration.employeeDocuments : [];
+    const documentsArray = Array.isArray(state.staffregistration.employeeDocuments) 
+        ? state.staffregistration.employeeDocuments 
+        : [];
     
     return {
         documents: documentsArray,

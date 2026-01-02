@@ -1,5 +1,4 @@
 import axios from "axios";
-
 import { API_BASE_URL } from '../../config/apiConfig';
 
 // ==============================================
@@ -58,32 +57,144 @@ export const getVerificationStaffDataById = async (params) => {
 };
 
 // 3. Approve Staff Registration
-// Enhanced API function in StaffRegistrationVerificationAPI.js
 export const approveStaffRegistration = async (approvalData) => {
     try {
         console.log('🎯 Approving Staff Registration...');
         console.log('📊 Payload Summary:', {
             EmpRefNo: approvalData.EmpRefNo,
             Action: approvalData.Action,
-            Roleid: approvalData.Roleid,
+            RoleId: approvalData.RoleId,
             Createdby: approvalData.Createdby,
             totalParameters: Object.keys(approvalData).length
         });
         
-        // Log a sample of the data being sent
-        console.log('🔍 Sample Data Check:', {
-            hasFirstName: !!approvalData.FirstName,
-            hasLastName: !!approvalData.LastName,
-            hasJoiningType: !!approvalData.JoiningType,
-            hasEmpCategory: !!approvalData.EmpCategory,
-            designationIdType: typeof approvalData.DesignationId,
-            transitdaysType: typeof approvalData.Transitdays,
-            uanexistType: typeof approvalData.Uanexist
-        });
+        // Build payload matching backend stored procedure parameters exactly
+        const payload = {
+            // Basic Employee Info
+            EmpRefNo: approvalData.EmpRefNo?.toString().trim() || '',
+            JoiningType: approvalData.JoiningType?.toString().trim() || '',
+            Category: approvalData.Category?.toString().trim() || '', // Maps to @EmpCategory
+            Appointmenttype: approvalData.Appointmenttype?.toString().trim() || '',
+            
+            // Personal Details
+            FirstName: approvalData.FirstName?.toString().trim() || '',
+            LastName: approvalData.LastName?.toString().trim() || '',
+            MiddleName: approvalData.MiddleName?.toString().trim() || '',
+            DateofBirth: approvalData.DateofBirth?.toString().trim() || '', // Maps to @DOB
+            EmpAge: approvalData.EmpAge?.toString().trim() || '', // Maps to @Age
+            Gender: approvalData.Gender?.toString().trim() || '',
+            MartialStatus: approvalData.MartialStatus?.toString().trim() || '', // Maps to @Martialstatus
+            DateofMarriage: approvalData.DateofMarriage?.toString().trim() || '', // Maps to @DOMarriage
+            
+            // Nominee Details
+            NomineeName: approvalData.NomineeName?.toString().trim() || '',
+            NomineeRelation: approvalData.NomineeRelation?.toString().trim() || '', // Maps to @Relation
+            NomineeDateofBirth: approvalData.NomineeDateofBirth?.toString().trim() || '', // Maps to @NomineeDOB
+            NomineeAge: approvalData.NomineeAge?.toString().trim() || '',
+            
+            // Contact Details
+            ContactWorkPhone: approvalData.ContactWorkPhone?.toString().trim() || '', // Maps to @ContactWorkPhoneNo
+            ContactMobile: approvalData.ContactMobile?.toString().trim() || '', // Maps to @Mobileno
+            PlaceofBirth: approvalData.PlaceofBirth?.toString().trim() || '', // Maps to @PlaceOfBirth
+            WorkEmail: approvalData.WorkEmail?.toString().trim() || '', // Maps to @MailId
+            PermanentAddress: approvalData.PermanentAddress?.toString().trim() || '',
+            PresentAddress: approvalData.PresentAddress?.toString().trim() || '',
+            
+            // Job Details
+            Experience: approvalData.Experience?.toString().trim() || '',
+            DesignationId: approvalData.DesignationId ? parseInt(approvalData.DesignationId) : 0,
+            JoiningDate: approvalData.JoiningDate?.toString().trim() || '', // Maps to @Joiningdate
+            JobType: approvalData.JobType?.toString().trim() || '',
+            JoiningCostCenter: approvalData.JoiningCostCenter?.toString().trim() || '', // Maps to @JoiningCC
+            TransitDay: approvalData.TransitDay ? parseInt(approvalData.TransitDay) : 0, // Maps to @Transitdays
+            ReportTo: approvalData.ReportTo?.toString().trim() || '',
+            DepartmentId: approvalData.DepartmentId ? parseInt(approvalData.DepartmentId) : 0,
+            
+            // Bank Details
+            BankName: approvalData.BankName?.toString().trim() || '',
+            BankAccountNo: approvalData.BankAccountNo?.toString().trim() || '',
+            IFSCcode: approvalData.IFSCcode?.toString().trim() || '', // Maps to @IFSCCode
+            BankAddress: approvalData.BankAddress?.toString().trim() || '',
+            
+            // Family Member Details (Comma-separated strings)
+            FMName: approvalData.FMName?.toString().trim() || '', // Maps to @FMNames
+            FMDateofBirth: approvalData.FMDateofBirth?.toString().trim() || '', // Maps to @FMDOBs
+            FMAge: approvalData.FMAge?.toString().trim() || '', // Maps to @FMAges
+            FMGender: approvalData.FMGender?.toString().trim() || '', // Maps to @FMGenders
+            FMRelation: approvalData.FMRelation?.toString().trim() || '', // Maps to @FMRelations
+            FMMobileNo: approvalData.FMMobileNo?.toString().trim() || '', // Maps to @FMMobilenos
+            
+            // Children Details (Comma-separated strings)
+            ChildName: approvalData.ChildName?.toString().trim() || '', // Maps to @ChildNames
+            ChildDateofBirth: approvalData.ChildDateofBirth?.toString().trim() || '', // Maps to @ChildDOBs
+            ChildAge: approvalData.ChildAge?.toString().trim() || '', // Maps to @ChildAges
+            ChildGender: approvalData.ChildGender?.toString().trim() || '', // Maps to @ChildGenders
+            ChildMaritalStatus: approvalData.ChildMaritalStatus?.toString().trim() || '', // Maps to @ChildMaritals
+            
+            // Academic Details (Comma-separated strings)
+            AcademicClass: approvalData.AcademicClass?.toString().trim() || '', // Maps to @AdClasses
+            NameofUniversity: approvalData.NameofUniversity?.toString().trim() || '', // Maps to @AdUniversities
+            FromYear: approvalData.FromYear?.toString().trim() || '', // Maps to @AdFromyears
+            ToYear: approvalData.ToYear?.toString().trim() || '', // Maps to @AdToyears
+            Percentage: approvalData.Percentage?.toString().trim() || '', // Maps to @AdPercents
+            
+            // Technical Skills (Comma-separated strings)
+            TechnicalSkill: approvalData.TechnicalSkill?.toString().trim() || '', // Maps to @TechSkills
+            TechInstitutionName: approvalData.TechInstitutionName?.toString().trim() || '',
+            TechFromYear: approvalData.TechFromYear?.toString().trim() || '',
+            TechToYear: approvalData.TechToYear?.toString().trim() || '',
+            TechPercentage: approvalData.TechPercentage?.toString().trim() || '',
+            
+            // Work History (Comma-separated strings)
+            OrganisationName: approvalData.OrganisationName?.toString().trim() || '', // Maps to @HTOrganisations
+            ExpFromYear: approvalData.ExpFromYear?.toString().trim() || '', // Maps to @HTFromyears
+            ExpToYear: approvalData.ExpToYear?.toString().trim() || '', // Maps to @HTToyears
+            Role: approvalData.Role?.toString().trim() || '', // Maps to @HTRoles
+            Mobilenos: approvalData.Mobilenos?.toString().trim() || '', // Maps to @HTMobilenos
+            
+            // Approval Details
+            RoleId: approvalData.RoleId ? parseInt(approvalData.RoleId) : 0, // Maps to @Roleid
+            Createdby: approvalData.Createdby?.toString().trim() || '',
+            Action: approvalData.Action?.toString().trim() || '',
+            ApprovalNote: approvalData.ApprovalNote?.toString().trim() || '', // Maps to @Note
+            
+            // Statutory Details
+            UANExist: approvalData.UANExist === true || approvalData.UANExist === 'true', // Maps to @Uanexist (Boolean)
+            UANNumber: approvalData.UANNumber?.toString().trim() || '', // Maps to @UANNo
+            ESINumber: approvalData.ESINumber?.toString().trim() || '',
+            UserName: approvalData.UserName?.toString().trim() || '', // Maps to @EmpUserName
+            Pwd: approvalData.Pwd?.toString().trim() || '',
+            AdharNo: approvalData.AdharNo?.toString().trim() || '', // Maps to @Aadharno
+            PanNo: approvalData.PanNo?.toString().trim() || '', // Maps to @Panno
+            ReportToRoleId: approvalData.ReportToRoleId ? parseInt(approvalData.ReportToRoleId) : 0,
+            PFExist: approvalData.PFExist?.toString().trim() || '',
+            ESIExist: approvalData.ESIExist?.toString().trim() || '',
+            GroupId: approvalData.GroupId ? parseInt(approvalData.GroupId) : 0,
+            Probationdays: approvalData.Probationdays ? parseFloat(approvalData.Probationdays) : 0, // Decimal
+            
+            // Contract Details
+            ContractStartDate: approvalData.ContractStartDate?.toString().trim() || '',
+            ContractEndDate: approvalData.ContractEndDate?.toString().trim() || '',
+            
+            // Reference Details (Comma-separated strings)
+            RefName: approvalData.RefName?.toString().trim() || '', // Maps to @RefNames
+            RefRelation: approvalData.RefRelation?.toString().trim() || '', // Maps to @RefRelations
+            RefMobileNo: approvalData.RefMobileNo?.toString().trim() || '', // Maps to @RefMobileNos
+            RefRemarks: approvalData.RefRemarks?.toString().trim() || '',
+            
+            // Experience Remarks
+            ExpRemarks: approvalData.ExpRemarks?.toString().trim() || '', // Maps to @HTExpRemarks
+            ExpContactNames: approvalData.ExpContactNames?.toString().trim() || '', // Maps to @HTExpContactNames
+            
+            // Document Data
+            DocumentData: approvalData.DocumentData || []
+        };
+        
+        console.log('📦 Complete Approval Payload prepared with', Object.keys(payload).length, 'parameters');
         
         const response = await axios.put(
             `${API_BASE_URL}/HR/ApproveStaffRegistration`,
-            approvalData,
+            payload,
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,33 +215,20 @@ export const approveStaffRegistration = async (approvalData) => {
         console.group('❌ Staff Registration Approval API Error');
         
         if (error.response) {
-            // Server responded with error status
             console.error('Response Status:', error.response.status);
-            console.error('Response Headers:', error.response.headers);
             console.error('Response Data:', error.response.data);
             
-            // Log specific error details for 400 errors
             if (error.response.status === 400) {
-                console.error('🔍 400 Bad Request Details:', {
-                    url: error.config?.url,
-                    method: error.config?.method,
-                    dataSize: error.config?.data ? error.config.data.length : 0,
-                    contentType: error.config?.headers['Content-Type']
-                });
+                console.error('🔍 400 Bad Request - Check payload field names and data types');
             }
-            
         } else if (error.request) {
-            // Request was made but no response received
             console.error('No Response Received:', error.request);
         } else {
-            // Something else happened
             console.error('Request Setup Error:', error.message);
         }
         
-        console.error('Full Error Config:', error.config);
         console.groupEnd();
         
-        // Return more specific error information
         if (error.response?.data) {
             throw error.response.data;
         } else if (error.response?.status === 400) {
@@ -142,6 +240,7 @@ export const approveStaffRegistration = async (approvalData) => {
         throw error;
     }
 };
+
 // 4. Get Employee Documents
 export const getEmployeeDocuments = async (empRefNo) => {
     try {

@@ -44,7 +44,24 @@ import roleReducer from "../slices/userRolesSlice/userRolesSlice";
 import empRoleAssignment from "../slices/userRolesSlice/userRoleAssignSlice";
 import ccBudgetAmendment from "../slices/budgetSlice/ccBudgetAmendmentSlice";
 import dcaBudgetAmendment from "../slices/budgetSlice/dcaBudgetAmendmentSlice";
-
+import staffAttendanceReportReducer from "../slices/HrReportSlice/staffAttendanceReportSlice";
+import employeeExitReportReducer from "../slices/HrReportSlice/employeeExitReportSlice";
+import leaveReportSlice from "../slices/HrReportSlice/leaveReportSlice";
+import costCenterCreationReducer from "../slices/costCenterSlice/costCenterCreationSlice";
+import clientPOVerificationReducer from "../slices/clientPOSlice/clientPOVerificationSlice";
+import lostDamagedItemsVerificationReducer from "../slices/stockSlice/lostDamagedItemsVerificationSlice";
+import dailyIssuedItemsReducer from "../slices/stockSlice/dailyIssueSlice";
+import scrapSaleReducer from "../slices/stockSlice/scrapSalesVerificationSlice";
+import closeSPPOReducer from "../slices/spPOSlice/closeSPPOSlice";
+import sppoAmend from "../slices/spPOSlice/sppoAmendSlice";
+import monthlyattendance from "../slices/HRSlice/monthlyAttendanceSlice";
+import staffdailyattendance from "../slices/HRSlice/staffDailyAttendanceSlice";
+import labourobjectivesgoals from "../slices/HRSlice/labourObjectivesGoalsSlice";
+import staffobjectivesgoals from "../slices/HRSlice/staffObjectivesandGoalsSlice";
+import employeectc from "../slices/HRSlice/employeeCTCSlice";
+import labourctc from "../slices/HRSlice/labourCTCSlice";
+import labourpayrevision from "../slices/HRSlice/labourPayRevisionSlice";
+import staffpayrevision from "../slices/HRSlice/staffPayRevisionSlice";
 
 const store = configureStore({
   
@@ -94,6 +111,24 @@ const store = configureStore({
     empRoleAssignment: empRoleAssignment,
     ccBudgetAmendment: ccBudgetAmendment,
     dcaBudgetAmendment: dcaBudgetAmendment,
+    staffattendancereport: staffAttendanceReportReducer,
+    employeeexitreport: employeeExitReportReducer,
+    leavereport: leaveReportSlice,
+    costCenterCreation: costCenterCreationReducer,
+    clientPO: clientPOVerificationReducer,
+    lostDamagedItems: lostDamagedItemsVerificationReducer,
+    dailyIssue: dailyIssuedItemsReducer,
+    scrapSale: scrapSaleReducer,
+    closeSPPO: closeSPPOReducer,
+    sppoAmend: sppoAmend,
+    monthlyattendance: monthlyattendance,
+    staffdailyattendance: staffdailyattendance,
+    labourobjectivesgoals: labourobjectivesgoals,
+    staffobjectivesgoals: staffobjectivesgoals,
+    employeectc: employeectc,
+    labourctc: labourctc,
+    labourpayrevision: labourpayrevision,
+    staffpayrevision: staffpayrevision,
 
   }
 

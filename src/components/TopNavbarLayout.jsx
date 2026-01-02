@@ -721,8 +721,8 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                     <img src="/logohaip.png" alt="slt" className='rounded-lg shadow-lg' />
                                 </div>
                                 <div>
-                                    <h1 className="text-lg font-bold text-gray-900 dark:text-white">HAIP</h1>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Management Modules</p>
+                                    {/* <h2 className="text-lg font-bold text-gray-900 dark:text-white">HAIP</h2> */}
+                                    {/* <p className="text-xs text-gray-500 dark:text-gray-400">Management</p> */}
                                 </div>
                             </div>
                         </div>

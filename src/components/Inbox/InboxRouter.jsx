@@ -14,6 +14,20 @@ import CostCenterApproval from '../../pages/CostCenter/CostCenterApproval';
 import GeneralInvoiceApproval from '../../pages/GeneralInvoice/GeneralInvoiceApproval';
 import VerifyCCBudgetAmendment from '../../pages/Budget/VerifyCCBudgetAmendment';
 import VerifyDCABudgetAmendment from '../../pages/Budget/VerifyDCABudgetAmendment';
+import VerifyClientPO from '../../pages/ClientPO/VerifyClientPO';
+import LostDamagedItemsVerification from '../../pages/Stock/LostDamagedItemsVerification';
+import VerifyDailyIssue from '../../pages/Stock/VerifyDailyIssue';
+import VerifyScrapSale from '../../pages/Stock/VerifyScrapSale';
+import VerifySPPOClose from '../../pages/SPPO/VerifySPPOClose';
+import VerifySPPOAmend from '../../pages/SPPO/VerifySPPOAmend';
+import VerifyExcelAttendance from '../../pages/HR/VerifyExcelAttendance';
+import VerifyStaffDailyAttendance from '../../pages/HR/VerifyStaffDailyAttendance';
+import VerifyLabourObjectivesGoals from '../../pages/HR/VerifyLabourObjectivesGoals';
+import VerifyStaffObjectivesGoals from '../../pages/HR/VerifyStaffObjectivesGoals';
+import VerifyEmployeeCTC from '../../pages/HR/VerifyEmployeeCTC';
+import VerifyLabourCTC from '../../pages/HR/VerifyLabourCTC';
+import VerifyLabourPayRevision from '../../pages/HR/VerifyLabourPayRevision';
+import VerifyStaffPayRevision from '../../pages/HR/VerifyStaffPayRevision';
 
 
 // ============================================================================
@@ -23,7 +37,7 @@ import VerifyDCABudgetAmendment from '../../pages/Budget/VerifyDCABudgetAmendmen
 const isStaffRegistrationVerification = (path) => {
     // Simple and direct path check - using lowercase
     const isMatch = path.includes('/hr/verifystaffregistration');
-    
+
     if (isMatch) {
         console.log('✅ Staff Registration detected by path:', path);
     } else {
@@ -36,10 +50,10 @@ const isStaffRegistrationVerification = (path) => {
 const isVendorPaymentVerification = (path, category, title, displayName, workflowType) => {
     // ✅ FIXED: Use lowercase strings for comparison since path is already lowercase
     const pathMatches = [
-        '/purchase/verifyvendorpayment?paytype=bank',  
-        '/vendorpayment/verifyvendorpayment',               
-        'verifyvendorpayment',                         
-        'vendor payment'                               
+        '/purchase/verifyvendorpayment?paytype=bank',
+        '/vendorpayment/verifyvendorpayment',
+        'verifyvendorpayment',
+        'vendor payment'
     ];
 
     const isMatch = pathMatches.some(match => path.includes(match)) ||
@@ -128,25 +142,31 @@ const isSupplierPOVerification = (path, category, title, displayName, workflowTy
 };
 
 const isSPPOVerification = (path, category, title, displayName, workflowType) => {
+    // ✅ Exact path matches for SPPO Verification only
     const pathMatches = [
-        '/sppo/verifySppo',
-        '/purchase/verifysppo',
-        'verify sppo',
-        'sppo'
+        '/sppo/verifysppo',
+        '/purchase/verifysppo'  // Without 'close'
     ];
 
-    const isMatch = pathMatches.some(match => path.includes(match)) ||
-        category.includes('sppo') ||
-        title.includes('sppo') ||
-        displayName.includes('sppo') ||
-        workflowType.includes('sppo');
+    // ✅ Check for exact path match first (most reliable)
+    const exactPathMatch = pathMatches.some(match => path === match);
+
+    // ✅ If not exact match, check if path contains the pattern but NOT 'close'
+    const partialPathMatch = pathMatches.some(match => path.includes(match)) && !path.includes('close');
+
+    const isMatch = exactPathMatch ||
+        partialPathMatch ||
+        (category.includes('newsppo') && !category.includes('close')) ||
+        (title.includes('newsppo') && !title.includes('close')) ||
+        (displayName.includes('newsppo') && !displayName.includes('close')) ||
+        (workflowType.includes('sppoverify') && !workflowType.includes('close'));
 
     if (isMatch) {
-        console.log('✅ SPPO detected by:', {
+        console.log('✅ SPPO Verification detected by:', {
             path, category, title, displayName, workflowType
         });
     } else {
-        console.log('❌ SPPO not detected. Details:', {
+        console.log('❌ SPPO Verification not detected. Details:', {
             path, category, title, displayName, workflowType
         });
     }
@@ -233,14 +253,14 @@ const isCCBudgetAmendmentVerification = (path, category, title, displayName, wor
         '/accountsapproval/verifyccamendbudget',
         'verifyccbudgetamendment',
         'cc budget amendment'
-    ];  
+    ];
     const isMatch = pathMatches.some(match => path.includes(match)) ||
         category.includes('cc budget amendment') ||
-        category.includes('verifyccbudgetamendment') ||     
+        category.includes('verifyccbudgetamendment') ||
         title.includes('cc budget amendment') ||
-        title.includes('verifyccbudgetamendment') ||        
+        title.includes('verifyccbudgetamendment') ||
         displayName.includes('cc budget amendment') ||
-        displayName.includes('cost center budget amend(pcc)') ||  
+        displayName.includes('cost center budget amend(pcc)') ||
         workflowType.includes('cc budget amendment') ||
         workflowType.includes('verifyccbudgetamendment');
     if (isMatch) {
@@ -251,7 +271,7 @@ const isCCBudgetAmendmentVerification = (path, category, title, displayName, wor
         console.log('❌ CC Budget Amendment not detected. Details:', {
             path, category, title, displayName, workflowType
         });
-    }   
+    }
     return isMatch;
 };
 
@@ -259,7 +279,7 @@ const isDCABudgetAmendmentVerification = (path, category, title, displayName, wo
     const pathMatches = [
         '/AccountsApproval/VerifyDCABudgetAmend',
         '/accountsapproval/verifydcabudgetamend',
-        '/accountsapproval/verifydcaamendbudget',   
+        '/accountsapproval/verifydcaamendbudget',
         'verifydcabudgetamendment',
         'dca budget amendment'
     ];
@@ -280,9 +300,319 @@ const isDCABudgetAmendmentVerification = (path, category, title, displayName, wo
         console.log('❌ DCA Budget Amendment not detected. Details:', {
             path, category, title, displayName, workflowType
         });
+    }
+    return isMatch;
+};
+
+const isClientPOVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/clientpo/verifyclientpo',
+        '/sales/verifyclientpo',
+        'verifyclientpo',
+        'client po'
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('client po') ||
+        category.includes('verifyclientpo') ||
+        title.includes('client po') ||
+        title.includes('verifyclientpo') ||
+        displayName.includes('client po') ||
+        displayName.includes('verifyclientpo') ||
+        workflowType.includes('client po') ||
+        workflowType.includes('verifyclientpo');
+    if (isMatch) {
+        console.log('✅ Client PO Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Client PO Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+    return isMatch;
+};
+
+const isLostDamagedItemsVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/stock/verifylostdamageditems',
+        '/Purchase/VerifyLostorDamagedItems',
+        '/purchase/verifylostordamageditems',
+        '/stock/lostordamageditemsverification',
+        '/stock/lostdamageditemsverification',
+        'Lost or Scrapped Items ',
+        'lost or scrapped items',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('lost damaged items') ||
+        category.includes('verifylostdamageditems') ||
+        title.includes('lost damaged items') ||
+        title.includes('verifylostdamageditems') ||
+        displayName.includes('lost damaged items') ||
+        displayName.includes('verifylostdamageditems') ||
+        workflowType.includes('lost damaged items') ||
+        workflowType.includes('verifylostdamageditems');
+    if (isMatch) {
+        console.log('✅ Lost Damaged Items Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Lost Damaged Items Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+    return isMatch;
+};
+
+const isDailyIssueVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/stock/verifydailyissue',
+        '/purchase/verifydailyissue',
+        'verifydailyissue',
+        'daily issue'
+    ];;
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('daily issue') ||
+        category.includes('verifydailyissue') ||
+        title.includes('daily issue') ||
+        title.includes('verifydailyissue') ||
+        displayName.includes('daily issue') ||
+        displayName.includes('verifydailyissue') ||
+        workflowType.includes('daily issue') ||
+        workflowType.includes('verifydailyissue');
+    if (isMatch) {
+        console.log('✅ Daily Issue Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Daily Issue Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+    return isMatch;
+};
+
+const isScrapSaleVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/stock/verifyscrapsale',
+        '/purchase/verifyscrapsale',
+        'verifyscrapsale',
+        'scrap sale'
+    ];;
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('scrap sale') ||
+        category.includes('verifyscrapsale') ||
+        title.includes('scrap sale') ||
+        title.includes('verifyscrapsale') ||
+        displayName.includes('scrap sale') ||
+        displayName.includes('verifyscrapsale') ||
+        workflowType.includes('scrap sale') ||
+        workflowType.includes('verifyscrapsale');
+    if (isMatch) {
+        console.log('✅ Scrap Sale Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Scrap Sale Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+    return isMatch;
+};
+
+const isSPPOCloseVerification = (path, category, title, displayName, workflowType) => {
+    // ✅ Exact path matches for SPPO Close Verification
+    const pathMatches = [
+        '/purchase/verifysppoclose',
+        '/purchase/verifysppoclose?closetype=performing',
+        '/purchase/verifysppoclose?closetype=nonperforming',
+        '/sppo/verifysppoclose'
+    ];
+
+    // ✅ Check for exact path match (without query params) OR with query params
+    const basePathMatch = path.startsWith('/purchase/verifysppoclose') ||
+        path.startsWith('/sppo/verifysppoclose');
+
+    const exactPathMatch = pathMatches.some(match => path === match || path.startsWith(match));
+
+    const isMatch = basePathMatch ||
+        exactPathMatch ||
+        path.includes('verifysppoclose') ||
+        category.includes('sppo close') ||
+        title.includes('sppo close verification') ||
+        displayName.includes('sppo close verification') ||
+        workflowType.includes('sppoclose');
+
+    if (isMatch) {
+        console.log('✅ SPPO Close Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ SPPO Close Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+
+    return isMatch;
+};
+
+const isSPPOAmendVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/sppo/verifysppoamend',
+        '/purchase/verifysppoamend',
+        'verifysppoamend',
+        'sppo amend'
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('sppo amend') ||
+        category.includes('verifysppoamend') ||
+        title.includes('sppo amend') ||
+        title.includes('verifysppoamend') ||
+        displayName.includes('sppo amend') ||
+        displayName.includes('verifysppoamend') ||
+        workflowType.includes('sppo amend') ||
+        workflowType.includes('verifysppoamend');
+    if (isMatch) {
+        console.log('✅ SPPO Amend Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ SPPO Amend Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+    return isMatch;
+};
+
+const isExcelAttendanceVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifyexcelattendance',    
+        '/hr/verifyexcelattendanceinbox',
+        'verifyexcelattendance',
+        'excel attendance'
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('excel attendance') ||
+        category.includes('verifyexcelattendance') ||
+        title.includes('excel attendance') ||
+        title.includes('verifyexcelattendance') ||
+        displayName.includes('excel attendance') ||
+        displayName.includes('verifyexcelattendance') ||
+        workflowType.includes('excel attendance') ||
+        workflowType.includes('verifyexcelattendance');     
+    if (isMatch) {
+        console.log('✅ Excel Attendance Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Excel Attendance Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+    return isMatch;
+};
+
+const isDailyAttendanceVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/HR/VerifyStaffAttendance?Type=Staff', 
+        '/hr/verifystaffattendance',
+        'verifystaffattendance',
+        'staff daily attendance'
+    ];  
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('/HR/VerifyStaffAttendance?Type=Staff') ||
+        category.includes('/HR/VerifyStaffAttendance') ||
+        title.includes('Staff Attendance') ||
+        title.includes('verifystaffattendance') ||
+        displayName.includes('staff daily attendance') ||
+        displayName.includes('verifystaffattendance') ||
+        workflowType.includes('staff daily attendance') ||
+        workflowType.includes('verifystaffattendance');
+    if (isMatch) {
+        console.log('✅ Staff Daily Attendance Verification detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Staff Daily Attendance Verification not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
     }   
     return isMatch;
 };
+
+const isLabourObjectivesGoalsVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/HR/VerifyLBObjectivesGoals') || path.includes('/hr/verifylbobjectivesgoals');
+
+    if (isMatch) {
+        console.log('✅ Labour Objectives & Goals detected by path:', path);
+    } else {
+        console.log('❌ Labour Objectives & Goals not detected. Path:', path);
+    }
+
+    return isMatch;
+};
+
+const isStaffObjectivesGoalsVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/HR/VerifyObjectivesAndGoals') || path.includes('/hr/verifyobjectivesandgoals');
+
+    if (isMatch) {
+        console.log('✅ Staff Objectives & Goals detected by path:', path);
+    } else {
+        console.log('❌ Staff Objectives & Goals not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isEmployeeCTCVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/HR/VerifyPayRollStructureNew') || path.includes('/hr/verifypayrollstructurenew'); 
+    if (isMatch) {
+        console.log('✅ Employee CTC detected by path:', path);
+    } else {
+        console.log('❌ Employee CTC not detected. Path:', path);
+    }   
+    return isMatch;
+};
+
+const isLabourCTCVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/HR/VerifyLabourPayRoll') || path.includes('/hr/verifylabourpayroll');   
+    if (isMatch) {
+        console.log('✅ Labour CTC detected by path:', path);
+    } else {
+        console.log('❌ Labour CTC not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isLabourPayRevisionVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/HR/VerifyLBPayRevision') || path.includes('/hr/verifylbpayrevision');
+    if (isMatch) {
+        console.log('✅ Labour Pay Revision detected by path:', path);
+    } else {
+        console.log('❌ Labour Pay Revision not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isStaffPayRevisionVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/HR/StaffPayRevision') || path.includes('/hr/staffpayrevision'); 
+    if (isMatch) {
+        console.log('✅ Staff Pay Revision detected by path:', path);
+    }
+    else {
+        console.log('❌ Staff Pay Revision not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+
+
+
+
 
 // ============================================================================
 // MAIN COMPONENT
@@ -326,11 +656,11 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         // ====================================================================
         if (isStaffRegistrationVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyStaffRegistration');
-            return <VerifyStaffRegistration 
-                notificationData={notification} 
-                onNavigate={onNavigate} 
+            return <VerifyStaffRegistration
+                notificationData={notification}
+                onNavigate={onNavigate}
             />;
-        }   
+        }
 
         // ====================================================================
         // VENDOR PAYMENT VERIFICATION
@@ -365,16 +695,7 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
 
-        // =====================================================================
-        // SPPO VERIFICATION
-        //=====================================================================
-        if (isSPPOVerification(path, category, title, displayName, workflowType)) { 
-            console.log('✅ Routing to VerifySPPO');
-            return <VerifySPPO
-                notificationData={notification}
-                onNavigate={onNavigate}
-            />; 
-        }
+     
 
         // ====================================================================
         // COST CENTER APPROVAL VERIFICATION
@@ -384,7 +705,7 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             return <CostCenterApproval
                 notificationData={notification}
                 onNavigate={onNavigate}
-            />; 
+            />;
         }
 
         // ====================================================================
@@ -401,7 +722,7 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         // ====================================================================
         // CC BUDGET AMENDMENT VERIFICATION
         // ====================================================================
-        if (isCCBudgetAmendmentVerification(path, category, title, displayName, workflowType)) {        
+        if (isCCBudgetAmendmentVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyCCBudgetAmendment');
             return <VerifyCCBudgetAmendment
                 notificationData={notification}
@@ -418,15 +739,177 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;
-        }   
+        }
         // ====================================================================
 
+        // CLIENT PO VERIFICATION
+        // ==================================================================== 
+        if (isClientPOVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyClientPO');
+            return <VerifyClientPO
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // LOST DAMAGED ITEMS VERIFICATION
+        // ==================================================================== 
+        if (isLostDamagedItemsVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyLostDamagedItems');
+            return <LostDamagedItemsVerification
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // DAILY ISSUE VERIFICATION
+        // ==================================================================== 
+        if (isDailyIssueVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyDailyIssue');
+            return <VerifyDailyIssue
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // SCRAP SALE VERIFICATION
+        // ==================================================================== 
+        if (isScrapSaleVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyScrapSale');
+            return <VerifyScrapSale
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // EXCEL ATTENDANCE VERIFICATION
+        // ==================================================================== 
+        if (isExcelAttendanceVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyExcelAttendance');
+            return <VerifyExcelAttendance
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />; 
+                
+        }
+
+        // ====================================================================
+        // SPPO CLOSE VERIFICATION
+        // ====================================================================
+        if (isSPPOCloseVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifySPPOClose');
+            return <VerifySPPOClose
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // SPPO AMEND VERIFICATION
+        // ====================================================================
+        if (isSPPOAmendVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifySPPOAmend');
+            return <VerifySPPOAmend
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+           // =====================================================================
+        // SPPO VERIFICATION
+        //=====================================================================
+        if (isSPPOVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifySPPO');
+            return <VerifySPPO
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // STAFF DAILY ATTENDANCE VERIFICATION
+        // ====================================================================
+        if (isDailyAttendanceVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyStaffDailyAttendance');
+            return <VerifyStaffDailyAttendance      
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // LABOUR OBJECTIVES & GOALS VERIFICATION
+        // ====================================================================
+        if (isLabourObjectivesGoalsVerification(path)) {
+            console.log('✅ Routing to VerifyLabourObjectivesGoals');
+            return <VerifyLabourObjectivesGoals
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // STAFF OBJECTIVES & GOALS VERIFICATION
+        // ====================================================================
+        if (isStaffObjectivesGoalsVerification(path)) {
+            console.log('✅ Routing to VerifyStaffObjectivesGoals');
+            return <VerifyStaffObjectivesGoals
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // EMPLOYEE CTC VERIFICATION
+        // ====================================================================
+        if (isEmployeeCTCVerification(path)) {
+            console.log('✅ Routing to VerifyEmployeeCTC');
+            return <VerifyEmployeeCTC
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // LABOUR CTC VERIFICATION
+        // ====================================================================
+        if (isLabourCTCVerification(path)) {
+            console.log('✅ Routing to VerifyLabourCTC');
+            return <VerifyLabourCTC
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+        // LABOUR PAY REVISION VERIFICATION
+        // ====================================================================
+        if (isLabourPayRevisionVerification(path)) {
+            console.log('✅ Routing to VerifyLabourPayRevision');
+            return <VerifyLabourPayRevision
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+        // STAFF PAY REVISION VERIFICATION
+        // ====================================================================
+        if (isStaffPayRevisionVerification(path)) {
+            console.log('✅ Routing to VerifyStaffPayRevision');
+            return <VerifyStaffPayRevision
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
 
         // ✅ USAGE #2: When no specific component matches the notification
         console.log('⚠️ No specific component found, using placeholder');
-        return <InboxItemPlaceholder 
-            notificationData={notification} 
-            onNavigate={onNavigate} 
+        return <InboxItemPlaceholder
+            notificationData={notification}
+            onNavigate={onNavigate}
         />;
     };
 

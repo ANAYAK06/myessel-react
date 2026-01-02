@@ -124,11 +124,42 @@ export const getCMSPayReportEmployeeData = async (params) => {
 // 5. Get Employee Pay Slip Data (POST Request)
 export const getEmpPaySlipData = async (paySlipData) => {
     try {
+
+          const payload = {
+            TransactionRefno: paySlipData.TransactionRefno || 
+                            paySlipData.transactionRefno || 
+                            "",
+            EmpRefno: paySlipData.EmpRefno || 
+                     paySlipData.employeeName || 
+                     paySlipData.EmployeeName || 
+                     "",
+            CurrentCC: paySlipData.CurrentCC || 
+                      paySlipData.CCCode || 
+                      paySlipData.ccCode || 
+                      "",
+            CategoryId: paySlipData.CategoryId || 
+                       paySlipData.categoryId || 
+                       0,
+            ConslidateTransNo: paySlipData.ConslidateTransNo || 
+                              paySlipData.consolidateTransNo || 
+                              ""
+        };
+        
+        // 🔍 ADD THIS INTERCEPTOR
+        const interceptor = axios.interceptors.request.use(config => {
+            console.log('🚀 AXIOS IS SENDING:');
+            console.log('   URL:', config.url);
+            console.log('   Data:', config.data);
+            console.log('   Data Type:', typeof config.data);
+            console.log('   Headers:', config.headers);
+            return config;
+        });
+        
         console.log('💰 Getting Employee Pay Slip Data with params:', paySlipData); // DEBUG
         
         const response = await axios.post(
             `${API_BASE_URL}/HR/GetEmpPaySlipData`,
-            paySlipData,
+            payload,
             {
                 headers: {
                     'Content-Type': 'application/json'

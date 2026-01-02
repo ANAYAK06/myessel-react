@@ -35,18 +35,7 @@ const RoleOperationsTab = () => {
         dispatch(fetchWorkflowMasterOperations());
     }, [dispatch]);
 
-    // Set default selected operation when data loads
-    useEffect(() => {
-        if (Array.isArray(workflowMasterOperations) && workflowMasterOperations.length > 0 && !selectedOperation) {
-            const firstOperation = workflowMasterOperations[0];
-            console.log('🎯 Auto-selecting first operation:', firstOperation);
-            setSelectedOperation(firstOperation);
-            if (firstOperation.MasterOperationID) {
-                console.log('📞 Calling fetchRoleOperationRoles with ID:', firstOperation.MasterOperationID);
-                dispatch(fetchRoleOperationRoles(firstOperation.MasterOperationID));
-            }
-        }
-    }, [workflowMasterOperations, selectedOperation, dispatch]);
+    // No auto-selection - user must explicitly select an operation from dropdown
 
     // Initialize permissions when roleOperationRoles loads
     useEffect(() => {
@@ -105,6 +94,16 @@ const RoleOperationsTab = () => {
     // Handle operation selection change
     const handleOperationChange = (e) => {
         const operationId = e.target.value;
+        
+        // If empty/placeholder value selected, clear everything
+        if (!operationId || operationId === '') {
+            console.log('🧹 Clearing selection');
+            setSelectedOperation(null);
+            setPermissions({});
+            setSaveSuccess(false);
+            return;
+        }
+
         const operation = workflowMasterOperations.find(
             op => op.MasterOperationID === parseInt(operationId)
         );
@@ -114,7 +113,7 @@ const RoleOperationsTab = () => {
         if (operation) {
             setSelectedOperation(operation);
             setPermissions({});
-            setSaveSuccess(false); // Clear success state when changing operation
+            setSaveSuccess(false);
             console.log('📞 Fetching role operation roles for operation ID:', operation.MasterOperationID);
             dispatch(fetchRoleOperationRoles(operation.MasterOperationID));
         }
@@ -187,15 +186,11 @@ const RoleOperationsTab = () => {
             // Show success state
             setSaveSuccess(true);
             
-            // Refresh both workflow master operations and role operation roles
+            // Refresh workflow master operations list
             await dispatch(fetchWorkflowMasterOperations()).unwrap();
             
-            // Re-fetch the current operation's roles to show updated state
-            if (selectedOperation.MasterOperationID) {
-                await dispatch(fetchRoleOperationRoles(selectedOperation.MasterOperationID)).unwrap();
-            }
-            
-            // Clear permissions to reset the form
+            // Clear the selected operation and permissions to reset the form
+            setSelectedOperation(null);
             setPermissions({});
             
             // Hide success state after 3 seconds
@@ -337,7 +332,7 @@ const RoleOperationsTab = () => {
                         <div className="flex-1">
                             <h4 className="text-sm font-medium text-green-800 dark:text-green-300">Success</h4>
                             <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                                Role operations have been saved successfully. The operation list has been refreshed.
+                                Role operations have been saved successfully. The form has been cleared.
                             </p>
                         </div>
                     </div>
@@ -364,9 +359,7 @@ const RoleOperationsTab = () => {
                                 onChange={handleOperationChange}
                                 className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                             >
-                                {!selectedOperation && (
-                                    <option value="" disabled>Select an operation...</option>
-                                )}
+                                <option value="">Select an operation...</option>
                                 {workflowMasterOperations.map((operation) => (
                                     <option 
                                         key={operation.MasterOperationID} 
@@ -379,7 +372,7 @@ const RoleOperationsTab = () => {
                             
                             
                             {/* Show Functional Area Name if available */}
-                            {roleOperationRoles && (roleOperationRoles.FirmFunctionalAreaName || roleOperationRoles.FunctionalAreaName) && (
+                            {selectedOperation && roleOperationRoles && (roleOperationRoles.FirmFunctionalAreaName || roleOperationRoles.FunctionalAreaName) && (
                                 <div className="mt-3 flex items-center justify-center text-sm text-gray-600 dark:text-gray-400">
                                     <Info className="w-4 h-4 mr-2" />
                                     <span>Functional Area: <span className="font-medium text-gray-900 dark:text-white">{roleOperationRoles.FirmFunctionalAreaName || roleOperationRoles.FunctionalAreaName}</span></span>
@@ -387,8 +380,14 @@ const RoleOperationsTab = () => {
                             )}
                         </div>
 
-                        {/* Loading state for roles */}
-                        {loading.roleOperationRoles ? (
+                        {/* Show content only when operation is selected */}
+                        {!selectedOperation ? (
+                            <div className="text-center py-12">
+                                <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Select an Operation</h3>
+                                <p className="text-gray-500 dark:text-gray-400">Please select an operation from the dropdown above to configure role permissions</p>
+                            </div>
+                        ) : loading.roleOperationRoles ? (
                             <div className="flex items-center justify-center py-8">
                                 <RefreshCw className="w-6 h-6 animate-spin text-orange-600" />
                                 <span className="ml-3 text-gray-600 dark:text-gray-300">Loading roles...</span>

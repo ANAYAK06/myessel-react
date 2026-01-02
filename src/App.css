@@ -16,4 +16,7 @@
 .transition-max-height {
     transition: max-height 0.5s ease-in-out;
   }
-  
+  .writing-mode-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}

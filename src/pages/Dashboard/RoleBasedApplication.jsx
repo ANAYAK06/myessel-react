@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import TopNavbarLayout from '../../components/TopNavbarLayout';
 import DashboardContent from './DashboardContent';
 import InboxRouter from '../../components/Inbox/InboxRouter';
+import LegacyPageWrapper from '../../components/LegacyPageWrapper'
 
 // ============================================================================
 // REPORT COMPONENTS 
@@ -38,6 +39,16 @@ import LCBGStatusReportPage from '../FinancialReports/LCBGStatusReportPage';
 import StockSummaryPage from '../FinancialReports/StockSummaryPage';
 import UnsecuredLoanReportPage from '../TermLoan/UnsecuredLoanReportPage';
 import CMSPaymentReportPage from '../HRReports/CMSPaymentReportPage';
+import StaffAttendanceReportPage from '../HRReports/StaffAttendanceReportPage';
+import EmployeeExitReportPage from '../HRReports/EmployeeExitReportPage';
+import LeaveReportPage from '../HRReports/LeaveReportPage';
+
+
+//============================================================================
+// MAIN WORKING COMPONENT
+//============================================================================
+
+import CostCenterCreationManagement from '../CostCenter/CostCenterCreationManagement';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -111,14 +122,14 @@ const RoleBasedApplication = () => {
         setCurrentMenuData(menuData);
     };
 
-     const isInboxItem = (menuData) => {
+    const isInboxItem = (menuData) => {
         if (!menuData) return false;
 
         // Check for notification-specific properties
         const hasNotificationProps = !!(
-            menuData.type === 'notification' || 
+            menuData.type === 'notification' ||
             menuData.type === 'inbox-item' ||
-            menuData.masterId || 
+            menuData.masterId ||
             menuData.MasterId ||
             menuData.NavigationPath ||
             menuData.InboxTitle ||
@@ -155,13 +166,13 @@ const RoleBasedApplication = () => {
 
         const pathMatches = menuData.path === '/Reports/AccruedInterestReport' ||
             menuData.path === '/Home/AccruedInterestReport' ||
-            menuData.path?.toLowerCase().includes('accruedinterest') 
-           
+            menuData.path?.toLowerCase().includes('accruedinterest')
+
         const nameMatches = menuData.name?.toLowerCase().includes('accruedinterest') ||
             menuData.name?.toLowerCase().includes('accrued interest') ||
             menuData.name?.toLowerCase().includes('liquidity status') ||
             menuData.name?.toLowerCase().includes('liquiditystatus')
-            
+
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('accruedinterest') ||
             menuData.reactRoute?.toLowerCase().includes('liquiditystatus');
 
@@ -292,7 +303,7 @@ const RoleBasedApplication = () => {
     const isAssetSalesReportPage = (menuData) => {
         if (!menuData) return false;
 
-        const pathMatches = menuData.path === '/Reports/AssetSaleReport'||
+        const pathMatches = menuData.path === '/Reports/AssetSaleReport' ||
             menuData.path === '/Assets/AssetSalesReport' ||
             menuData.path === '/Purchase/ViewAssetSaleMainGrid' ||
             menuData.path?.toLowerCase().includes('assetsalesreport') ||
@@ -362,7 +373,7 @@ const RoleBasedApplication = () => {
     // check if menu item should route to Gst consolidated purchase report Page
     const isGstConsolidatedPurchaseReportPage = (menuData) => {
         if (!menuData) return false;
-        const pathMatches = menuData.path === '/Reports/StockPurchaseConsolidateReport' ||  menuData.path === '/Inventory/StockPurchaseConsolidateReport' ||
+        const pathMatches = menuData.path === '/Reports/StockPurchaseConsolidateReport' || menuData.path === '/Inventory/StockPurchaseConsolidateReport' ||
             menuData.path?.toLowerCase().includes('stockpurchaseconsolidatereport');
         const nameMatches = menuData.name?.toLowerCase().includes('stockpurchaseconsolidatereport') ||
             menuData.name?.toLowerCase().includes('stock purchase consolidate report');
@@ -502,7 +513,7 @@ const RoleBasedApplication = () => {
 
         return pathMatches || nameMatches || routeMatches;
     };
-    
+
     // check if menu item should route to Lost Scrap Report Page
     const isLostScrapReportPage = (menuData) => {
         if (!menuData) return false;
@@ -554,7 +565,7 @@ const RoleBasedApplication = () => {
     // check if menu item should route to any cms payment report page
     const isCMSPaymentReportPage = (menuData) => {
         if (!menuData) return false;
-        const pathMatches = menuData.path === '/HR/CMSPayReport' || menuData.path === '/Inventory/CMSPaymentReport' ||
+        const pathMatches = menuData.path === '/HR/CMSPayReport' || menuData.path === '/HR/CMSPayReport?Type=Staff' ||
             menuData.path?.toLowerCase().includes('cmspaymentreport');
         const nameMatches = menuData.name?.toLowerCase().includes('cmspaymentreport') ||
             menuData.name?.toLowerCase().includes('cms payment report');
@@ -562,6 +573,85 @@ const RoleBasedApplication = () => {
 
         return pathMatches || nameMatches || routeMatches;
     };
+
+
+    // check if menu item should route to any staff attendance report page
+    const isStaffAttendanceReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/StaffAttendenceView' ||
+            menuData.path?.toLowerCase().includes('staffattendancereport');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffattendancereport') ||
+            menuData.name?.toLowerCase().includes('staff attendance report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffattendancereport');
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check Payrollreport page  -- this is the testing of LeagcyPageWrapper page  
+
+
+    const isPayRollReportPage = (menuData) => {
+        if (!menuData) return false;
+
+        const pathMatches = menuData.path === '/HR/PayRollReport' ||
+            menuData.path?.toLowerCase().includes('payrollreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('payrollreport') ||
+            menuData.name?.toLowerCase().includes('payroll report') ||
+            menuData.name?.toLowerCase().includes('pay roll');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('payrollreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    // check Employee Exit Report Page
+    const isEmployeeExitReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/ExitReport?Type=Staff' ||
+            menuData.path?.toLowerCase().includes('employeeexitreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('employeeexitreport') ||
+            menuData.name?.toLowerCase().includes('employee exit report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('employeeexitreport');
+
+
+        return pathMatches || nameMatches || routeMatches;
+
+
+    };
+
+
+    // check Leave Report Page 
+    const isLeaveReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/LeaveReport' ||
+            menuData.path?.toLowerCase().includes('leavereport');
+        const nameMatches = menuData.name?.toLowerCase().includes('leavereport') ||
+            menuData.name?.toLowerCase().includes('leave report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('leavereport');
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+
+
+   // Main menu function link starts here 
+
+   const costCenterCreation = (menuData) => {
+        if (!menuData) return false;    
+        const pathMatches = menuData.path === '/Home/CostCenter' ||
+            menuData.path?.toLowerCase().includes('costcentercreationmanagement');
+        const nameMatches = menuData.name?.toLowerCase().includes('costcentercreationmanagement') ||
+
+            menuData.name?.toLowerCase().includes('cost center creation management');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('costcentercreationmanagement');
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+   
+   
+
+    // Check if this menu item should show PayRoll Report Page
+    if (currentMenuData && isPayRollReportPage(currentMenuData)) {
+        console.log('✅ Rendering PayRollReportPage (Legacy) for:', currentMenuData.name);
+        return <LegacyPageWrapper menuData={currentMenuData} onNavigate={handleNavigation} />;
+    }
 
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
@@ -573,6 +663,16 @@ const RoleBasedApplication = () => {
             menuData.type?.toLowerCase().includes('budget');
 
         return pathMatches || nameMatches || sectionMatches;
+    };
+
+
+    const isLegacyPage = (menuData) => {
+        if (!menuData) return false;
+
+        // Mark as legacy if it has a specific flag or hasn't been implemented yet
+        return menuData.isLegacy === true ||
+            menuData.useLegacyPage === true ||
+            menuData.reactRoute === null;
     };
 
 
@@ -755,6 +855,34 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isCMSPaymentReportPage(currentMenuData)) {
             console.log('✅ Rendering CMSPaymentReportPage for:', currentMenuData.name);
             return <CMSPaymentReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Staff Attendance Report Page
+        if (currentMenuData && isStaffAttendanceReportPage(currentMenuData)) {
+            console.log('✅ Rendering StaffAttendanceReportPage for:', currentMenuData.name);
+            return <StaffAttendanceReportPage menuData={currentMenuData} />;
+        }
+
+        // Check if this menu item should show Employee Exit Report Page
+        if (currentMenuData && isEmployeeExitReportPage(currentMenuData)) {
+            console.log('✅ Rendering EmployeeExitReportPage for:', currentMenuData.name);
+            return <EmployeeExitReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should show Leave Report Page
+        if (currentMenuData && isLeaveReportPage(currentMenuData)) {
+            console.log('✅ Rendering LeaveReportPage for:', currentMenuData.name);
+            return <LeaveReportPage menuData={currentMenuData} />;
+        }
+        
+        // Check if this menu item should show Cost Center Creation Management Page
+        if (currentMenuData && costCenterCreation(currentMenuData)) {
+            console.log('✅ Rendering CostCenterCreationManagementPage for:', currentMenuData.name);
+            return <CostCenterCreationManagement   menuData={currentMenuData} />;
+        }
+
+        // Check if this should load from legacy application
+        if (currentMenuData && isLegacyPage(currentMenuData)) {
+            console.log('✅ Rendering Legacy Page for:', currentMenuData.name);
+            return <LegacyPageWrapper menuData={currentMenuData} />;
         }
 
         // For any other budget-related menu item, show a budget module placeholder

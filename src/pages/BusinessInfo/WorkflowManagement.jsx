@@ -754,7 +754,369 @@ const CreateWorkflowModal = ({ isOpen, onClose, unassignedOperations = [] }) => 
     );
 };
 
-// Edit Workflow Modal Component
+// // Edit Workflow Modal Component
+// const EditWorkflowModal = ({ isOpen, onClose, workflow }) => {
+//     const dispatch = useDispatch();
+//     const userRolesForAssign = useSelector(selectUserRolesForAssign) || [];
+//     const loading = useSelector(selectLoading) || {};
+//     const isSaving = useSelector(selectIsSaving) || false;
+//     const { userData } = useSelector((state) => state.auth);
+
+//     const [workflowLevels, setWorkflowLevels] = useState([]);
+//     const [pendingVerifications, setPendingVerifications] = useState({});
+//     const [checkingPending, setCheckingPending] = useState(true);
+
+//     // Get logged-in user's role ID
+//     const loggedInRoleId = getLoggedInRoleId(userData);
+
+//     // Helper function to get flow details
+//     const getFlowDetails = (workflow) => {
+//         if (!workflow) return null;
+
+//         const methods = [
+//             () => workflow['1stFlowDetails'],
+//             () => workflow.lstFlowDetails,
+//             () => Object.getOwnPropertyDescriptor(workflow, '1stFlowDetails')?.value,
+//             () => {
+//                 const flowKey = Object.keys(workflow).find(key =>
+//                     key.includes('FlowDetails') || key.includes('1stFlow')
+//                 );
+//                 return flowKey ? workflow[flowKey] : null;
+//             }
+//         ];
+
+//         for (const method of methods) {
+//             try {
+//                 const result = method();
+//                 if (result && Array.isArray(result)) {
+//                     return result;
+//                 }
+//             } catch (e) {
+//                 continue;
+//             }
+//         }
+//         return null;
+//     };
+
+//     // Load workflow levels and check for pending verifications
+//     useEffect(() => {
+//         const loadWorkflowData = async () => {
+//             if (!workflow || !loggedInRoleId) return;
+
+//             setCheckingPending(true);
+
+//             // Fetch available roles based on current user's role
+//             dispatch(fetchUserRolesForAssign(loggedInRoleId));
+
+//             const flowDetails = getFlowDetails(workflow);
+
+//             if (flowDetails && Array.isArray(flowDetails)) {
+//                 const validFlowDetails = flowDetails.filter(detail =>
+//                     detail && detail.UserRoleCode && detail.UserRoleCode.trim() !== ''
+//                 );
+
+//                 // Check for pending verifications for each role
+//                 const pendingChecks = {};
+
+//                 for (const detail of validFlowDetails) {
+//                     if (detail.UserRoleID) {
+//                         try {
+//                             const result = await dispatch(fetchVerificationPendingForRole({
+//                                 roleId: detail.UserRoleID,
+//                                 masterId: workflow.MasterOperationID,
+//                                 levelNo: detail.LevelOfApproval
+//                             })).unwrap();
+
+//                             // If there are pending items, mark this level and all below as locked
+//                             if (result && Array.isArray(result) && result.length > 0) {
+//                                 const currentLevel = detail.LevelOfApproval;
+//                                 // Lock this level and all levels below it
+//                                 validFlowDetails.forEach(flow => {
+//                                     if (flow.LevelOfApproval <= currentLevel) {
+//                                         pendingChecks[flow.LevelOfApproval] = true;
+//                                     }
+//                                 });
+//                             }
+//                         } catch (error) {
+//                             console.error(`Error checking pending for level ${detail.LevelOfApproval}:`, error);
+//                         }
+//                     }
+//                 }
+
+//                 setPendingVerifications(pendingChecks);
+
+//                 // Set workflow levels with editability
+//                 const levels = validFlowDetails.map(detail => ({
+//                     level: detail.LevelOfApproval,
+//                     roleId: detail.UserRoleID ? String(detail.UserRoleID) : '',
+//                     roleName: detail.UserRoleCode,
+//                     isEditable: !pendingChecks[detail.LevelOfApproval],
+//                     canDelete: !pendingChecks[detail.LevelOfApproval],
+//                     originalRoleId: detail.UserRoleID
+//                 }));
+
+//                 setWorkflowLevels(levels);
+//             }
+
+//             setCheckingPending(false);
+//         };
+
+//         loadWorkflowData();
+//     }, [workflow, loggedInRoleId, dispatch]);
+
+//     const handleRoleChange = (index, newRoleId) => {
+//         const updated = [...workflowLevels];
+//         updated[index].roleId = newRoleId;
+//         const selectedRole = userRolesForAssign?.find(role => String(role.UserRoleID) === String(newRoleId));
+//         updated[index].roleName = selectedRole?.UserRoleCode || '';
+//         setWorkflowLevels(updated);
+//     };
+
+//     const handleDeleteLevel = async (index) => {
+//         const level = workflowLevels[index];
+
+//         if (!level.canDelete) {
+//             toast.error('Cannot delete level with pending verifications');
+//             return;
+//         }
+
+//         try {
+//             const result = await dispatch(fetchVerificationPendingForRole({
+//                 roleId: level.originalRoleId,
+//                 masterId: workflow.MasterOperationID,
+//                 levelNo: level.level
+//             })).unwrap();
+
+//             if (result && Array.isArray(result) && result.length > 0) {
+//                 toast.error('Cannot delete level with pending verifications');
+//                 return;
+//             }
+
+//             const updated = workflowLevels.filter((_, i) => i !== index);
+//             // Renumber levels
+//             const renumbered = updated.map((lvl, idx) => ({
+//                 ...lvl,
+//                 level: idx + 1
+//             }));
+//             setWorkflowLevels(renumbered);
+//             toast.success('Level removed');
+//         } catch (error) {
+//             toast.error('Error checking pending verifications');
+//         }
+//     };
+
+//     const handleSubmit = async () => {
+//         if (!loggedInRoleId) {
+//             toast.error('Unable to determine user role. Please login again.');
+//             return;
+//         }
+
+//         const invalidLevels = workflowLevels.filter(level => !level.roleId || level.roleId === '');
+//         if (invalidLevels.length > 0) {
+//             toast.error('Please select roles for all workflow levels');
+//             return;
+//         }
+
+//         // For UPDATE: Single MasterId, but multiple RoleIds and LevelIds
+//         const roleIds = workflowLevels.map(level => level.roleId);
+//         const levelIds = workflowLevels.map((_, index) => index + 1);
+
+//         const hierarchyData = {
+//             MasterId: workflow.MasterOperationID,
+//             RoleIds: roleIds.join(',') + ',',
+//             LevelIds: levelIds.join(',') + ','
+//         };
+
+//         try {
+//             await dispatch(updateApprovalHierarchy(hierarchyData)).unwrap();
+//             toast.success('Workflow updated successfully');
+//             dispatch(fetchWorkflowLevels());
+//             onClose();
+//         } catch (error) {
+//             toast.error(error || 'Error updating workflow');
+//         }
+//     };
+//     if (!isOpen || !workflow) return null;
+
+//     return (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center">
+//             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
+//             <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden">
+//                 {/* Header */}
+//                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+//                     <div>
+//                         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+//                             Edit Workflow
+//                         </h2>
+//                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+//                             {workflow.MasterOperationDescription}
+//                         </p>
+//                     </div>
+//                     <button
+//                         onClick={onClose}
+//                         className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+//                     >
+//                         <X className="w-5 h-5" />
+//                     </button>
+//                 </div>
+
+//                 {/* Content */}
+//                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+//                     {!loggedInRoleId ? (
+//                         <div className="text-center py-8">
+//                             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+//                             <p className="text-gray-600 dark:text-gray-400 mb-2">
+//                                 User role not found
+//                             </p>
+//                             <p className="text-sm text-gray-500 dark:text-gray-400">
+//                                 Unable to load available roles. Please login again.
+//                             </p>
+//                         </div>
+//                     ) : checkingPending ? (
+//                         <div className="flex items-center justify-center py-8">
+//                             <RefreshCw className="w-6 h-6 animate-spin text-indigo-600 mr-3" />
+//                             <span className="text-gray-600 dark:text-gray-300">
+//                                 Checking for pending verifications...
+//                             </span>
+//                         </div>
+//                     ) : workflowLevels.length === 0 ? (
+//                         <div className="text-center py-8">
+//                             <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
+//                             <p className="text-gray-600 dark:text-gray-400">
+//                                 No workflow levels found
+//                             </p>
+//                         </div>
+//                     ) : (
+//                         <div className="space-y-4">
+//                             {/* Info banner if any levels are locked */}
+//                             {Object.keys(pendingVerifications).length > 0 && (
+//                                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start space-x-3">
+//                                     <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+//                                     <div className="text-sm text-yellow-800 dark:text-yellow-200">
+//                                         <p className="font-medium mb-1">Some levels are locked</p>
+//                                         <p>Levels with pending verifications (and all levels below them) cannot be edited or deleted until all pending items are processed.</p>
+//                                     </div>
+//                                 </div>
+//                             )}
+
+//                             {/* Add Level Button */}
+//                             <div className="flex justify-end">
+//                                 <button
+//                                     onClick={() => {
+//                                         const newLevel = workflowLevels.length + 1;
+//                                         setWorkflowLevels([...workflowLevels, {
+//                                             level: newLevel,
+//                                             roleId: '',
+//                                             roleName: '',
+//                                             isEditable: true,
+//                                             canDelete: true,
+//                                             originalRoleId: null
+//                                         }]);
+//                                     }}
+//                                     className="flex items-center space-x-1 px-3 py-1 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+//                                 >
+//                                     <Plus className="w-4 h-4" />
+//                                     <span>Add Level</span>
+//                                 </button>
+//                             </div>
+
+//                             {/* Workflow Levels */}
+//                             {workflowLevels.map((level, index) => (
+//                                 <div
+//                                     key={index}
+//                                     className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors ${level.isEditable
+//                                         ? 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+//                                         : 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
+//                                         }`}
+//                                 >
+//                                     <div className="flex-shrink-0 w-24">
+//                                         <div className="flex items-center space-x-2">
+//                                             <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+//                                                 <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+//                                                     {index + 1}
+//                                                 </span>
+//                                             </div>
+//                                             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+//                                                 Level {index + 1}
+//                                             </span>
+//                                         </div>
+//                                     </div>
+
+//                                     <div className="flex-1">
+//                                         <select
+//                                             value={level.roleId}
+//                                             onChange={(e) => handleRoleChange(index, e.target.value)}
+//                                             disabled={!level.isEditable || loading.userRolesForAssign}
+//                                             className={`w-full px-3 py-2 border rounded-md text-sm transition-colors ${level.isEditable
+//                                                 ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500'
+//                                                 : 'border-yellow-300 dark:border-yellow-700 bg-yellow-100 dark:bg-yellow-900/20 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+//                                                 }`}
+//                                         >
+//                                             <option value="">Select Role</option>
+//                                             {userRolesForAssign?.map(role => (
+//                                                 <option key={role.UserRoleID} value={String(role.UserRoleID)}>
+//                                                     {role.UserRoleCode}
+//                                                 </option>
+//                                             ))}
+//                                         </select>
+//                                         {!level.isEditable && (
+//                                             <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1 flex items-center">
+//                                                 <AlertTriangle className="w-3 h-3 mr-1" />
+//                                                 Has pending verifications or level below has pending - cannot edit
+//                                             </p>
+//                                         )}
+//                                     </div>
+
+//                                     {workflowLevels.length > 1 && (
+//                                         <button
+//                                             onClick={() => handleDeleteLevel(index)}
+//                                             disabled={!level.isEditable}
+//                                             className={`p-2 rounded-md transition-colors ${level.isEditable
+//                                                 ? 'text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
+//                                                 : 'text-gray-400 cursor-not-allowed opacity-50'
+//                                                 }`}
+//                                             title={level.isEditable ? 'Delete level' : 'Cannot delete - has pending verifications or level below has pending'}
+//                                         >
+//                                             <Trash2 className="w-4 h-4" />
+//                                         </button>
+//                                     )}
+//                                 </div>
+//                             ))}
+//                         </div>
+//                     )}
+//                 </div>
+
+//                 {/* Footer */}
+//                 <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-600">
+//                     <button
+//                         onClick={onClose}
+//                         disabled={isSaving}
+//                         className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors disabled:opacity-50"
+//                     >
+//                         Cancel
+//                     </button>
+//                     <button
+//                         onClick={handleSubmit}
+//                         disabled={isSaving || checkingPending || workflowLevels.length === 0}
+//                         className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+//                     >
+//                         {isSaving ? (
+//                             <>
+//                                 <RefreshCw className="w-4 h-4 animate-spin" />
+//                                 <span>Updating...</span>
+//                             </>
+//                         ) : (
+//                             <>
+//                                 <Save className="w-4 h-4" />
+//                                 <span>Update Workflow</span>
+//                             </>
+//                         )}
+//                     </button>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
 const EditWorkflowModal = ({ isOpen, onClose, workflow }) => {
     const dispatch = useDispatch();
     const userRolesForAssign = useSelector(selectUserRolesForAssign) || [];
@@ -936,6 +1298,7 @@ const EditWorkflowModal = ({ isOpen, onClose, workflow }) => {
             toast.error(error || 'Error updating workflow');
         }
     };
+
     if (!isOpen || !workflow) return null;
 
     return (
@@ -999,28 +1362,9 @@ const EditWorkflowModal = ({ isOpen, onClose, workflow }) => {
                                 </div>
                             )}
 
-                            {/* Add Level Button */}
-                            <div className="flex justify-end">
-                                <button
-                                    onClick={() => {
-                                        const newLevel = workflowLevels.length + 1;
-                                        setWorkflowLevels([...workflowLevels, {
-                                            level: newLevel,
-                                            roleId: '',
-                                            roleName: '',
-                                            isEditable: true,
-                                            canDelete: true,
-                                            originalRoleId: null
-                                        }]);
-                                    }}
-                                    className="flex items-center space-x-1 px-3 py-1 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span>Add Level</span>
-                                </button>
-                            </div>
+                            {/* ❌ REMOVED FROM HERE - WAS AT TOP */}
 
-                            {/* Workflow Levels */}
+                            {/* Workflow Levels List */}
                             {workflowLevels.map((level, index) => (
                                 <div
                                     key={index}
@@ -1082,6 +1426,27 @@ const EditWorkflowModal = ({ isOpen, onClose, workflow }) => {
                                     )}
                                 </div>
                             ))}
+
+                            {/* ✅ ADD LEVEL BUTTON - MOVED TO BOTTOM */}
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    onClick={() => {
+                                        const newLevel = workflowLevels.length + 1;
+                                        setWorkflowLevels([...workflowLevels, {
+                                            level: newLevel,
+                                            roleId: '',
+                                            roleName: '',
+                                            isEditable: true,
+                                            canDelete: true,
+                                            originalRoleId: null
+                                        }]);
+                                    }}
+                                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    <span>Add Level</span>
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

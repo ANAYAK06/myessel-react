@@ -62,6 +62,7 @@ import employeectc from "../slices/HRSlice/employeeCTCSlice";
 import labourctc from "../slices/HRSlice/labourCTCSlice";
 import labourpayrevision from "../slices/HRSlice/labourPayRevisionSlice";
 import staffpayrevision from "../slices/HRSlice/staffPayRevisionSlice";
+import employeeleave from "../slices/HRSlice/employeeLeaveSlice";
 
 const store = configureStore({
   
@@ -129,6 +130,7 @@ const store = configureStore({
     labourctc: labourctc,
     labourpayrevision: labourpayrevision,
     staffpayrevision: staffpayrevision,
+    employeeleave: employeeleave,
 
   }
 

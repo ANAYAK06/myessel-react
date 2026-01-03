@@ -28,6 +28,7 @@ import VerifyEmployeeCTC from '../../pages/HR/VerifyEmployeeCTC';
 import VerifyLabourCTC from '../../pages/HR/VerifyLabourCTC';
 import VerifyLabourPayRevision from '../../pages/HR/VerifyLabourPayRevision';
 import VerifyStaffPayRevision from '../../pages/HR/VerifyStaffPayRevision';
+import VerifyEmployeeLeaveRequest from '../../pages/HR/VerifyEmployeeLeaveRequest';
 
 
 // ============================================================================
@@ -609,6 +610,17 @@ const isStaffPayRevisionVerification = (path) => {
     return isMatch;
 };
 
+const isEmployeeLeaveRequestVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/HR/VerifyHRLeaveRequest') || path.includes('/hr/verifyhrleaverequest'); 
+    if (isMatch) {
+        console.log('✅ Employee Leave Request detected by path:', path);
+    } else {
+        console.log('❌ Employee Leave Request not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 
 
 
@@ -904,6 +916,20 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
         // ====================================================================
+
+        // EMPLOYEE LEAVE REQUEST VERIFICATION
+        // ====================================================================
+        if (isEmployeeLeaveRequestVerification(path)) {
+            console.log('✅ Routing to VerifyEmployeeLeaveRequest');
+            return <VerifyEmployeeLeaveRequest
+                notificationData={notification} 
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+
+        
 
         // ✅ USAGE #2: When no specific component matches the notification
         console.log('⚠️ No specific component found, using placeholder');

@@ -29,6 +29,9 @@ import VerifyLabourCTC from '../../pages/HR/VerifyLabourCTC';
 import VerifyLabourPayRevision from '../../pages/HR/VerifyLabourPayRevision';
 import VerifyStaffPayRevision from '../../pages/HR/VerifyStaffPayRevision';
 import VerifyEmployeeLeaveRequest from '../../pages/HR/VerifyEmployeeLeaveRequest';
+import DividendDeclarationVerification from '../../pages/shares/DividendDeclarationVerification';
+import DividendDistributionVerification from '../../pages/shares/DividendDistributionVerification';
+import DividendBankPaymentVerification from '../../pages/shares/DividendBankPaymentVerification';
 
 
 // ============================================================================
@@ -620,8 +623,40 @@ const isEmployeeLeaveRequestVerification = (path) => {
     }
     return isMatch;
 };
+const isDividendDeclarationVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/shares/dividenddeclarationverification') || path.includes('/Shares/DividendDeclarationVerification');
 
+    if (isMatch) {
+        console.log('✅ Dividend Declaration Verification detected by path:', path);
+    } else {
+        console.log('❌ Dividend Declaration Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
 
+const isDividendDistributionVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/shares/dividenddistributionverification') || path.includes('/Shares/DividendDistributionVerification'); 
+    if (isMatch) {
+        console.log('✅ Dividend Distribution Verification detected by path:', path);
+    } else {
+        console.log('❌ Dividend Distribution Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isDividendBankPaymentVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/shares/DividendPaymentVerification') || path.includes('/Shares/DividendPaymentVerification')|| path.includes('/shares/dividendpaymentverification') || path.includes('/shares/dividendbankpaymentverification');
+
+    if (isMatch) {
+        console.log('✅ Dividend Bank Payment Verification detected by path:', path);
+    } else {
+        console.log('❌ Dividend Bank Payment Verification not detected. Path:', path); 
+    }
+    return isMatch;
+};
 
 
 
@@ -928,7 +963,37 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         }
         // ====================================================================
 
-
+        // DIVIDEND DECLARATION VERIFICATION
+        // ====================================================================
+        if (isDividendDeclarationVerification(path)) {
+            console.log('✅ Routing to DividendDeclarationVerification');
+            return <DividendDeclarationVerification
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />; 
+        }
+        
+        // ====================================================================
+        // DIVIDEND DISTRIBUTION VERIFICATION
+        // ====================================================================
+        if (isDividendDistributionVerification(path)) {
+            console.log('✅ Routing to DividendDistributionVerification');
+            return <DividendDistributionVerification
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+        // DIVIDEND BANK PAYMENT VERIFICATION
+        // ====================================================================
+        if (isDividendBankPaymentVerification(path)) {
+            console.log('✅ Routing to DividendBankPaymentVerification');
+            return <DividendBankPaymentVerification
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
         
 
         // ✅ USAGE #2: When no specific component matches the notification

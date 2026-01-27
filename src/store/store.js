@@ -63,6 +63,11 @@ import labourctc from "../slices/HRSlice/labourCTCSlice";
 import labourpayrevision from "../slices/HRSlice/labourPayRevisionSlice";
 import staffpayrevision from "../slices/HRSlice/staffPayRevisionSlice";
 import employeeleave from "../slices/HRSlice/employeeLeaveSlice";
+import dividendDeclaration from "../slices/capitalSlice/dividendDeclarationSlice";
+import dividendDistribution from "../slices/capitalSlice/dividendDistributionSlice";
+import dividendBankPayment from "../slices/capitalSlice/dividendBankPaymentSlice";
+import bankDetails from "../slices/CommonSlice/bankDetailsSlice";
+import chequeNumbers from "../slices/bankSlice/chequeNumbersSlice";
 
 const store = configureStore({
   
@@ -131,6 +136,11 @@ const store = configureStore({
     labourpayrevision: labourpayrevision,
     staffpayrevision: staffpayrevision,
     employeeleave: employeeleave,
+    dividendDeclaration: dividendDeclaration,
+    dividendDistribution: dividendDistribution,
+    dividendBankPayment: dividendBankPayment,
+    bankDetails: bankDetails,
+    chequeNumbers: chequeNumbers,
 
   }
 

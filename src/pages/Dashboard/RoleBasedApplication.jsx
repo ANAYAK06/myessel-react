@@ -49,6 +49,9 @@ import LeaveReportPage from '../HRReports/LeaveReportPage';
 //============================================================================
 
 import CostCenterCreationManagement from '../CostCenter/CostCenterCreationManagement';
+import DividendDeclarationCreate from '../shares/DividendDeclarationCreate';
+import DividendDistributionCreate from '../shares/DividendDistributionCreate';
+import DividendBankPaymentCreate from '../shares/DividendBankPaymentCreate';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -644,8 +647,37 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
-   
-   
+
+    const isDividedDeclarationPage = (menuData) => {
+        if (!menuData) return false;    
+        const pathMatches = menuData.path === '/Accounts/DividendDeclaration' ||
+            menuData.path?.toLowerCase().includes('dividendeclaration');
+        const nameMatches = menuData.name?.toLowerCase().includes('dividendeclaration') ||
+
+            menuData.name?.toLowerCase().includes('dividend declaration');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('dividendeclaration');
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    const isDividendDistributionPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Accounts/DividendDistribution' ||
+            menuData.path?.toLowerCase().includes('dividenddistribution');
+        const nameMatches = menuData.name?.toLowerCase().includes('dividenddistribution') ||
+            menuData.name?.toLowerCase().includes('dividend distribution');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('dividenddistribution');
+        return pathMatches || nameMatches || routeMatches;
+    };
+
+    const isDividendBankPaymentPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/Accounts/DividendPayment' ||
+            menuData.path?.toLowerCase().includes('dividendbankpayment');
+        const nameMatches = menuData.name?.toLowerCase().includes('dividendbankpayment') ||
+            menuData.name?.toLowerCase().includes('dividend bank payment');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('dividendbankpayment');
+        return pathMatches || nameMatches || routeMatches;
+    };
 
     // Check if this menu item should show PayRoll Report Page
     if (currentMenuData && isPayRollReportPage(currentMenuData)) {
@@ -878,6 +910,24 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering CostCenterCreationManagementPage for:', currentMenuData.name);
             return <CostCenterCreationManagement   menuData={currentMenuData} />;
         }
+
+        // check if the menu item should show divided declearation page
+        if (currentMenuData && isDividedDeclarationPage(currentMenuData)) {
+            console.log('✅ Rendering DividedDeclarationPage for:', currentMenuData.name);
+            return <DividendDeclarationCreate menuData={currentMenuData} />;
+        }
+        // check if the menu item should show dividend distribution page
+        if (currentMenuData && isDividendDistributionPage(currentMenuData)) {
+            console.log('✅ Rendering DividendDistributionPage for:', currentMenuData.name);
+            return <DividendDistributionCreate menuData={currentMenuData} />;
+        }   
+
+        // check if the menu item should show dividend bank payment page
+        if (currentMenuData && isDividendBankPaymentPage(currentMenuData)) {
+            console.log('✅ Rendering DividendBankPaymentPage for:', currentMenuData.name);
+            return <DividendBankPaymentCreate menuData={currentMenuData} />;
+        }
+
 
         // Check if this should load from legacy application
         if (currentMenuData && isLegacyPage(currentMenuData)) {

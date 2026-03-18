@@ -717,8 +717,8 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                         {/* Logo and Company Name */}
                         <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                                    <img src="/logohaip.png" alt="slt" className='rounded-lg shadow-lg' />
+                                <div className="w-12 h-12 bg-gradient-to-r rounded-lg flex items-center justify-center">
+                                    <img src="/logoicon.png" alt="slt" className='rounded-full shadow-lg' />
                                 </div>
                                 <div>
                                     {/* <h2 className="text-lg font-bold text-gray-900 dark:text-white">HAIP</h2> */}
@@ -1228,6 +1228,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                 <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center">
                         <p className="text-sm">Copyright © . All Rights Reserved</p>
+                        <img src="/image.png" alt="applogo" className='h-10' />
                         <p className="text-sm">Powered By SL Touch IT Solutions Pvt Ltd.</p>
                     </div>
                 </div>

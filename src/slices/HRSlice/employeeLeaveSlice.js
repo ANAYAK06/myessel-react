@@ -32,6 +32,58 @@ export const fetchSingleEmpForLeaveRequest = createAsyncThunk(
     }
 );
 
+// 4. Fetch Employee Data for Leave Request (search autocomplete)
+export const fetchEmpDataForLeaveRequest = createAsyncThunk(
+    'employeeleave/fetchEmpDataForLeaveRequest',
+    async (prefix, { rejectWithValue }) => {
+        try {
+            const response = await leaveAPI.getEmpDataForLeaveRequest(prefix);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch employee search results');
+        }
+    }
+);
+
+// 5. Fetch Employee Balance Leave
+export const fetchEmpBalanceLeave = createAsyncThunk(
+    'employeeleave/fetchEmpBalanceLeave',
+    async (params, { rejectWithValue }) => {
+        try {
+            const response = await leaveAPI.getEmpBalanceLeave(params);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch balance leave');
+        }
+    }
+);
+
+// 6. Save Leave Request
+export const saveLeaveRequest = createAsyncThunk(
+    'employeeleave/saveLeaveRequest',
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await leaveAPI.saveHRLeaveRequest(data);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to save leave request');
+        }
+    }
+);
+
+// 7. Fetch Leave Request by Refno
+export const fetchLeaveRequestByRefno = createAsyncThunk(
+    'employeeleave/fetchLeaveRequestByRefno',
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await leaveAPI.getLeaveRequestByRefno(data);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch leave request by refno');
+        }
+    }
+);
+
 // 3. Approve HR Leave Request
 export const approveHRLeaveRequest = createAsyncThunk(
     'employeeleave/approveHRLeaveRequest',
@@ -53,11 +105,23 @@ const initialState = {
     leaveRequestDetails: null,
     approvalResult: null,
 
+    // Creation flow
+    empSearchList: [],
+    selectedEmpData: null,
+    balanceLeave: null,
+    saveResult: null,
+    saveStatus: null,          // null | 'pending' | 'success' | 'failed'
+    leaveRequestByRefno: null, // used in verification detail
+
     // Loading states for each API
     loading: {
         verifyLeaveRequests: false,
         leaveRequestDetails: false,
         approveLeaveRequest: false,
+        empSearch: false,
+        balanceLeave: false,
+        saveLeaveRequest: false,
+        leaveRequestByRefno: false,
     },
 
     // Error states for each API
@@ -65,6 +129,10 @@ const initialState = {
         verifyLeaveRequests: null,
         leaveRequestDetails: null,
         approveLeaveRequest: null,
+        empSearch: null,
+        balanceLeave: null,
+        saveLeaveRequest: null,
+        leaveRequestByRefno: null,
     },
 
     // UI State
@@ -116,12 +184,32 @@ const employeeLeaveSlice = createSlice({
             state.selectedRoleId = null;
             state.selectedEmpRefno = null;
             state.approvalStatus = null;
+            state.empSearchList = [];
+            state.balanceLeave = null;
+            state.saveResult = null;
+            state.saveStatus = null;
+            state.errors.saveLeaveRequest = null;
         },
 
         // Action to clear approval result
         clearApprovalResult: (state) => {
             state.approvalResult = null;
-        }
+        },
+
+        clearSaveResult: (state) => {
+            state.saveResult = null;
+            state.saveStatus = null;
+            state.errors.saveLeaveRequest = null;
+        },
+        clearSelectedEmpData: (state) => {
+            state.selectedEmpData = null;
+            state.balanceLeave = null;
+            state.empSearchList = [];
+        },
+        clearLeaveRequestByRefno: (state) => {
+            state.leaveRequestByRefno = null;
+            state.errors.leaveRequestByRefno = null;
+        },
     },
     extraReducers: (builder) => {
         // 1. Verify Leave Requests Inbox - HANDLE API RESPONSE STRUCTURE
@@ -177,18 +265,94 @@ const employeeLeaveSlice = createSlice({
                 state.loading.approveLeaveRequest = false;
                 state.errors.approveLeaveRequest = action.payload;
             });
+
+        // 4. fetchEmpDataForLeaveRequest
+        builder
+            .addCase(fetchEmpDataForLeaveRequest.pending, (state) => {
+                state.loading.empSearch = true;
+                state.errors.empSearch = null;
+            })
+            .addCase(fetchEmpDataForLeaveRequest.fulfilled, (state, action) => {
+                state.loading.empSearch = false;
+                state.empSearchList = action.payload?.Data || [];
+            })
+            .addCase(fetchEmpDataForLeaveRequest.rejected, (state, action) => {
+                state.loading.empSearch = false;
+                state.errors.empSearch = action.payload;
+                state.empSearchList = [];
+            });
+
+        // 5. fetchEmpBalanceLeave
+        builder
+            .addCase(fetchEmpBalanceLeave.pending, (state) => {
+                state.loading.balanceLeave = true;
+                state.errors.balanceLeave = null;
+            })
+            .addCase(fetchEmpBalanceLeave.fulfilled, (state, action) => {
+                state.loading.balanceLeave = false;
+                state.balanceLeave = action.payload?.Data || action.payload || null;
+            })
+            .addCase(fetchEmpBalanceLeave.rejected, (state, action) => {
+                state.loading.balanceLeave = false;
+                state.errors.balanceLeave = action.payload;
+            });
+
+        // 6. saveLeaveRequest
+        builder
+            .addCase(saveLeaveRequest.pending, (state) => {
+                state.loading.saveLeaveRequest = true;
+                state.errors.saveLeaveRequest = null;
+                state.saveStatus = 'pending';
+            })
+            .addCase(saveLeaveRequest.fulfilled, (state, action) => {
+                state.loading.saveLeaveRequest = false;
+                state.saveResult = action.payload;
+                const dataVal = action.payload?.Data ?? '';
+                const dataStr = typeof dataVal === 'string' ? dataVal.toLowerCase() : '';
+                if (dataStr.includes('submit')) {
+                    state.saveStatus = 'success';
+                } else {
+                    state.saveStatus = 'failed';
+                    state.errors.saveLeaveRequest = typeof dataVal === 'string' && dataVal ? dataVal : 'Save failed. Please try again.';
+                }
+            })
+            .addCase(saveLeaveRequest.rejected, (state, action) => {
+                state.loading.saveLeaveRequest = false;
+                state.errors.saveLeaveRequest = action.payload;
+                state.saveStatus = 'failed';
+            });
+
+        // 7. fetchLeaveRequestByRefno
+        builder
+            .addCase(fetchLeaveRequestByRefno.pending, (state) => {
+                state.loading.leaveRequestByRefno = true;
+                state.errors.leaveRequestByRefno = null;
+                state.leaveRequestByRefno = null;
+            })
+            .addCase(fetchLeaveRequestByRefno.fulfilled, (state, action) => {
+                state.loading.leaveRequestByRefno = false;
+                state.leaveRequestByRefno = action.payload?.Data || action.payload || null;
+            })
+            .addCase(fetchLeaveRequestByRefno.rejected, (state, action) => {
+                state.loading.leaveRequestByRefno = false;
+                state.errors.leaveRequestByRefno = action.payload;
+                state.leaveRequestByRefno = null;
+            });
     },
 });
 
 // Export actions
-export const { 
+export const {
     setSelectedRoleId,
     setSelectedEmpRefno,
     setApprovalStatus,
     resetLeaveRequestDetails,
     clearError,
     resetEmployeeLeaveData,
-    clearApprovalResult
+    clearApprovalResult,
+    clearSaveResult,
+    clearSelectedEmpData,
+    clearLeaveRequestByRefno,
 } = employeeLeaveSlice.actions;
 
 // Selectors
@@ -253,6 +417,18 @@ export const selectLeaveRequestDetailsSummary = (state) => {
             && !state.employeeleave.loading.leaveRequestDetails
     };
 };
+
+// New selectors for creation flow and refno lookup
+export const selectEmpSearchList = (state) => Array.isArray(state.employeeleave.empSearchList) ? state.employeeleave.empSearchList : [];
+export const selectBalanceLeave = (state) => state.employeeleave.balanceLeave;
+export const selectSaveResult = (state) => state.employeeleave.saveResult;
+export const selectSaveStatus = (state) => state.employeeleave.saveStatus;
+export const selectSaveLeaveRequestLoading = (state) => state.employeeleave.loading.saveLeaveRequest;
+export const selectSaveLeaveRequestError = (state) => state.employeeleave.errors.saveLeaveRequest;
+export const selectEmpSearchLoading = (state) => state.employeeleave.loading.empSearch;
+export const selectBalanceLeaveLoading = (state) => state.employeeleave.loading.balanceLeave;
+export const selectLeaveRequestByRefno = (state) => state.employeeleave.leaveRequestByRefno;
+export const selectLeaveRequestByRefnoLoading = (state) => state.employeeleave.loading.leaveRequestByRefno;
 
 // Export reducer
 export default employeeLeaveSlice.reducer;

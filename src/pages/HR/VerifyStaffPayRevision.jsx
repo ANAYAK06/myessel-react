@@ -205,6 +205,7 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
 
     const handleItemSelect = (item) => {
         console.log('✅ Selected Staff Pay Revision Item:', item);
+        dispatch(resetPayRevisionDetails());
         setSelectedItem(item);
     };
 
@@ -277,20 +278,45 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
 
             const result = await dispatch(approvePayRevision(payload)).unwrap();
 
-            if (result && typeof result === 'string') {
-                if (result.includes('$')) {
-                    const [status, additionalInfo] = result.split('$');
-                    toast.success(`${action.text || actionValue} completed successfully!`);
-                    if (additionalInfo) {
-                        setTimeout(() => {
-                            toast.info(additionalInfo, { autoClose: 6000 });
-                        }, 500);
-                    }
-                } else {
-                    toast.success(result || `${action.text || actionValue} completed successfully!`);
+            // Extract Data field — SP may return a business-level error message
+            // even when HTTP 200 / IsSuccessful = true
+            const dataMsg = typeof result === 'string' ? result : (result?.Data || '');
+
+            const KNOWN_ERRORS = [
+                'Salary Rules Does Not Exist For This Group',
+                'Access Denied',
+                'AlreadyExistAndPending',
+                'AlreadyRevised',
+            ];
+
+            const isBusinessError = KNOWN_ERRORS.some((e) =>
+                typeof dataMsg === 'string' && dataMsg.toLowerCase().includes(e.toLowerCase())
+            );
+
+            if (isBusinessError) {
+                toast.error(dataMsg, { autoClose: 10000 });
+                return;
+            }
+
+            const val = actionValue.toLowerCase();
+            const successMsg = val === 'reject'
+                ? 'Pay revision rejected successfully!'
+                : val === 'approve'
+                    ? 'Pay revision approved successfully!'
+                    : val === 'verify'
+                        ? 'Pay revision verified successfully!'
+                        : `${action.text || actionValue} completed successfully!`;
+
+            if (typeof dataMsg === 'string' && dataMsg.includes('$')) {
+                const [, additionalInfo] = dataMsg.split('$');
+                toast.success(successMsg);
+                if (additionalInfo) {
+                    setTimeout(() => {
+                        toast.info(additionalInfo, { autoClose: 6000 });
+                    }, 500);
                 }
             } else {
-                toast.success(`${action.text || actionValue} completed successfully!`);
+                toast.success(successMsg);
             }
 
             setTimeout(() => {

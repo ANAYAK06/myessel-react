@@ -38,10 +38,16 @@ import LostScrapReportPage from '../Stock/LostScrapReportPage';
 import LCBGStatusReportPage from '../FinancialReports/LCBGStatusReportPage';
 import StockSummaryPage from '../FinancialReports/StockSummaryPage';
 import UnsecuredLoanReportPage from '../TermLoan/UnsecuredLoanReportPage';
-import CMSPaymentReportPage from '../HRReports/CMSPaymentReportPage';
+import StaffCMSPaymentReportPage from '../HRReports/StaffCMSPaymentReportPage';
 import StaffAttendanceReportPage from '../HRReports/StaffAttendanceReportPage';
 import EmployeeExitReportPage from '../HRReports/EmployeeExitReportPage';
 import LeaveReportPage from '../HRReports/LeaveReportPage';
+import StaffPFESIReportPage from '../HRReports/StaffPFESIReportPage';
+import LabourPFESIReportPage from '../HRReports/LabourPFESIReportPage';
+import StaffSalaryReportPage from '../HRReports/StaffSalaryReportPage';
+import LabourSalaryReportPage from '../HRReports/LabourSalaryReportPage';
+import StaffReportPage from '../HRReports/StaffReportPage';
+import StaffCTCReportPage from '../HRReports/StaffCTCReportPage';
 
 
 //============================================================================
@@ -52,6 +58,19 @@ import CostCenterCreationManagement from '../CostCenter/CostCenterCreationManage
 import DividendDeclarationCreate from '../shares/DividendDeclarationCreate';
 import DividendDistributionCreate from '../shares/DividendDistributionCreate';
 import DividendBankPaymentCreate from '../shares/DividendBankPaymentCreate';
+import StaffCMSPayCreation from '../HR/StaffCMSPayCreation';
+import StaffPayrollGeneration from '../HR/StaffPayrollGeneration';
+import StaffSalaryDeductionArrear from '../HR/StaffSalaryDeductionArrear';
+import StaffJoinRegistration from '../HR/StaffJoinRegistration';
+import EmployeeTransfer from '../HR/EmployeeTransfer';
+import EmployeeExit from '../HR/EmployeeExit';
+import StaffFullFinal from '../HR/StaffFullFinal';
+import EmployeeLeaveRequest from '../HR/EmployeeLeaveRequest';
+import StaffAdvanceRequest from '../HR/StaffAdvanceRequest';
+import StaffAppraisalObjective from '../HR/StaffAppraisalObjective';
+import StaffPayrollStructure from '../HR/StaffPayrollStructure';
+import StaffAttendance from '../HR/StaffAttendance';
+import StaffPayRevision from '../HR/StaffPayRevision';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -578,6 +597,20 @@ const RoleBasedApplication = () => {
     };
 
 
+    // Staff Attendance Entry Page (/HR/StaffAttendance?Type=Staff)
+    const isStaffAttendanceEntryPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/StaffAttendance?Type=Staff' ||
+            menuData.path === '/HR/StaffAttendance' ||
+            (menuData.path?.toLowerCase().includes('staffattendance') &&
+             !menuData.path?.toLowerCase().includes('view') &&
+             !menuData.path?.toLowerCase().includes('report'));
+        const nameMatches = menuData.name?.toLowerCase().includes('staff attendance entry') ||
+            menuData.name?.toLowerCase() === 'staff attendance';
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffattendanceentry');
+        return pathMatches || nameMatches || routeMatches;
+    };
+
     // check if menu item should route to any staff attendance report page
     const isStaffAttendanceReportPage = (menuData) => {
         if (!menuData) return false;
@@ -592,18 +625,18 @@ const RoleBasedApplication = () => {
     // check Payrollreport page  -- this is the testing of LeagcyPageWrapper page  
 
 
-    const isPayRollReportPage = (menuData) => {
-        if (!menuData) return false;
+    // const isPayRollReportPage = (menuData) => {
+    //     if (!menuData) return false;
 
-        const pathMatches = menuData.path === '/HR/PayRollReport' ||
-            menuData.path?.toLowerCase().includes('payrollreport');
-        const nameMatches = menuData.name?.toLowerCase().includes('payrollreport') ||
-            menuData.name?.toLowerCase().includes('payroll report') ||
-            menuData.name?.toLowerCase().includes('pay roll');
-        const routeMatches = menuData.reactRoute?.toLowerCase().includes('payrollreport');
+    //     const pathMatches = menuData.path === '/HR/PayRollReport' ||
+    //         menuData.path?.toLowerCase().includes('payrollreport');
+    //     const nameMatches = menuData.name?.toLowerCase().includes('payrollreport') ||
+    //         menuData.name?.toLowerCase().includes('payroll report') ||
+    //         menuData.name?.toLowerCase().includes('pay roll');
+    //     const routeMatches = menuData.reactRoute?.toLowerCase().includes('payrollreport');
 
-        return pathMatches || nameMatches || routeMatches;
-    };
+    //     return pathMatches || nameMatches || routeMatches;
+    // };
 
     // check Employee Exit Report Page
     const isEmployeeExitReportPage = (menuData) => {
@@ -679,11 +712,130 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
-    // Check if this menu item should show PayRoll Report Page
-    if (currentMenuData && isPayRollReportPage(currentMenuData)) {
-        console.log('✅ Rendering PayRollReportPage (Legacy) for:', currentMenuData.name);
-        return <LegacyPageWrapper menuData={currentMenuData} onNavigate={handleNavigation} />;
+    const isStaffPFandESIReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/PFESIReport?Type=Staff' ||
+            menuData.path?.toLowerCase().includes('pfandesipaymentreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('pfandesipaymentreport') ||
+            menuData.name?.toLowerCase().includes('pf and esi payment report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('pfandesipaymentreport');
+        return pathMatches || nameMatches || routeMatches;
     }
+
+    const isLabourPFandESIReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/PFESIReport?Type=Labour' ||
+            menuData.path?.toLowerCase().includes('pfandesilabourreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('pfandesilabourreport') ||
+            menuData.name?.toLowerCase().includes('pf and esi labour report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('pfandesilabourreport');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+    const isStaffSalaryReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/PayRollReport?Type=Staff' ||
+            menuData.path?.toLowerCase().includes('staffsalaryreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffsalaryreport') ||
+            menuData.name?.toLowerCase().includes('staff salary report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffsalaryreport');
+        return pathMatches || nameMatches || routeMatches;
+    }
+    const isLabourSalaryReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/PayRollReport?Type=Labour' ||
+            menuData.path?.toLowerCase().includes('laboursalaryreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('laboursalaryreport') ||
+            menuData.name?.toLowerCase().includes('labour salary report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('laboursalaryreport');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+    const isStaffReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/StaffDetailsView' ||
+            menuData.path?.toLowerCase().includes('staffreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffreport') ||
+            menuData.name?.toLowerCase().includes('staff report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffreport');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+    const isStaffCTCReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/PayRollStructureReport' ||
+            menuData.path?.toLowerCase().includes('staffctcreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffctcreport') ||
+            menuData.name?.toLowerCase().includes('staff ctc report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffctcreport');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+    const isStaffCMSPayCreationPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/CMSPaymentFormat' ||
+            menuData.path?.toLowerCase().includes('staffcmspaycreation');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffcmspaycreation') ||
+            menuData.name?.toLowerCase().includes('staff cms pay creation');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffcmspaycreation');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+    const isStaffPayrollCreationPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/EmployeeWisePayRollGenration' ||
+            menuData.path?.toLowerCase().includes('staffpayrollcreation');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffpayrollcreation') ||
+            menuData.name?.toLowerCase().includes('staff payroll creation');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffpayrollcreation');
+        return pathMatches || nameMatches || routeMatches;
+    }   
+
+    const isStaffSalaryDeductionandArrear = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/SalaryDeductions?Type=Staff' ||  
+            menuData.path?.toLowerCase().includes('staffsalarydeductionandarrear');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffsalarydeductionandarrear') ||
+            menuData.name?.toLowerCase().includes('staff salary deduction and arrear');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffsalarydeductionandarrear');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+    const isStaffRegistrationPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/EmployeeRegistration' ||
+            menuData.path?.toLowerCase().includes('staffregistration');
+        const nameMatches = menuData.name?.toLowerCase().includes('staffregistration') ||
+            menuData.name?.toLowerCase().includes('staff registration');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffregistration');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+    const isEmployeeTransferPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/EmployeeTransfer' ||
+            menuData.path?.toLowerCase().includes('employeetransfer');
+        const nameMatches = menuData.name?.toLowerCase().includes('employeetransfer') ||
+            menuData.name?.toLowerCase().includes('employee transfer');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('employeetransfer');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
+
+
+
+
+
+
+
+
+
+
+    // Check if this menu item should show PayRoll Report Page
+    // if (currentMenuData && isPayRollReportPage(currentMenuData)) {
+    //     console.log('✅ Rendering PayRollReportPage (Legacy) for:', currentMenuData.name);
+    //     return <LegacyPageWrapper menuData={currentMenuData} onNavigate={handleNavigation} />;
+    // }
 
     // Check if menu item should route to any Budget related functionality
     const isBudgetModule = (menuData) => {
@@ -886,8 +1038,14 @@ const RoleBasedApplication = () => {
         // Check if this menu item should route to CMS Payment Report Page
         if (currentMenuData && isCMSPaymentReportPage(currentMenuData)) {
             console.log('✅ Rendering CMSPaymentReportPage for:', currentMenuData.name);
-            return <CMSPaymentReportPage menuData={currentMenuData} />;
+            return <StaffCMSPaymentReportPage menuData={currentMenuData} />;
         }
+        // Staff Attendance Entry Page
+        if (currentMenuData && isStaffAttendanceEntryPage(currentMenuData)) {
+            console.log('✅ Rendering StaffAttendance Entry for:', currentMenuData.name);
+            return <StaffAttendance menuData={currentMenuData} />;
+        }
+
         // Check if this menu item should route to Staff Attendance Report Page
         if (currentMenuData && isStaffAttendanceReportPage(currentMenuData)) {
             console.log('✅ Rendering StaffAttendanceReportPage for:', currentMenuData.name);
@@ -928,6 +1086,149 @@ const RoleBasedApplication = () => {
             return <DividendBankPaymentCreate menuData={currentMenuData} />;
         }
 
+        // check if the menu item should show staff PF and ESI payment report page
+        if (currentMenuData && isStaffPFandESIReportPage(currentMenuData)) {
+            console.log('✅ Rendering StaffPFandESIPaymentReportPage for:', currentMenuData.name);
+            return <StaffPFESIReportPage menuData={currentMenuData} />;
+        }
+
+        // check if the menu item should show labour PF and ESI payment report page
+        if (currentMenuData && isLabourPFandESIReportPage(currentMenuData)) {
+            console.log('✅ Rendering LabourPFandESIPaymentReportPage for:', currentMenuData.name);
+            return <LabourPFESIReportPage menuData={currentMenuData} />;
+        }
+
+        // check if the menu item should show staff salary report page
+        if (currentMenuData && isStaffSalaryReportPage(currentMenuData)) {
+            console.log('✅ Rendering StaffSalaryReportPage for:', currentMenuData.name);
+            return <StaffSalaryReportPage menuData={currentMenuData} />;
+        }
+
+        // check if the menu item should show labour salary report page
+        if (currentMenuData && isLabourSalaryReportPage(currentMenuData)) {
+            console.log('✅ Rendering LabourSalaryReportPage for:', currentMenuData.name);
+            return <LabourSalaryReportPage menuData={currentMenuData} />;
+        }
+        // check if the menu item should show staff report page
+        if (currentMenuData && isStaffReportPage(currentMenuData)) {
+            console.log('✅ Rendering StaffReportPage for:', currentMenuData.name);
+            return <StaffReportPage menuData={currentMenuData} />;
+        }
+        // check if the menu item should show staff CTC report page
+        if (currentMenuData && isStaffCTCReportPage(currentMenuData)) {
+            console.log('✅ Rendering StaffCTCReportPage for:', currentMenuData.name);
+            return <StaffCTCReportPage menuData={currentMenuData} />;
+        }
+        // check if the menu item should show staff CMS Pay Creation page
+        if (currentMenuData && isStaffCMSPayCreationPage(currentMenuData)) {
+            console.log('✅ Rendering StaffCMSPayCreationPage for:', currentMenuData.name);
+            return <StaffCMSPayCreation menuData={currentMenuData} />;
+        }
+        // check if the menu item should show staff Payroll Creation page
+        if (currentMenuData && isStaffPayrollCreationPage(currentMenuData)) {
+            console.log('✅ Rendering StaffPayrollGeneration for:', currentMenuData.name);
+            return <StaffPayrollGeneration menuData={currentMenuData} />;
+        }
+        // check if the menu item should show staff Salary Deduction and Arrear page
+        if (currentMenuData && isStaffSalaryDeductionandArrear(currentMenuData)) {
+            console.log('✅ Rendering StaffSalaryDeductionAndArrearPage for:', currentMenuData.name);
+            return <StaffSalaryDeductionArrear menuData={currentMenuData} />;
+        }
+        // check if the menu item should show staff registration page
+        if (currentMenuData && isStaffRegistrationPage(currentMenuData)) {
+            console.log('✅ Rendering StaffRegistrationPage for:', currentMenuData.name);
+            return <StaffJoinRegistration menuData={currentMenuData} />;
+        }
+        // check if the menu item should show employee transfer page
+        if (currentMenuData && isEmployeeTransferPage(currentMenuData)) {
+            console.log('✅ Rendering EmployeeTransferPage for:', currentMenuData.name);
+            return <EmployeeTransfer menuData={currentMenuData} />;
+        }
+        // check if the menu item should show employee exit page
+        if (currentMenuData && (
+            currentMenuData.path === '/HR/EmployeeExit' ||
+            currentMenuData.path?.toLowerCase().includes('employeeexit') ||
+            currentMenuData.name?.toLowerCase().includes('employee exit') ||
+            currentMenuData.name?.toLowerCase().includes('employeeexit')
+        )) {
+            console.log('✅ Rendering EmployeeExitPage for:', currentMenuData.name);
+            return <EmployeeExit menuData={currentMenuData} />;
+        }
+        // check if the menu item should show staff full & final page
+        if (currentMenuData && (
+            currentMenuData.path === '/HR/StaffFullFinal' ||
+            currentMenuData.path?.toLowerCase().includes('fullfinal') ||
+            currentMenuData.path?.toLowerCase().includes('finalsalary') ||
+            currentMenuData.name?.toLowerCase().includes('full & final') ||
+            currentMenuData.name?.toLowerCase().includes('full and final') ||
+            currentMenuData.name?.toLowerCase().includes('fullfinal') ||
+            currentMenuData.name?.toLowerCase().includes('final salary')
+        )) {
+            console.log('✅ Rendering StaffFullFinal for:', currentMenuData.name);
+            return <StaffFullFinal menuData={currentMenuData} />;
+        }
+
+        // Leave Request Creation Page
+        if (currentMenuData && (
+            currentMenuData.path === '/HR/LeaveRequest' ||
+            currentMenuData.path?.toLowerCase().includes('leaverequest') ||
+            currentMenuData.path?.toLowerCase().includes('leave-request') ||
+            currentMenuData.name?.toLowerCase().includes('leave request') ||
+            currentMenuData.name?.toLowerCase().includes('leaverequest')
+        )) {
+            console.log('✅ Rendering EmployeeLeaveRequest for:', currentMenuData.name);
+            return <EmployeeLeaveRequest menuData={currentMenuData} />;
+        }
+
+        // Advance Request Creation Page (LTA / SA)
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('advancerequest') ||
+            currentMenuData.path?.toLowerCase().includes('advance-request') ||
+            currentMenuData.path?.toLowerCase().includes('hradvance') ||
+            currentMenuData.name?.toLowerCase().includes('advance request') ||
+            currentMenuData.name?.toLowerCase().includes('advancerequest') ||
+            currentMenuData.name?.toLowerCase().includes('lta') ||
+            currentMenuData.name?.toLowerCase().includes('salary advance')
+        )) {
+            return <StaffAdvanceRequest menuData={currentMenuData} />;
+        }
+
+        // Appraisal Objective and Goals
+        if (currentMenuData && (
+            currentMenuData.path === '/HR/EmpObjectiveGoals' ||
+            currentMenuData.path === '/HR/AppraisalObjectives' ||
+            currentMenuData.path?.toLowerCase().includes('appraisal') ||
+            currentMenuData.path?.toLowerCase().includes('objectivegoal') ||
+            currentMenuData.path?.toLowerCase().includes('empobject') ||
+            currentMenuData.name?.toLowerCase().includes('appraisal') ||
+            currentMenuData.name?.toLowerCase().includes('objective') ||
+            currentMenuData.name?.toLowerCase().includes('goals')
+        )) {
+            return <StaffAppraisalObjective menuData={currentMenuData} />;
+        }
+
+        // Payroll Structure / CTC Creation Page
+        if (currentMenuData && (
+            currentMenuData.path === '/HR/PayRollStructure' ||
+            currentMenuData.path?.toLowerCase().includes('payrollstructure') ||
+            currentMenuData.name?.toLowerCase().includes('payroll structure') ||
+            currentMenuData.name?.toLowerCase().includes('payrollstructure') ||
+            currentMenuData.name?.toLowerCase().includes('ctc creation') ||
+            currentMenuData.name?.toLowerCase().includes('ctccreation')
+        )) {
+            console.log('✅ Rendering StaffPayrollStructure for:', currentMenuData.name);
+            return <StaffPayrollStructure menuData={currentMenuData} />;
+        }
+
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('payrevision') ||
+            currentMenuData.name?.toLowerCase().includes('pay revision') ||
+            currentMenuData.name?.toLowerCase().includes('payrevision') ||
+            currentMenuData.name?.toLowerCase().includes('staff pay revision')
+        )) {
+            console.log('✅ Rendering StaffPayRevision for:', currentMenuData.name);
+            return <StaffPayRevision menuData={currentMenuData} />;
+        }
 
         // Check if this should load from legacy application
         if (currentMenuData && isLegacyPage(currentMenuData)) {

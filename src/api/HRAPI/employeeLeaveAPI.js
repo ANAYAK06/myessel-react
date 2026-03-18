@@ -190,3 +190,70 @@ export const approveHRLeaveRequest = async (params) => {
         throw error;
     }
 };
+// ==============================================
+// HR LEAVE REQUEST CREATION RELATED APIs
+// ==============================================
+
+// 4. Get Employee Data for Leave Request (search autocomplete)
+export const getEmpDataForLeaveRequest = async (prefix) => {
+    try {
+        const response = await axios.get(
+            `${API_BASE_URL}/HR/GetEmpDataForLeaveRequest?Prefix=${encodeURIComponent(prefix)}`,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error;
+    }
+};
+
+// 5. Get Employee Balance Leave
+export const getEmpBalanceLeave = async (params) => {
+    try {
+        const { empRefno, leaveTypeid, fromDate } = params;
+        const queryParams = new URLSearchParams({
+            EmpRefno: empRefno,
+            LeaveTypeid: leaveTypeid,
+            FromDate: fromDate,
+        });
+        const response = await axios.get(
+            `${API_BASE_URL}/HR/GetEmpBalanceLeave?${queryParams}`,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error;
+    }
+};
+
+// 6. Save HR Leave Request (POST)
+export const saveHRLeaveRequest = async (data) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/HR/SaveHRLeaveRequest`,
+            data,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error;
+    }
+};
+
+// 7. Get Leave Request by Refno (POST)
+export const getLeaveRequestByRefno = async (data) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/HR/GetLeaveRequestbyRefno`,
+            data,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error;
+    }
+};

@@ -32,13 +32,26 @@ export const getCMSYears = async () => {
     }
 };
 
-// 2. Get CMS Months by Year
-export const getCMSMonthsByYear = async (year) => {
+// 2. Get CMS Months by Year (UPDATED with new parameters)
+export const getCMSMonthsByYear = async (params) => {
     try {
-        console.log('📅 Getting CMS Months for Year:', year); // DEBUG
+        // Handle both old API call format (single year param) and new format (params object)
+        const year = typeof params === 'object' ? params.year : params;
+        const lType = typeof params === 'object' ? params.lType : '';
+        const contraCode = typeof params === 'object' ? params.contraCode : '';
+        const eType = typeof params === 'object' ? params.eType : '';
+        
+        console.log('📅 Getting CMS Months for:', { year, lType, contraCode, eType }); // DEBUG
+        
+        const queryParams = new URLSearchParams({
+            Year: year || '',
+            LType: lType || '',
+            ContraCode: contraCode || '',
+            EType: eType || ''
+        });
         
         const response = await axios.get(
-            `${API_BASE_URL}/HR/GetCMSMonthsbyYear?Year=${year}`,
+            `${API_BASE_URL}/HR/GetCMSMonthsbyYear?${queryParams}`,
             {
                 headers: {
                     'Content-Type': 'application/json'
@@ -60,12 +73,15 @@ export const getCMSMonthsByYear = async (year) => {
 // 3. Get CMS Paid Employees
 export const getCMSPaidEmployee = async (params) => {
     try {
-        const { year, month } = params;
-        console.log('👥 Getting CMS Paid Employees for:', { year, month }); // DEBUG
+        const { year, month, lType, contraCode, eType } = params;
+        console.log('👥 Getting CMS Paid Employees for:', params); // DEBUG
         
         const queryParams = new URLSearchParams({
             Year: year || '',
-            Month: month || ''
+            Month: month || '',
+            LType: lType || '',
+            ContraCode: contraCode || '',
+            EType: eType || ''
         });
         
         const response = await axios.get(
@@ -81,6 +97,41 @@ export const getCMSPaidEmployee = async (params) => {
         return response.data;
     } catch (error) {
         console.error('❌ CMS Paid Employees API Error:', error.response || error);
+        if (error.response?.data) {
+            throw error.response.data;
+        }
+        throw error;
+    }
+};
+
+// 3a. Get CMS Paid Employees by Cost Centre (NEW)
+export const getCMSPaidEmployeebyCC = async (params) => {
+    try {
+        const { year, month, ccCode, lType, contraCode, eType } = params;
+        console.log('🏢 Getting CMS Paid Employees by CC for:', params); // DEBUG
+        
+        const queryParams = new URLSearchParams({
+            Year: year || '',
+            Month: month || '',
+            CCCode: ccCode || '',
+            LType: lType || '',
+            ContraCode: contraCode || '',
+            EType: eType || ''
+        });
+        
+        const response = await axios.get(
+            `${API_BASE_URL}/HR/GetCMSPaidEmployeebyCC?${queryParams}`,
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        console.log('✅ CMS Paid Employees by CC Response:', response.data); // DEBUG
+        return response.data;
+    } catch (error) {
+        console.error('❌ CMS Paid Employees by CC API Error:', error.response || error);
         if (error.response?.data) {
             throw error.response.data;
         }
@@ -178,15 +229,18 @@ export const getEmpPaySlipData = async (paySlipData) => {
     }
 };
 
-// 6. Get CMS Paid Cost Centre by Month
+// 6. Get CMS Paid Cost Centre by Month (UPDATED with new parameters)
 export const getCMSPaidCCbyMonth = async (params) => {
     try {
-        const { month, year } = params;
-        console.log('🏢 Getting CMS Paid Cost Centre for:', { month, year }); // DEBUG
+        const { month, year, lType, contraCode, eType } = params;
+        console.log('🏢 Getting CMS Paid Cost Centre for:', params); // DEBUG
         
         const queryParams = new URLSearchParams({
             Month: month || '',
-            Year: year || ''
+            Year: year || '',
+            LType: lType || '',
+            ContraCode: contraCode || '',
+            EType: eType || ''
         });
         
         const response = await axios.get(

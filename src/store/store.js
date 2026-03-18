@@ -29,9 +29,9 @@ import lostScrapReportReducer from "../slices/stockSlice/lostScrapReportSlice";
 import lcbgReducer from "../slices/lcbgSlice/lcbgSlice";
 import stockSummaryReducer from "../slices/financialReportSlice/stockSummarySlice";
 import unsecuredLoanReportReducer from "../slices/termLoanSlice/unsecuredLoanReportSlice";
-import cmspaymentreportReducer from "../slices/HrReportSlice/cmsPaymentReportSlice";
+import cmsPaymentReportSlice from "../slices/HrReportSlice/cmsPaymentReportSlice";
 import inboxNotificationReducer from "../slices/notificationSlice/userInboxNotificationSlice";
-import staffRegistrationSlice from "../slices/HRSlice/staffRegistrationSlice";
+
 import approvalReducer from "../slices/CommonSlice/getStatusSlice";
 import VendorPaymentReducer from "../slices/VendorPaymentSlice/vendorPaymentSlice"
 import SuppplierInvoiceReducer from "../slices/vendorInvoiceSlice/supplierInvoiceSlice";
@@ -68,6 +68,25 @@ import dividendDistribution from "../slices/capitalSlice/dividendDistributionSli
 import dividendBankPayment from "../slices/capitalSlice/dividendBankPaymentSlice";
 import bankDetails from "../slices/CommonSlice/bankDetailsSlice";
 import chequeNumbers from "../slices/bankSlice/chequeNumbersSlice";
+import pfesireport from "../slices/HrReportSlice/pfandesiReportSlice";
+import salaryreport from "../slices/HrReportSlice/salaryReportSlice";
+import staffreport from "../slices/HrReportSlice/staffReportSlice";
+import staffctcreport from "../slices/HrReportSlice/staffCTCReportSlice";
+import staffcmspay from "../slices/HRSlice/staffCMSPayCreationSlice";
+import staffcmspayverification from "../slices/HRSlice/staffCMSPayVerificationSlice";
+import staffpayroll from "../slices/HRSlice/staffPayrollGenerationSlice";
+import staffpayrollverification from "../slices/HRSlice/staffPayrollVerificationSlice";
+import salaryDeductionArrear from "../slices/HRSlice/staffSalaryDeductionArrearSlice";
+import salaryDeductionArearVerification from "../slices/HRSlice/salaryDeductionArearVerificationSlice";
+import staffJoin from "../slices/HRSlice/staffJoinSlice";
+import staffVerify from "../slices/HRSlice/staffRegistrationVerifySlice";
+import employeeTransfer from "../slices/HRSlice/employeeTransferSlice";
+import employeeExitReducer from "../slices/HRSlice/employeeExitSlice";
+import staffFullFinalReducer from "../slices/HRSlice/staffFullFinalSlice";
+import staffAdvanceReducer from "../slices/HRSlice/staffAdvanceSlice";
+import staffAppraisalReducer from "../slices/HRSlice/staffAppraisalSlice";
+import staffCTCCreationReducer from "../slices/HRSlice/staffCTCCreationSlice";
+import staffAttendanceEntryReducer from "../slices/HRSlice/staffAttendanceEntrySlice";
 
 const store = configureStore({
   
@@ -102,9 +121,8 @@ const store = configureStore({
     lcbg: lcbgReducer,
     stocksummary: stockSummaryReducer,
     unsecuredloanreport: unsecuredLoanReportReducer,
-    cmspaymentreport:cmspaymentreportReducer,
+    cmspaymentreport:cmsPaymentReportSlice,
     inboxnotifications: inboxNotificationReducer,
-    staffregistration: staffRegistrationSlice,
     approval: approvalReducer,
     vendorpayment: VendorPaymentReducer,
     supplierinvoice: SuppplierInvoiceReducer,
@@ -141,6 +159,25 @@ const store = configureStore({
     dividendBankPayment: dividendBankPayment,
     bankDetails: bankDetails,
     chequeNumbers: chequeNumbers,
+    pfesireport: pfesireport,
+    salaryreport: salaryreport,
+    staffreport: staffreport,
+    staffctcreport: staffctcreport,
+    staffcmspay: staffcmspay,
+    staffcmspayverification: staffcmspayverification,
+    staffpayroll:staffpayroll,
+    staffpayrollverification: staffpayrollverification,
+    salaryDeductionArrear: salaryDeductionArrear,
+    salarydeductionarearverification: salaryDeductionArearVerification,
+    staffJoin:  staffJoin,
+    staffVerify: staffVerify,
+    employeeTransfer: employeeTransfer,
+    employeeExit:    employeeExitReducer,
+    staffFullFinal:  staffFullFinalReducer,
+    staffadvance:    staffAdvanceReducer,
+    staffappraisal:  staffAppraisalReducer,
+    staffCTCCreation:      staffCTCCreationReducer,
+    staffAttendanceEntry:  staffAttendanceEntryReducer,
 
   }
 

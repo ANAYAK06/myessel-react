@@ -32,6 +32,14 @@ import VerifyEmployeeLeaveRequest from '../../pages/HR/VerifyEmployeeLeaveReques
 import DividendDeclarationVerification from '../../pages/shares/DividendDeclarationVerification';
 import DividendDistributionVerification from '../../pages/shares/DividendDistributionVerification';
 import DividendBankPaymentVerification from '../../pages/shares/DividendBankPaymentVerification';
+import VerifyStaffCMSPay from '../../pages/HR/VerifyStaffCMSPay';
+import VerifyStaffPayroll from '../../pages/HR/VerifyStaffPayroll';
+import VerifySalaryDeductionArear from '../../pages/HR/VerifySalaryDeductionArear';
+import VerifyEmployeeTransfer from '../../pages/HR/VerifyEmployeeTransfer';
+import VerifyEmployeeExit    from '../../pages/HR/VerifyEmployeeExit';
+import VerifyStaffFullFinal from '../../pages/HR/VerifyStaffFullFinal';
+import VerifyStaffAdvance from '../../pages/HR/VerifyStaffAdvance';
+import VerifyStaffAppraisal from '../../pages/HR/VerifyStaffAppraisal';
 
 
 // ============================================================================
@@ -601,9 +609,10 @@ const isLabourPayRevisionVerification = (path) => {
     return isMatch;
 };
 
+
 const isStaffPayRevisionVerification = (path) => {
     // Simple and direct path check - using lowercase
-    const isMatch = path.includes('/HR/StaffPayRevision') || path.includes('/hr/staffpayrevision'); 
+    const isMatch = path.includes('/HR/VerifyPayRevision') || path.includes('/hr/verifypayrevision'); 
     if (isMatch) {
         console.log('✅ Staff Pay Revision detected by path:', path);
     }
@@ -658,7 +667,62 @@ const isDividendBankPaymentVerification = (path) => {
     return isMatch;
 };
 
+const isStaffCMSPayVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/hr/verifycmspaygeneration') || path.includes('/HR/VerifyCMSPayGeneration');
+    if (isMatch) {
+        console.log('✅ Staff CMS Pay Verification detected by path:', path);
+    } else {
+        console.log('❌ Staff CMS Pay Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
 
+const isStaffPayrollVerification = (path) => {
+    // Simple and direct path check - using lowercase
+    const isMatch = path.includes('/hr/verifyccpayroll') || path.includes('/HR/VerifyCCPayRoll');
+    if (isMatch) {
+        console.log('✅ Staff Payroll Verification detected by path:', path);
+    } else {
+        console.log('❌ Staff Payroll Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isSalaryDeductionArearVerification = (path) => {
+    
+    const isMatch = path.includes('/hr/verifysalarydeduction') || path.includes('/HR/VerifySalaryDeduction');
+    if (isMatch) {
+        console.log('✅ Salary Deduction Arear Verification detected by path:', path);
+    } else {
+        console.log('❌ Salary Deduction Arear Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+const isEmployeeTransferVerification = (path) => {
+    const isMatch = path.includes('/hr/verifyemployeetransfer') || path.includes('/HR/VerifyEmployeeTransfer');
+    if (isMatch) {
+        console.log('✅ Employee Transfer Verification detected by path:', path);
+    } else {
+        console.log('❌ Employee Transfer Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isAppraisalObjectiveVerification = (path) => {
+    const isMatch = path.includes('/hr/verifyappraisalobjectives') ||
+        path.includes('/hr/verifyempobjectivesgoals') ||
+        path.includes('/hr/verifyempobjectandgoals') ||
+        path.includes('/hr/verifyappraisa') ||
+        path.includes('appraisalobjective') ||
+        path.includes('verifyempobject');
+    if (isMatch) {
+        console.log('✅ Appraisal Objective & Goals Verification detected by path:', path);
+    } else {
+        console.log('❌ Appraisal Objective & Goals not detected. Path:', path);
+    }
+    return isMatch;
+};
 
 
 // ============================================================================
@@ -994,7 +1058,114 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
         // ====================================================================
-        
+        // STAFF CMS PAY VERIFICATION
+        // ====================================================================
+        if (isStaffCMSPayVerification(path)) {
+            console.log('✅ Routing to VerifyStaffCMSPay');
+            return <VerifyStaffCMSPay
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // STAFF PAYROLL VERIFICATION
+        // ====================================================================
+        if (isStaffPayrollVerification(path)) {
+            console.log('✅ Routing to VerifyStaffPayroll');
+            return <VerifyStaffPayroll
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // SALARY DEDUCTION AREAR VERIFICATION
+        // ====================================================================
+        if (isSalaryDeductionArearVerification(path)) {
+            console.log('✅ Routing to VerifySalaryDeductionArear');
+            return <VerifySalaryDeductionArear
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+        // EMPLOYEE TRANSFER VERIFICATION
+        if (isEmployeeTransferVerification(path)) {
+            console.log('✅ Routing to EmployeeTransferVerify');
+            return <VerifyEmployeeTransfer
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+        // EMPLOYEE EXIT VERIFICATION
+        if (path.includes('/hr/verifyempexit') || path.includes('/HR/VerifyEmpExit')) {
+            console.log('✅ Routing to EmployeeExitVerify');
+            return <VerifyEmployeeExit
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // STAFF FULL & FINAL VERIFICATION
+        // ====================================================================
+        if (
+            path.includes('finalsalary')   ||
+            path.includes('fullfinal')     ||
+            path.includes('full & final')  ||
+            path.includes('full&final')    ||
+            path.includes('fullfinalsalary') ||
+            title.includes('full & final') ||
+            title.includes('finalsalary')  ||
+            displayName.includes('full & final') ||
+            displayName.includes('finalsalary')  ||
+            category.includes('finalsalary')
+        ) {
+            console.log('✅ Routing to VerifyStaffFullFinal');
+            return <VerifyStaffFullFinal
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // HR Advance Request Verification (LTA / SA)
+        if (
+            path.includes('advance')        ||
+            path.includes('hradvance')      ||
+            path.includes('lta')            ||
+            path.includes('salaryadvance')  ||
+            title.includes('advance')       ||
+            displayName.includes('advance') ||
+            category.includes('advance')
+        ) {
+            console.log('✅ Routing to VerifyStaffAdvance');
+            return <VerifyStaffAdvance
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // APPRAISAL OBJECTIVE & GOALS VERIFICATION
+        // ====================================================================
+        if (
+            isAppraisalObjectiveVerification(path) ||
+            title.includes('appraisal')            ||
+            title.includes('objective')            ||
+            displayName.includes('appraisal')      ||
+            displayName.includes('objective')      ||
+            category.includes('appraisal')         ||
+            category.includes('objective')
+        ) {
+            console.log('✅ Routing to VerifyStaffAppraisal');
+            return <VerifyStaffAppraisal
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
 
         // ✅ USAGE #2: When no specific component matches the notification
         console.log('⚠️ No specific component found, using placeholder');

@@ -65,15 +65,15 @@ export const insertDividendBankPayment = async (params) => {
 
         // ✅ Use PascalCase to match C# model properties
         const payload = {
-            DistributionId: parseInt(params.distributionId),              // Capital D, I
-            BankId: parseInt(params.bankId),                              // Capital B, I
-            PaymentMode: params.paymentMode.toString().trim(),            // Capital P, M
-            ChequeNo: params.chequeNo?.toString().trim() || '',           // Capital C, N
-            ChequeDate: params.chequeDate || null,                        // Capital C, D
-            PaymentDate: params.paymentDate,                              // Capital P, D
+            DistributionId: parseInt(params.distributionId),              
+            BankId: parseInt(params.bankId),                              
+            PaymentMode: params.paymentMode.toString().trim(),            
+            ChequeNo: params.chequeNo?.toString().trim() || '',           
+            ChequeDate: params.chequeDate || null,                        
+            PaymentDate: params.paymentDate,                              
             UserId: params.userId.toString().trim(), 
-            RoleId: parseInt(params.roleId),                     // Capital U, I
-            Remarks: params.remarks.toString().trim()                     // Capital R - NEW FIELD
+            RoleId: parseInt(params.roleId),                     
+            Remarks: params.remarks.toString().trim()                     
         };
 
         console.log('🔗 API URL:', `${API_BASE_URL}/Accounts/InsertDividendBankPayment`);

@@ -11,6 +11,7 @@ module.exports = {
         "light-white":"#fff"
       }
     },
+   
   },
   plugins: [],
 }

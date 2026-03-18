@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    FileText, Clock, CheckCircle2, Users,
-    Calendar, Building2, Hash, User,
-    TrendingUp, AlertCircle, CalendarDays,
-    Plane, UserCheck, UserX, CheckSquare, MapPin, Phone
+    FileText, Clock,
+    Calendar, Building2, User,
+    AlertCircle, CalendarDays,
+    Plane, MapPin, Phone
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
@@ -17,21 +17,20 @@ import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
     fetchVerifyLeaveRequests,
-    fetchSingleEmpForLeaveRequest,
+    fetchLeaveRequestByRefno,
     approveHRLeaveRequest,
     setSelectedEmpRefno,
     setSelectedRoleId,
     resetLeaveRequestDetails,
     resetEmployeeLeaveData,
     clearApprovalResult,
+    clearLeaveRequestByRefno,
     selectVerifyLeaveRequestsInboxArray,
-    selectLeaveRequestDetails,
+    selectLeaveRequestByRefno,
+    selectLeaveRequestByRefnoLoading,
     selectVerifyLeaveRequestsLoading,
-    selectLeaveRequestDetailsLoading,
     selectApproveLeaveRequestLoading,
-    selectVerifyLeaveRequestsError,
-    selectLeaveRequestDetailsError,
-    selectApprovalResult
+    selectVerifyLeaveRequestsError
 } from '../../slices/HRSlice/employeeLeaveSlice';
 
 import {
@@ -59,12 +58,10 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
     const inboxLoading = useSelector(selectVerifyLeaveRequestsLoading);
     const inboxError = useSelector(selectVerifyLeaveRequestsError);
 
-    const leaveRequestDetails = useSelector(selectLeaveRequestDetails);
-    const detailsLoading = useSelector(selectLeaveRequestDetailsLoading);
-    const detailsError = useSelector(selectLeaveRequestDetailsError);
+    const leaveRequestDetails = useSelector(selectLeaveRequestByRefno);
+    const detailsLoading = useSelector(selectLeaveRequestByRefnoLoading);
 
     const approvalLoading = useSelector(selectApproveLeaveRequestLoading);
-    const approvalResult = useSelector(selectApprovalResult);
 
     const remarks = useSelector(selectRemarks);
     const remarksLoading = useSelector(selectRemarksLoading);
@@ -76,7 +73,6 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
 
     const { userData, userDetails } = useSelector((state) => state.auth);
     const roleId = userData?.roleId || userData?.RID;
-    const uid = userData?.UID || userData?.uid;
 
     // Local State
     const [selectedItem, setSelectedItem] = useState(null);
@@ -133,17 +129,21 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
             dispatch(resetEmployeeLeaveData());
             dispatch(resetApprovalData());
             dispatch(clearApprovalResult());
+            dispatch(clearLeaveRequestByRefno());
         };
     }, [dispatch]);
 
     // Fetch leave request details when item is selected
     useEffect(() => {
         if (selectedItem?.EmpRefNo) {
-            console.log('🔍 Fetching Employee Leave Request Details for EmpRefNo:', selectedItem.EmpRefNo);
-
             dispatch(setSelectedEmpRefno(selectedItem.EmpRefNo));
-            dispatch(fetchSingleEmpForLeaveRequest(selectedItem.EmpRefNo));
-
+            dispatch(fetchLeaveRequestByRefno({
+                LeaveTypeId:       selectedItem.LeaveTypeId        || 0,
+                EmpRefNo:          selectedItem.EmpRefNo,
+                UserName:          selectedItem.UserName           || '',
+                TransactionRefNo:  selectedItem.TransactionRefNo   || '',
+                JoiningCostCenter: selectedItem.JoiningCostCenter  || '',
+            }));
             setIsVerified(false);
             setVerificationComment('');
             setShowRemarksHistory(false);
@@ -196,7 +196,13 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
             dispatch(fetchVerifyLeaveRequests(roleId));
 
             if (selectedItem) {
-                dispatch(fetchSingleEmpForLeaveRequest(selectedItem.EmpRefNo));
+                dispatch(fetchLeaveRequestByRefno({
+                    LeaveTypeId:       selectedItem.LeaveTypeId        || 0,
+                    EmpRefNo:          selectedItem.EmpRefNo,
+                    UserName:          selectedItem.UserName           || '',
+                    TransactionRefNo:  selectedItem.TransactionRefNo   || '',
+                    JoiningCostCenter: selectedItem.JoiningCostCenter  || '',
+                }));
             }
         }
     };
@@ -273,7 +279,7 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
 
             if (result && typeof result === 'string') {
                 if (result.includes('$')) {
-                    const [status, additionalInfo] = result.split('$');
+                    const [, additionalInfo] = result.split('$');
                     toast.success(`${action.text || actionValue} completed successfully!`);
                     if (additionalInfo) {
                         setTimeout(() => {

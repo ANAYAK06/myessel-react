@@ -2,266 +2,301 @@ import axios from "axios";
 import { API_BASE_URL } from '../../config/apiConfig';
 
 // ==============================================
-// STAFF REGISTRATION & APPROVAL RELATED APIs
+// STAFF REGISTRATION VERIFICATION APIs
 // ==============================================
 
-// 1. Get Verification Staff by Role ID
+// 1. Get Verification Staff List by Role (GET)
+//    GET api/HR/GetVerificationStaff?Roleid={Roleid}
 export const getVerificationStaff = async (roleId) => {
     try {
-        console.log('👥 Getting Verification Staff for Role ID:', roleId); // DEBUG
-        
+        console.log('📋 Getting Verification Staff List');
+        console.log('🔗 API URL:', `${API_BASE_URL}/HR/GetVerificationStaff`);
+        console.log('📦 Params:', { Roleid: roleId });
+
         const response = await axios.get(
-            `${API_BASE_URL}/HR/GetVerificationStaff?Roleid=${roleId}`,
+            `${API_BASE_URL}/HR/GetVerificationStaff`,
             {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                params: { Roleid: roleId },
+                headers: { 'Content-Type': 'application/json' },
             }
         );
-        
-        console.log('✅ Verification Staff Response:', response.data); // DEBUG
+        console.log('✅ Get Verification Staff Response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('❌ Verification Staff API Error:', error.response || error);
-        if (error.response?.data) {
-            throw error.response.data;
-        }
-        throw error;
+        console.error('❌ Get Verification Staff API Error:', error.response || error);
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to get verification staff list';
     }
 };
 
-// 2. Get Verification Staff Data by ID
-export const getVerificationStaffDataById = async (params) => {
+// 2. Get Staff Main Data by EmpRefNo (GET)
+//    GET api/HR/GetStaffMainDatabyId?EmpRefNo={EmpRefNo}&RoleId={RoleId}
+export const getStaffMainDataById = async ({ empRefNo, roleId }) => {
     try {
-        const { empRefNo, roleId } = params;
-        console.log('🔍 Getting Verification Staff Data for:', { empRefNo, roleId }); // DEBUG
-        
+        console.log('🔍 Getting Staff Main Data by ID');
+        console.log('🔗 API URL:', `${API_BASE_URL}/HR/GetStaffMainDatabyId`);
+        console.log('📦 Params:', { EmpRefNo: empRefNo, RoleId: roleId });
+
         const response = await axios.get(
-            `${API_BASE_URL}/HR/GetStaffMainDatabyId?EmpRefNo=${empRefNo}&RoleId=${roleId}`,
+            `${API_BASE_URL}/HR/GetStaffMainDatabyId`,
             {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                params: { EmpRefNo: empRefNo, RoleId: roleId },
+                headers: { 'Content-Type': 'application/json' },
             }
         );
-        
-        console.log('✅ Verification Staff Data Response:', response.data); // DEBUG
+        console.log('✅ Get Staff Main Data Response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('❌ Verification Staff Data API Error:', error.response || error);
-        if (error.response?.data) {
-            throw error.response.data;
-        }
-        throw error;
+        console.error('❌ Get Staff Main Data API Error:', error.response || error);
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to get staff main data';
     }
 };
 
-// 3. Approve Staff Registration
-export const approveStaffRegistration = async (approvalData) => {
+// 3. Get Employee Documents by EmpRefNo (GET)
+//    GET api/HR/GetEmployeeDocuments?EmpRefno={EmpRefno}
+export const getEmployeeDocuments = async (empRefNo) => {
     try {
-        console.log('🎯 Approving Staff Registration...');
-        console.log('📊 Payload Summary:', {
-            EmpRefNo: approvalData.EmpRefNo,
-            Action: approvalData.Action,
-            RoleId: approvalData.RoleId,
-            Createdby: approvalData.Createdby,
-            totalParameters: Object.keys(approvalData).length
-        });
-        
-        // Build payload matching backend stored procedure parameters exactly
+        console.log('📄 Getting Employee Documents');
+        console.log('🔗 API URL:', `${API_BASE_URL}/HR/GetEmployeeDocuments`);
+        console.log('📦 Params:', { EmpRefno: empRefNo });
+
+        const response = await axios.get(
+            `${API_BASE_URL}/HR/GetEmployeeDocuments`,
+            {
+                params: { EmpRefno: empRefNo },
+                headers: { 'Content-Type': 'application/json' },
+            }
+        );
+        console.log('✅ Get Employee Documents Response:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Get Employee Documents API Error:', error.response || error);
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to get employee documents';
+    }
+};
+
+// 4. Approve / Reject Staff Registration (PUT)
+//    PUT api/HR/ApproveStaffRegistration
+//    Action: 'Approve' | 'Reject' | 'Forward' (whatever your SP supports)
+export const approveStaffRegistration = async (params) => {
+    try {
+        console.log('✅ Approving/Rejecting Staff Registration - raw params:', params);
+
+        // ── Validate required fields ──────────────────────────────────────────
+        if (!params.empRefNo)   throw new Error('EmpRefNo is required');
+        if (!params.roleId)     throw new Error('Role ID is required');
+        if (!params.createdBy)  throw new Error('Created By is required');
+        if (!params.action)     throw new Error('Action is required');
+
+        // ── Build payload matching spApproveStaffRegistration SP params ────────
+        // ⚠️  IMPORTANT: SP uses JSON_VALUE() which requires STRING types.
+        //     Numeric fields (IDs, days) must be sent as strings — matching old MVC app behaviour.
         const payload = {
-            // Basic Employee Info
-            EmpRefNo: approvalData.EmpRefNo?.toString().trim() || '',
-            JoiningType: approvalData.JoiningType?.toString().trim() || '',
-            Category: approvalData.Category?.toString().trim() || '', // Maps to @EmpCategory
-            Appointmenttype: approvalData.Appointmenttype?.toString().trim() || '',
-            
-            // Personal Details
-            FirstName: approvalData.FirstName?.toString().trim() || '',
-            LastName: approvalData.LastName?.toString().trim() || '',
-            MiddleName: approvalData.MiddleName?.toString().trim() || '',
-            DateofBirth: approvalData.DateofBirth?.toString().trim() || '', // Maps to @DOB
-            EmpAge: approvalData.EmpAge?.toString().trim() || '', // Maps to @Age
-            Gender: approvalData.Gender?.toString().trim() || '',
-            MartialStatus: approvalData.MartialStatus?.toString().trim() || '', // Maps to @Martialstatus
-            DateofMarriage: approvalData.DateofMarriage?.toString().trim() || '', // Maps to @DOMarriage
-            
-            // Nominee Details
-            NomineeName: approvalData.NomineeName?.toString().trim() || '',
-            NomineeRelation: approvalData.NomineeRelation?.toString().trim() || '', // Maps to @Relation
-            NomineeDateofBirth: approvalData.NomineeDateofBirth?.toString().trim() || '', // Maps to @NomineeDOB
-            NomineeAge: approvalData.NomineeAge?.toString().trim() || '',
-            
-            // Contact Details
-            ContactWorkPhone: approvalData.ContactWorkPhone?.toString().trim() || '', // Maps to @ContactWorkPhoneNo
-            ContactMobile: approvalData.ContactMobile?.toString().trim() || '', // Maps to @Mobileno
-            PlaceofBirth: approvalData.PlaceofBirth?.toString().trim() || '', // Maps to @PlaceOfBirth
-            WorkEmail: approvalData.WorkEmail?.toString().trim() || '', // Maps to @MailId
-            PermanentAddress: approvalData.PermanentAddress?.toString().trim() || '',
-            PresentAddress: approvalData.PresentAddress?.toString().trim() || '',
-            
-            // Job Details
-            Experience: approvalData.Experience?.toString().trim() || '',
-            DesignationId: approvalData.DesignationId ? parseInt(approvalData.DesignationId) : 0,
-            JoiningDate: approvalData.JoiningDate?.toString().trim() || '', // Maps to @Joiningdate
-            JobType: approvalData.JobType?.toString().trim() || '',
-            JoiningCostCenter: approvalData.JoiningCostCenter?.toString().trim() || '', // Maps to @JoiningCC
-            TransitDay: approvalData.TransitDay ? parseInt(approvalData.TransitDay) : 0, // Maps to @Transitdays
-            ReportTo: approvalData.ReportTo?.toString().trim() || '',
-            DepartmentId: approvalData.DepartmentId ? parseInt(approvalData.DepartmentId) : 0,
-            
-            // Bank Details
-            BankName: approvalData.BankName?.toString().trim() || '',
-            BankAccountNo: approvalData.BankAccountNo?.toString().trim() || '',
-            IFSCcode: approvalData.IFSCcode?.toString().trim() || '', // Maps to @IFSCCode
-            BankAddress: approvalData.BankAddress?.toString().trim() || '',
-            
-            // Family Member Details (Comma-separated strings)
-            FMName: approvalData.FMName?.toString().trim() || '', // Maps to @FMNames
-            FMDateofBirth: approvalData.FMDateofBirth?.toString().trim() || '', // Maps to @FMDOBs
-            FMAge: approvalData.FMAge?.toString().trim() || '', // Maps to @FMAges
-            FMGender: approvalData.FMGender?.toString().trim() || '', // Maps to @FMGenders
-            FMRelation: approvalData.FMRelation?.toString().trim() || '', // Maps to @FMRelations
-            FMMobileNo: approvalData.FMMobileNo?.toString().trim() || '', // Maps to @FMMobilenos
-            
-            // Children Details (Comma-separated strings)
-            ChildName: approvalData.ChildName?.toString().trim() || '', // Maps to @ChildNames
-            ChildDateofBirth: approvalData.ChildDateofBirth?.toString().trim() || '', // Maps to @ChildDOBs
-            ChildAge: approvalData.ChildAge?.toString().trim() || '', // Maps to @ChildAges
-            ChildGender: approvalData.ChildGender?.toString().trim() || '', // Maps to @ChildGenders
-            ChildMaritalStatus: approvalData.ChildMaritalStatus?.toString().trim() || '', // Maps to @ChildMaritals
-            
-            // Academic Details (Comma-separated strings)
-            AcademicClass: approvalData.AcademicClass?.toString().trim() || '', // Maps to @AdClasses
-            NameofUniversity: approvalData.NameofUniversity?.toString().trim() || '', // Maps to @AdUniversities
-            FromYear: approvalData.FromYear?.toString().trim() || '', // Maps to @AdFromyears
-            ToYear: approvalData.ToYear?.toString().trim() || '', // Maps to @AdToyears
-            Percentage: approvalData.Percentage?.toString().trim() || '', // Maps to @AdPercents
-            
-            // Technical Skills (Comma-separated strings)
-            TechnicalSkill: approvalData.TechnicalSkill?.toString().trim() || '', // Maps to @TechSkills
-            TechInstitutionName: approvalData.TechInstitutionName?.toString().trim() || '',
-            TechFromYear: approvalData.TechFromYear?.toString().trim() || '',
-            TechToYear: approvalData.TechToYear?.toString().trim() || '',
-            TechPercentage: approvalData.TechPercentage?.toString().trim() || '',
-            
-            // Work History (Comma-separated strings)
-            OrganisationName: approvalData.OrganisationName?.toString().trim() || '', // Maps to @HTOrganisations
-            ExpFromYear: approvalData.ExpFromYear?.toString().trim() || '', // Maps to @HTFromyears
-            ExpToYear: approvalData.ExpToYear?.toString().trim() || '', // Maps to @HTToyears
-            Role: approvalData.Role?.toString().trim() || '', // Maps to @HTRoles
-            Mobilenos: approvalData.Mobilenos?.toString().trim() || '', // Maps to @HTMobilenos
-            
-            // Approval Details
-            RoleId: approvalData.RoleId ? parseInt(approvalData.RoleId) : 0, // Maps to @Roleid
-            Createdby: approvalData.Createdby?.toString().trim() || '',
-            Action: approvalData.Action?.toString().trim() || '',
-            ApprovalNote: approvalData.ApprovalNote?.toString().trim() || '', // Maps to @Note
-            
-            // Statutory Details
-            UANExist: approvalData.UANExist === true || approvalData.UANExist === 'true', // Maps to @Uanexist (Boolean)
-            UANNumber: approvalData.UANNumber?.toString().trim() || '', // Maps to @UANNo
-            ESINumber: approvalData.ESINumber?.toString().trim() || '',
-            UserName: approvalData.UserName?.toString().trim() || '', // Maps to @EmpUserName
-            Pwd: approvalData.Pwd?.toString().trim() || '',
-            AdharNo: approvalData.AdharNo?.toString().trim() || '', // Maps to @Aadharno
-            PanNo: approvalData.PanNo?.toString().trim() || '', // Maps to @Panno
-            ReportToRoleId: approvalData.ReportToRoleId ? parseInt(approvalData.ReportToRoleId) : 0,
-            PFExist: approvalData.PFExist?.toString().trim() || '',
-            ESIExist: approvalData.ESIExist?.toString().trim() || '',
-            GroupId: approvalData.GroupId ? parseInt(approvalData.GroupId) : 0,
-            Probationdays: approvalData.Probationdays ? parseFloat(approvalData.Probationdays) : 0, // Decimal
-            
-            // Contract Details
-            ContractStartDate: approvalData.ContractStartDate?.toString().trim() || '',
-            ContractEndDate: approvalData.ContractEndDate?.toString().trim() || '',
-            
-            // Reference Details (Comma-separated strings)
-            RefName: approvalData.RefName?.toString().trim() || '', // Maps to @RefNames
-            RefRelation: approvalData.RefRelation?.toString().trim() || '', // Maps to @RefRelations
-            RefMobileNo: approvalData.RefMobileNo?.toString().trim() || '', // Maps to @RefMobileNos
-            RefRemarks: approvalData.RefRemarks?.toString().trim() || '',
-            
-            // Experience Remarks
-            ExpRemarks: approvalData.ExpRemarks?.toString().trim() || '', // Maps to @HTExpRemarks
-            ExpContactNames: approvalData.ExpContactNames?.toString().trim() || '', // Maps to @HTExpContactNames
-            
-            // Document Data
-            DocumentData: approvalData.DocumentData || []
+            EmpRefNo: params.empRefNo?.toString() || '',
+
+            // ── Employment basics ───────────────────────────────────────────
+            JoiningType:     params.joiningType?.toString() || '',
+            Category:        params.category?.toString() || '',
+            Appointmenttype: params.appointmentType?.toString() || '',
+
+            // ── Personal info ───────────────────────────────────────────────
+            FirstName:      params.firstName?.toString() || '',
+            LastName:       params.lastName?.toString() || '',
+            MiddleName:     params.middleName?.toString() || '',
+            DateofBirth:    params.dob?.toString() || '',
+            EmpAge:         params.empAge?.toString() || '',
+            Gender:         params.gender?.toString() || '',
+            MartialStatus:  params.martialStatus?.toString() || '',
+            DateofMarriage: params.dateofMarriage?.toString() || '',
+            PlaceofBirth:   params.placeofBirth?.toString() || '',
+
+            // ── Nominee ─────────────────────────────────────────────────────
+            NomineeName:        params.nomineeName?.toString() || '',
+            NomineeRelation:    params.nomineeRelation?.toString() || '',
+            NomineeDateofBirth: params.nomineeDateofBirth?.toString() || '',
+            NomineeAge:         params.nomineeAge?.toString() || '',
+
+            // ── Contact ─────────────────────────────────────────────────────
+            ContactWorkPhone: params.contactWorkPhone?.toString() || '',
+            ContactMobile:    params.contactMobile?.toString() || '',
+            WorkEmail:        params.workEmail?.toString() || '',
+            PermanentAddress: params.permanentAddress?.toString() || '',
+            PresentAddress:   params.presentAddress?.toString() || '',
+
+            // ── Job details ─────────────────────────────────────────────────
+            // ✅ FIX: Send as strings (old MVC app sends "19", "2" etc — not numbers)
+            Experience:       params.experience?.toString() || '',
+            DesignationId:    (parseInt(params.designationId) || 0).toString(),
+            JoiningDate:      params.joiningDate?.toString() || '',
+            JobType:          params.jobType?.toString() || '',
+            JoiningCostCenter: params.joiningCostCenter?.toString() || '',
+            TransitDay:       (parseInt(params.transitDay) || 0).toString(),
+            ReportTo:         params.reportTo?.toString() || '',
+            DepartmentId:     (parseInt(params.departmentId) || 0).toString(),
+
+            // ── Bank ────────────────────────────────────────────────────────
+            BankName:      params.bankName?.toString() || '',
+            BankAccountNo: params.bankAccountNo?.toString() || '',
+            IFSCcode:      params.ifscCode?.toString() || '',
+            BankAddress:   params.bankAddress?.toString() || '',
+
+            // ── Family members (pipe-delimited strings) ─────────────────────
+            FMName:        params.fmName?.toString() || '',
+            FMDateofBirth: params.fmDateofBirth?.toString() || '',
+            FMAge:         params.fmAge?.toString() || '',
+            FMGender:      params.fmGender?.toString() || '',
+            FMRelation:    params.fmRelation?.toString() || '',
+            FMMobileNo:    params.fmMobileNo?.toString() || '',
+
+            // ── Children (pipe-delimited strings) ───────────────────────────
+            ChildName:          params.childName?.toString() || '',
+            ChildDateofBirth:   params.childDateofBirth?.toString() || '',
+            ChildAge:           params.childAge?.toString() || '',
+            ChildGender:        params.childGender?.toString() || '',
+            ChildMaritalStatus: params.childMaritalStatus?.toString() || '',
+
+            // ── Academic details (pipe-delimited strings) ───────────────────
+            AcademicClass:    params.academicClass?.toString() || '',
+            NameofUniversity: params.nameofUniversity?.toString() || '',
+            FromYear:         params.fromYear?.toString() || '',
+            ToYear:           params.toYear?.toString() || '',
+            Percentage:       params.percentage?.toString() || '',
+
+            // ── Technical skills (pipe-delimited strings) ───────────────────
+            TechnicalSkill:      params.technicalSkill?.toString() || '',
+            TechInstitutionName: params.techInstitutionName?.toString() || '',
+            TechFromYear:        params.techFromYear?.toString() || '',
+            TechToYear:          params.techToYear?.toString() || '',
+            TechPercentage:      params.techPercentage?.toString() || '',
+
+            // ── Work history (pipe-delimited strings) ───────────────────────
+            OrganisationName: params.organisationName?.toString() || '',
+            ExpFromYear:      params.expFromYear?.toString() || '',
+            ExpToYear:        params.expToYear?.toString() || '',
+            Role:             params.role?.toString() || '',
+            Mobilenos:        params.mobilenos?.toString() || '',
+            ExpRemarks:       params.expRemarks?.toString() || '',
+            ExpContactNames:  params.expContactNames?.toString() || '',
+
+            // ── PF / ESI / UAN ──────────────────────────────────────────────
+            UANExist:  params.uanExist === true || params.uanExist === 'true',
+            UANNumber: params.uanNumber?.toString() || '',
+            ESINumber: params.esiNumber?.toString() || '',
+            PFExist:   params.pfExist?.toString() || '',
+            ESIExist:  params.esiExist?.toString() || '',
+
+            // ── Identity ────────────────────────────────────────────────────
+            AdharNo: params.adharNo?.toString() || '',
+            PanNo:   params.panNo?.toString() || '',
+
+            // ── Login credentials (set during approve) ──────────────────────
+            UserName: params.userName?.toString() || '',
+            Pwd:      params.pwd?.toString() || '',
+
+            // ── Org / role ──────────────────────────────────────────────────
+            // ✅ FIX: Send as strings (old MVC app sends "102", "24" etc — not numbers)
+            ReportToRoleId: (parseInt(params.reportToRoleId) || 0).toString(),
+            GroupId:        (parseInt(params.groupId) || 0).toString(),
+            RoleId:         parseInt(params.roleId),   // RoleId stays as number (it's the auth role, not a SP string param)
+
+            // ── Contract / probation ─────────────────────────────────────────
+            // ✅ FIX: Probationdays as "0.00" string (old MVC app format)
+            Probationdays:     (parseFloat(params.probationdays) || 0).toFixed(2),
+            ContractStartDate: params.contractStartDate?.toString() || '',
+            ContractEndDate:   params.contractEndDate?.toString() || '',
+
+            // ── References (pipe-delimited strings) ─────────────────────────
+            RefName:     params.refName?.toString() || '',
+            RefRelation: params.refRelation?.toString() || '',
+            RefMobileNo: params.refMobileNo?.toString() || '',
+            // ✅ FIX: Use 'null,' placeholder (old MVC app sends "null," not "")
+            RefRemarks:  params.refRemarks?.toString() || '',
+
+            // ── Approval meta ────────────────────────────────────────────────
+            Createdby:    params.createdBy.toString(),
+            Action:       params.action.toString(),   // 'Approve' | 'Reject' | 'Forward'
+            ApprovalNote: params.approvalNote?.toString() || '',
+
+            // ── Documents ───────────────────────────────────────────────────
+            // Backend loops through DocumentData and calls SaveDocumentsVerify per item.
+            // Handles both shapes:
+            //   • Server-fetched docs from GetEmployeeDocuments → PascalCase fields (PDFBaseData, FileType, DocName, Path)
+            //   • User-uploaded File docs converted in component  → camelCase fields (base64, fileType, docName)
+            DocumentData: Array.isArray(params.documents)
+                ? params.documents.map(doc => ({
+                    DocName:     doc.DocName     || doc.docName    || '',
+                    PDFBaseData: doc.PDFBaseData || doc.base64     || '',
+                    FileType:    doc.FileType    || doc.fileType   || '',
+                    Path:        doc.Path        || doc.path       || '',
+                }))
+                : [],
         };
-        
-        console.log('📦 Complete Approval Payload prepared with', Object.keys(payload).length, 'parameters');
-        
+
+        console.log('🔗 API URL:', `${API_BASE_URL}/HR/ApproveStaffRegistration`);
+        console.log('📦 Full Approve Payload:', JSON.stringify(payload, null, 2));
+        console.log('📦 Key fields check:', {
+            EmpRefNo:      payload.EmpRefNo,
+            RoleId:        payload.RoleId,
+            Action:        payload.Action,
+            Createdby:     payload.Createdby,
+            DesignationId: payload.DesignationId,   // should be "8" not 8
+            DepartmentId:  payload.DepartmentId,    // should be "14" not 14
+            GroupId:       payload.GroupId,          // should be "13" not 13
+            ReportToRoleId: payload.ReportToRoleId, // should be "142" not 142
+            Probationdays: payload.Probationdays,   // should be "0.00" not 0
+            TransitDay:    payload.TransitDay,       // should be "0" not 0
+            JoiningType:   payload.JoiningType,
+            Category:      payload.Category,
+            FirstName:     payload.FirstName,
+            LastName:      payload.LastName,
+            DocCount:      payload.DocumentData?.length,
+        });
+
         const response = await axios.put(
             `${API_BASE_URL}/HR/ApproveStaffRegistration`,
             payload,
             {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                timeout: 30000 // 30 second timeout for complex operations
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 30000,   // documents upload can be slow
             }
         );
-        
-        console.log('✅ Staff Registration Approval Response:', {
-            status: response.status,
-            data: response.data
-        });
-        
+
+        console.log('✅ Approve Staff Registration Response:', response.data);
         return response.data;
-        
     } catch (error) {
-        console.group('❌ Staff Registration Approval API Error');
-        
-        if (error.response) {
-            console.error('Response Status:', error.response.status);
-            console.error('Response Data:', error.response.data);
-            
-            if (error.response.status === 400) {
-                console.error('🔍 400 Bad Request - Check payload field names and data types');
-            }
-        } else if (error.request) {
-            console.error('No Response Received:', error.request);
-        } else {
-            console.error('Request Setup Error:', error.message);
-        }
-        
-        console.groupEnd();
-        
-        if (error.response?.data) {
-            throw error.response.data;
-        } else if (error.response?.status === 400) {
-            throw new Error('Bad Request: Invalid data format or missing required fields');
-        } else if (error.response?.status === 500) {
-            throw new Error('Server Error: Please contact administrator');
-        }
-        
-        throw error;
+        console.error('🔴 Full error response:', JSON.stringify(error.response?.data, null, 2));
+        console.error('🔴 Response body raw:', error.response?.request?.responseText);
+        console.error('❌ Approve Staff Registration API Error:', error.response || error);
+        console.error('❌ Error Details:', {
+            message:      error.message,
+            status:       error.response?.status,
+            statusText:   error.response?.statusText,
+            responseData: error.response?.data,
+            responseBody: JSON.stringify(error.response?.data, null, 2),
+        });
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to approve/reject staff registration';
     }
 };
 
-// 4. Get Employee Documents
-export const getEmployeeDocuments = async (empRefNo) => {
-    try {
-        console.log('📄 Getting Employee Documents for EmpRefNo:', empRefNo); // DEBUG
-        
-        const response = await axios.get(
-            `${API_BASE_URL}/HR/GetEmployeeDocuments?EmpRefno=${empRefNo}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        
-        console.log('✅ Employee Documents Response:', response.data); // DEBUG
-        return response.data;
-    } catch (error) {
-        console.error('❌ Employee Documents API Error:', error.response || error);
-        if (error.response?.data) {
-            throw error.response.data;
-        }
-        throw error;
-    }
+// ==============================================
+// DOCUMENT HELPERS (re-exported for verify page)
+// ==============================================
+
+// Convert File object to pure base64 (no data URI prefix)
+export const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
+};
+
+// Determine FileType string from File object
+export const getFileType = (file) => {
+    if (file.type === 'application/pdf') return 'PDF';
+    return 'Image'; // jpeg, png, etc.
 };

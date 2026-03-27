@@ -87,6 +87,18 @@ import staffAdvanceReducer from "../slices/HRSlice/staffAdvanceSlice";
 import staffAppraisalReducer from "../slices/HRSlice/staffAppraisalSlice";
 import staffCTCCreationReducer from "../slices/HRSlice/staffCTCCreationSlice";
 import staffAttendanceEntryReducer from "../slices/HRSlice/staffAttendanceEntrySlice";
+import cashVoucherReducer from "../slices/accountsSlice/cashVoucherSlice";
+import vendorCashPaymentReducer from "../slices/accountsSlice/vendorCashPaymentSlice";
+import ccCashTransferReducer from "../slices/accountsSlice/ccCashTransferSlice";
+import ccClosingReducer from "../slices/accountsSlice/ccClosingSlice";
+import clientInvoiceReducer from "../slices/accountsSlice/clientInvoiceSlice";
+import clientManfInvoiceReducer from "../slices/accountsSlice/clientManufacturingInvoiceSlice";
+import clientScrapInvoiceReducer from "../slices/accountsSlice/clientScrapSaleInvoiceSlice";
+import clientTradingInvoiceReducer from "../slices/accountsSlice/clientTradingInvoiceSlice";
+import genInvoiceCreationReducer from "../slices/accountsSlice/generalInvoiceCreationSlice";
+import bankWithdrawalReducer from "../slices/accountsSlice/bankWithdrawalSlice";
+import sppoInvoiceReducer from "../slices/spPOSlice/sppoInvoiceSlice";
+import supplierPOInvoiceReducer from "../slices/supplierPOSlice/supplierPOInvoiceSlice";
 
 const store = configureStore({
   
@@ -178,6 +190,18 @@ const store = configureStore({
     staffappraisal:  staffAppraisalReducer,
     staffCTCCreation:      staffCTCCreationReducer,
     staffAttendanceEntry:  staffAttendanceEntryReducer,
+    cashvoucher:           cashVoucherReducer,
+    vendorCashPayment:     vendorCashPaymentReducer,
+    ccCashTransfer:        ccCashTransferReducer,
+    ccClosing:             ccClosingReducer,
+    clientInvoice:         clientInvoiceReducer,
+    clientManfInvoice:     clientManfInvoiceReducer,
+    clientScrapInvoice:    clientScrapInvoiceReducer,
+    clientTradingInvoice:  clientTradingInvoiceReducer,
+    genInvoiceCreation:    genInvoiceCreationReducer,
+    bankWithdrawal:        bankWithdrawalReducer,
+    sppoInvoice:           sppoInvoiceReducer,
+    supplierPOInvoice:     supplierPOInvoiceReducer,
 
   }
 

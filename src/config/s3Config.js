@@ -8,8 +8,12 @@
 // S3 Base URL
 export const S3_BASE_URL = 'https://sltouch-rdsbackup-bucket.s3.us-east-2.amazonaws.com';
 
-// Upload docs base path
+// Upload docs base path (URL-encoded for building read URLs)
 export const UPLOAD_DOCS_PATH = 'Upload+docs';
+
+// Upload docs base path used as FormData key when uploading via /AWSUpload/UploadFiles
+// (matches Web.config txtawsuploadvendor, uses space not +)
+export const UPLOAD_DOCS_FORM_PATH = 'Upload docs';
 
 // Module-specific folder names
 export const S3_FOLDERS = {
@@ -19,6 +23,7 @@ export const S3_FOLDERS = {
     STAFF_DOCUMENTS: 'StaffDocuments',
     LEAVE_ATTACHMENTS: 'LeaveAttachments',
     SPPO_AMENDMENTS: 'SPPOAmendPROD',
+    VENDOR_INVOICES: 'VendorTEST',
     // Add more folders as needed
 };
 
@@ -64,6 +69,23 @@ export const buildStaffDocumentUrl = (filePath) => {
 
 export const buildLeaveAttachmentUrl = (filePath) => {
     return buildS3Url(S3_FOLDERS.LEAVE_ATTACHMENTS, filePath);
+};
+
+/**
+ * Build the S3 read URL for a vendor invoice file (SPPO Invoice module).
+ * @param {string} iCode - Invoice code returned by SaveNewSPPOInvoice (e.g. "SPINV-00123")
+ */
+export const buildVendorInvoiceUrl = (iCode) => {
+    return buildS3Url(S3_FOLDERS.VENDOR_INVOICES, iCode);
+};
+
+/**
+ * Get the FormData folder path used when uploading via /AWSUpload/UploadFiles.
+ * Matches Web.config txtawsuploadvendor format: "Upload docs/<folder>/"
+ * @param {string} folderName - from S3_FOLDERS
+ */
+export const getS3UploadFolderPath = (folderName) => {
+    return `${UPLOAD_DOCS_FORM_PATH}/${folderName}/`;
 };
 
 /**

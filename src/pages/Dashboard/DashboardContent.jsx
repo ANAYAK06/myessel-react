@@ -1,12 +1,15 @@
 // Enhanced Dashboard Content Component with Centralized Frequency Tracking
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config/apiConfig';
 
 import { useSelector, useDispatch } from 'react-redux';
 import {
     TrendingUp, TrendingDown, ShoppingCart, Package, AlertTriangle,
     CheckCircle, Clock, BarChart3, PieChart, Activity, Users, FileText,
     DollarSign, ArrowUpRight, ArrowDownRight, Eye, ExternalLink,
-    Zap, Target, Award, Bell, Star, TrendingUpIcon, Calculator, CreditCard
+    Zap, Target, Award, Bell, Star, TrendingUpIcon, Calculator, CreditCard,
+    X, ChevronRight
 } from 'lucide-react';
 import {
     fetchTodayTransactionLog,
@@ -37,6 +40,14 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
     const previousMonthVendorData = useSelector(selectPreviousMonthVendorInvoiceLog);
     const previousMonthClientData = useSelector(selectPreviousMonthClientInvoiceLog);
 
+    // Rejected transactions
+    const [rejectedData,    setRejectedData]    = useState([]);
+    const [rejectedLoading, setRejectedLoading] = useState(false);
+    const [showRejectedModal, setShowRejectedModal] = useState(false);
+
+    const userId = userData?.userId || userData?.UID || userData?.employeeId || '';
+    const roleId = userData?.roleId || userData?.RID || 0;
+
     useEffect(() => {
         dispatch(fetchTodayTransactionLog());
         dispatch(fetchMonthlyVendorInvoiceLog());
@@ -44,6 +55,15 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
         dispatch(fetchPreviousMonthVendorInvoiceLog());
         dispatch(fetchPreviousMonthClientInvoiceLog());
     }, [dispatch]);
+
+    useEffect(() => {
+        if (!userId || !roleId) return;
+        setRejectedLoading(true);
+        axios.get(`${API_BASE_URL}/Accounts/GetRejectedData`, { params: { UserId: userId, RoleId: roleId } })
+            .then(res => setRejectedData(res.data?.Data || []))
+            .catch(() => setRejectedData([]))
+            .finally(() => setRejectedLoading(false));
+    }, [userId, roleId]);
 
     const formatCurrency = (amount) => {
         if (!amount && amount !== 0) return '0.00';
@@ -366,18 +386,27 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                 </div>
 
                 {/* Rejected Transactions */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md dark:hover:shadow-lg transition-all">
+                <button
+                    onClick={() => rejectedData.length > 0 && setShowRejectedModal(true)}
+                    className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md dark:hover:shadow-lg hover:border-red-300 dark:hover:border-red-700 transition-all text-left w-full group"
+                >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rejected Today</p>
-                            <p className="text-2xl font-bold text-red-600 dark:text-red-500">{dashboardData.transactions.rejected}</p>
-                            <p className="text-sm text-red-600 dark:text-red-500">Review required</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rejected Transactions</p>
+                            <p className="text-2xl font-bold text-red-600 dark:text-red-500">
+                                {rejectedLoading ? '—' : rejectedData.length}
+                            </p>
+                            <p className="text-sm text-red-500 dark:text-red-400 flex items-center gap-1 mt-0.5">
+                                {rejectedData.length > 0 ? (
+                                    <><ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" /> Click to view details</>
+                                ) : 'No rejected transactions'}
+                            </p>
                         </div>
                         <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
                             <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
                         </div>
                     </div>
-                </div>
+                </button>
             </div>
 
             {/* Charts and Analytics Row */}
@@ -684,6 +713,94 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                     </div>
                 </div>
             </div>
+
+            {/* Rejected Transactions Modal */}
+            {showRejectedModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRejectedModal(false)} />
+
+                    {/* Modal */}
+                    <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl max-h-[85vh] flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-red-50 dark:bg-red-900/20 rounded-t-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                                    <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-gray-800 dark:text-gray-100">Rejected Transactions</h2>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{rejectedData.length} record{rejectedData.length !== 1 ? 's' : ''} found</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowRejectedModal(false)}
+                                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Table */}
+                        <div className="overflow-auto flex-1">
+                            <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-gray-50 dark:bg-gray-900/60 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left">#</th>
+                                        <th className="px-4 py-3 text-left">Ref No</th>
+                                        <th className="px-4 py-3 text-left">Module</th>
+                                        <th className="px-4 py-3 text-left">CC</th>
+                                        <th className="px-4 py-3 text-left">Rejected By</th>
+                                        <th className="px-4 py-3 text-left">Date</th>
+                                        <th className="px-4 py-3 text-left">Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {rejectedData.map((row, idx) => {
+                                        const [, moduleName] = (row.MCode || '').split(',');
+                                        const [, ccName]     = (row.CCName || '').split(',');
+                                        return (
+                                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                                <td className="px-4 py-3 text-gray-400">{idx + 1}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+                                                        {row.Refno || '—'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[160px]">
+                                                    <span className="text-xs">{(moduleName || row.MCode || '—').trim()}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs whitespace-nowrap">
+                                                    {(ccName || row.CCName || '—').trim()}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                                                        {(row.RejectedBy || '—').trim()}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                                                    {row.Rejectedate || '—'}
+                                                </td>
+                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-xs max-w-[200px]">
+                                                    <span title={row.Remarks} className="line-clamp-2 block">
+                                                        {row.Remarks || '—'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex justify-end rounded-b-2xl bg-gray-50/60 dark:bg-gray-900/40">
+                            <button onClick={() => setShowRejectedModal(false)}
+                                className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

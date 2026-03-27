@@ -71,6 +71,18 @@ import StaffAppraisalObjective from '../HR/StaffAppraisalObjective';
 import StaffPayrollStructure from '../HR/StaffPayrollStructure';
 import StaffAttendance from '../HR/StaffAttendance';
 import StaffPayRevision from '../HR/StaffPayRevision';
+import CashVoucherCreation from '../Accounts/CashVoucherCreation';
+import VendorCashPayment from '../Accounts/VendorCashPayment';
+import CCCashTransfer from '../Accounts/CCCashTransfer';
+import CCClosing from '../Accounts/CCClosing';
+import ClientInvoiceCreation from '../Accounts/ClientInvoiceCreation';
+import ClientManufacturingInvoiceCreation from '../Accounts/ClientManufacturingInvoiceCreation';
+import ClientScrapSaleInvoiceCreation from '../Accounts/ClientScrapSaleInvoiceCreation';
+import ClientTradingInvoiceCreation from '../Accounts/ClientTradingInvoiceCreation';
+import GeneralInvoiceCreation from '../Accounts/GeneralInvoiceCreation';
+import BankWithdrawal from '../Accounts/BankWithdrawal';
+import SPPOInvoiceCreation from '../SPPO/SPPOInvoiceCreation';
+import SupplierPOInvoiceCreation from '../SupplierPO/SupplierPOInvoiceCreation';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -1228,6 +1240,148 @@ const RoleBasedApplication = () => {
         )) {
             console.log('✅ Rendering StaffPayRevision for:', currentMenuData.name);
             return <StaffPayRevision menuData={currentMenuData} />;
+        }
+
+        // Vendor Cash Payment (SPPO)
+        if (currentMenuData && (
+            currentMenuData.path === '/Purchase/SPPOPayments' ||
+            currentMenuData.path?.toLowerCase().includes('sppopayments') ||
+            currentMenuData.path?.toLowerCase().includes('sppo/payments') ||
+            currentMenuData.name?.toLowerCase().includes('vendor cash payment') ||
+            currentMenuData.name?.toLowerCase().includes('sppopayment') ||
+            currentMenuData.name?.toLowerCase().includes('sppo payment')
+        )) {
+            console.log('✅ Rendering VendorCashPayment for:', currentMenuData.name);
+            return <VendorCashPayment menuData={currentMenuData} />;
+        }
+
+        // Supplier PO Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('supplierpoinvoice') ||
+            currentMenuData.path?.toLowerCase().includes('supplier/invoice') ||
+            currentMenuData.path?.toLowerCase().includes('savesupplierpomoice') ||
+            currentMenuData.path?.toLowerCase().includes('newsupplierpo') ||
+            currentMenuData.name?.toLowerCase().includes('supplier po invoice') ||
+            currentMenuData.name?.toLowerCase().includes('supplier invoice creation') ||
+            currentMenuData.name?.toLowerCase().includes('supplierpoinvoice')
+        )) {
+            return <SupplierPOInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // SPPO Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('sppoinvoice') ||
+            currentMenuData.path?.toLowerCase().includes('sppo/invoice') ||
+            currentMenuData.path?.toLowerCase().includes('savesppomoice') ||
+            currentMenuData.path?.toLowerCase().includes('newsppoinvoice') ||
+            currentMenuData.name?.toLowerCase().includes('sppo invoice') ||
+            currentMenuData.name?.toLowerCase().includes('sppoinvoice') ||
+            currentMenuData.name?.toLowerCase().includes('service provider invoice')
+        )) {
+            return <SPPOInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // General Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('generalinvoice') ||
+            currentMenuData.path?.toLowerCase().includes('geninvoice') ||
+            currentMenuData.name?.toLowerCase().includes('general invoice') ||
+            currentMenuData.name?.toLowerCase().includes('gen invoice')
+        )) {
+            return <GeneralInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // Client Trading Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('clienttrading') ||
+            currentMenuData.path?.toLowerCase().includes('tradinginvoice') ||
+            currentMenuData.name?.toLowerCase().includes('trading invoice') ||
+            currentMenuData.name?.toLowerCase().includes('clienttrading')
+        )) {
+            return <ClientTradingInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // Client Scrap Sale Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('clientscrap') ||
+            currentMenuData.path?.toLowerCase().includes('scrapsaleinvoice') ||
+            currentMenuData.path?.toLowerCase().includes('scrap sale invoice') ||
+            currentMenuData.name?.toLowerCase().includes('scrap sale invoice') ||
+            currentMenuData.name?.toLowerCase().includes('scrap invoice') ||
+            currentMenuData.name?.toLowerCase().includes('clientscrap')
+        )) {
+            return <ClientScrapSaleInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // Client Manufacturing Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('clientmanufacturing') ||
+            currentMenuData.path?.toLowerCase().includes('clientmanufactureinvoice') ||
+            currentMenuData.path?.toLowerCase().includes('clientmanfinvoice') ||
+            currentMenuData.name?.toLowerCase().includes('manufacturing invoice') ||
+            currentMenuData.name?.toLowerCase().includes('manufacture invoice') ||
+            currentMenuData.name?.toLowerCase().includes('clientmanufacturing')
+        )) {
+            return <ClientManufacturingInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // Client Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('clientinvoice') ||
+            currentMenuData.path?.toLowerCase().includes('client invoice') ||
+            currentMenuData.path?.toLowerCase().includes('saveclientinvoice') ||
+            currentMenuData.name?.toLowerCase().includes('client invoice') ||
+            currentMenuData.name?.toLowerCase().includes('clientinvoice')
+        )) {
+            console.log('✅ Rendering ClientInvoiceCreation for:', currentMenuData.name);
+            return <ClientInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // CC Closing
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('ccclosing') ||
+            currentMenuData.path?.toLowerCase().includes('cc closing') ||
+            currentMenuData.name?.toLowerCase().includes('cc closing') ||
+            currentMenuData.name?.toLowerCase().includes('ccclosing') ||
+            currentMenuData.name?.toLowerCase().includes('cc suspend') ||
+            currentMenuData.name?.toLowerCase().includes('ccsuspend')
+        )) {
+            return <CCClosing menuData={currentMenuData} />;
+        }
+
+        // CC Cash Transfer
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('cccashtransfer') ||
+            currentMenuData.path?.toLowerCase().includes('cc cash transfer') ||
+            currentMenuData.path?.toLowerCase().includes('cccash') ||
+            currentMenuData.name?.toLowerCase().includes('cc cash transfer') ||
+            currentMenuData.name?.toLowerCase().includes('cccashtransfer')
+        )) {
+            console.log('✅ Rendering CCCashTransfer for:', currentMenuData.name);
+            return <CCCashTransfer menuData={currentMenuData} />;
+        }
+
+        // Bank Withdrawal
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/Withdrawal' ||
+            currentMenuData.path?.toLowerCase().includes('withdrawal') ||
+            currentMenuData.name?.toLowerCase().includes('bank withdrawal') ||
+            currentMenuData.name?.toLowerCase().includes('withdrawal')
+        )) {
+            return <BankWithdrawal menuData={currentMenuData} />;
+        }
+
+        // Cash Voucher Creation Page
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/CashVoucher' ||
+            currentMenuData.path?.toLowerCase().includes('cashvoucher') ||
+            currentMenuData.path?.toLowerCase().includes('generalcashpayment') ||
+            currentMenuData.name?.toLowerCase().includes('cash voucher') ||
+            currentMenuData.name?.toLowerCase().includes('cashvoucher') ||
+            currentMenuData.name?.toLowerCase().includes('general cash payment')
+        )) {
+            console.log('✅ Rendering CashVoucherCreation for:', currentMenuData.name);
+            return <CashVoucherCreation menuData={currentMenuData} />;
         }
 
         // Check if this should load from legacy application

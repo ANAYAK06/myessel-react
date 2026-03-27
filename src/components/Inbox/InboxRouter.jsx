@@ -40,6 +40,10 @@ import VerifyEmployeeExit    from '../../pages/HR/VerifyEmployeeExit';
 import VerifyStaffFullFinal from '../../pages/HR/VerifyStaffFullFinal';
 import VerifyStaffAdvance from '../../pages/HR/VerifyStaffAdvance';
 import VerifyStaffAppraisal from '../../pages/HR/VerifyStaffAppraisal';
+import VerifyCashVoucher from '../../pages/Accounts/VerifyCashVoucher';
+import VerifyVendorPaymentByCash from '../../pages/Accounts/VerifyVendorPaymentByCash';
+import VerifyCCCashTransfer from '../../pages/Accounts/VerifyCCCashTransfer';
+import VerifyCCClosing from '../../pages/Accounts/VerifyCCClosing';
 
 
 // ============================================================================
@@ -59,8 +63,11 @@ const isStaffRegistrationVerification = (path) => {
     return isMatch;
 };
 
+// Matches Bank vendor payment only — excludes Paytype=Cash paths
 const isVendorPaymentVerification = (path, category, title, displayName, workflowType) => {
-    // ✅ FIXED: Use lowercase strings for comparison since path is already lowercase
+    // If the path explicitly requests Cash paytype, do NOT match here
+    if (path.includes('paytype=cash')) return false;
+
     const pathMatches = [
         '/purchase/verifyvendorpayment?paytype=bank',
         '/vendorpayment/verifyvendorpayment',
@@ -79,15 +86,26 @@ const isVendorPaymentVerification = (path, category, title, displayName, workflo
         workflowType.includes('vendorpayment');
 
     if (isMatch) {
-        console.log('✅ Vendor Payment detected by:', {
+        console.log('✅ Vendor Payment (Bank) detected by:', {
             path, category, title, displayName, workflowType
         });
     } else {
-        console.log('❌ Vendor Payment not detected. Details:', {
+        console.log('❌ Vendor Payment (Bank) not detected. Details:', {
             path, category, title, displayName, workflowType
         });
     }
 
+    return isMatch;
+};
+
+// Matches Cash vendor payment only — Paytype=Cash path
+const isVendorCashPaymentVerification = (path) => {
+    const isMatch = path.includes('/purchase/verifyvendorpayment?paytype=cash');
+    if (isMatch) {
+        console.log('✅ Vendor Payment (Cash) detected by path:', path);
+    } else {
+        console.log('❌ Vendor Payment (Cash) not detected. Path:', path);
+    }
     return isMatch;
 };
 
@@ -709,6 +727,82 @@ const isEmployeeTransferVerification = (path) => {
     return isMatch;
 };
 
+const isCCCashTransferVerification = (path, category, title, displayName, workflowType) => {
+    const isMatch =
+        path.includes('cccashtransfer') ||
+        path.includes('cc cash transfer') ||
+        path.includes('verifycccashtransfer') ||
+        category.includes('cccashtransfer') ||
+        category.includes('cc cash transfer') ||
+        title.includes('cccashtransfer') ||
+        title.includes('cc cash transfer') ||
+        displayName.includes('cccashtransfer') ||
+        displayName.includes('cc cash transfer') ||
+        workflowType.includes('cccashtransfer') ||
+        workflowType.includes('cc cash transfer');
+
+    if (isMatch) {
+        console.log('✅ CC Cash Transfer detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ CC Cash Transfer not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isCashVoucherVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/accounts/verifycashvoucher',
+        '/accountsapproval/verifygeneralpayablebycash',
+        '/accountsapproval/verifycashvoucher',
+        'verifycashvoucher',
+        'cashvoucher',
+        'cash voucher',
+        'generalpayablebycash',
+        'cashpayment',
+        'cash payment',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('cash voucher') ||
+        category.includes('cashvoucher') ||
+        category.includes('generalpayablebycash') ||
+        title.includes('cash voucher') ||
+        title.includes('cashvoucher') ||
+        displayName.includes('cash voucher') ||
+        displayName.includes('cashvoucher') ||
+        workflowType.includes('cash voucher') ||
+        workflowType.includes('cashvoucher');
+    if (isMatch) {
+        console.log('✅ Cash Voucher Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Cash Voucher Verification not detected. Details:', { path, category, title, displayName, workflowType });
+    }
+    return isMatch;
+};
+
+const isCCClosingVerification = (path, category, title, displayName, workflowType) => {
+    const isMatch =
+        path.includes('ccclosing') ||
+        path.includes('cc closing') ||
+        path.includes('verifyccclosing') ||
+        path.includes('ccsuspend') ||
+        path.includes('cc suspend') ||
+        category.includes('ccclosing') ||
+        category.includes('cc closing') ||
+        title.includes('ccclosing') ||
+        title.includes('cc closing') ||
+        displayName.includes('ccclosing') ||
+        displayName.includes('cc closing') ||
+        workflowType.includes('ccclosing') ||
+        workflowType.includes('cc closing');
+
+    if (isMatch) {
+        console.log('✅ CC Closing detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ CC Closing not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isAppraisalObjectiveVerification = (path) => {
     const isMatch = path.includes('/hr/verifyappraisalobjectives') ||
         path.includes('/hr/verifyempobjectivesgoals') ||
@@ -774,7 +868,18 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         }
 
         // ====================================================================
-        // VENDOR PAYMENT VERIFICATION
+        // VENDOR CASH PAYMENT VERIFICATION  (Paytype=Cash)
+        // ====================================================================
+        if (isVendorCashPaymentVerification(path)) {
+            console.log('✅ Routing to VerifyVendorPaymentByCash');
+            return <VerifyVendorPaymentByCash
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // VENDOR PAYMENT VERIFICATION  (Paytype=Bank)
         // ====================================================================
         if (isVendorPaymentVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyVendorPayment');
@@ -1166,6 +1271,39 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
 
+
+        // ====================================================================
+        // CC CASH TRANSFER VERIFICATION
+        // ====================================================================
+        if (isCCCashTransferVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyCCCashTransfer');
+            return <VerifyCCCashTransfer
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // CC CLOSING VERIFICATION
+        // ====================================================================
+        if (isCCClosingVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyCCClosing');
+            return <VerifyCCClosing
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // CASH VOUCHER VERIFICATION
+        // ====================================================================
+        if (isCashVoucherVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyCashVoucher');
+            return <VerifyCashVoucher
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
 
         // ✅ USAGE #2: When no specific component matches the notification
         console.log('⚠️ No specific component found, using placeholder');

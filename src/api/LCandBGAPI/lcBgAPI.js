@@ -79,3 +79,98 @@ export const getLCBGStatusReportMainGrid = async (params) => {
         throw error;
     }
 };
+
+// ──────────────────────────────────────────────────────────────────────────────
+// LC/BG CREATION APIs
+// ──────────────────────────────────────────────────────────────────────────────
+
+// 3. Get LC Vendor Codes (for LC type)
+export const getLCVendorCodes = async ({ RoleId, Userid }) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/Purchase/GetLCVendorCodes`, {
+            params: { RoleId, Userid },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch vendor codes';
+    }
+};
+
+// 4. Get PO Numbers for a Vendor/Client
+export const getPOForLCVendor = async ({ VendorCode }) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/Purchase/GetPOForlcvendor`, {
+            params: { VendorCode },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch PO numbers';
+    }
+};
+
+// 5. Get FD Numbers (optional)
+export const getLCBGFDs = async () => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/Purchase/Getlcbgfds`);
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch FD numbers';
+    }
+};
+
+// 6. Get BG Client Codes
+export const getBGClientCodes = async ({ RoleId, Userid }) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/Purchase/GetBGClientCodes`, {
+            params: { RoleId, Userid },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch BG client codes';
+    }
+};
+
+// 7. Get Sub-Clients for a BG Client
+export const getSubClientsForBGClient = async ({ ClientCode }) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/Purchase/Getsubclientforbgclient`, {
+            params: { ClientCode },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch sub-clients';
+    }
+};
+
+// 8. Get Client POs for BG (ClientCode + Subclient)
+export const getClientPOsForBGClient = async ({ ClientCode, Subclient }) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/Purchase/Getclientpoforbgclient`, {
+            params: { ClientCode, Subclient },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch client PO numbers';
+    }
+};
+
+// 9. Save LC/BG Data (POST)
+export const saveLCBGData = async (payload) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/Purchase/SaveLCBGData`,
+            payload,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to save LC/BG data';
+    }
+};

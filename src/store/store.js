@@ -97,8 +97,15 @@ import clientScrapInvoiceReducer from "../slices/accountsSlice/clientScrapSaleIn
 import clientTradingInvoiceReducer from "../slices/accountsSlice/clientTradingInvoiceSlice";
 import genInvoiceCreationReducer from "../slices/accountsSlice/generalInvoiceCreationSlice";
 import bankWithdrawalReducer from "../slices/accountsSlice/bankWithdrawalSlice";
+import bankTransferReducer from "../slices/accountsSlice/bankTransferSlice";
+import genInvPaymentReducer from "../slices/accountsSlice/generalInvoicePaymentSlice";
+import ccSepPaymentReducer from "../slices/accountsSlice/ccSepPaymentSlice";
 import sppoInvoiceReducer from "../slices/spPOSlice/sppoInvoiceSlice";
 import supplierPOInvoiceReducer from "../slices/supplierPOSlice/supplierPOInvoiceSlice";
+import loadWalletReducer from "../slices/accountsSlice/loadWalletSlice";
+import lcbgCreationReducer from "../slices/accountsSlice/lcbgCreationSlice";
+import sppoPaymentReducer from "../slices/purchaseSlice/sppoPaymentSlice";
+import vendorCMSPaymentReducer from "../slices/purchaseSlice/vendorCMSPaymentSlice";
 
 const store = configureStore({
   
@@ -200,8 +207,15 @@ const store = configureStore({
     clientTradingInvoice:  clientTradingInvoiceReducer,
     genInvoiceCreation:    genInvoiceCreationReducer,
     bankWithdrawal:        bankWithdrawalReducer,
+    bankTransfer:          bankTransferReducer,
+    genInvPayment:         genInvPaymentReducer,
+    ccSepPayment:          ccSepPaymentReducer,
     sppoInvoice:           sppoInvoiceReducer,
     supplierPOInvoice:     supplierPOInvoiceReducer,
+    loadWallet:            loadWalletReducer,
+    lcbgCreation:          lcbgCreationReducer,
+    sppoPayment:           sppoPaymentReducer,
+    vendorCMSPayment:      vendorCMSPaymentReducer,
 
   }
 

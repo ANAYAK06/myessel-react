@@ -44,6 +44,7 @@ import VerifyCashVoucher from '../../pages/Accounts/VerifyCashVoucher';
 import VerifyVendorPaymentByCash from '../../pages/Accounts/VerifyVendorPaymentByCash';
 import VerifyCCCashTransfer from '../../pages/Accounts/VerifyCCCashTransfer';
 import VerifyCCClosing from '../../pages/Accounts/VerifyCCClosing';
+import VerifyLoadWallet from '../../pages/Accounts/VerifyLoadWallet';
 
 
 // ============================================================================
@@ -803,6 +804,28 @@ const isCCClosingVerification = (path, category, title, displayName, workflowTyp
     return isMatch;
 };
 
+const isLoadWalletVerification = (path, category, title, displayName, workflowType) => {
+    const isMatch =
+        path.includes('loadwallet') ||
+        path.includes('load wallet') ||
+        path.includes('verifyloadwallet') ||
+        category.includes('loadwallet') ||
+        category.includes('load wallet') ||
+        title.includes('loadwallet') ||
+        title.includes('load wallet') ||
+        displayName.includes('loadwallet') ||
+        displayName.includes('load wallet') ||
+        workflowType.includes('loadwallet') ||
+        workflowType.includes('load wallet');
+
+    if (isMatch) {
+        console.log('✅ Load Wallet detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Load Wallet not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isAppraisalObjectiveVerification = (path) => {
     const isMatch = path.includes('/hr/verifyappraisalobjectives') ||
         path.includes('/hr/verifyempobjectivesgoals') ||
@@ -1289,6 +1312,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isCCClosingVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyCCClosing');
             return <VerifyCCClosing
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // LOAD WALLET VERIFICATION
+        // ====================================================================
+        if (isLoadWalletVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyLoadWallet');
+            return <VerifyLoadWallet
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

@@ -81,8 +81,16 @@ import ClientScrapSaleInvoiceCreation from '../Accounts/ClientScrapSaleInvoiceCr
 import ClientTradingInvoiceCreation from '../Accounts/ClientTradingInvoiceCreation';
 import GeneralInvoiceCreation from '../Accounts/GeneralInvoiceCreation';
 import BankWithdrawal from '../Accounts/BankWithdrawal';
+import BankTransfer from '../Accounts/BankTransfer';
+import GeneralInvoicePayment from '../Accounts/GeneralInvoicePayment';
+import CCSalEsiPfPayment from '../Accounts/CCSalEsiPfPayment';
 import SPPOInvoiceCreation from '../SPPO/SPPOInvoiceCreation';
 import SupplierPOInvoiceCreation from '../SupplierPO/SupplierPOInvoiceCreation';
+import LoadWallet from '../Accounts/LoadWallet';
+import LCBGCreation from '../Accounts/LCBGCreation';
+import SPPOPayment from '../Purchase/SPPOPayment';
+import VendorCMSPayment from '../Purchase/VendorCMSPayment';
+import ChatBot from '../../components/ChatBot/ChatBot';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -558,6 +566,58 @@ const RoleBasedApplication = () => {
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('lostscrapreport');
 
         return pathMatches || nameMatches || routeMatches;
+    };
+
+    // Check if menu item should route to Vendor CMS Payment
+    const isVendorCMSPaymentPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/purchase/vendorcmspayment' ||
+            path.includes('vendorcmspayment') ||
+            path.includes('savecmsvendorpayment') ||
+            path.includes('savendorcmspayment') ||
+            name.includes('vendor cms payment') ||
+            name.includes('cms vendor payment') ||
+            name.includes('cms payment') ||
+            route.includes('vendorcmspayment')
+        );
+    };
+
+    // Check if menu item should route to SPPO Vendor Bank Payment
+    const isSPPOPaymentPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/purchase/sppopayments' ||
+            path.includes('purchase/sppopayment') ||
+            path.includes('savenewsppoinvoice') ||
+            name.includes('vendor bank payment') ||
+            name.includes('sppo payment') ||
+            name.includes('vendor payment from bank') ||
+            route.includes('sppopayment')
+        );
+    };
+
+    // Check if menu item should route to LC/BG Creation Page
+    const isLCBGCreationPage = (menuData) => {
+        if (!menuData) return false;
+        const path = menuData.path?.toLowerCase() || '';
+        const name = menuData.name?.toLowerCase() || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/purchase/lcbgcreation' ||
+            path.includes('purchase/lcbgcreation') ||
+            path.includes('savelcbgdata') || path.includes('lc bg') ||
+            name.includes('lc creation') || name.includes('bg creation') ||
+            name.includes('lcbg creation') || name.includes('letter of credit') ||
+            name.includes('bank guarantee') || name.includes('lc/bg') ||
+            route.includes('lcbgcreation') || route.includes('savelcbg')
+        );
     };
 
     // check if menu item should route to any LCBG status report
@@ -1242,14 +1302,13 @@ const RoleBasedApplication = () => {
             return <StaffPayRevision menuData={currentMenuData} />;
         }
 
-        // Vendor Cash Payment (SPPO)
+        // Vendor Cash Payment 
         if (currentMenuData && (
-            currentMenuData.path === '/Purchase/SPPOPayments' ||
-            currentMenuData.path?.toLowerCase().includes('sppopayments') ||
+            currentMenuData.path === '/Purchase/VedorPaymentByCash' ||
+            currentMenuData.path?.toLowerCase().includes('vendorcashpayment') ||
             currentMenuData.path?.toLowerCase().includes('sppo/payments') ||
             currentMenuData.name?.toLowerCase().includes('vendor cash payment') ||
-            currentMenuData.name?.toLowerCase().includes('sppopayment') ||
-            currentMenuData.name?.toLowerCase().includes('sppo payment')
+            currentMenuData.name?.toLowerCase().includes('vendorcashpayment') 
         )) {
             console.log('✅ Rendering VendorCashPayment for:', currentMenuData.name);
             return <VendorCashPayment menuData={currentMenuData} />;
@@ -1281,11 +1340,34 @@ const RoleBasedApplication = () => {
             return <SPPOInvoiceCreation menuData={currentMenuData} />;
         }
 
+        // CC SEP Payment (Salary / ESI / PF)
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/CCSalEsiPfPayment' ||
+            currentMenuData.path?.toLowerCase().includes('ccsalesipfpayment') ||
+            currentMenuData.path?.toLowerCase().includes('ccseppaym') ||
+            currentMenuData.name?.toLowerCase().includes('cc sal esi pf') ||
+            currentMenuData.name?.toLowerCase().includes('ccsalesipf') ||
+            currentMenuData.name?.toLowerCase().includes('sep payment')
+        )) {
+            return <CCSalEsiPfPayment menuData={currentMenuData} />;
+        }
+
+        // General Invoice Payment by Bank (checked BEFORE creation to avoid name collision)
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/GeneralInvoicePayment' ||
+            currentMenuData.path?.toLowerCase().includes('generalinvoicepayment') ||
+            currentMenuData.name?.toLowerCase().includes('general invoice payment') ||
+            currentMenuData.name?.toLowerCase().includes('generalinvoicepayment')
+        )) {
+            return <GeneralInvoicePayment menuData={currentMenuData} />;
+        }
+
         // General Invoice Creation
         if (currentMenuData && (
-            currentMenuData.path?.toLowerCase().includes('generalinvoice') ||
+            currentMenuData.path === '/Accounts/GeneralInvoiceCreation' ||
             currentMenuData.path?.toLowerCase().includes('geninvoice') ||
-            currentMenuData.name?.toLowerCase().includes('general invoice') ||
+            (currentMenuData.name?.toLowerCase().includes('general invoice') &&
+             !currentMenuData.name?.toLowerCase().includes('payment')) ||
             currentMenuData.name?.toLowerCase().includes('gen invoice')
         )) {
             return <GeneralInvoiceCreation menuData={currentMenuData} />;
@@ -1371,6 +1453,44 @@ const RoleBasedApplication = () => {
             return <BankWithdrawal menuData={currentMenuData} />;
         }
 
+        // Bank to Bank Transfer
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/Banktransfer' ||
+            currentMenuData.path?.toLowerCase().includes('banktransfer') ||
+            currentMenuData.path?.toLowerCase().includes('bank transfer') ||
+            currentMenuData.name?.toLowerCase().includes('bank transfer') ||
+            currentMenuData.name?.toLowerCase().includes('banktransfer') ||
+            currentMenuData.name?.toLowerCase().includes('bank to bank')
+        )) {
+            return <BankTransfer menuData={currentMenuData} />;
+        }
+
+        // SPPO Vendor Bank Payment
+        if (currentMenuData && isSPPOPaymentPage(currentMenuData)) {
+            return <SPPOPayment menuData={currentMenuData} />;
+        }
+
+        // Vendor CMS Payment
+        if (currentMenuData && isVendorCMSPaymentPage(currentMenuData)) {
+            return <VendorCMSPayment menuData={currentMenuData} />;
+        }
+
+        // LC / BG Creation
+        if (currentMenuData && isLCBGCreationPage(currentMenuData)) {
+            return <LCBGCreation menuData={currentMenuData} />;
+        }
+
+        // Load Wallet (Bank → Wallet / Wallet → Wallet)
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/LoadWallet' ||
+            currentMenuData.path?.toLowerCase().includes('loadwallet') ||
+            currentMenuData.path?.toLowerCase().includes('load wallet') ||
+            currentMenuData.name?.toLowerCase().includes('load wallet') ||
+            currentMenuData.name?.toLowerCase().includes('loadwallet')
+        )) {
+            return <LoadWallet menuData={currentMenuData} />;
+        }
+
         // Cash Voucher Creation Page
         if (currentMenuData && (
             currentMenuData.path === '/Accounts/CashVoucher' ||
@@ -1413,12 +1533,15 @@ const RoleBasedApplication = () => {
     }
 
     return (
-        <TopNavbarLayout
-            currentPage={currentPage}
-            onNavigate={handleNavigation}
-        >
-            {renderPageContent()}
-        </TopNavbarLayout>
+        <>
+            <TopNavbarLayout
+                currentPage={currentPage}
+                onNavigate={handleNavigation}
+            >
+                {renderPageContent()}
+            </TopNavbarLayout>
+            <ChatBot />
+        </>
     );
 };
 

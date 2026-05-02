@@ -40,7 +40,39 @@ export const getVendorCMSPaymentInnerData = async ({ Vendorcode, Userid }) => {
     }
 };
 
-// 4. Save Vendor CMS Payment
+// 4. Add invoice to temp staging table (call on each invoice select)
+//    BasicBalance is the paying amount stored in the temp table so the SP can
+//    compute NewBalance = BasicBalance - PayingAmount correctly (avoids NULL).
+export const addCMSTempInvoice = async ({ invoiceId, userId, payingAmount }) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/Purchase/AddCMSTempInvoices`,
+            { Id: invoiceId, UserID: String(userId), BasicBalance: String(payingAmount || 0) },
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to add temp invoice';
+    }
+};
+
+// 5. Remove invoice from temp staging table (call on each invoice deselect)
+export const removeCMSTempInvoice = async ({ invoiceId }) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/Purchase/RemoveCMSTempInvoices`,
+            { Id: invoiceId },
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to remove temp invoice';
+    }
+};
+
+// 6. Save Vendor CMS Payment (SP reads invoice list from the temp staging table)
 export const saveVendorCMSPayment = async (payload) => {
     try {
         const response = await axios.post(

@@ -59,7 +59,9 @@ import DividendDeclarationCreate from '../shares/DividendDeclarationCreate';
 import DividendDistributionCreate from '../shares/DividendDistributionCreate';
 import DividendBankPaymentCreate from '../shares/DividendBankPaymentCreate';
 import StaffCMSPayCreation from '../HR/StaffCMSPayCreation';
+import LabourCMSPayCreation from '../HR/LabourCMSPayCreation';
 import StaffPayrollGeneration from '../HR/StaffPayrollGeneration';
+import LabourPayrollGeneration from '../HR/LabourPayrollGeneration';
 import StaffSalaryDeductionArrear from '../HR/StaffSalaryDeductionArrear';
 import StaffJoinRegistration from '../HR/StaffJoinRegistration';
 import EmployeeTransfer from '../HR/EmployeeTransfer';
@@ -90,7 +92,18 @@ import LoadWallet from '../Accounts/LoadWallet';
 import LCBGCreation from '../Accounts/LCBGCreation';
 import SPPOPayment from '../Purchase/SPPOPayment';
 import VendorCMSPayment from '../Purchase/VendorCMSPayment';
+import VendorTDSPayment from '../Purchase/VendorTDSPayment';
+import BOESettlement from '../Purchase/BOESettlement';
+import ClientBadDebtReceivables from '../Accounts/ClientBadDebtReceivables';
+import JournalVoucherCreation from '../Accounts/JournalVoucherCreation';
+import CreditDebitNote from '../Purchase/CreditDebitNote';
+import LCBGAmend from '../Purchase/LCBGAmend';
+import UnsecuredLoan from '../Accounts/UnsecuredLoan';
+import TermLoanCreation from '../Accounts/TermLoanCreation';
+import TermLoanPayment from '../Accounts/TermLoanPayment';
+import AgencyCreation from '../Accounts/AgencyCreation';
 import ChatBot from '../../components/ChatBot/ChatBot';
+import LabourRuleConfig from '../HR/LabourRuleConfig';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -312,14 +325,11 @@ const RoleBasedApplication = () => {
         const pathMatches = menuData.path === '/Reports/TermLoanReport' ||
             menuData.path === '/Reports/ViewTermLoan' ||
             menuData.path === '/Purchase/GetTermLoanReportGrid' ||
-            menuData.path?.toLowerCase().includes('termloanreport') ||
-            menuData.path?.toLowerCase().includes('termloan');
+            menuData.path?.toLowerCase().includes('termloanreport');
         const nameMatches = menuData.name?.toLowerCase().includes('termloanreport') ||
             menuData.name?.toLowerCase().includes('term loan report') ||
-            menuData.name?.toLowerCase().includes('term loan') ||
             menuData.name?.toLowerCase().includes('loan report');
-        const routeMatches = menuData.reactRoute?.toLowerCase().includes('termloanreport') ||
-            menuData.reactRoute?.toLowerCase().includes('termloan');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('termloanreport');
 
         return pathMatches || nameMatches || routeMatches;
     };
@@ -586,6 +596,98 @@ const RoleBasedApplication = () => {
         );
     };
 
+    // Check if menu item should route to Vendor TDS Payment
+    const isVendorTDSPaymentPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/purchase/vendortdspayment' ||
+            path.includes('vendortdspayment') ||
+            path.includes('savetdspayment') ||
+            name.includes('vendor tds payment') ||
+            name.includes('tds payment') ||
+            route.includes('vendortdspayment')
+        );
+    };
+
+    // Check if menu item should route to Client Bad Debt Receivables
+    const isClientBadDebtPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/accounts/clientbaddebtrecievables' ||
+            path.includes('clientbaddebt') ||
+            path.includes('baddebtreciev') ||
+            name.includes('bad debt') ||
+            name.includes('write-off') ||
+            name.includes('writeoff') ||
+            name.includes('write off receivable') ||
+            route.includes('clientbaddebt')
+        );
+    };
+
+    // Check if menu item should route to Credit / Debit Note
+    const isCreditDebitNotePage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path.includes('creditdebitnote') ||
+            path.includes('credit debit note') ||
+            path.includes('savecreditdebitnote') ||
+            path.includes('creditnote') ||
+            path.includes('debitnote') ||
+            name.includes('credit note') ||
+            name.includes('debit note') ||
+            name.includes('credit/debit') ||
+            name.includes('creditdebitnote') ||
+            route.includes('creditdebitnote') ||
+            route.includes('creditnote') ||
+            route.includes('debitnote')
+        );
+    };
+
+    // Check if menu item should route to Journal Voucher Creation
+    const isJournalVoucherPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path.includes('journalvoucher') ||
+            path.includes('journal voucher') ||
+            path.includes('savejournal') ||
+            name.includes('journal voucher') ||
+            name.includes('journalvoucher') ||
+            name.includes('journal entry') ||
+            name.includes('jv creation') ||
+            name.includes('jvcreation') ||
+            route.includes('journalvoucher') ||
+            route.includes('journal')
+        );
+    };
+
+    // Check if menu item should route to BOE Settlement Payment
+    const isBOESettlementPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/purchase/boesettlement' ||
+            path.includes('boesettlement') ||
+            path.includes('saveboesettelment') ||
+            name.includes('boe settlement') ||
+            name.includes('bill of exchange settlement') ||
+            route.includes('boesettlement')
+        );
+    };
+
     // Check if menu item should route to SPPO Vendor Bank Payment
     const isSPPOPaymentPage = (menuData) => {
         if (!menuData) return false;
@@ -617,6 +719,121 @@ const RoleBasedApplication = () => {
             name.includes('lcbg creation') || name.includes('letter of credit') ||
             name.includes('bank guarantee') || name.includes('lc/bg') ||
             route.includes('lcbgcreation') || route.includes('savelcbg')
+        );
+    };
+
+    // Check if menu item should route to Unsecured Loan page
+    const isUnsecuredLoanPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/accounts/newunsecuredloan' ||
+            path.includes('newunsecuredloan') ||
+            path.includes('unsecuredloan') ||
+            path.includes('saveunsecuredloan') ||
+            name.includes('unsecured loan') ||
+            name.includes('unsecuredloan') ||
+            route.includes('newunsecuredloan') ||
+            route.includes('unsecuredloan')
+        );
+    };
+
+    // Check if menu item should route to Term Loan Creation page
+    const isTermLoanCreationPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/accounts/termloan' ||
+            path === '/accounts/termloancreation' ||
+            path.includes('termloancreation') ||
+            path.includes('savetldetails') ||
+            name === 'term loan creation' ||
+            name.includes('termloancreation') ||
+            route.includes('termloancreation')
+        );
+    };
+
+    // Check if menu item should route to Term Loan Payment page
+    const isTermLoanPaymentPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/accounts/tlpayments' ||
+            path.includes('tlpayments') ||
+            path.includes('savetermloanpayment') ||
+            name === 'term loan repayment' ||
+            name === 'tl repayment' ||
+            name === 'tl payment' ||
+            name.includes('tlpayment') ||
+            route.includes('tlpayments')
+        );
+    };
+
+    // Check if menu item should route to Agency Creation page
+    const isAgencyCreationPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/accounts/saveagency' ||
+            path === '/accounts/agencycreation' ||
+            path.includes('saveagency') ||
+            path.includes('agencycreation') ||
+            name === 'term loan agency' ||
+            name === 'agency creation' ||
+            name.includes('tl agency') ||
+            name.includes('loan agency') ||
+            route.includes('agencycreation') ||
+            route.includes('saveagency')
+        );
+    };
+
+    // Check if menu item should route to Labour Rule Configuration page
+    const isLabourRuleConfigPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path.includes('labourruleconfig') ||
+            path.includes('labourconfig') ||
+            path.includes('labourwageconfig') ||
+            name.includes('labour rule config') ||
+            name.includes('labourruleconfig') ||
+            name.includes('labour config') ||
+            name.includes('labour rule') ||
+            name.includes('wage config') ||
+            name.includes('min wage config') ||
+            route.includes('labourruleconfig') ||
+            route.includes('labourconfig')
+        );
+    };
+
+    // Check if menu item should route to LC/BG Amendment/Closure page
+    const isLCBGAmendPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/purchase/lcbgamend' ||
+            path.includes('lcbgamend') ||
+            path.includes('savelcbgamenddata') ||
+            name.includes('lc/bg amend') ||
+            name.includes('lcbg amend') ||
+            name.includes('lc bg amend') ||
+            name.includes('lc/bg amendment') ||
+            name.includes('lc/bg close') ||
+            name.includes('lcbg amendment') ||
+            name.includes('lcbg closure') ||
+            route.includes('lcbgamend')
         );
     };
 
@@ -853,6 +1070,15 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     }
 
+    const isLabourCMSPayCreationPage = (menuData) => {
+        if (!menuData) return false;
+        return menuData.path === '/HR/LBCMSPayment' ||
+            menuData.path?.toLowerCase().includes('lbcmspayment') ||
+            menuData.name?.toLowerCase().includes('labour cms') ||
+            menuData.name?.toLowerCase().includes('labourcms') ||
+            menuData.reactRoute?.toLowerCase().includes('lbcmspayment');
+    }
+
     const isStaffPayrollCreationPage = (menuData) => {
         if (!menuData) return false;
         const pathMatches = menuData.path === '/HR/EmployeeWisePayRollGenration' ||
@@ -862,6 +1088,16 @@ const RoleBasedApplication = () => {
         const routeMatches = menuData.reactRoute?.toLowerCase().includes('staffpayrollcreation');
         return pathMatches || nameMatches || routeMatches;
     }   
+
+    const isLabourPayrollGenerationPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/LabourPayRollGeneration' ||
+            menuData.path?.toLowerCase().includes('labourpayrollgeneration');
+        const nameMatches = menuData.name?.toLowerCase().includes('labourpayrollgeneration') ||
+            menuData.name?.toLowerCase().includes('labour payroll generation');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('labourpayrollgeneration');
+        return pathMatches || nameMatches || routeMatches;
+    }
 
     const isStaffSalaryDeductionandArrear = (menuData) => {
         if (!menuData) return false;
@@ -1196,10 +1432,20 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering StaffCMSPayCreationPage for:', currentMenuData.name);
             return <StaffCMSPayCreation menuData={currentMenuData} />;
         }
+        // check if the menu item should show Labour CMS Pay Creation page
+        if (currentMenuData && isLabourCMSPayCreationPage(currentMenuData)) {
+            console.log('✅ Rendering LabourCMSPayCreation for:', currentMenuData.name);
+            return <LabourCMSPayCreation menuData={currentMenuData} />;
+        }
         // check if the menu item should show staff Payroll Creation page
         if (currentMenuData && isStaffPayrollCreationPage(currentMenuData)) {
             console.log('✅ Rendering StaffPayrollGeneration for:', currentMenuData.name);
             return <StaffPayrollGeneration menuData={currentMenuData} />;
+        }
+        // check if the menu item should show Labour Payroll Generation page
+        if (currentMenuData && isLabourPayrollGenerationPage(currentMenuData)) {
+            console.log('✅ Rendering LabourPayrollGeneration for:', currentMenuData.name);
+            return <LabourPayrollGeneration menuData={currentMenuData} />;
         }
         // check if the menu item should show staff Salary Deduction and Arrear page
         if (currentMenuData && isStaffSalaryDeductionandArrear(currentMenuData)) {
@@ -1343,7 +1589,6 @@ const RoleBasedApplication = () => {
         // CC SEP Payment (Salary / ESI / PF)
         if (currentMenuData && (
             currentMenuData.path === '/Accounts/CCSalEsiPfPayment' ||
-            currentMenuData.path?.toLowerCase().includes('ccsalesipfpayment') ||
             currentMenuData.path?.toLowerCase().includes('ccseppaym') ||
             currentMenuData.name?.toLowerCase().includes('cc sal esi pf') ||
             currentMenuData.name?.toLowerCase().includes('ccsalesipf') ||
@@ -1475,9 +1720,59 @@ const RoleBasedApplication = () => {
             return <VendorCMSPayment menuData={currentMenuData} />;
         }
 
+        // Vendor TDS Payment
+        if (currentMenuData && isVendorTDSPaymentPage(currentMenuData)) {
+            return <VendorTDSPayment menuData={currentMenuData} />;
+        }
+
+        // BOE Settlement Payment
+        if (currentMenuData && isBOESettlementPage(currentMenuData)) {
+            return <BOESettlement menuData={currentMenuData} />;
+        }
+
+        // Client Bad Debt Receivables / Write-off
+        if (currentMenuData && isClientBadDebtPage(currentMenuData)) {
+            return <ClientBadDebtReceivables menuData={currentMenuData} />;
+        }
+
+        // Journal Voucher Creation
+        if (currentMenuData && isJournalVoucherPage(currentMenuData)) {
+            return <JournalVoucherCreation menuData={currentMenuData} />;
+        }
+
+        // Credit / Debit Note
+        if (currentMenuData && isCreditDebitNotePage(currentMenuData)) {
+            return <CreditDebitNote menuData={currentMenuData} />;
+        }
+
         // LC / BG Creation
         if (currentMenuData && isLCBGCreationPage(currentMenuData)) {
             return <LCBGCreation menuData={currentMenuData} />;
+        }
+
+        // LC / BG Amendment & Closure
+        if (currentMenuData && isLCBGAmendPage(currentMenuData)) {
+            return <LCBGAmend menuData={currentMenuData} />;
+        }
+
+        // Unsecured Loan (New / Topup / Repay)
+        if (currentMenuData && isUnsecuredLoanPage(currentMenuData)) {
+            return <UnsecuredLoan menuData={currentMenuData} />;
+        }
+
+        // Term Loan Creation
+        if (currentMenuData && isTermLoanCreationPage(currentMenuData)) {
+            return <TermLoanCreation menuData={currentMenuData} />;
+        }
+
+        // Term Loan Payment (Installment / Preclosure)
+        if (currentMenuData && isTermLoanPaymentPage(currentMenuData)) {
+            return <TermLoanPayment menuData={currentMenuData} />;
+        }
+
+        // Term Loan Agency Creation
+        if (currentMenuData && isAgencyCreationPage(currentMenuData)) {
+            return <AgencyCreation menuData={currentMenuData} />;
         }
 
         // Load Wallet (Bank → Wallet / Wallet → Wallet)
@@ -1502,6 +1797,12 @@ const RoleBasedApplication = () => {
         )) {
             console.log('✅ Rendering CashVoucherCreation for:', currentMenuData.name);
             return <CashVoucherCreation menuData={currentMenuData} />;
+        }
+
+        // Labour Rule Configuration
+        if (currentMenuData && isLabourRuleConfigPage(currentMenuData)) {
+            console.log('✅ Rendering LabourRuleConfig for:', currentMenuData.name);
+            return <LabourRuleConfig menuData={currentMenuData} />;
         }
 
         // Check if this should load from legacy application

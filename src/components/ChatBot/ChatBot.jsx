@@ -155,6 +155,7 @@ function TypingDots() {
 // ─── Main ChatBot component ──────────────────────────────────────────────────
 const ChatBot = () => {
     const { userData, roleId: authRoleId, employeeId } = useSelector(s => s.auth);
+    const userFirstName = userData?.FirstName || userData?.firstName || 'User';
 
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
@@ -195,15 +196,16 @@ const ChatBot = () => {
                 const roleCode = res.session?.UserRoleCode || '';
                 setMessages([{
                     role: 'assistant',
-                    text: `Hello${roleCode ? ` (${roleCode})` : ''}! I'm your ERP assistant. Ask me anything about your data — bank details, reports, transactions, and more.`,
+                    text: `Hello${userFirstName ? ` ${userFirstName}` : ''}! I'm your ERP assistant. Ask me anything about your data — bank details, reports, transactions, and more.`,
                 }]);
                 return sid;
             } else {
                 setSessionError('Could not initialize chat session.');
                 return null;
             }
-        } catch {
-            setSessionError('Failed to connect to chat service.');
+        } catch (err) {
+            const msg = err?.response?.data?.message || err?.message || 'Failed to connect to chat service.';
+            setSessionError(msg);
             return null;
         } finally {
             setInitializing(false);

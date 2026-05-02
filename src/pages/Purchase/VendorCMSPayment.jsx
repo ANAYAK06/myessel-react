@@ -9,6 +9,7 @@ import {
 
 import CustomDatePicker from '../../components/CustomDatePicker';
 import { convertAmountToWords, formatIndianCurrency } from '../../utilities/amountToTextHelper';
+import { addCMSTempInvoice, removeCMSTempInvoice } from '../../api/PurchaseAPI/vendorCMSPaymentAPI';
 
 import {
     fetchCMSVendors, fetchVendorCMSPaymentData, fetchVendorCMSInnerData,
@@ -361,6 +362,7 @@ const VendorCMSPayment = ({ menuData }) => {
         if (isInvoiceSelected(vendorCode, id)) {
             setSelectedInvoices(prev => prev.filter(inv => !(inv.vendorCode === vendorCode && inv.Id === id)));
             setPayingAmts(prev => { const next = { ...prev }; delete next[id]; return next; });
+            removeCMSTempInvoice({ invoiceId: id }).catch(() => {});
         } else {
             setSelectedInvoices(prev => [...prev, {
                 vendorCode,
@@ -372,6 +374,7 @@ const VendorCMSPayment = ({ menuData }) => {
                 BasicBalance: row.BasicBalance,
             }]);
             setPayingAmts(prev => ({ ...prev, [id]: String(row.BasicBalance || 0) }));
+            addCMSTempInvoice({ invoiceId: id, userId, payingAmount: row.BasicBalance }).catch(() => {});
         }
     };
 
@@ -386,6 +389,7 @@ const VendorCMSPayment = ({ menuData }) => {
                 invoices.forEach(r => delete next[r.Id]);
                 return next;
             });
+            invoices.forEach(r => removeCMSTempInvoice({ invoiceId: r.Id }).catch(() => {}));
         } else {
             const newInvoices = invoices
                 .filter(r => !isInvoiceSelected(vendorCode, r.Id))
@@ -399,6 +403,7 @@ const VendorCMSPayment = ({ menuData }) => {
                 invoices.forEach(r => { if (!next[r.Id]) next[r.Id] = String(r.BasicBalance || 0); });
                 return next;
             });
+            newInvoices.forEach(inv => addCMSTempInvoice({ invoiceId: inv.Id, userId, payingAmount: inv.BasicBalance }).catch(() => {}));
         }
     };
 
@@ -443,9 +448,6 @@ const VendorCMSPayment = ({ menuData }) => {
     // ── Submit ─────────────────────────────────────────────────────────────────
 
     const handleSubmit = () => {
-        const invoiceIds   = selectedInvoices.map(inv => inv.Id).join(',');
-        const vendorCodes  = [...new Set(selectedInvoices.map(inv => inv.vendorCode))].join(',');
-
         const payload = {
             BankId:            String(selectedBank?.BankId || ''),
             ModeofPay:         modeOfPay,
@@ -456,11 +458,6 @@ const VendorCMSPayment = ({ menuData }) => {
             CreatedUID:        String(userId),
             Createdby:         userName,
             Roleid:            parseInt(roleId, 10),
-            // Additional context for the backend to process invoices
-            VendorType:        vendorType,
-            VendorCodes:       vendorCodes,
-            InvoiceIds:        invoiceIds,
-            BankName:          selectedBank?.BankName || '',
         };
 
         dispatch(submitVendorCMSPayment(payload));
@@ -469,11 +466,15 @@ const VendorCMSPayment = ({ menuData }) => {
     // ── Reset ──────────────────────────────────────────────────────────────────
 
     const handleReset = () => {
+        // Clear any invoices still in the temp staging table
+        setSelectedInvoices(prev => {
+            prev.forEach(inv => removeCMSTempInvoice({ invoiceId: inv.Id }).catch(() => {}));
+            return [];
+        });
         setStep(1);
         setVendorType('Supplier');
         setSelectedVendorCodes([]);
         setExpandedVendors(new Set());
-        setSelectedInvoices([]);
         setPayingAmts({});
         setPayDate(null); setSelectedBank(null); setModeOfPay('');
         setChequeId(''); setRefNo(''); setRemarks('');

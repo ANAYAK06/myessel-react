@@ -1,21 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
+import {
     LogOut, Shield, Building2, Users, BarChart3, Settings, ChevronDown,
     Search, Mail, Home, FileText, Package, Warehouse, ShoppingCart,
-    Database, TrendingUp, Calculator, CreditCard, Briefcase, FolderOpen, X
+    Database, TrendingUp, Calculator, CreditCard, Briefcase, FolderOpen, X,
+    Bell, CheckCheck, AlertCircle
 } from 'lucide-react';
 import { useLogout } from '../hooks/useLogout';
 import ThemeToggle from './ThemeToggle';
 
 // Import inbox notification actions and selectors
-import { 
+import {
     fetchUserInboxNotifications,
     selectNotificationsSummary,
     selectNotificationsLoading,
     selectTotalPendingCount,
     selectNotificationsByCategory
 } from '../slices/notificationSlice/userInboxNotificationSlice';
+
+// Import rejection alert actions and selectors
+import {
+    fetchRejectionAlertCount,
+    fetchRejectionAlerts,
+    updateAlertStatus,
+    markAlertRead,
+    dismissAlert,
+    selectRejectionAlerts,
+    selectRejectionAlertCount,
+    selectRejectionAlertsLoading,
+} from '../slices/rejectionAlertSlice/rejectionAlertSlice';
 
 const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
     // UPDATED: Get userData from Redux state
@@ -36,15 +49,22 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
     
     const { logout } = useLogout();
     
+    // Rejection alert selectors
+    const rejectionAlerts = useSelector(selectRejectionAlerts);
+    const rejectionAlertCount = useSelector(selectRejectionAlertCount);
+    const rejectionAlertsLoading = useSelector(selectRejectionAlertsLoading);
+
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
+    const [isRejectionAlertOpen, setIsRejectionAlertOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
     const dropdownRef = useRef(null);
     const notificationDropdownRef = useRef(null);
+    const rejectionAlertDropdownRef = useRef(null);
     const searchModalRef = useRef(null);
     const searchInputRef = useRef(null);
     const logoutButtonRef = useRef(null);
@@ -72,15 +92,32 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
     useEffect(() => {
         if (notificationUid && notificationRoleId) {
             const interval = setInterval(() => {
-                dispatch(fetchUserInboxNotifications({ 
-                    userId: notificationUid, 
-                    roleId: notificationRoleId 
+                dispatch(fetchUserInboxNotifications({
+                    userId: notificationUid,
+                    roleId: notificationRoleId
                 }));
             }, 5 * 60 * 1000); // 5 minutes
 
             return () => clearInterval(interval);
         }
     }, [dispatch, notificationUid, notificationRoleId]);
+
+    // Rejection alert — fetch count on mount
+    useEffect(() => {
+        if (notificationUid) {
+            dispatch(fetchRejectionAlertCount(notificationUid));
+        }
+    }, [dispatch, notificationUid]);
+
+    // Auto-refresh rejection alert count every 5 minutes
+    useEffect(() => {
+        if (notificationUid) {
+            const interval = setInterval(() => {
+                dispatch(fetchRejectionAlertCount(notificationUid));
+            }, 5 * 60 * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [dispatch, notificationUid]);
 
     // Icon mapping for main menu items (UL)
     const menuIcons = {
@@ -182,11 +219,43 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
     // Refresh notifications manually
     const handleRefreshNotifications = () => {
         if (notificationUid && notificationRoleId) {
-            dispatch(fetchUserInboxNotifications({ 
-                userId: notificationUid, 
-                roleId: notificationRoleId 
+            dispatch(fetchUserInboxNotifications({
+                userId: notificationUid,
+                roleId: notificationRoleId
             }));
         }
+    };
+
+    // Toggle rejection alert dropdown — fetch full list on first open
+    const handleRejectionAlertToggle = () => {
+        const opening = !isRejectionAlertOpen;
+        setIsRejectionAlertOpen(opening);
+        setIsNotificationMenuOpen(false);
+        setIsUserMenuOpen(false);
+        if (opening && notificationUid) {
+            dispatch(fetchRejectionAlerts(notificationUid));
+        }
+    };
+
+    // Mark an alert as read (Status: 1) — keeps it in list, removes from count
+    const handleMarkAlertRead = (alert) => {
+        if (alert.IsRead) return;
+        dispatch(markAlertRead(alert.RejectionAlertId));
+        dispatch(updateAlertStatus({
+            RejectionAlertId: alert.RejectionAlertId,
+            UserId: notificationUid,
+            Status: 1,
+        }));
+    };
+
+    // Dismiss an alert permanently (Status: 2) — removes from list entirely
+    const handleDismissAlert = (alert) => {
+        dispatch(dismissAlert(alert.RejectionAlertId));
+        dispatch(updateAlertStatus({
+            RejectionAlertId: alert.RejectionAlertId,
+            UserId: notificationUid,
+            Status: 2,
+        }));
     };
 
     // Transform API menu data using actual UL, LI, SUBLI structure
@@ -384,6 +453,11 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
             if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(event.target)) {
                 setIsNotificationMenuOpen(false);
             }
+
+            // Handle rejection alert dropdown
+            if (rejectionAlertDropdownRef.current && !rejectionAlertDropdownRef.current.contains(event.target)) {
+                setIsRejectionAlertOpen(false);
+            }
             
             // Close search modal if clicking outside
             if (searchModalRef.current && !searchModalRef.current.contains(event.target)) {
@@ -395,23 +469,15 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         };
 
         const handleResize = () => {
-            // Close dropdown on window resize to prevent positioning issues
-            if (activeDropdown) {
-                setActiveDropdown(null);
-            }
-            if (isNotificationMenuOpen) {
-                setIsNotificationMenuOpen(false);
-            }
+            if (activeDropdown) setActiveDropdown(null);
+            if (isNotificationMenuOpen) setIsNotificationMenuOpen(false);
+            if (isRejectionAlertOpen) setIsRejectionAlertOpen(false);
         };
 
         const handleScroll = () => {
-            // Close dropdown on scroll to prevent positioning issues
-            if (activeDropdown) {
-                setActiveDropdown(null);
-            }
-            if (isNotificationMenuOpen) {
-                setIsNotificationMenuOpen(false);
-            }
+            if (activeDropdown) setActiveDropdown(null);
+            if (isNotificationMenuOpen) setIsNotificationMenuOpen(false);
+            if (isRejectionAlertOpen) setIsRejectionAlertOpen(false);
         };
 
         document.addEventListener('mousedown', handleClickOutside);
@@ -423,7 +489,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('scroll', handleScroll);
         };
-    }, [activeDropdown, isNotificationMenuOpen]);
+    }, [activeDropdown, isNotificationMenuOpen, isRejectionAlertOpen]);
 
     // Handle search modal open
     const handleSearchModalOpen = () => {
@@ -456,13 +522,15 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                     setIsUserMenuOpen(false);
                 } else if (isNotificationMenuOpen) {
                     setIsNotificationMenuOpen(false);
+                } else if (isRejectionAlertOpen) {
+                    setIsRejectionAlertOpen(false);
                 }
             }
         };
 
         document.addEventListener('keydown', handleEscKey);
         return () => document.removeEventListener('keydown', handleEscKey);
-    }, [isSearchModalOpen, activeDropdown, isUserMenuOpen, isNotificationMenuOpen]);
+    }, [isSearchModalOpen, activeDropdown, isUserMenuOpen, isNotificationMenuOpen, isRejectionAlertOpen]);
 
     const handleMenuClick = (item) => {
         if (onNavigate) {
@@ -864,6 +932,131 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
 
                             {/* Theme Toggle */}
                             <ThemeToggle variant="dropdown" showLabel={false} />
+
+                            {/* Rejection Alerts */}
+                            <div className="relative" ref={rejectionAlertDropdownRef}>
+                                <button
+                                    onClick={handleRejectionAlertToggle}
+                                    className={`p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative transition-colors ${
+                                        isRejectionAlertOpen ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : ''
+                                    }`}
+                                    title="Rejection Alerts"
+                                >
+                                    <Bell className="w-5 h-5" />
+                                    {rejectionAlertCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 min-w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1">
+                                            {rejectionAlertCount > 99 ? '99+' : rejectionAlertCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {/* Rejection Alerts Dropdown */}
+                                {isRejectionAlertOpen && (
+                                    <div className="absolute right-0 top-full mt-1 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 transition-colors max-h-[28rem] flex flex-col">
+                                        {/* Header */}
+                                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-t-lg flex-shrink-0">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-2">
+                                                    <Bell className="w-5 h-5 text-white" />
+                                                    <h3 className="text-sm font-semibold text-white">Rejection Alerts</h3>
+                                                </div>
+                                                {rejectionAlertCount > 0 && (
+                                                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
+                                                        {rejectionAlertCount} unread
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Body */}
+                                        <div className="overflow-y-auto flex-1">
+                                            {rejectionAlertsLoading ? (
+                                                <div className="p-6 text-center">
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mx-auto mb-3"></div>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading alerts...</p>
+                                                </div>
+                                            ) : rejectionAlerts.length === 0 ? (
+                                                <div className="p-6 text-center">
+                                                    <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">No rejection alerts</p>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">You're all clear!</p>
+                                                </div>
+                                            ) : (
+                                                <div className="p-2 space-y-1">
+                                                    {rejectionAlerts.map((alert, index) => (
+                                                        <div
+                                                            key={alert.RejectionAlertId ?? index}
+                                                            onClick={() => handleMarkAlertRead(alert)}
+                                                            className={`w-full text-left p-3 rounded-lg border transition-all duration-200 cursor-pointer group ${
+                                                                alert.IsRead
+                                                                    ? 'bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-700'
+                                                                    : 'bg-violet-50 dark:bg-violet-900/20 border-violet-100 dark:border-violet-800 hover:border-violet-300 dark:hover:border-violet-600'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-start space-x-3">
+                                                                <div className="flex-shrink-0 mt-0.5">
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                                                        alert.IsRead ? 'bg-gray-400' : 'bg-red-500'
+                                                                    }`}>
+                                                                        <AlertCircle className="w-4 h-4 text-white" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={`text-sm font-medium truncate ${
+                                                                        alert.IsRead
+                                                                            ? 'text-gray-500 dark:text-gray-400'
+                                                                            : 'text-gray-900 dark:text-white'
+                                                                    }`}>
+                                                                        {alert.AlertMessage ?? alert.Message ?? alert.Title ?? alert.Subject ?? 'Rejection Alert'}
+                                                                    </p>
+                                                                    {(alert.ModuleName ?? alert.Module ?? alert.FormName) && (
+                                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                                            {alert.ModuleName ?? alert.Module ?? alert.FormName}
+                                                                        </p>
+                                                                    )}
+                                                                    {(alert.CreatedDate ?? alert.AlertDate ?? alert.Date) && (
+                                                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                                                            {new Date(alert.CreatedDate ?? alert.AlertDate ?? alert.Date).toLocaleDateString()}
+                                                                        </p>
+                                                                    )}
+                                                                    {!alert.IsRead && (
+                                                                        <span className="inline-block mt-1 text-xs text-violet-600 dark:text-violet-400">
+                                                                            Click to mark as read
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDismissAlert(alert); }}
+                                                                    className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                                                                    title="Dismiss permanently"
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Footer */}
+                                        {rejectionAlerts.length > 0 && (
+                                            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-lg flex-shrink-0">
+                                                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                                    <span className="flex items-center space-x-1">
+                                                        <CheckCheck className="w-3.5 h-3.5" />
+                                                        <span>Click alert to mark read</span>
+                                                    </span>
+                                                    <span className="flex items-center space-x-1">
+                                                        <X className="w-3.5 h-3.5" />
+                                                        <span>Hover to dismiss</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Inbox Notifications */}
                             <div className="relative" ref={notificationDropdownRef}>

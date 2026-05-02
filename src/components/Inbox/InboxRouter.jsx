@@ -26,6 +26,7 @@ import VerifyLabourObjectivesGoals from '../../pages/HR/VerifyLabourObjectivesGo
 import VerifyStaffObjectivesGoals from '../../pages/HR/VerifyStaffObjectivesGoals';
 import VerifyEmployeeCTC from '../../pages/HR/VerifyEmployeeCTC';
 import VerifyLabourCTC from '../../pages/HR/VerifyLabourCTC';
+import VerifyLabourPayRoll from '../../pages/HR/VerifyLabourPayRoll';
 import VerifyLabourPayRevision from '../../pages/HR/VerifyLabourPayRevision';
 import VerifyStaffPayRevision from '../../pages/HR/VerifyStaffPayRevision';
 import VerifyEmployeeLeaveRequest from '../../pages/HR/VerifyEmployeeLeaveRequest';
@@ -45,6 +46,7 @@ import VerifyVendorPaymentByCash from '../../pages/Accounts/VerifyVendorPaymentB
 import VerifyCCCashTransfer from '../../pages/Accounts/VerifyCCCashTransfer';
 import VerifyCCClosing from '../../pages/Accounts/VerifyCCClosing';
 import VerifyLoadWallet from '../../pages/Accounts/VerifyLoadWallet';
+import VerifyLabourCMSPay from '../../pages/HR/VerifyLabourCMSPay';
 
 
 // ============================================================================
@@ -607,12 +609,22 @@ const isEmployeeCTCVerification = (path) => {
 };
 
 const isLabourCTCVerification = (path) => {
-    // Simple and direct path check - using lowercase
-    const isMatch = path.includes('/HR/VerifyLabourPayRoll') || path.includes('/hr/verifylabourpayroll');   
+    const isMatch = path.includes('/HR/VerifyNewLabourCTC') || path.includes('/hr/verifynewlabourctc')
+        || path.includes('/HR/VerifyLabourCTC') || path.includes('/hr/verifylabourctc');
     if (isMatch) {
         console.log('✅ Labour CTC detected by path:', path);
     } else {
         console.log('❌ Labour CTC not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isLabourPayrollVerification = (path) => {
+    const isMatch = path.includes('/HR/VerifyLabourPayRoll') || path.includes('/hr/verifylabourpayroll') || path.includes('/HR/VerifyLabourPayroll') || path.includes('/hr/approvelabourpayroll');
+    if (isMatch) {
+        console.log('✅ Labour Payroll detected by path:', path);
+    } else {
+        console.log('❌ Labour Payroll not detected. Path:', path);
     }
     return isMatch;
 };
@@ -822,6 +834,31 @@ const isLoadWalletVerification = (path, category, title, displayName, workflowTy
         console.log('✅ Load Wallet detected by:', { path, category, title, displayName, workflowType });
     } else {
         console.log('❌ Load Wallet not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isLabourCMSPayVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifylabourcmspay',
+        '/hr/verifylabourcms',
+        'verifylabourcmspay',
+        'labour cms',
+        'labourcms',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('labour cms') ||
+        category.includes('labourcms') ||
+        title.includes('labour cms') ||
+        title.includes('labourcms') ||
+        displayName.includes('labour cms') ||
+        displayName.includes('labourcms') ||
+        workflowType.includes('labour cms') ||
+        workflowType.includes('labourcms');
+    if (isMatch) {
+        console.log('✅ Labour CMS Pay Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Labour CMS Pay Verification not detected. Path:', path);
     }
     return isMatch;
 };
@@ -1123,6 +1160,16 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
             />;
         }
         // ====================================================================
+        // LABOUR PAYROLL VERIFICATION
+        // ====================================================================
+        if (isLabourPayrollVerification(path)) {
+            console.log('✅ Routing to VerifyLabourPayRoll');
+            return <VerifyLabourPayRoll
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
         // LABOUR PAY REVISION VERIFICATION
         // ====================================================================
         if (isLabourPayRevisionVerification(path)) {
@@ -1185,6 +1232,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
                 onNavigate={onNavigate}
             />;
         }
+        // ====================================================================
+        // LABOUR CMS PAY VERIFICATION
+        // ====================================================================
+        if (isLabourCMSPayVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyLabourCMSPay');
+            return <VerifyLabourCMSPay
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
         // ====================================================================
         // STAFF CMS PAY VERIFICATION
         // ====================================================================

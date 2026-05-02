@@ -1,31 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import clsx from 'clsx';
 import {
-    CreditCard,
-    Building2,
-    Calendar,
-    FileText,
-    Save,
-    RotateCcw,
-    AlertTriangle,
-    Info,
-    CheckCircle,
-    DollarSign,
-    Hash,
-    User,
-    Wallet,
-    TrendingUp,
-    Clock,
-    MessageSquare,
-    ChevronDown,
-    Banknote,
-    Receipt,
-    Activity
+    CreditCard, ChevronDown, Loader2, RotateCcw, Send, CheckCircle,
+    Navigation, FileText, Eye, Building2, AlertTriangle, IndianRupee,
+    MessageSquare, Hash,
 } from 'lucide-react';
 import CustomDatePicker from '../../components/CustomDatePicker';
 import {
@@ -36,7 +15,7 @@ import {
     selectInsertOperationStatus,
     setSelectedDistributionId,
     setSelectedBankId,
-    setPaymentMode,
+    setPaymentMode as setPaymentModeAction,
     clearInsertResult,
 } from '../../slices/capitalSlice/dividendBankPaymentSlice';
 import {
@@ -53,748 +32,581 @@ import {
 import {
     convertAmountToWords,
     formatIndianCurrency,
-    getAmountDisplay,
-    isValidAmount
 } from '../../utilities/amountToTextHelper';
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+
+const PAYMENT_MODES = ['NEFT', 'RTGS', 'IMPS', 'Cheque', 'DD'];
+const STEPS         = ['Payment Details', 'Review'];
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+const formatDateForAPI = (date) => {
+    if (!date) return '';
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+};
+
+const fmtCurrency = (amount) => {
+    if (!amount && amount !== 0) return '0.00';
+    return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+};
+
+const fmtNumber = (num) => {
+    if (!num && num !== 0) return '0';
+    return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
+};
+
+// ── Shared UI ──────────────────────────────────────────────────────────────────
+
+const inputCls =
+    'w-full px-3.5 py-2.5 rounded-xl border-2 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 hover:border-gray-300 transition-all disabled:opacity-60 disabled:cursor-not-allowed';
+
+const selectCls = inputCls + ' appearance-none pr-10';
+
+const Label = ({ children, required }) => (
+    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+        {children}{required && <span className="text-rose-500 ml-0.5">*</span>}
+    </label>
+);
+
+const SelectIcon = ({ loading }) => (
+    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+        {loading ? <Loader2 className="h-4 w-4 text-indigo-500 animate-spin" />
+                 : <ChevronDown className="h-4 w-4 text-gray-400" />}
+    </div>
+);
+
+const SectionHeader = ({ icon: Icon, title, subtitle }) => (
+    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-gray-50/60 dark:bg-gray-900/40 rounded-t-2xl">
+        <Icon className="h-4 w-4 text-indigo-500" />
+        <div>
+            <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100">{title}</h2>
+            {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>}
+        </div>
+    </div>
+);
+
+const ChipGroup = ({ options, value, onChange, colorActive = 'indigo' }) => {
+    const colors = {
+        indigo: 'bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-200 dark:shadow-indigo-900/30',
+        violet: 'bg-violet-600 border-violet-600 text-white shadow-sm shadow-violet-200 dark:shadow-violet-900/30',
+    };
+    return (
+        <div className="flex flex-wrap gap-2">
+            {options.map(opt => (
+                <button key={opt} type="button" onClick={() => onChange(opt)}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
+                        value === opt ? colors[colorActive]
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-700'
+                    }`}>
+                    {opt}
+                </button>
+            ))}
+        </div>
+    );
+};
+
+const StepIndicator = ({ current }) => (
+    <div className="flex items-center">
+        {STEPS.map((label, i) => {
+            const idx    = i + 1;
+            const done   = idx < current;
+            const active = idx === current;
+            return (
+                <React.Fragment key={idx}>
+                    <div className="flex flex-col items-center">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all
+                            ${done   ? 'bg-white border-white text-indigo-600'
+                            : active ? 'bg-white/20 border-white text-white'
+                            :          'bg-white/10 border-white/30 text-white/50'}`}>
+                            {done ? <CheckCircle className="h-4 w-4" /> : idx}
+                        </div>
+                        <span className={`mt-1 text-xs font-medium hidden sm:block ${active ? 'text-white' : done ? 'text-indigo-200' : 'text-white/40'}`}>
+                            {label}
+                        </span>
+                    </div>
+                    {i < STEPS.length - 1 && (
+                        <div className={`flex-1 h-0.5 mx-2 mb-4 rounded ${done ? 'bg-white/60' : 'bg-white/20'}`} />
+                    )}
+                </React.Fragment>
+            );
+        })}
+    </div>
+);
+
+const ReviewRow = ({ label, value, highlight }) => (
+    <div className="flex justify-between items-start py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{label}</span>
+        <span className={`text-xs font-semibold text-right max-w-[60%] ${highlight ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-800 dark:text-gray-200'}`}>
+            {value || <span className="text-gray-300 dark:text-gray-600">—</span>}
+        </span>
+    </div>
+);
+
+// ── Main Component ─────────────────────────────────────────────────────────────
 
 const DividendBankPaymentCreate = ({ menuData }) => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
 
-    // Get userData from auth state
-    const { userData } = useSelector((state) => state.auth);
+    const { userData } = useSelector((s) => s.auth);
     const userId = userData?.userName || userData?.UserName || userData?.userId || userData?.UserID || userData?.employeeId;
-    const roleId = userData?.roleId || userData?.RoleId || userData?.roleID || userData?.RoleID;
+    const roleId = userData?.roleId   || userData?.RoleId   || userData?.roleID || userData?.RoleID;
 
-    
+    const approvedDistributions  = useSelector(selectApprovedDistributionsArray);
+    const distributionsLoading   = useSelector(selectApprovedDistributionsLoading);
+    const bankDetails            = useSelector(selectBankDetailsArray);
+    const bankDetailsLoading     = useSelector(selectBankDetailsLoading);
+    const chequeNumbers          = useSelector(selectChequeNumbersArray);
+    const chequeNumbersLoading   = useSelector(selectChequeNumbersLoading);
+    const { isLoading }          = useSelector(selectInsertOperationStatus);
 
-    // Get data from Redux
-    const approvedDistributions = useSelector(selectApprovedDistributionsArray);
-    const distributionsLoading = useSelector(selectApprovedDistributionsLoading);
-    const bankDetails = useSelector(selectBankDetailsArray);
-    const bankDetailsLoading = useSelector(selectBankDetailsLoading);
-    const chequeNumbers = useSelector(selectChequeNumbersArray);
-    const chequeNumbersLoading = useSelector(selectChequeNumbersLoading);
-    const { isLoading, isSuccess, error, result } = useSelector(selectInsertOperationStatus);
+    // ── Form state ────────────────────────────────────────────────────────────
 
-    // Local state
-    const [formSubmitted, setFormSubmitted] = useState(false);
-    const [selectedDistribution, setSelectedDistribution] = useState(null);
-    const [selectedBank, setSelectedBank] = useState(null);
-    const [showBankDetails, setShowBankDetails] = useState(false);
-    const [showPaymentSummary, setShowPaymentSummary] = useState(false);
+    const [step,       setStep]      = useState(1);
+    const [submitted,  setSubmitted] = useState(false);
+    const [transRef,   setTransRef]  = useState('');
 
-    // Payment modes
-    const paymentModes = [
-        { value: 'NEFT', label: 'NEFT - National Electronic Funds Transfer' },
-        { value: 'RTGS', label: 'RTGS - Real Time Gross Settlement' },
-        { value: 'IMPS', label: 'IMPS - Immediate Payment Service' },
-        { value: 'Cheque', label: 'Cheque' },
-        { value: 'DD', label: 'DD - Demand Draft' }
-    ];
+    const [distributionId, setDistributionId] = useState('');
+    const [bankId,         setBankId]         = useState('');
+    const [paymentMode,    setPaymentMode]     = useState('');
+    const [chequeNo,       setChequeNo]        = useState('');
+    const [chequeDate,     setChequeDate]      = useState(null);
+    const [paymentDate,    setPaymentDate]     = useState(null);
+    const [remarks,        setRemarks]         = useState('');
 
-    // Validation Schema
-    const validationSchema = Yup.object({
-        distributionId: Yup.number()
-            .required('Distribution selection is required')
-            .positive('Please select a valid distribution'),
-        bankId: Yup.number()
-            .required('Bank selection is required')
-            .positive('Please select a valid bank'),
-        paymentMode: Yup.string()
-            .required('Payment mode is required'),
-        chequeNo: Yup.string()
-            .when('paymentMode', {
-                is: (val) => val === 'Cheque' || val === 'DD',
-                then: (schema) => schema.required('Cheque/DD number is required'),
-                otherwise: (schema) => schema.notRequired()
-            }),
-        chequeDate: Yup.date()
-            .nullable()
-            .when('paymentMode', {
-                is: (val) => val === 'Cheque' || val === 'DD',
-                then: (schema) => schema
-                    .required('Cheque/DD date is required')
-                    .typeError('Invalid date format'),
-                otherwise: (schema) => schema.notRequired()
-            }),
-        paymentDate: Yup.date()
-            .required('Payment date is required')
-            .nullable()
-            .typeError('Invalid date format'),
-        remarks: Yup.string()
-            .required('Remarks are required')
-            .trim()
-            .min(10, 'Remarks must be at least 10 characters')
-            .max(500, 'Remarks cannot exceed 500 characters')
-    });
+    // ── Derived ───────────────────────────────────────────────────────────────
 
-    // Formik Setup
-    const formik = useFormik({
-        initialValues: {
-            distributionId: '',
-            bankId: '',
-            paymentMode: '',
-            chequeNo: '',
-            chequeDate: null,
-            paymentDate: null,
-            remarks: ''
-        },
-        validationSchema,
-        validateOnChange: false,
-        validateOnBlur: true,
-        onSubmit: async (values, { setSubmitting, resetForm }) => {
-            setFormSubmitted(true);
+    const selectedDistribution = approvedDistributions.find(d => String(d.DistributionId) === String(distributionId));
+    const selectedBank         = bankDetails.find(b => String(b.BankId) === String(bankId));
+    const isChequeDD           = paymentMode === 'Cheque' || paymentMode === 'DD';
 
-            if (!userId) {
-                toast.error('User information is missing. Please login again.');
-                setSubmitting(false);
-                return;
-            }
+    const hasInsufficientBalance = !!(selectedBank && selectedDistribution &&
+        (selectedBank.AvailableBalance || 0) < (selectedDistribution.NetPayableAmount || 0));
 
-            // Validate bank balance
-            if (selectedBank && selectedDistribution) {
-                const availableBalance = selectedBank.AvailableBalance || 0;
-                const paymentAmount = selectedDistribution.NetPayableAmount || 0;
+    // ── On mount ──────────────────────────────────────────────────────────────
 
-                if (availableBalance < paymentAmount) {
-                    toast.error(
-                        <div>
-                            <strong>Insufficient Balance!</strong>
-                            <br />
-                            <span className="text-sm">Available: ₹{formatCurrency(availableBalance)}</span>
-                            <br />
-                            <span className="text-sm">Required: ₹{formatCurrency(paymentAmount)}</span>
-                        </div>,
-                        { autoClose: 5000 }
-                    );
-                    setSubmitting(false);
-                    return;
-                }
-            }
-
-            try {
-                const payload = {
-                    distributionId: parseInt(values.distributionId),
-                    bankId: parseInt(values.bankId),
-                    paymentMode: values.paymentMode,
-                    chequeNo: values.chequeNo || '',
-                    chequeDate: values.chequeDate ? formatDateForAPI(values.chequeDate) : null,
-                    paymentDate: formatDateForAPI(values.paymentDate),
-                    userId: userId.toString(),
-                    roleId: parseInt(roleId),
-                    remarks: values.remarks.trim()
-                };
-
-                console.log('📤 Submitting Dividend Bank Payment:', payload);
-
-                const result = await dispatch(insertDividendBankPayment(payload)).unwrap();
-
-                console.log('✅ Submission Result:', result);
-
-                if (result?.IsSuccessful || result?.Data?.includes('Submited')) {
-                    const transactionRefNo = result?.Data?.replace('Submited$', '') || 'N/A';
-
-                    toast.success(
-                        <div>
-                            <strong>Dividend Payment Initiated Successfully!</strong>
-                            <br />
-                            <span className="text-sm">Transaction Ref: {transactionRefNo}</span>
-                        </div>,
-                        { autoClose: 5000 }
-                    );
-
-                    setTimeout(() => {
-                        handleReset(resetForm);
-                        dispatch(fetchApprovedDistributionsForPayment());
-                        toast.info('Form has been reset for next entry', {
-                            autoClose: 3000,
-                            position: 'bottom-right'
-                        });
-                    }, 1500);
-
-                } else {
-                    toast.error(result?.Message || 'Failed to create Dividend Bank Payment');
-                }
-
-            } catch (err) {
-                console.error('❌ Submission Error:', err);
-                toast.error(err?.Message || err?.message || 'Failed to create Dividend Bank Payment');
-            } finally {
-                setSubmitting(false);
-            }
-        }
-    });
-
-    // Load data on mount
     useEffect(() => {
         dispatch(fetchApprovedDistributionsForPayment());
         dispatch(fetchBankDetailsWithAvailableBalance());
-    }, [dispatch]);
-
-    // Handle distribution selection
-    const handleDistributionChange = (e) => {
-        const distributionId = parseInt(e.target.value);
-        formik.setFieldValue('distributionId', distributionId);
-
-        const distribution = approvedDistributions.find(d => d.DistributionId === distributionId);
-        setSelectedDistribution(distribution || null);
-        dispatch(setSelectedDistributionId(distributionId));
-
-        // Hide payment summary when distribution changes
-        setShowPaymentSummary(false);
-    };
-
-    // Handle bank selection
-    const handleBankChange = (e) => {
-        const bankId = parseInt(e.target.value);
-        formik.setFieldValue('bankId', bankId);
-
-        const bank = bankDetails.find(b => b.BankId === bankId);
-        setSelectedBank(bank || null);
-        dispatch(setSelectedBankId(bankId));
-        setShowBankDetails(!!bank);
-
-        // Fetch cheque numbers for selected bank
-        if (bank) {
-            dispatch(fetchChequeNumbers(bank.BankName));
-        } else {
-            dispatch(clearChequeNumbers());
-        }
-
-        // Clear cheque number when bank changes
-        formik.setFieldValue('chequeNo', '');
-
-        // Update payment summary visibility
-        updatePaymentSummaryVisibility(bank, formik.values.paymentMode);
-    };
-
-    // Handle payment mode change
-    const handlePaymentModeChange = (e) => {
-        const mode = e.target.value;
-        formik.setFieldValue('paymentMode', mode);
-        dispatch(setPaymentMode(mode));
-
-        // Clear cheque fields if not cheque/DD
-        if (mode !== 'Cheque' && mode !== 'DD') {
-            formik.setFieldValue('chequeNo', '');
-            formik.setFieldValue('chequeDate', null);
-        }
-
-        // Update payment summary visibility
-        updatePaymentSummaryVisibility(selectedBank, mode);
-    };
-
-    // Update payment summary visibility
-    const updatePaymentSummaryVisibility = (bank, paymentMode) => {
-        setShowPaymentSummary(!!(bank && paymentMode && selectedDistribution));
-    };
-
-    // Date formatting utilities
-    const formatDateForAPI = (date) => {
-        if (!date) return '';
-        if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return date;
-        }
-        const d = new Date(date);
-        if (isNaN(d.getTime())) return '';
-        return d.toISOString().split('T')[0];
-    };
-
-    // Format currency
-    const formatCurrency = (amount) => {
-        if (!amount && amount !== 0) return '0.00';
-        return new Intl.NumberFormat('en-IN', {
-            style: 'decimal',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
-    };
-
-    // Format number
-    const formatNumber = (num) => {
-        if (!num && num !== 0) return '0';
-        return new Intl.NumberFormat('en-IN', {
-            style: 'decimal',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(num);
-    };
-
-    // Handle Reset
-    const handleReset = (resetForm) => {
-        if (resetForm) {
-            resetForm();
-        } else {
-            formik.resetForm();
-        }
-        setFormSubmitted(false);
-        setSelectedDistribution(null);
-        setSelectedBank(null);
-        setShowBankDetails(false);
-        setShowPaymentSummary(false);
-        dispatch(clearInsertResult());
-        dispatch(clearChequeNumbers());
-    };
-
-    // Cleanup on unmount
-    useEffect(() => {
         return () => {
             dispatch(clearInsertResult());
             dispatch(clearChequeNumbers());
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch]);
 
-    // Helper to determine if error should show
-    const shouldShowError = (field) => {
-        return (formSubmitted || formik.touched[field]) && formik.errors[field];
+    // ── Bank change → fetch cheque numbers ───────────────────────────────────
+
+    useEffect(() => {
+        if (bankId && isChequeDD) {
+            const bank = bankDetails.find(b => String(b.BankId) === String(bankId));
+            if (bank) dispatch(fetchChequeNumbers(bank.BankName));
+        } else {
+            dispatch(clearChequeNumbers());
+            setChequeNo('');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bankId, paymentMode]);
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
+
+    const handleDistributionChange = (val) => {
+        setDistributionId(val);
+        dispatch(setSelectedDistributionId(parseInt(val) || 0));
     };
 
-    // Check if cheque/DD fields are required
-    const isChequeFieldsRequired = formik.values.paymentMode === 'Cheque' || formik.values.paymentMode === 'DD';
+    const handleBankChange = (val) => {
+        setBankId(val);
+        dispatch(setSelectedBankId(parseInt(val) || 0));
+        setChequeNo('');
+    };
 
-    // Check if account is overdraft
-    const isOverdraftAccount = selectedBank?.AccountType === 'Over Draft';
+    const handleModeChange = (mode) => {
+        setPaymentMode(mode);
+        dispatch(setPaymentModeAction(mode));
+        if (mode !== 'Cheque' && mode !== 'DD') {
+            setChequeNo('');
+            setChequeDate(null);
+        }
+    };
+
+    const handleReset = useCallback(() => {
+        setStep(1); setSubmitted(false); setTransRef('');
+        setDistributionId(''); setBankId(''); setPaymentMode('');
+        setChequeNo(''); setChequeDate(null); setPaymentDate(null); setRemarks('');
+        dispatch(clearInsertResult());
+        dispatch(clearChequeNumbers());
+        dispatch(fetchApprovedDistributionsForPayment());
+    }, [dispatch]);
+
+    const handleSubmit = async () => {
+        if (!userId) {
+            toast.error('User information missing. Please login again.');
+            return;
+        }
+        if (hasInsufficientBalance) {
+            toast.error(`Insufficient balance! Available: ₹${fmtCurrency(selectedBank.AvailableBalance)} / Required: ₹${fmtCurrency(selectedDistribution.NetPayableAmount)}`);
+            return;
+        }
+        try {
+            const payload = {
+                distributionId: parseInt(distributionId),
+                bankId:         parseInt(bankId),
+                paymentMode,
+                chequeNo:       chequeNo || '',
+                chequeDate:     chequeDate ? formatDateForAPI(chequeDate) : null,
+                paymentDate:    formatDateForAPI(paymentDate),
+                userId:         userId.toString(),
+                roleId:         parseInt(roleId),
+                remarks:        remarks.trim(),
+            };
+            const result = await dispatch(insertDividendBankPayment(payload)).unwrap();
+            if (result?.IsSuccessful || result?.Data?.includes('Submited')) {
+                const ref = result?.Data?.replace('Submited$', '') || '';
+                setTransRef(ref);
+                setSubmitted(true);
+                toast.success('Dividend payment initiated successfully!');
+            } else {
+                toast.error(result?.Message || 'Failed to initiate payment.');
+                dispatch(clearInsertResult());
+            }
+        } catch (err) {
+            toast.error(err?.Message || err?.message || 'Failed to initiate payment.');
+            dispatch(clearInsertResult());
+        }
+    };
+
+    // ── Validation ────────────────────────────────────────────────────────────
+
+    const step1Valid =
+        distributionId && bankId && paymentMode &&
+        paymentDate instanceof Date &&
+        (!isChequeDD || (chequeNo && chequeDate instanceof Date)) &&
+        remarks.trim().length >= 10 &&
+        !hasInsufficientBalance;
+
+    // ── Success screen ────────────────────────────────────────────────────────
+
+    if (submitted) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6 flex items-center justify-center">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-10 max-w-sm w-full text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-5 shadow-lg">
+                        <CheckCircle className="h-8 w-8 text-white" />
+                    </div>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">Payment Initiated</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        Dividend bank payment submitted for approval.
+                    </p>
+                    {transRef && (
+                        <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">Ref: {transRef}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mb-6">{selectedDistribution?.LotName} — {paymentMode}</p>
+                    <button onClick={handleReset}
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all">
+                        New Entry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="space-y-6 p-6">
-            {/* Compact Page Header */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2.5 rounded-lg">
-                            <CreditCard className="h-6 w-6 text-white" />
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
+
+            {/* ── Page Header ───────────────────────────────────────────────── */}
+            <div className="max-w-7xl mx-auto mb-6">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-700 shadow-xl shadow-indigo-500/20 p-7 text-white">
+                    <div className="absolute inset-0 opacity-10"
+                        style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-purple-500 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
+
+                    <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
+                                <CreditCard className="h-7 w-7 text-white" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">Capital Module</span>
+                                </div>
+                                <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                                    {menuData?.name || 'Dividend Bank Payment'}
+                                </h1>
+                                <p className="text-indigo-200 text-sm mt-0.5">Process bank payment for approved dividend distributions</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                Dividend Bank Payment
-                            </h1>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Process payment for approved dividend distributions
-                            </p>
+                        <div className="flex items-center gap-3">
+                            <button onClick={handleReset}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-semibold transition-all">
+                                <RotateCcw className="h-3.5 w-3.5" /> Reset
+                            </button>
+                            <div className="hidden sm:flex items-center gap-2 text-indigo-200">
+                                <div className="text-right">
+                                    <p className="text-xs uppercase tracking-wider">Module</p>
+                                    <p className="text-sm font-bold text-white">Capital / Dividend</p>
+                                </div>
+                                <Navigation className="h-5 w-5 opacity-60" />
+                            </div>
                         </div>
                     </div>
-                    {userId && (
-                        <div className="px-3 py-1.5 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 text-blue-800 dark:text-blue-200 text-xs rounded-full">
-                            User: {userId}
-                        </div>
-                    )}
+
+                    <div className="relative">
+                        <StepIndicator current={step} />
+                    </div>
                 </div>
             </div>
 
-            {/* Main Form */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-blue-700 dark:to-purple-800 px-4 py-3">
-                    <div className="flex items-center gap-2 text-white">
-                        <Receipt className="h-5 w-5" />
-                        <h2 className="text-lg font-bold">Payment Details</h2>
-                    </div>
-                </div>
+            <div className="max-w-7xl mx-auto space-y-6">
 
-                <form onSubmit={formik.handleSubmit} className="p-6 space-y-5">
-                    {/* Distribution and Bank Selection - Compact Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Distribution Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Select Distribution <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
-                                <select
-                                    name="distributionId"
-                                    value={formik.values.distributionId}
-                                    onChange={handleDistributionChange}
-                                    onBlur={formik.handleBlur}
-                                    disabled={distributionsLoading}
-                                    className={clsx(
-                                        "w-full pl-10 pr-10 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors appearance-none",
-                                        shouldShowError('distributionId')
-                                            ? "border-red-500 focus:ring-red-500"
-                                            : "border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500",
-                                        "dark:bg-gray-700 dark:text-white"
-                                    )}
-                                >
-                                    <option value="">
-                                        {distributionsLoading ? 'Loading...' : 'Select Distribution'}
-                                    </option>
-                                    {approvedDistributions.map((dist) => (
-                                        <option key={dist.DistributionId} value={dist.DistributionId}>
-                                            {dist.LotName} - FY {dist.FinancialYear} - ₹{formatCurrency(dist.NetPayableAmount)}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                            </div>
-                            {shouldShowError('distributionId') && (
-                                <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    {formik.errors.distributionId}
-                                </p>
-                            )}
-                        </div>
+                {/* ── STEP 1: Payment Details ───────────────────────────────── */}
+                {step === 1 && (
+                    <>
+                        {/* Distribution & Bank */}
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+                            <SectionHeader icon={FileText} title="Distribution & Bank"
+                                subtitle="Select the approved distribution and the debit bank account"
+                            />
+                            <div className="p-6 md:p-8 space-y-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                        {/* Bank Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Select Bank Account <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
-                                <select
-                                    name="bankId"
-                                    value={formik.values.bankId}
-                                    onChange={handleBankChange}
-                                    onBlur={formik.handleBlur}
-                                    disabled={bankDetailsLoading}
-                                    className={clsx(
-                                        "w-full pl-10 pr-10 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors appearance-none",
-                                        shouldShowError('bankId')
-                                            ? "border-red-500 focus:ring-red-500"
-                                            : "border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500",
-                                        "dark:bg-gray-700 dark:text-white"
-                                    )}
-                                >
-                                    <option value="">
-                                        {bankDetailsLoading ? 'Loading...' : 'Select Bank'}
-                                    </option>
-                                    {bankDetails.map((bank) => (
-                                        <option key={bank.BankId} value={bank.BankId}>
-                                            {bank.BankName} - {bank.AccountNo}
-                                            {bank.AccountType === 'Over Draft' ? ' (OD)' : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                            </div>
-                            {shouldShowError('bankId') && (
-                                <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    {formik.errors.bankId}
-                                </p>
-                            )}
-                        </div>
-                    </div>
+                                    {/* Distribution */}
+                                    <div>
+                                        <Label required>Distribution</Label>
+                                        <div className="relative">
+                                            <select className={selectCls} value={distributionId}
+                                                onChange={e => handleDistributionChange(e.target.value)}
+                                                disabled={distributionsLoading}>
+                                                <option value="">{distributionsLoading ? 'Loading…' : '— Select distribution —'}</option>
+                                                {approvedDistributions.map(d => (
+                                                    <option key={d.DistributionId} value={d.DistributionId}>
+                                                        {d.LotName} — FY {d.FinancialYear} — ₹{fmtCurrency(d.NetPayableAmount)}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <SelectIcon loading={distributionsLoading} />
+                                        </div>
+                                    </div>
 
-                    {/* Selected Bank Details - Compact */}
-                    {showBankDetails && selectedBank && (
-                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                <div>
-                                    <p className="text-gray-600 dark:text-gray-400">Bank</p>
-                                    <p className="font-bold text-gray-900 dark:text-white">{selectedBank.BankName}</p>
+                                    {/* Bank */}
+                                    <div>
+                                        <Label required>Debit Bank Account</Label>
+                                        <div className="relative">
+                                            <select className={selectCls} value={bankId}
+                                                onChange={e => handleBankChange(e.target.value)}
+                                                disabled={bankDetailsLoading}>
+                                                <option value="">{bankDetailsLoading ? 'Loading…' : '— Select bank —'}</option>
+                                                {bankDetails.map(b => (
+                                                    <option key={b.BankId} value={b.BankId}>
+                                                        {b.BankName} — {b.AccountNo}{b.AccountType === 'Over Draft' ? ' (OD)' : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <SelectIcon loading={bankDetailsLoading} />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-gray-600 dark:text-gray-400">Account</p>
-                                    <p className="font-bold text-gray-900 dark:text-white font-mono">{selectedBank.AccountNo}</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-600 dark:text-gray-400">Type</p>
-                                    <p className="font-bold text-gray-900 dark:text-white">{selectedBank.AccountType}</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-600 dark:text-gray-400">Available</p>
-                                    <p className={clsx(
-                                        "font-bold",
-                                        selectedDistribution && (selectedBank.AvailableBalance || 0) >= (selectedDistribution.NetPayableAmount || 0)
-                                            ? "text-green-600 dark:text-green-400"
-                                            : "text-red-600 dark:text-red-400"
-                                    )}>
-                                        ₹{formatCurrency(selectedBank.AvailableBalance)}
-                                    </p>
-                                </div>
-                            </div>
 
-                            {/* Balance Check Warning */}
-                            {selectedDistribution && selectedBank.AvailableBalance < selectedDistribution.NetPayableAmount && (
-                                <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
-                                    <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                        <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-                                        <span>
-                                            Insufficient! Required: ₹{formatCurrency(selectedDistribution.NetPayableAmount)}
-                                        </span>
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Payment Mode and Details - Compact Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Payment Mode */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Payment Mode <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <Banknote className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
-                                <select
-                                    name="paymentMode"
-                                    value={formik.values.paymentMode}
-                                    onChange={handlePaymentModeChange}
-                                    onBlur={formik.handleBlur}
-                                    className={clsx(
-                                        "w-full pl-10 pr-10 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors appearance-none",
-                                        shouldShowError('paymentMode')
-                                            ? "border-red-500 focus:ring-red-500"
-                                            : "border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500",
-                                        "dark:bg-gray-700 dark:text-white"
-                                    )}
-                                >
-                                    <option value="">Select Mode</option>
-                                    {paymentModes.map((mode) => (
-                                        <option key={mode.value} value={mode.value}>
-                                            {mode.value}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                            </div>
-                            {shouldShowError('paymentMode') && (
-                                <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    {formik.errors.paymentMode}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Cheque Number - Conditional */}
-                        {/* Cheque Number - Conditional */}
-                        {isChequeFieldsRequired && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                    {formik.values.paymentMode} Number <span className="text-red-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
-                                    <select
-                                        name="chequeNo"
-                                        value={formik.values.chequeNo}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        disabled={chequeNumbersLoading || !selectedBank}
-                                        className={clsx(
-                                            "w-full pl-10 pr-10 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors appearance-none",
-                                            shouldShowError('chequeNo')
-                                                ? "border-red-500 focus:ring-red-500"
-                                                : "border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500",
-                                            "dark:bg-gray-700 dark:text-white"
+                                {/* Bank info strip */}
+                                {selectedBank && (
+                                    <div className={`rounded-xl p-4 border grid grid-cols-2 md:grid-cols-4 gap-3 text-xs ${
+                                        hasInsufficientBalance
+                                            ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800'
+                                            : 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/40'
+                                    }`}>
+                                        <div>
+                                            <p className="text-gray-500 dark:text-gray-400 font-medium mb-0.5">Bank</p>
+                                            <p className="font-bold text-gray-800 dark:text-gray-100">{selectedBank.BankName}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 dark:text-gray-400 font-medium mb-0.5">Account</p>
+                                            <p className="font-bold text-gray-800 dark:text-gray-100 font-mono">{selectedBank.AccountNo}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 dark:text-gray-400 font-medium mb-0.5">Type</p>
+                                            <p className="font-bold text-gray-800 dark:text-gray-100">{selectedBank.AccountType}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 dark:text-gray-400 font-medium mb-0.5">Available Balance</p>
+                                            <p className={`font-bold ${hasInsufficientBalance ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                                ₹{fmtCurrency(selectedBank.AvailableBalance)}
+                                            </p>
+                                        </div>
+                                        {hasInsufficientBalance && (
+                                            <div className="col-span-2 md:col-span-4 flex items-center gap-1.5 mt-1 text-rose-600 dark:text-rose-400">
+                                                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                                                <span className="text-xs font-semibold">
+                                                    Insufficient balance — required ₹{fmtCurrency(selectedDistribution?.NetPayableAmount)}
+                                                </span>
+                                            </div>
                                         )}
-                                    >
-                                        <option value="">
-                                            {chequeNumbersLoading ? 'Loading cheque numbers...' :
-                                                chequeNumbers.length === 0 ? 'No cheque numbers available' :
-                                                    'Select Cheque Number'}
-                                        </option>
-                                        {chequeNumbers.map((cheque) => (
-                                            <option
-                                                key={cheque.Cheque_Id}
-                                                value={cheque.Cheque_No}
-                                            >
-                                                {cheque.Cheque_No}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                                </div>
-                                {shouldShowError('chequeNo') && (
-                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                        <AlertTriangle className="h-3 w-3" />
-                                        {formik.errors.chequeNo}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Cheque Date - Conditional */}
-                        {isChequeFieldsRequired && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                    {formik.values.paymentMode} Date <span className="text-red-500">*</span>
-                                </label>
-                                <CustomDatePicker
-                                    selected={formik.values.chequeDate}
-                                    onChange={(date) => {
-                                        formik.setFieldValue('chequeDate', date, false);
-                                    }}
-                                    placeholderText="Select Date"
-                                    closeOnSelect={true}
-                                />
-                                {shouldShowError('chequeDate') && (
-                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                        <AlertTriangle className="h-3 w-3" />
-                                        {formik.errors.chequeDate}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Payment Date */}
-                        <div className={isChequeFieldsRequired ? '' : 'md:col-span-2'}>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Payment Date <span className="text-red-500">*</span>
-                            </label>
-                            <CustomDatePicker
-                                selected={formik.values.paymentDate}
-                                onChange={(date) => {
-                                    formik.setFieldValue('paymentDate', date, false);
-                                }}
-                                placeholderText="Select Payment Date"
-                                closeOnSelect={true}
-                            />
-                            {shouldShowError('paymentDate') && (
-                                <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    {formik.errors.paymentDate}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Payment Amount Summary with Amount in Words */}
-                    {showPaymentSummary && selectedDistribution && (
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                                    Payment Amount
-                                </h3>
-                            </div>
-
-                            <div className="space-y-3">
-                                {/* Amount in Numbers */}
-                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-green-200 dark:border-green-700">
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Payable Amount</p>
-                                    <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                                        ₹{formatIndianCurrency(selectedDistribution.NetPayableAmount)}
-                                    </p>
-                                </div>
-
-                                {/* Amount in Words */}
-                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-green-200 dark:border-green-700">
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Amount in Words</p>
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-white italic">
-                                        {convertAmountToWords(selectedDistribution.NetPayableAmount)}
-                                    </p>
-                                </div>
-
-                                {/* Additional Details */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                                        <p className="text-xs text-gray-600 dark:text-gray-400">Distribution</p>
-                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedDistribution.LotName}</p>
                                     </div>
-                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                                        <p className="text-xs text-gray-600 dark:text-gray-400">Shareholders</p>
-                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{formatNumber(selectedDistribution.ShareholderCount)}</p>
+                                )}
+
+                                {/* Distribution amount summary */}
+                                {selectedDistribution && (
+                                    <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <IndianRupee className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Payment Amount</span>
+                                            </div>
+                                            <span className="text-2xl font-black text-emerald-700 dark:text-emerald-300">
+                                                ₹{formatIndianCurrency(selectedDistribution.NetPayableAmount)}
+                                            </span>
+                                            <span className="text-xs text-emerald-600 dark:text-emerald-400 italic">
+                                                {convertAmountToWords(selectedDistribution.NetPayableAmount)}
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-4 text-xs text-emerald-700 dark:text-emerald-400">
+                                            <span>Lot: <strong>{selectedDistribution.LotName}</strong></span>
+                                            <span>FY: <strong>{selectedDistribution.FinancialYear}</strong></span>
+                                            <span>Shareholders: <strong>{fmtNumber(selectedDistribution.ShareholderCount)}</strong></span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Payment Mode & Dates */}
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+                            <SectionHeader icon={CreditCard} title="Payment Mode & Date"
+                                subtitle="Choose how the payment will be made and the transaction date"
+                            />
+                            <div className="p-6 md:p-8 space-y-5">
+
+                                {/* Mode chips */}
+                                <div>
+                                    <Label required>Mode of Payment</Label>
+                                    <ChipGroup options={PAYMENT_MODES} value={paymentMode} onChange={handleModeChange} colorActive="indigo" />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                                    {/* Cheque / DD fields (conditional) */}
+                                    {isChequeDD && (
+                                        <>
+                                            <div>
+                                                <Label required>{paymentMode} Number</Label>
+                                                <div className="relative">
+                                                    <select className={selectCls} value={chequeNo}
+                                                        onChange={e => setChequeNo(e.target.value)}
+                                                        disabled={chequeNumbersLoading || !selectedBank}>
+                                                        <option value="">
+                                                            {chequeNumbersLoading ? 'Loading…'
+                                                                : !selectedBank ? '— Select bank first —'
+                                                                : chequeNumbers.length === 0 ? 'No cheques available'
+                                                                : '— Select cheque —'}
+                                                        </option>
+                                                        {chequeNumbers.map(c => (
+                                                            <option key={c.Cheque_Id} value={c.Cheque_No}>{c.Cheque_No}</option>
+                                                        ))}
+                                                    </select>
+                                                    <SelectIcon loading={chequeNumbersLoading} />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label required>{paymentMode} Date</Label>
+                                                <CustomDatePicker value={chequeDate} onChange={setChequeDate}
+                                                    format="DD-MMM-YYYY" placeholder="Select date" />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Payment Date */}
+                                    <div className={isChequeDD ? '' : 'md:col-span-2'}>
+                                        <Label required>Payment Date</Label>
+                                        <CustomDatePicker value={paymentDate} onChange={setPaymentDate}
+                                            format="DD-MMM-YYYY" placeholder="Select date" />
                                     </div>
                                 </div>
+
+                                {/* Remarks */}
+                                <div>
+                                    <Label required>Remarks</Label>
+                                    <div className="relative">
+                                        <textarea rows={3} className={inputCls + ' resize-none pl-9'}
+                                            placeholder="Enter payment remarks (min 10 characters)…"
+                                            maxLength={500}
+                                            value={remarks} onChange={e => setRemarks(e.target.value)} />
+                                        <div className="pointer-events-none absolute top-3 left-3">
+                                            <MessageSquare className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1 text-right">{remarks.length}/500</p>
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Remarks */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                            Remarks <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none z-10" />
-                            <textarea
-                                name="remarks"
-                                value={formik.values.remarks}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                placeholder="Enter payment remarks (minimum 10 characters)"
-                                rows="3"
-                                maxLength="500"
-                                className={clsx(
-                                    "w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-none",
-                                    shouldShowError('remarks')
-                                        ? "border-red-500 focus:ring-red-500"
-                                        : "border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500",
-                                    "dark:bg-gray-700 dark:text-white"
-                                )}
-                            />
+                        {/* Navigation */}
+                        <div className="flex justify-end">
+                            <button type="button" onClick={() => setStep(2)} disabled={!step1Valid}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-semibold shadow-md hover:from-indigo-700 hover:to-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                                <Eye className="h-4 w-4" /> Review
+                            </button>
                         </div>
-                        {shouldShowError('remarks') && (
-                            <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3" />
-                                {formik.errors.remarks}
-                            </p>
-                        )}
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            {formik.values.remarks.length}/500 characters
-                        </p>
-                    </div>
+                    </>
+                )}
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <button
-                            type="submit"
-                            disabled={isLoading || formik.isSubmitting || (selectedBank && selectedDistribution && selectedBank.AvailableBalance < selectedDistribution.NetPayableAmount)}
-                            className="flex-1 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg"
-                        >
-                            {isLoading || formik.isSubmitting ? (
-                                <>
-                                    <RotateCcw className="h-4 w-4 animate-spin" />
-                                    Processing Payment...
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="h-4 w-4" />
-                                    Initiate Payment
-                                </>
-                            )}
-                        </button>
+                {/* ── STEP 2: Review & Submit ───────────────────────────────── */}
+                {step === 2 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+                        <SectionHeader icon={Eye} title="Review & Submit"
+                            subtitle="Confirm dividend payment details before initiating"
+                        />
+                        <div className="p-6 md:p-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-                        <button
-                            type="button"
-                            onClick={() => handleReset()}
-                            disabled={isLoading || formik.isSubmitting}
-                            className="px-5 py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-sm font-medium rounded-lg hover:from-gray-700 hover:to-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg"
-                        >
-                            <RotateCcw className="h-4 w-4" />
-                            Reset
-                        </button>
-                    </div>
-                </form>
-            </div>
+                                {/* Distribution details */}
+                                <div className="bg-gray-50/60 dark:bg-gray-900/30 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+                                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Distribution</p>
+                                    <ReviewRow label="Lot Name"       value={selectedDistribution?.LotName}        highlight />
+                                    <ReviewRow label="Financial Year" value={selectedDistribution?.FinancialYear}   />
+                                    <ReviewRow label="Shareholders"   value={fmtNumber(selectedDistribution?.ShareholderCount)} />
+                                    <ReviewRow label="Net Payable"    value={`₹${fmtCurrency(selectedDistribution?.NetPayableAmount)}`} highlight />
+                                    <ReviewRow label="Amount in Words" value={convertAmountToWords(selectedDistribution?.NetPayableAmount)} />
+                                </div>
 
-            {/* Important Notes */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-start gap-2.5">
-                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-1.5 rounded-lg mt-0.5">
-                        <Info className="h-4 w-4 text-white" />
+                                {/* Payment details */}
+                                <div className="bg-gray-50/60 dark:bg-gray-900/30 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+                                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Payment Details</p>
+                                    <ReviewRow label="Bank"         value={selectedBank?.BankName} highlight />
+                                    <ReviewRow label="Account No"   value={selectedBank?.AccountNo} />
+                                    <ReviewRow label="Account Type" value={selectedBank?.AccountType} />
+                                    <ReviewRow label="Mode"         value={paymentMode} />
+                                    {isChequeDD && <ReviewRow label={`${paymentMode} No`}   value={chequeNo} />}
+                                    {isChequeDD && <ReviewRow label={`${paymentMode} Date`} value={chequeDate instanceof Date ? chequeDate.toLocaleDateString('en-IN') : ''} />}
+                                    <ReviewRow label="Payment Date" value={paymentDate instanceof Date ? paymentDate.toLocaleDateString('en-IN') : ''} />
+                                </div>
+
+                                {/* Remarks — full width */}
+                                <div className="md:col-span-2 bg-gray-50/60 dark:bg-gray-900/30 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+                                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Remarks</p>
+                                    <p className="text-xs text-gray-700 dark:text-gray-300">{remarks}</p>
+                                </div>
+                            </div>
+
+                            {/* Navigation */}
+                            <div className="flex justify-between">
+                                <button type="button" onClick={() => setStep(1)} disabled={isLoading}
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-700 disabled:opacity-40 transition-all">
+                                    Back
+                                </button>
+                                <button type="button" onClick={handleSubmit} disabled={isLoading || hasInsufficientBalance}
+                                    className="flex items-center gap-2 px-8 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-semibold shadow-md hover:from-indigo-700 hover:to-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                                    {isLoading
+                                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
+                                        : <><Send className="h-4 w-4" /> Initiate Payment</>}
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">
-                            Important Information
-                        </h3>
-                        <ul className="space-y-1.5 text-xs text-gray-700 dark:text-gray-300">
-                            <li className="flex items-start gap-1.5">
-                                <CheckCircle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                <span>Only approved distributions are available for payment processing</span>
-                            </li>
-                            <li className="flex items-start gap-1.5">
-                                <CheckCircle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                <span>Available balance includes overdraft facility for OD accounts</span>
-                            </li>
-                            <li className="flex items-start gap-1.5">
-                                <CheckCircle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                <span>Cheque/DD numbers are fetched from the selected bank</span>
-                            </li>
-                            <li className="flex items-start gap-1.5">
-                                <CheckCircle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                <span>Payment goes through multi-level approval workflow before processing</span>
-                            </li>
-                            <li className="flex items-start gap-1.5">
-                                <CheckCircle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                <span>Bank balance will be updated only after final approval</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );

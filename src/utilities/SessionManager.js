@@ -22,14 +22,10 @@ class SessionManager {
 
     // Initialize session tracking and browser close detection
     initializeSessionTracking() {
-        // Track browser close
-        window.addEventListener('beforeunload', () => {
-            this.clearSession();
-        });
-
-        window.addEventListener('pagehide', () => {
-            this.clearSession();
-        });
+        // NOTE: beforeunload/pagehide are intentionally NOT used here.
+        // They fire on both tab close AND page refresh, which would silently
+        // log the user out on every F5/refresh. Session expiry is handled
+        // exclusively by the 30-minute inactivity timer instead.
 
         // Track user activity
         const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
@@ -157,8 +153,21 @@ class SessionManager {
         const employeeId = this.getSession('employeeId');
         const userData = this.getSession('userData');
 
+        // Fallback: if sessionStorage was cleared (e.g. after a page refresh that
+        // didn't go through beforeunload), treat localStorage auth data as still valid
+        // and re-hydrate sessionStorage so subsequent checks pass.
         if (!employeeId && !userData) {
-            // IMPROVED: Only log if we expected a session to exist
+            const lsEmployeeId = localStorage.getItem('employeeId');
+            const lsUserData   = localStorage.getItem('userData');
+            if (lsEmployeeId || lsUserData) {
+                if (lsEmployeeId) this.setSession('employeeId', lsEmployeeId);
+                if (lsUserData)   this.setSession('userData', JSON.parse(lsUserData));
+                this.lastValidationResult = true;
+                this.lastValidationTime = now;
+                this.expectSession = true;
+                return true;
+            }
+
             if (this.expectSession) {
                 console.log('ℹ️ No valid session found');
             }

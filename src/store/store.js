@@ -106,6 +106,21 @@ import loadWalletReducer from "../slices/accountsSlice/loadWalletSlice";
 import lcbgCreationReducer from "../slices/accountsSlice/lcbgCreationSlice";
 import sppoPaymentReducer from "../slices/purchaseSlice/sppoPaymentSlice";
 import vendorCMSPaymentReducer from "../slices/purchaseSlice/vendorCMSPaymentSlice";
+import vendorTDSPaymentReducer from "../slices/purchaseSlice/vendorTDSPaymentSlice";
+import boeSettlementReducer from "../slices/purchaseSlice/boeSettlementSlice";
+import clientBadDebtReducer from "../slices/accountsSlice/clientBadDebtSlice";
+import journalVoucherReducer from "../slices/accountsSlice/journalVoucherSlice";
+import creditDebitNoteReducer from "../slices/purchaseSlice/creditDebitNoteSlice";
+import lcbgAmendReducer from "../slices/purchaseSlice/lcbgAmendSlice";
+import unsecuredLoanReducer from "../slices/accountsSlice/unsecuredLoanSlice";
+import termLoanCreationReducer from "../slices/accountsSlice/termLoanCreationSlice";
+import termLoanPaymentReducer from "../slices/accountsSlice/termLoanPaymentSlice";
+import agencyCreationReducer from "../slices/accountsSlice/agencyCreationSlice";
+import rejectionAlertReducer from "../slices/rejectionAlertSlice/rejectionAlertSlice";
+import labourConfigReducer from "../slices/labourConfigSlice/labourConfigSlice";
+import labourPayrollReducer from "../slices/labourPayrollSlice/labourPayrollSlice";
+import labourCMSPaymentReducer from "../slices/HRSlice/labourCMSPaymentSlice";
+import labourCMSVerificationReducer from "../slices/HRSlice/labourCMSVerificationSlice";
 
 const store = configureStore({
   
@@ -216,6 +231,21 @@ const store = configureStore({
     lcbgCreation:          lcbgCreationReducer,
     sppoPayment:           sppoPaymentReducer,
     vendorCMSPayment:      vendorCMSPaymentReducer,
+    vendorTDSPayment:      vendorTDSPaymentReducer,
+    boeSettlement:         boeSettlementReducer,
+    clientBadDebt:         clientBadDebtReducer,
+    journalVoucher:        journalVoucherReducer,
+    creditDebitNote:       creditDebitNoteReducer,
+    lcbgAmend:             lcbgAmendReducer,
+    unsecuredLoan:         unsecuredLoanReducer,
+    termLoanCreation:      termLoanCreationReducer,
+    termLoanPayment:       termLoanPaymentReducer,
+    agencyCreation:        agencyCreationReducer,
+    rejectionAlerts:       rejectionAlertReducer,
+    labourConfig:          labourConfigReducer,
+    labourPayroll:         labourPayrollReducer,
+    labourCMSPayment:      labourCMSPaymentReducer,
+    labourCMSVerification: labourCMSVerificationReducer,
 
   }
 

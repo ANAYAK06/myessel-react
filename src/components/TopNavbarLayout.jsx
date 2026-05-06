@@ -58,6 +58,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
     const [isRejectionAlertOpen, setIsRejectionAlertOpen] = useState(false);
+    const [expandedAlerts, setExpandedAlerts] = useState(new Set());
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
@@ -102,18 +103,18 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         }
     }, [dispatch, notificationUid, notificationRoleId]);
 
-    // Rejection alert — fetch count on mount
+    // Rejection alerts — fetch full list on mount (count is derived from the list in the slice)
     useEffect(() => {
         if (notificationUid) {
-            dispatch(fetchRejectionAlertCount(notificationUid));
+            dispatch(fetchRejectionAlerts(notificationUid));
         }
     }, [dispatch, notificationUid]);
 
-    // Auto-refresh rejection alert count every 5 minutes
+    // Auto-refresh rejection alerts every 5 minutes
     useEffect(() => {
         if (notificationUid) {
             const interval = setInterval(() => {
-                dispatch(fetchRejectionAlertCount(notificationUid));
+                dispatch(fetchRejectionAlerts(notificationUid));
             }, 5 * 60 * 1000);
             return () => clearInterval(interval);
         }
@@ -226,15 +227,11 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         }
     };
 
-    // Toggle rejection alert dropdown — fetch full list on first open
+    // Toggle rejection alert dropdown
     const handleRejectionAlertToggle = () => {
-        const opening = !isRejectionAlertOpen;
-        setIsRejectionAlertOpen(opening);
+        setIsRejectionAlertOpen(prev => !prev);
         setIsNotificationMenuOpen(false);
         setIsUserMenuOpen(false);
-        if (opening && notificationUid) {
-            dispatch(fetchRejectionAlerts(notificationUid));
-        }
     };
 
     // Mark an alert as read (Status: 1) — keeps it in list, removes from count
@@ -256,6 +253,16 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
             UserId: notificationUid,
             Status: 2,
         }));
+    };
+
+    // Toggle AI message expand for a specific alert
+    const handleToggleAiExpand = (alertId) => {
+        setExpandedAlerts(prev => {
+            const next = new Set(prev);
+            if (next.has(alertId)) next.delete(alertId);
+            else next.add(alertId);
+            return next;
+        });
     };
 
     // Transform API menu data using actual UL, LI, SUBLI structure
@@ -937,31 +944,52 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                             <div className="relative" ref={rejectionAlertDropdownRef}>
                                 <button
                                     onClick={handleRejectionAlertToggle}
-                                    className={`p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative transition-colors ${
-                                        isRejectionAlertOpen ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : ''
+                                    className={`relative flex flex-col items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                                        rejectionAlertCount > 0
+                                            ? isRejectionAlertOpen
+                                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                                                : 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
+                                            : isRejectionAlertOpen
+                                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                                                : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }`}
-                                    title="Rejection Alerts"
+                                    title={rejectionAlertCount > 0 ? `${rejectionAlertCount} unread rejection alert${rejectionAlertCount !== 1 ? 's' : ''}` : 'Rejection Alerts'}
                                 >
-                                    <Bell className="w-5 h-5" />
+                                    {/* Bell + badge */}
+                                    <div className="relative">
+                                        <Bell className="w-5 h-5" />
+                                        {rejectionAlertCount > 0 && (
+                                            <>
+                                                {/* Pulsing ring */}
+                                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-400 rounded-full animate-ping opacity-70 pointer-events-none" />
+                                                {/* Count badge */}
+                                                <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 z-10 leading-none">
+                                                    {rejectionAlertCount > 99 ? '99+' : rejectionAlertCount}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                    {/* "NEW" label below icon — only when unread */}
                                     {rejectionAlertCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 min-w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1">
-                                            {rejectionAlertCount > 99 ? '99+' : rejectionAlertCount}
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-red-500 dark:text-red-400 leading-none mt-0.5">
+                                            new
                                         </span>
                                     )}
                                 </button>
 
                                 {/* Rejection Alerts Dropdown */}
                                 {isRejectionAlertOpen && (
-                                    <div className="absolute right-0 top-full mt-1 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 transition-colors max-h-[28rem] flex flex-col">
+                                    <div className="absolute right-0 top-full mt-1 w-[26rem] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 max-h-[32rem] flex flex-col">
+
                                         {/* Header */}
-                                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-t-lg flex-shrink-0">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-red-600 to-rose-500 rounded-t-xl flex-shrink-0">
                                             <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-2">
-                                                    <Bell className="w-5 h-5 text-white" />
-                                                    <h3 className="text-sm font-semibold text-white">Rejection Alerts</h3>
+                                                <div className="flex items-center gap-2">
+                                                    <Bell className="w-4 h-4 text-white" />
+                                                    <h3 className="text-sm font-bold text-white tracking-wide">Rejection Alerts</h3>
                                                 </div>
                                                 {rejectionAlertCount > 0 && (
-                                                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
+                                                    <span className="text-[11px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded-full">
                                                         {rejectionAlertCount} unread
                                                     </span>
                                                 )}
@@ -971,85 +999,128 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                         {/* Body */}
                                         <div className="overflow-y-auto flex-1">
                                             {rejectionAlertsLoading ? (
-                                                <div className="p-6 text-center">
-                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mx-auto mb-3"></div>
+                                                <div className="p-8 text-center">
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-3" />
                                                     <p className="text-sm text-gray-500 dark:text-gray-400">Loading alerts...</p>
                                                 </div>
                                             ) : rejectionAlerts.length === 0 ? (
-                                                <div className="p-6 text-center">
-                                                    <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-                                                    <p className="text-sm text-gray-500 dark:text-gray-400">No rejection alerts</p>
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">You're all clear!</p>
+                                                <div className="p-8 text-center">
+                                                    <CheckCheck className="w-10 h-10 mx-auto mb-3 text-emerald-400" />
+                                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">All clear!</p>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">No rejection alerts</p>
                                                 </div>
                                             ) : (
-                                                <div className="p-2 space-y-1">
-                                                    {rejectionAlerts.map((alert, index) => (
-                                                        <div
-                                                            key={alert.RejectionAlertId ?? index}
-                                                            onClick={() => handleMarkAlertRead(alert)}
-                                                            className={`w-full text-left p-3 rounded-lg border transition-all duration-200 cursor-pointer group ${
-                                                                alert.IsRead
-                                                                    ? 'bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-700'
-                                                                    : 'bg-violet-50 dark:bg-violet-900/20 border-violet-100 dark:border-violet-800 hover:border-violet-300 dark:hover:border-violet-600'
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-start space-x-3">
-                                                                <div className="flex-shrink-0 mt-0.5">
-                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                                                        alert.IsRead ? 'bg-gray-400' : 'bg-red-500'
+                                                <div className="p-2 space-y-2">
+                                                    {rejectionAlerts.map((alert, index) => {
+                                                        const isRead = alert.Status === 1 || alert.IsRead;
+                                                        const isAiExpanded = expandedAlerts.has(alert.RejectionAlertId);
+                                                        return (
+                                                            <div
+                                                                key={alert.RejectionAlertId ?? index}
+                                                                className={`rounded-xl border overflow-hidden transition-all duration-200 ${
+                                                                    isRead
+                                                                        ? 'bg-gray-50 dark:bg-gray-700/40 border-gray-200 dark:border-gray-700'
+                                                                        : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+                                                                }`}
+                                                            >
+                                                                {/* Main row */}
+                                                                <div
+                                                                    className="p-3 flex items-start gap-3 cursor-pointer"
+                                                                    onClick={() => handleMarkAlertRead(alert)}
+                                                                >
+                                                                    {/* Status dot */}
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                                                        isRead ? 'bg-gray-300 dark:bg-gray-600' : 'bg-red-500'
                                                                     }`}>
                                                                         <AlertCircle className="w-4 h-4 text-white" />
                                                                     </div>
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={`text-sm font-medium truncate ${
-                                                                        alert.IsRead
-                                                                            ? 'text-gray-500 dark:text-gray-400'
-                                                                            : 'text-gray-900 dark:text-white'
-                                                                    }`}>
-                                                                        {alert.AlertMessage ?? alert.Message ?? alert.Title ?? alert.Subject ?? 'Rejection Alert'}
-                                                                    </p>
-                                                                    {(alert.ModuleName ?? alert.Module ?? alert.FormName) && (
-                                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                                            {alert.ModuleName ?? alert.Module ?? alert.FormName}
+
+                                                                    <div className="flex-1 min-w-0">
+                                                                        {/* Module + unread dot */}
+                                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                                            <span className={`text-xs font-bold truncate ${
+                                                                                isRead ? 'text-gray-500 dark:text-gray-400' : 'text-red-600 dark:text-red-400'
+                                                                            }`}>
+                                                                                {alert.ModuleName || 'Rejection'}
+                                                                            </span>
+                                                                            {!isRead && <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />}
+                                                                        </div>
+
+                                                                        {/* Rejected by + date */}
+                                                                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                                                            Rejected by <span className="font-semibold text-gray-600 dark:text-gray-300">{alert.RejectedBy}</span>
+                                                                            {alert.RejectedOn && <> · {alert.RejectedOn}</>}
                                                                         </p>
-                                                                    )}
-                                                                    {(alert.CreatedDate ?? alert.AlertDate ?? alert.Date) && (
-                                                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                                                            {new Date(alert.CreatedDate ?? alert.AlertDate ?? alert.Date).toLocaleDateString()}
-                                                                        </p>
-                                                                    )}
-                                                                    {!alert.IsRead && (
-                                                                        <span className="inline-block mt-1 text-xs text-violet-600 dark:text-violet-400">
-                                                                            Click to mark as read
-                                                                        </span>
-                                                                    )}
+
+                                                                        {/* Ref no */}
+                                                                        {alert.Refno && (
+                                                                            <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-0.5">
+                                                                                {alert.Refno}
+                                                                            </p>
+                                                                        )}
+
+                                                                        {/* Rejection remarks */}
+                                                                        {alert.Remarks && (
+                                                                            <p className={`text-xs mt-1.5 leading-relaxed line-clamp-2 ${
+                                                                                isRead ? 'text-gray-500 dark:text-gray-400 italic' : 'text-gray-700 dark:text-gray-200 italic'
+                                                                            }`}>
+                                                                                "{alert.Remarks}"
+                                                                            </p>
+                                                                        )}
+
+                                                                        {!isRead && (
+                                                                            <span className="inline-block mt-1 text-[10px] text-red-500 dark:text-red-400">
+                                                                                Click to mark as read
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Dismiss */}
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDismissAlert(alert); }}
+                                                                        className="flex-shrink-0 p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                                        title="Dismiss permanently"
+                                                                    >
+                                                                        <X className="w-3.5 h-3.5" />
+                                                                    </button>
                                                                 </div>
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDismissAlert(alert); }}
-                                                                    className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
-                                                                    title="Dismiss permanently"
-                                                                >
-                                                                    <X className="w-4 h-4" />
-                                                                </button>
+
+                                                                {/* AI Message — expand toggle */}
+                                                                {alert.AiMessage && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleToggleAiExpand(alert.RejectionAlertId); }}
+                                                                            className="w-full flex items-center justify-between px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 border-t border-violet-100 dark:border-violet-800/50 text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
+                                                                        >
+                                                                            <span className="flex items-center gap-1.5">
+                                                                                ✨ AI Insight
+                                                                            </span>
+                                                                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isAiExpanded ? 'rotate-180' : ''}`} />
+                                                                        </button>
+                                                                        {isAiExpanded && (
+                                                                            <div className="px-3 py-3 bg-violet-50/60 dark:bg-violet-900/10 border-t border-violet-100 dark:border-violet-800/50 text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">
+                                                                                {alert.AiMessage}
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
 
                                         {/* Footer */}
                                         {rejectionAlerts.length > 0 && (
-                                            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 rounded-b-lg flex-shrink-0">
-                                                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                                    <span className="flex items-center space-x-1">
+                                            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/60 border-t border-gray-200 dark:border-gray-700 rounded-b-xl flex-shrink-0">
+                                                <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500">
+                                                    <span className="flex items-center gap-1.5">
                                                         <CheckCheck className="w-3.5 h-3.5" />
-                                                        <span>Click alert to mark read</span>
+                                                        Click to mark read
                                                     </span>
-                                                    <span className="flex items-center space-x-1">
-                                                        <X className="w-3.5 h-3.5" />
-                                                        <span>Hover to dismiss</span>
+                                                    <span className="flex items-center gap-1.5">
+                                                        ✨ Expand for AI insight
                                                     </span>
                                                 </div>
                                             </div>

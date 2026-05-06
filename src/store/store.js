@@ -121,6 +121,8 @@ import labourConfigReducer from "../slices/labourConfigSlice/labourConfigSlice";
 import labourPayrollReducer from "../slices/labourPayrollSlice/labourPayrollSlice";
 import labourCMSPaymentReducer from "../slices/HRSlice/labourCMSPaymentSlice";
 import labourCMSVerificationReducer from "../slices/HRSlice/labourCMSVerificationSlice";
+import bulkWorkerRegReducer from "../slices/HRSlice/bulkWorkerRegistrationSlice";
+import bulkWorkerVerifyReducer from "../slices/HRSlice/bulkWorkerVerificationSlice";
 
 const store = configureStore({
   
@@ -246,6 +248,8 @@ const store = configureStore({
     labourPayroll:         labourPayrollReducer,
     labourCMSPayment:      labourCMSPaymentReducer,
     labourCMSVerification: labourCMSVerificationReducer,
+    bulkWorkerReg:         bulkWorkerRegReducer,
+    bulkWorkerVerify:      bulkWorkerVerifyReducer,
 
   }
 

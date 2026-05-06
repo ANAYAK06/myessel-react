@@ -54,7 +54,8 @@ const rejectionAlertSlice = createSlice({
         markAlertRead: (state, action) => {
             const id = action.payload;
             const alert = state.alerts.find(a => a.RejectionAlertId === id);
-            if (alert && !alert.IsRead) {
+            if (alert && alert.Status !== 1) {
+                alert.Status = 1;
                 alert.IsRead = true;
                 state.count = Math.max(0, state.count - 1);
             }
@@ -63,7 +64,7 @@ const rejectionAlertSlice = createSlice({
             const id = action.payload;
             const index = state.alerts.findIndex(a => a.RejectionAlertId === id);
             if (index !== -1) {
-                const wasUnread = !state.alerts[index].IsRead;
+                const wasUnread = state.alerts[index].Status === 0 && !state.alerts[index].IsRead;
                 state.alerts.splice(index, 1);
                 if (wasUnread) {
                     state.count = Math.max(0, state.count - 1);
@@ -79,12 +80,30 @@ const rejectionAlertSlice = createSlice({
             })
             .addCase(fetchRejectionAlertCount.fulfilled, (state, action) => {
                 state.loadingCount = false;
-                // API may return a plain number or { count: N } or { Count: N }
                 const raw = action.payload;
-                if (typeof raw === 'number') {
-                    state.count = raw;
-                } else if (raw && typeof raw === 'object') {
-                    state.count = raw.count ?? raw.Count ?? raw.AlertCount ?? 0;
+                // Plain number
+                if (typeof raw === 'number') { state.count = raw; return; }
+                // Array of rows e.g. [{UnreadCount:1}]
+                if (Array.isArray(raw) && raw.length > 0) {
+                    const r = raw[0];
+                    state.count = r.UnreadCount ?? r.unreadCount ?? r.Count ?? r.count ?? 0;
+                    return;
+                }
+                if (raw && typeof raw === 'object') {
+                    // Unwrap ResponseResult Data wrapper
+                    const inner = raw.Data ?? raw.data;
+                    if (typeof inner === 'number') { state.count = inner; return; }
+                    if (Array.isArray(inner) && inner.length > 0) {
+                        const r = inner[0];
+                        state.count = r.UnreadCount ?? r.unreadCount ?? r.Count ?? r.count ?? 0;
+                        return;
+                    }
+                    if (inner && typeof inner === 'object') {
+                        state.count = inner.UnreadCount ?? inner.unreadCount ?? inner.Count ?? inner.count ?? inner.AlertCount ?? 0;
+                        return;
+                    }
+                    // No Data wrapper — check top-level fields directly
+                    state.count = raw.UnreadCount ?? raw.unreadCount ?? raw.Count ?? raw.count ?? raw.AlertCount ?? 0;
                 }
             })
             .addCase(fetchRejectionAlertCount.rejected, (state, action) => {
@@ -100,7 +119,9 @@ const rejectionAlertSlice = createSlice({
             .addCase(fetchRejectionAlerts.fulfilled, (state, action) => {
                 state.loadingAlerts = false;
                 const raw = action.payload;
-                state.alerts = Array.isArray(raw) ? raw : (raw?.data ?? raw?.Data ?? []);
+                state.alerts = Array.isArray(raw) ? raw : (raw?.Data ?? raw?.data ?? []);
+                // Recompute badge count from the fresh list — Status 0 = Unread
+                state.count = state.alerts.filter(a => a.Status === 0 && !a.IsRead).length;
             })
             .addCase(fetchRejectionAlerts.rejected, (state, action) => {
                 state.loadingAlerts = false;

@@ -64,6 +64,7 @@ import StaffPayrollGeneration from '../HR/StaffPayrollGeneration';
 import LabourPayrollGeneration from '../HR/LabourPayrollGeneration';
 import StaffSalaryDeductionArrear from '../HR/StaffSalaryDeductionArrear';
 import StaffJoinRegistration from '../HR/StaffJoinRegistration';
+import BulkWorkerRegistration from '../HR/BulkWorkerRegistration';
 import EmployeeTransfer from '../HR/EmployeeTransfer';
 import EmployeeExit from '../HR/EmployeeExit';
 import StaffFullFinal from '../HR/StaffFullFinal';
@@ -1119,6 +1120,17 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     }
 
+    const isBulkWorkerRegistrationPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/WorkerStaffRegistration' ||
+            menuData.path?.toLowerCase().includes('workerstaffregistration');
+        const nameMatches = menuData.name?.toLowerCase().includes('bulk worker') ||
+            menuData.name?.toLowerCase().includes('bulkworker') ||
+            menuData.name?.toLowerCase().includes('bulk labour');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('workerstaffregistration');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
     const isEmployeeTransferPage = (menuData) => {
         if (!menuData) return false;
         const pathMatches = menuData.path === '/HR/EmployeeTransfer' ||
@@ -1452,6 +1464,11 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering StaffSalaryDeductionAndArrearPage for:', currentMenuData.name);
             return <StaffSalaryDeductionArrear menuData={currentMenuData} />;
         }
+        // check if the menu item should show bulk worker registration page
+        if (currentMenuData && isBulkWorkerRegistrationPage(currentMenuData)) {
+            console.log('✅ Rendering BulkWorkerRegistration for:', currentMenuData.name);
+            return <BulkWorkerRegistration menuData={currentMenuData} />;
+        }
         // check if the menu item should show staff registration page
         if (currentMenuData && isStaffRegistrationPage(currentMenuData)) {
             console.log('✅ Rendering StaffRegistrationPage for:', currentMenuData.name);
@@ -1589,10 +1606,9 @@ const RoleBasedApplication = () => {
         // CC SEP Payment (Salary / ESI / PF)
         if (currentMenuData && (
             currentMenuData.path === '/Accounts/CCSalEsiPfPayment' ||
-            currentMenuData.path?.toLowerCase().includes('ccseppaym') ||
-            currentMenuData.name?.toLowerCase().includes('cc sal esi pf') ||
-            currentMenuData.name?.toLowerCase().includes('ccsalesipf') ||
-            currentMenuData.name?.toLowerCase().includes('sep payment')
+            currentMenuData.name?.toLowerCase().includes('cc sal esi pf')
+          
+            
         )) {
             return <CCSalEsiPfPayment menuData={currentMenuData} />;
         }

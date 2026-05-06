@@ -47,6 +47,8 @@ import VerifyCCCashTransfer from '../../pages/Accounts/VerifyCCCashTransfer';
 import VerifyCCClosing from '../../pages/Accounts/VerifyCCClosing';
 import VerifyLoadWallet from '../../pages/Accounts/VerifyLoadWallet';
 import VerifyLabourCMSPay from '../../pages/HR/VerifyLabourCMSPay';
+import VerifyBulkWorker from '../../pages/HR/VerifyBulkWorker';
+import VerifyWorkerStaffReg from '../../pages/HR/VerifyWorkerStaffReg';
 
 
 // ============================================================================
@@ -863,6 +865,55 @@ const isLabourCMSPayVerification = (path, category, title, displayName, workflow
     return isMatch;
 };
 
+const isWorkerStaffRegVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifyworkerstaffreg',
+        'verifyworkerstaffreg',
+        'worker staff reg',
+        'workerstaffreg',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('worker staff reg') ||
+        category.includes('workerstaffreg') ||
+        title.includes('worker staff reg') ||
+        title.includes('workerstaffreg') ||
+        displayName.includes('worker staff reg') ||
+        displayName.includes('workerstaffreg') ||
+        workflowType.includes('worker staff reg') ||
+        workflowType.includes('workerstaffreg');
+    if (isMatch) {
+        console.log('✅ Worker Staff Reg Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Worker Staff Reg Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isBulkWorkerVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifybulkworker',
+        '/hr/approvebulkworker',
+        'verifybulkworker',
+        'bulk worker',
+        'bulkworker',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('bulk worker') ||
+        category.includes('bulkworker') ||
+        title.includes('bulk worker') ||
+        title.includes('bulkworker') ||
+        displayName.includes('bulk worker') ||
+        displayName.includes('bulkworker') ||
+        workflowType.includes('bulk worker') ||
+        workflowType.includes('bulkworker');
+    if (isMatch) {
+        console.log('✅ Bulk Worker Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Bulk Worker Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isAppraisalObjectiveVerification = (path) => {
     const isMatch = path.includes('/hr/verifyappraisalobjectives') ||
         path.includes('/hr/verifyempobjectivesgoals') ||
@@ -1392,6 +1443,28 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isCashVoucherVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyCashVoucher');
             return <VerifyCashVoucher
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // WORKER & STAFF REGISTRATION VERIFICATION
+        // ====================================================================
+        if (isWorkerStaffRegVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyWorkerStaffReg');
+            return <VerifyWorkerStaffReg
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // BULK WORKER REGISTRATION VERIFICATION
+        // ====================================================================
+        if (isBulkWorkerVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyBulkWorker');
+            return <VerifyBulkWorker
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

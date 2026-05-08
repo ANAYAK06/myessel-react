@@ -48,6 +48,7 @@ import StaffSalaryReportPage from '../HRReports/StaffSalaryReportPage';
 import LabourSalaryReportPage from '../HRReports/LabourSalaryReportPage';
 import StaffReportPage from '../HRReports/StaffReportPage';
 import StaffCTCReportPage from '../HRReports/StaffCTCReportPage';
+import LabourReportPage from '../HRReports/LabourReportPage';
 
 
 //============================================================================
@@ -75,6 +76,7 @@ import StaffPayrollStructure from '../HR/StaffPayrollStructure';
 import StaffAttendance from '../HR/StaffAttendance';
 import StaffPayRevision from '../HR/StaffPayRevision';
 import CashVoucherCreation from '../Accounts/CashVoucherCreation';
+import GeneralPayment from '../Accounts/GeneralPayment';
 import VendorCashPayment from '../Accounts/VendorCashPayment';
 import CCCashTransfer from '../Accounts/CCCashTransfer';
 import CCClosing from '../Accounts/CCClosing';
@@ -1051,6 +1053,15 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     }
 
+    const isLabourReportPage = (menuData) => {
+        if (!menuData) return false;
+        return menuData.path?.toLowerCase().includes('getlaboursfor') ||
+            menuData.path?.toLowerCase().includes('labourreport') ||
+            menuData.name?.toLowerCase().includes('labour report') ||
+            menuData.name?.toLowerCase().includes('labourreport') ||
+            menuData.reactRoute?.toLowerCase().includes('labourreport');
+    }
+
     const isStaffCTCReportPage = (menuData) => {
         if (!menuData) return false;
         const pathMatches = menuData.path === '/HR/PayRollStructureReport' ||
@@ -1434,6 +1445,11 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering StaffReportPage for:', currentMenuData.name);
             return <StaffReportPage menuData={currentMenuData} />;
         }
+        // check if the menu item should show labour report page
+        if (currentMenuData && isLabourReportPage(currentMenuData)) {
+            console.log('✅ Rendering LabourReportPage for:', currentMenuData.name);
+            return <LabourReportPage menuData={currentMenuData} />;
+        }
         // check if the menu item should show staff CTC report page
         if (currentMenuData && isStaffCTCReportPage(currentMenuData)) {
             console.log('✅ Rendering StaffCTCReportPage for:', currentMenuData.name);
@@ -1800,6 +1816,15 @@ const RoleBasedApplication = () => {
             currentMenuData.name?.toLowerCase().includes('loadwallet')
         )) {
             return <LoadWallet menuData={currentMenuData} />;
+        }
+
+        // General Payment from Bank
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('generalpayable') ||
+            currentMenuData.name?.toLowerCase().includes('general payment') ||
+            currentMenuData.name?.toLowerCase().includes('generalpayable')
+        )) {
+            return <GeneralPayment menuData={currentMenuData} />;
         }
 
         // Cash Voucher Creation Page

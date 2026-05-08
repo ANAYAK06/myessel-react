@@ -32,19 +32,25 @@ import {
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const excelDateToString = (val) => {
     if (!val && val !== 0) return '';
-    let d;
     if (val instanceof Date) {
-        d = val;
-    } else if (typeof val === 'number' && val > 25569) {
-        // Excel serial → Unix ms (25569 = 1970-01-01 in Excel)
-        d = new Date(Math.round((val - 25569) * 86400 * 1000));
-    } else {
-        return val?.toString().trim() || '';
+        // xlsx serial→Date conversion has a known floating-point drift that produces
+        // 23:59:50 instead of 00:00:00 midnight. Nudge +30 seconds to cross midnight
+        // safely — this never affects a real date boundary since dates are date-only.
+        const d    = new Date(val.getTime() + 30 * 1000);
+        const dd   = String(d.getDate()).padStart(2, '0');
+        const mon  = MONTH_ABBR[d.getMonth()];
+        const yyyy = d.getFullYear();
+        return `${dd}-${mon}-${yyyy}`;
     }
-    const dd   = String(d.getUTCDate()).padStart(2, '0');
-    const mon  = MONTH_ABBR[d.getUTCMonth()];
-    const yyyy = d.getUTCFullYear();
-    return `${dd}-${mon}-${yyyy}`;
+    if (typeof val === 'number' && val > 25569) {
+        // Excel serial → UTC epoch ms (25569 = 1970-01-01 in Excel)
+        const d    = new Date(Math.round((val - 25569) * 86400 * 1000));
+        const dd   = String(d.getUTCDate()).padStart(2, '0');
+        const mon  = MONTH_ABBR[d.getUTCMonth()];
+        const yyyy = d.getUTCFullYear();
+        return `${dd}-${mon}-${yyyy}`;
+    }
+    return val?.toString().trim() || '';
 };
 
 // ─── Excel parser ──────────────────────────────────────────────────────────────

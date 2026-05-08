@@ -153,8 +153,8 @@ export const getEmployeeDetails = createAsyncThunk(
             
             console.log('🎯 Employee Details Response:', response);
             
-            if (response && response.IsSuccessful === true) {
-                // IMPROVED: Batch localStorage update
+            // Accept data when present regardless of IsSuccessful flag (API returns false even on success)
+            if (response && response.Data && (response.IsSuccessful === true || response.ResponseCode === 200)) {
                 batchLocalStorageUpdate({
                     employeeData: response.Data,
                     loginType: 'employee'

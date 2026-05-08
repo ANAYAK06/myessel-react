@@ -154,10 +154,10 @@ const LoginOptions = () => {
         try {
             await dispatch(getEmployeeDetails(employeeId)).unwrap();
             toast.success('Employee login successful!');
-            // Processing state will be reset in useEffect above
+            setIsProcessingLogin(false);
         } catch (error) {
             console.error('Employee details error:', error);
-            setIsProcessingLogin(false); // ADDED: Reset processing state on error
+            setIsProcessingLogin(false);
         }
     };
 

@@ -1,42 +1,73 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { LogOut, User, Building2, Clock, Mail, Phone, MapPin } from 'lucide-react';
+import {
+    LogOut, User, Building2, Mail, Phone, MapPin,
+    Briefcase, Calendar, Heart, Shield, Badge
+} from 'lucide-react';
 import { useLogout } from '../../hooks/useLogout';
 
+const InfoRow = ({ label, value, className = '' }) => (
+    <div className={`flex flex-col sm:flex-row sm:items-center py-2.5 border-b border-gray-100 last:border-0 ${className}`}>
+        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide sm:w-40 shrink-0 mb-0.5 sm:mb-0">
+            {label}
+        </span>
+        <span className="text-sm text-gray-900 font-medium">
+            {value || <span className="text-gray-400 font-normal">—</span>}
+        </span>
+    </div>
+);
+
+const SectionCard = ({ title, icon: Icon, iconColor, children }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-100 bg-gray-50">
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconColor}`}>
+                <Icon className="w-4 h-4 text-white" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+        </div>
+        <div className="px-5 py-1">{children}</div>
+    </div>
+);
+
 const EmployeeDashboard = () => {
-    const { employeeData, employeeId, lastActivity } = useSelector((state) => state.auth);
+    const { employeeData, employeeId } = useSelector((state) => state.auth);
     const { logout } = useLogout();
 
-    const handleLogout = () => {
-        logout();
-    };
+    const d = employeeData || {};
 
-    const formatLastActivity = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleString();
-    };
+    const fullName = [d.Firstname, d.Middlename, d.Lastname]
+        .filter(Boolean)
+        .map(n => n.trim())
+        .join(' ');
+
+    const initials = [d.Firstname, d.Lastname]
+        .filter(Boolean)
+        .map(n => n[0])
+        .join('');
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <header className="bg-white shadow-sm border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-4">
-                        <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                                <Building2 className="w-5 h-5 text-white" />
+            {/* Top Navigation */}
+            <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6">
+                    <div className="flex justify-between items-center h-14">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                <Building2 className="w-4 h-4 text-white" />
                             </div>
-                            <h1 className="text-xl font-semibold text-gray-900">Employee Portal</h1>
+                            <div>
+                                <span className="text-sm font-semibold text-gray-900">Employee Portal</span>
+                                <span className="hidden sm:inline text-gray-400 text-xs ml-2">Essel Projects</span>
+                            </div>
                         </div>
-                        
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                <User className="w-4 h-4" />
-                                <span>Welcome, {employeeData?.name || employeeId}</span>
-                            </div>
+
+                        <div className="flex items-center gap-3">
+                            <span className="hidden sm:block text-sm text-gray-600">
+                                {fullName || employeeId}
+                            </span>
                             <button
-                                onClick={handleLogout}
-                                className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                                onClick={logout}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             >
                                 <LogOut className="w-4 h-4" />
                                 <span>Logout</span>
@@ -46,171 +77,88 @@ const EmployeeDashboard = () => {
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="px-4 py-6 sm:px-0">
-                    {/* Welcome Card */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
-                        <div className="px-4 py-5 sm:p-6">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <User className="w-6 h-6 text-blue-600" />
-                                    </div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">
-                                            Welcome to Employee Portal
-                                        </dt>
-                                        <dd className="text-lg font-medium text-gray-900">
-                                            {employeeData?.name || employeeId}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+                {/* Profile Hero */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 mb-6 text-white shadow-lg">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                            {initials || <User className="w-7 h-7" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-xl font-bold truncate">{fullName || 'Employee'}</h1>
+                            <p className="text-indigo-200 text-sm mt-0.5">{d.Appointed || d.UserRole || '—'}</p>
+                            <p className="text-indigo-200 text-xs mt-0.5">{d.DepartmentName || '—'}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 sm:flex-col sm:items-end sm:gap-1.5">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                d.Status === 'Active'
+                                    ? 'bg-green-400/20 text-green-100 border border-green-400/30'
+                                    : 'bg-yellow-400/20 text-yellow-100 border border-yellow-400/30'
+                            }`}>
+                                {d.Status || 'Unknown'}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-indigo-100 border border-white/20">
+                                {d.EmpRefno || employeeId}
+                            </span>
                         </div>
                     </div>
 
-                    {/* Employee Information Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        {/* Personal Information */}
-                        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                            <div className="px-4 py-5 sm:px-6">
-                                <h3 className="text-lg leading-6 font-medium text-gray-900">
-                                    Personal Information
-                                </h3>
-                                <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                                    Your personal details and contact information.
-                                </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/20">
+                        {[
+                            { label: 'Employee ID', value: d.Username || employeeId },
+                            { label: 'Job Type', value: d.Jobtype },
+                            { label: 'Category', value: d.Category },
+                            { label: 'Role', value: d.UserRole },
+                        ].map(({ label, value }) => (
+                            <div key={label}>
+                                <p className="text-indigo-200 text-xs">{label}</p>
+                                <p className="text-white text-sm font-semibold truncate">{value || '—'}</p>
                             </div>
-                            <div className="border-t border-gray-200">
-                                <dl>
-                                    <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500">
-                                            Employee ID
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {employeeId || 'N/A'}
-                                        </dd>
-                                    </div>
-                                    <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500">
-                                            Full Name
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {employeeData?.name || 'N/A'}
-                                        </dd>
-                                    </div>
-                                    <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500 flex items-center space-x-1">
-                                            <Mail className="w-4 h-4" />
-                                            <span>Email</span>
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {employeeData?.email || 'N/A'}
-                                        </dd>
-                                    </div>
-                                    <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500 flex items-center space-x-1">
-                                            <Phone className="w-4 h-4" />
-                                            <span>Phone</span>
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {employeeData?.phone || 'N/A'}
-                                        </dd>
-                                    </div>
-                                </dl>
-                            </div>
-                        </div>
-
-                        {/* Employment Information */}
-                        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                            <div className="px-4 py-5 sm:px-6">
-                                <h3 className="text-lg leading-6 font-medium text-gray-900">
-                                    Employment Details
-                                </h3>
-                                <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                                    Your job details and department information.
-                                </p>
-                            </div>
-                            <div className="border-t border-gray-200">
-                                <dl>
-                                    <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500">
-                                            Department
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {employeeData?.department || 'N/A'}
-                                        </dd>
-                                    </div>
-                                    <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500">
-                                            Position
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {employeeData?.position || 'N/A'}
-                                        </dd>
-                                    </div>
-                                    <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500">
-                                            Join Date
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {employeeData?.joinDate ? new Date(employeeData.joinDate).toLocaleDateString() : 'N/A'}
-                                        </dd>
-                                    </div>
-                                    <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                        <dt className="text-sm font-medium text-gray-500 flex items-center space-x-1">
-                                            <Clock className="w-4 h-4" />
-                                            <span>Last Activity</span>
-                                        </dt>
-                                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                            {formatLastActivity(lastActivity)}
-                                        </dd>
-                                    </div>
-                                </dl>
-                            </div>
-                        </div>
+                        ))}
                     </div>
+                </div>
 
-                    {/* Quick Actions */}
-                    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                        <div className="px-4 py-5 sm:px-6">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900">
-                                Quick Actions
-                            </h3>
-                            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                                Frequently used employee services.
-                            </p>
-                        </div>
-                        <div className="border-t border-gray-200 p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <User className="w-5 h-5 text-blue-600 mr-3" />
-                                    <span className="text-sm font-medium text-gray-900">View Profile</span>
-                                </button>
-                                <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <Clock className="w-5 h-5 text-green-600 mr-3" />
-                                    <span className="text-sm font-medium text-gray-900">Time & Attendance</span>
-                                </button>
-                                <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <MapPin className="w-5 h-5 text-purple-600 mr-3" />
-                                    <span className="text-sm font-medium text-gray-900">Leave Requests</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                {/* Info Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {/* Personal Information */}
+                    <SectionCard title="Personal Information" icon={User} iconColor="bg-indigo-500">
+                        <InfoRow label="Full Name" value={fullName} />
+                        <InfoRow label="Date of Birth" value={d.UpDob} />
+                        <InfoRow label="Age" value={d.Age ? `${d.Age} years` : null} />
+                        <InfoRow label="Gender" value={d.Gender} />
+                        <InfoRow label="Marital Status" value={d.MartialStatus} />
+                        {d.MartialStatus === 'Married' && (
+                            <InfoRow label="Date of Marriage" value={d.UpDateofMarriage} />
+                        )}
+                    </SectionCard>
 
-                    {/* Debug Information (Remove in production) */}
-                    {employeeData && (
-                        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <h4 className="text-sm font-medium text-blue-900 mb-2">Debug - Employee Data:</h4>
-                            <pre className="text-xs text-blue-800 overflow-auto">
-                                {JSON.stringify(employeeData, null, 2)}
-                            </pre>
-                        </div>
-                    )}
+                    {/* Employment Details */}
+                    <SectionCard title="Employment Details" icon={Briefcase} iconColor="bg-purple-500">
+                        <InfoRow label="Ref No" value={d.EmpRefno} />
+                        <InfoRow label="Department" value={d.DepartmentName} />
+                        <InfoRow label="Designation" value={d.Appointed} />
+                        <InfoRow label="Job Type" value={d.Jobtype} />
+                        <InfoRow label="Joining Category" value={d.joiningcategory} />
+                        <InfoRow label="Joining Type" value={d.JoiningType} />
+                        <InfoRow label="Appointment" value={d.Appointmenttype} />
+                    </SectionCard>
+
+                    {/* Contact & Address */}
+                    <SectionCard title="Contact & Address" icon={Phone} iconColor="bg-blue-500">
+                        <InfoRow label="Mobile" value={d.Mobile} />
+                        <InfoRow label="Work Email" value={d.workemail} />
+                        <InfoRow label="Permanent Address" value={d.PermanentAddress} />
+                    </SectionCard>
+
+                    {/* Family & Nominee */}
+                    <SectionCard title="Family & Nominee" icon={Heart} iconColor="bg-rose-500">
+                        {d.MartialStatus === 'Married' && (
+                            <InfoRow label="Spouse Name" value={d.SpouseName} />
+                        )}
+                        <InfoRow label="Nominee Name" value={d.NomineeName} />
+                        <InfoRow label="Relation" value={d.Relation} />
+                        <InfoRow label="Nominee Gender" value={d.NomineeGender} />
+                    </SectionCard>
                 </div>
             </main>
         </div>

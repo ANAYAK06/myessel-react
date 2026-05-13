@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import {
     Settings, DollarSign, Users, BookOpen, CalendarDays,
     Plus, Pencil, Trash2, Save, Loader2, ChevronDown,
-    X, Search, Filter, ShieldCheck, HeartPulse,
+    X, Search, Filter, ShieldCheck, HeartPulse, Receipt, Briefcase,
 } from 'lucide-react';
 import CustomDatePicker from '../../components/CustomDatePicker';
 
@@ -16,7 +16,10 @@ import {
     fetchHolidays,        submitHoliday, removeHoliday,
     fetchPFConfig,        submitPFConfig,
     fetchESIConfig,       submitESIConfig,
-    clearSaveResult, clearSubDca,
+    fetchPTConfig,        submitPTConfig,
+    fetchPTSlabs,         submitPTSlab,   removePTSlab,
+    fetchLWFConfig,       submitLWFConfig,
+    clearSaveResult, clearPTSlabs, clearSubDca,
 } from '../../slices/labourConfigSlice/labourConfigSlice';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +70,7 @@ const Badge = ({ children, color = 'gray' }) => {
         green:  'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700',
         red:    'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-700',
         blue:   'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700',
+        indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-700',
         violet: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-700',
         gray:   'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
     };
@@ -142,11 +146,16 @@ const TABS = [
     { id: 'holidays',     label: 'Holidays',      icon: CalendarDays },
     { id: 'pfconfig',     label: 'PF Config',     icon: ShieldCheck },
     { id: 'esiconfig',    label: 'ESI Config',    icon: HeartPulse  },
+    { id: 'ptconfig',     label: 'PT Config',     icon: Receipt     },
+    { id: 'lwfconfig',    label: 'LWF Config',    icon: Briefcase   },
 ];
 
-const CATEGORIES    = ['SK', 'SSK', 'USK', 'HSK'];
-const HOLIDAY_TYPES = ['National', 'Regional', 'Optional'];
+const CATEGORIES     = ['SK', 'SSK', 'USK', 'HSK'];
+const HOLIDAY_TYPES  = ['National', 'Regional', 'Optional'];
 const STATUS_OPTIONS = ['Active', 'Inactive'];
+const PAYMENT_CYCLES = ['Monthly', 'HalfYearly', 'Annual'];
+const PT_GENDERS     = ['All', 'Male', 'Female'];
+const MONTH_NAMES    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 1 — CC Wise Minimum Wages
@@ -1766,6 +1775,823 @@ const ESIConfigTab = ({ userData, costCenters, costCentersLoading }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TAB 7 — Professional Tax (PT) Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PT_CONFIG_BLANK = {
+    ConfigId: 0, CCCodes: [], EffectiveFrom: '',
+    PaymentCycle: 'Monthly', GenderBased: false, Status: 'Active',
+};
+const PT_SLAB_BLANK = {
+    SlabId: 0, Gender: 'All', SlabFrom: '', SlabTo: '',
+    PTAmount: '', SpecialMonthNo: '', SpecialMonthAmount: '', DisplayOrder: 0,
+};
+
+const PTConfigTab = ({ userData, costCenters, costCentersLoading }) => {
+    const dispatch = useDispatch();
+    const {
+        ptConfigData, ptConfigLoading, ptConfigError,
+        ptSlabData, ptSlabLoading, ptSlabError,
+        saveLoading, saveResult, saveError,
+    } = useSelector((s) => s.labourConfig);
+
+    const savingWhatRef = useRef(null);
+
+    const toApiDate = (val) => {
+        if (!val) return '';
+        if (val instanceof Date) {
+            return `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')}`;
+        }
+        const str = String(val);
+        if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0, 10);
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) { const [d, m, y] = str.split('/'); return `${y}-${m}-${d}`; }
+        return str;
+    };
+
+    const [filterCC,         setFilterCC]         = useState('');
+    const [showConfigForm,   setShowConfigForm]    = useState(false);
+    const [configForm,       setConfigForm]        = useState(PT_CONFIG_BLANK);
+    const [expandedConfigId, setExpandedConfigId]  = useState(null);
+    const [showSlabForm,     setShowSlabForm]      = useState(false);
+    const [slabForm,         setSlabForm]          = useState(PT_SLAB_BLANK);
+    const [deleteSlabId,     setDeleteSlabId]      = useState(null);
+
+    const selectedConfig = ptConfigData.find(c => c.ConfigId === expandedConfigId) || null;
+
+    const loadConfigs = useCallback(() => {
+        dispatch(fetchPTConfig(filterCC || undefined));
+    }, [dispatch, filterCC]);
+
+    useEffect(() => { loadConfigs(); }, [loadConfigs]);
+
+    useEffect(() => {
+        if (expandedConfigId) {
+            dispatch(fetchPTSlabs(expandedConfigId));
+        } else {
+            dispatch(clearPTSlabs());
+        }
+    }, [expandedConfigId, dispatch]);
+
+    useEffect(() => {
+        if (saveResult) {
+            const msg = saveResult?.Message || saveResult?.Result;
+            if (saveResult?.Result === 'SUCCESS') {
+                toast.success(msg || 'Saved successfully.');
+                if (savingWhatRef.current === 'config') {
+                    setShowConfigForm(false);
+                    setConfigForm(PT_CONFIG_BLANK);
+                    loadConfigs();
+                } else if (savingWhatRef.current === 'slab') {
+                    setShowSlabForm(false);
+                    setSlabForm(PT_SLAB_BLANK);
+                    if (expandedConfigId) dispatch(fetchPTSlabs(expandedConfigId));
+                }
+            } else if (saveResult?.Result === 'DUPLICATE') {
+                toast.warning(msg || 'A config already exists for this CC and effective date.');
+            } else if (saveResult?.Result === 'ERROR') {
+                toast.error(msg || 'An error occurred.');
+            } else {
+                toast.warning(msg || 'Saved.');
+            }
+            dispatch(clearSaveResult());
+            savingWhatRef.current = null;
+        }
+        if (saveError) {
+            toast.error(saveError);
+            dispatch(clearSaveResult());
+            savingWhatRef.current = null;
+        }
+    }, [saveResult, saveError]); // eslint-disable-line
+
+    const handleEditConfig = (row) => {
+        const raw = row.EffectiveFrom || '';
+        let dateVal = '';
+        if (raw) {
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                const [y, m, d] = raw.substring(0, 10).split('-');
+                dateVal = `${d}/${m}/${y}`;
+            } else { dateVal = raw; }
+        }
+        setConfigForm({
+            ConfigId:      row.ConfigId || 0,
+            CCCodes:       [row.CCCode],
+            EffectiveFrom: dateVal,
+            PaymentCycle:  row.PaymentCycle || 'Monthly',
+            GenderBased:   !!row.GenderBased,
+            Status:        row.Status || 'Active',
+        });
+        setShowConfigForm(true);
+    };
+
+    const handleConfigSubmit = () => {
+        if (!configForm.CCCodes.length || !configForm.EffectiveFrom) {
+            toast.warning('Cost Centre and Effective Date are required.');
+            return;
+        }
+        savingWhatRef.current = 'config';
+        dispatch(submitPTConfig({
+            ConfigId:      configForm.ConfigId || 0,
+            CCCodes:       configForm.CCCodes,
+            EffectiveFrom: toApiDate(configForm.EffectiveFrom),
+            PaymentCycle:  configForm.PaymentCycle,
+            GenderBased:   configForm.GenderBased,
+            Status:        configForm.Status,
+            ActionBy:      userData?.userName || userData?.empCode || '',
+        }));
+    };
+
+    const handleEditSlab = (slab) => {
+        setSlabForm({
+            SlabId:             slab.SlabId || 0,
+            Gender:             slab.Gender || 'All',
+            SlabFrom:           slab.SlabFrom  != null ? String(slab.SlabFrom)  : '',
+            SlabTo:             slab.SlabTo    != null ? String(slab.SlabTo)    : '',
+            PTAmount:           slab.PTAmount  != null ? String(slab.PTAmount)  : '',
+            SpecialMonthNo:     slab.SpecialMonthNo     != null ? String(slab.SpecialMonthNo)     : '',
+            SpecialMonthAmount: slab.SpecialMonthAmount != null ? String(slab.SpecialMonthAmount) : '',
+            DisplayOrder:       slab.DisplayOrder ?? 0,
+        });
+        setShowSlabForm(true);
+    };
+
+    const handleSlabSubmit = () => {
+        if (slabForm.SlabFrom === '' || slabForm.PTAmount === '') {
+            toast.warning('Slab From and PT Amount are required.');
+            return;
+        }
+        savingWhatRef.current = 'slab';
+        dispatch(submitPTSlab({
+            SlabId:             slabForm.SlabId || 0,
+            ConfigId:           selectedConfig.ConfigId,
+            Gender:             slabForm.Gender,
+            SlabFrom:           parseFloat(slabForm.SlabFrom) || 0,
+            SlabTo:             slabForm.SlabTo !== '' ? parseFloat(slabForm.SlabTo) : null,
+            PTAmount:           parseFloat(slabForm.PTAmount) || 0,
+            SpecialMonthNo:     slabForm.SpecialMonthNo !== '' ? parseInt(slabForm.SpecialMonthNo) : null,
+            SpecialMonthAmount: slabForm.SpecialMonthNo !== '' && slabForm.SpecialMonthAmount !== ''
+                ? parseFloat(slabForm.SpecialMonthAmount) : null,
+            DisplayOrder:       parseInt(slabForm.DisplayOrder) || 0,
+        }));
+    };
+
+    const handleDeleteSlab = (slabId) => {
+        dispatch(removePTSlab(slabId)).then((res) => {
+            if (!res.error) toast.success('PT slab removed.');
+            else toast.error(res.payload || 'Failed to remove slab.');
+        });
+        setDeleteSlabId(null);
+    };
+
+    const toggleExpand = (configId) => {
+        if (expandedConfigId === configId) {
+            setExpandedConfigId(null);
+            setShowSlabForm(false);
+            setSlabForm(PT_SLAB_BLANK);
+        } else {
+            setExpandedConfigId(configId);
+            setShowSlabForm(false);
+            setSlabForm(PT_SLAB_BLANK);
+        }
+    };
+
+    const fmtAmt  = (v) => v != null ? `₹${parseFloat(v).toLocaleString('en-IN')}` : '—';
+    const nilOrAmt = (v) => (v === 0 || v === '0' || parseFloat(v) === 0) ? 'Nil' : fmtAmt(v);
+
+    return (
+        <div className="space-y-5">
+            {/* ── Filter + Add ── */}
+            <SectionCard>
+                <div className="p-4 flex flex-wrap gap-3 items-end">
+                    <div className="w-56">
+                        <Label>Cost Centre</Label>
+                        <SelectWrap loading={costCentersLoading}>
+                            <select className={selectCls} value={filterCC} onChange={(e) => setFilterCC(e.target.value)}>
+                                <option value="">All Cost Centres</option>
+                                {costCenters.map(c => <option key={c.CC_Code} value={c.CC_Code}>{c.CC_Name}</option>)}
+                            </select>
+                        </SelectWrap>
+                    </div>
+                    <Btn onClick={loadConfigs} loading={ptConfigLoading} variant="secondary">
+                        <Filter className="h-3.5 w-3.5" />Apply
+                    </Btn>
+                    <div className="ml-auto">
+                        <Btn onClick={() => { setConfigForm(PT_CONFIG_BLANK); setShowConfigForm(v => !v); }}>
+                            <Plus className="h-3.5 w-3.5" />Add PT Config
+                        </Btn>
+                    </div>
+                </div>
+            </SectionCard>
+
+            {/* ── Add / Edit Config Form ── */}
+            {showConfigForm && (
+                <SectionCard>
+                    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                            {configForm.ConfigId ? 'Edit PT Configuration' : 'Add PT Configuration'}
+                        </span>
+                        <button onClick={() => setShowConfigForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                    <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
+                        <div>
+                            <Label required>
+                                Cost Centre
+                                {!configForm.ConfigId && <span className="ml-1 font-normal text-gray-400 normal-case">(multiple allowed)</span>}
+                            </Label>
+                            {configForm.ConfigId ? (
+                                <div className={`${inputCls} bg-gray-50 dark:bg-gray-700 cursor-not-allowed text-gray-500`}>
+                                    {costCenters.find(c => c.CC_Code === configForm.CCCodes[0])?.CC_Name || configForm.CCCodes[0] || '—'}
+                                </div>
+                            ) : (
+                                <MultiCCSelect
+                                    value={configForm.CCCodes}
+                                    onChange={(val) => setConfigForm(p => ({ ...p, CCCodes: val }))}
+                                    costCenters={costCenters}
+                                    loading={costCentersLoading}
+                                />
+                            )}
+                        </div>
+                        <div>
+                            <CustomDatePicker
+                                label="Effective From"
+                                required
+                                value={configForm.EffectiveFrom}
+                                onChange={(val) => {
+                                    if (val instanceof Date) {
+                                        const d = String(val.getDate()).padStart(2, '0');
+                                        const m = String(val.getMonth() + 1).padStart(2, '0');
+                                        const y = val.getFullYear();
+                                        setConfigForm(p => ({ ...p, EffectiveFrom: `${d}/${m}/${y}` }));
+                                    } else {
+                                        setConfigForm(p => ({ ...p, EffectiveFrom: val || '' }));
+                                    }
+                                }}
+                                placeholder="DD/MM/YYYY"
+                                format="DD/MM/YYYY"
+                            />
+                        </div>
+                        <div>
+                            <Label required>Payment Cycle</Label>
+                            <SelectWrap>
+                                <select className={selectCls} value={configForm.PaymentCycle}
+                                    onChange={(e) => setConfigForm(p => ({ ...p, PaymentCycle: e.target.value }))}>
+                                    {PAYMENT_CYCLES.map(c => <option key={c}>{c}</option>)}
+                                </select>
+                            </SelectWrap>
+                        </div>
+                        <div className="space-y-3">
+                            <div>
+                                <Label>Gender-Based Slabs</Label>
+                                <label className="flex items-center gap-2 cursor-pointer mt-1.5">
+                                    <input
+                                        type="checkbox"
+                                        checked={configForm.GenderBased}
+                                        onChange={(e) => setConfigForm(p => ({ ...p, GenderBased: e.target.checked }))}
+                                        className="w-4 h-4 accent-indigo-600"
+                                    />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">Apply gender-specific slabs</span>
+                                </label>
+                            </div>
+                            <div>
+                                <Label>Status</Label>
+                                <SelectWrap>
+                                    <select className={selectCls} value={configForm.Status}
+                                        onChange={(e) => setConfigForm(p => ({ ...p, Status: e.target.value }))}>
+                                        {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                                    </select>
+                                </SelectWrap>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-5 pb-5 flex gap-3">
+                        <Btn onClick={handleConfigSubmit} loading={saveLoading}>
+                            <Save className="h-3.5 w-3.5" />Save
+                        </Btn>
+                        <Btn variant="secondary" onClick={() => setShowConfigForm(false)}>Cancel</Btn>
+                    </div>
+                </SectionCard>
+            )}
+
+            {/* ── Per-config accordion cards ── */}
+            {ptConfigLoading ? (
+                <SectionCard>
+                    <div className="py-10 flex justify-center"><Loader2 className="h-6 w-6 text-indigo-500 animate-spin" /></div>
+                </SectionCard>
+            ) : ptConfigError ? (
+                <SectionCard>
+                    <div className="py-8 text-center text-rose-500 text-sm">{ptConfigError}</div>
+                </SectionCard>
+            ) : ptConfigData.length === 0 ? (
+                <SectionCard>
+                    <EmptyState message="No PT configurations found. Click 'Add PT Config' to begin." />
+                </SectionCard>
+            ) : (
+                ptConfigData.map((config) => {
+                    const isExpanded = expandedConfigId === config.ConfigId;
+                    return (
+                        <SectionCard key={config.ConfigId}>
+                            {/* Config summary row */}
+                            <div className="px-5 py-4 flex flex-wrap items-center gap-3">
+                                <div className="flex-1 min-w-0 flex items-center gap-3 flex-wrap">
+                                    <span className="font-bold text-gray-800 dark:text-gray-100">{config.CCCode}</span>
+                                    {config.CCName && (
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">{config.CCName}</span>
+                                    )}
+                                    <Badge color="indigo">{config.PaymentCycle}</Badge>
+                                    {config.GenderBased && <Badge color="violet">Gender-Based</Badge>}
+                                    <Badge color={config.Status === 'Active' ? 'green' : 'red'}>{config.Status}</Badge>
+                                    <span className="text-xs text-gray-400">Eff: {config.EffectiveFrom || '—'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        onClick={() => handleEditConfig(config)}
+                                        title="Edit config"
+                                        className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <Btn
+                                        size="sm"
+                                        variant={isExpanded ? 'primary' : 'secondary'}
+                                        onClick={() => toggleExpand(config.ConfigId)}
+                                    >
+                                        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                        {isExpanded ? 'Hide Slabs' : 'Manage Slabs'}
+                                    </Btn>
+                                </div>
+                            </div>
+
+                            {/* Expanded inline slab section */}
+                            {isExpanded && (
+                                <div className="border-t border-gray-100 dark:border-gray-700">
+
+                                    {/* Slab entry form */}
+                                    {showSlabForm && (
+                                        <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-indigo-50/40 dark:bg-indigo-900/10">
+                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                                                {slabForm.SlabId ? 'Edit Slab' : 'New Slab'}
+                                            </p>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                {!!config.GenderBased && (
+                                                    <div>
+                                                        <Label>Gender</Label>
+                                                        <SelectWrap>
+                                                            <select className={selectCls} value={slabForm.Gender}
+                                                                onChange={(e) => setSlabForm(p => ({ ...p, Gender: e.target.value }))}>
+                                                                {PT_GENDERS.map(g => <option key={g}>{g}</option>)}
+                                                            </select>
+                                                        </SelectWrap>
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <Label required>Income From (₹)</Label>
+                                                    <input type="number" min="0" className={inputCls}
+                                                        value={slabForm.SlabFrom} placeholder="0"
+                                                        onChange={(e) => setSlabForm(p => ({ ...p, SlabFrom: e.target.value }))} />
+                                                </div>
+                                                <div>
+                                                    <Label>Income To (₹) <span className="font-normal text-gray-400 normal-case">(blank = no cap)</span></Label>
+                                                    <input type="number" min="0" className={inputCls}
+                                                        value={slabForm.SlabTo} placeholder="No cap"
+                                                        onChange={(e) => setSlabForm(p => ({ ...p, SlabTo: e.target.value }))} />
+                                                </div>
+                                                <div>
+                                                    <Label required>PT Amount (₹/{config.PaymentCycle})</Label>
+                                                    <input type="number" min="0" step="0.01" className={inputCls}
+                                                        value={slabForm.PTAmount} placeholder="0 for Nil"
+                                                        onChange={(e) => setSlabForm(p => ({ ...p, PTAmount: e.target.value }))} />
+                                                </div>
+                                                <div>
+                                                    <Label>Special Month <span className="font-normal text-gray-400 normal-case">(1–12)</span></Label>
+                                                    <input type="number" min="1" max="12" className={inputCls}
+                                                        value={slabForm.SpecialMonthNo} placeholder="e.g. 2 for Feb"
+                                                        onChange={(e) => setSlabForm(p => ({ ...p, SpecialMonthNo: e.target.value }))} />
+                                                </div>
+                                                {slabForm.SpecialMonthNo !== '' && (
+                                                    <div>
+                                                        <Label>Special Month Amount (₹)</Label>
+                                                        <input type="number" min="0" step="0.01" className={inputCls}
+                                                            value={slabForm.SpecialMonthAmount} placeholder="300"
+                                                            onChange={(e) => setSlabForm(p => ({ ...p, SpecialMonthAmount: e.target.value }))} />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <Label>Display Order</Label>
+                                                    <input type="number" min="0" className={inputCls}
+                                                        value={slabForm.DisplayOrder}
+                                                        onChange={(e) => setSlabForm(p => ({ ...p, DisplayOrder: e.target.value }))} />
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 flex gap-3">
+                                                <Btn onClick={handleSlabSubmit} loading={saveLoading}>
+                                                    <Save className="h-3.5 w-3.5" />Save Slab
+                                                </Btn>
+                                                <Btn variant="secondary" onClick={() => { setShowSlabForm(false); setSlabForm(PT_SLAB_BLANK); }}>Cancel</Btn>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Delete confirm */}
+                                    {deleteSlabId && (
+                                        <div className="mx-5 my-3 rounded-xl border border-rose-200 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/20 px-4 py-3 flex items-center justify-between">
+                                            <span className="text-sm text-rose-700 dark:text-rose-300 font-medium">Delete this PT slab?</span>
+                                            <div className="flex gap-2">
+                                                <Btn variant="danger" size="sm" onClick={() => handleDeleteSlab(deleteSlabId)}>
+                                                    <Trash2 className="h-3 w-3" />Delete
+                                                </Btn>
+                                                <Btn variant="secondary" size="sm" onClick={() => setDeleteSlabId(null)}>Cancel</Btn>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Slab table */}
+                                    {ptSlabLoading ? (
+                                        <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 text-indigo-500 animate-spin" /></div>
+                                    ) : ptSlabError ? (
+                                        <div className="py-6 text-center text-rose-500 text-sm">{ptSlabError}</div>
+                                    ) : ptSlabData.length === 0 ? (
+                                        <div className="px-5 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            No income slabs configured yet — click <strong>+ Add Slab</strong> below.
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="bg-gray-50 dark:bg-gray-900/40 text-left">
+                                                        {[
+                                                            ...(config.GenderBased ? ['Gender'] : []),
+                                                            'Income From', 'Income To', 'PT Amount', 'Special Month', 'Special Amt', 'Order', '',
+                                                        ].map(h => (
+                                                            <th key={h} className="px-3 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                                                    {ptSlabData.map((slab, i) => (
+                                                        <tr key={i} className="hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-colors">
+                                                            {config.GenderBased && (
+                                                                <td className="px-3 py-2.5">
+                                                                    <Badge color={slab.Gender === 'Male' ? 'blue' : slab.Gender === 'Female' ? 'violet' : 'gray'}>
+                                                                        {slab.Gender}
+                                                                    </Badge>
+                                                                </td>
+                                                            )}
+                                                            <td className="px-3 py-2.5 font-semibold text-gray-800 dark:text-gray-100">{fmtAmt(slab.SlabFrom)}</td>
+                                                            <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">
+                                                                {slab.SlabTo != null ? fmtAmt(slab.SlabTo) : <span className="text-gray-400 italic">No cap</span>}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 font-semibold text-indigo-600 dark:text-indigo-400">
+                                                                {nilOrAmt(slab.PTAmount)}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">
+                                                                {slab.SpecialMonthNo != null ? (MONTH_NAMES[slab.SpecialMonthNo - 1] || slab.SpecialMonthNo) : '—'}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">
+                                                                {slab.SpecialMonthAmount != null ? fmtAmt(slab.SpecialMonthAmount) : '—'}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-gray-400">{slab.DisplayOrder ?? '—'}</td>
+                                                            <td className="px-3 py-2.5">
+                                                                <div className="flex gap-1">
+                                                                    <button onClick={() => handleEditSlab(slab)}
+                                                                        className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors">
+                                                                        <Pencil className="h-3.5 w-3.5" />
+                                                                    </button>
+                                                                    <button onClick={() => setDeleteSlabId(slab.SlabId)}
+                                                                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors">
+                                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+
+                                    {/* Add Slab footer */}
+                                    {!showSlabForm && (
+                                        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700">
+                                            <Btn size="sm" onClick={() => { setSlabForm(PT_SLAB_BLANK); setShowSlabForm(true); }}>
+                                                <Plus className="h-3 w-3" />Add Slab
+                                            </Btn>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </SectionCard>
+                    );
+                })
+            )}
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB 8 — Labour Welfare Fund (LWF) Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+const LWF_CONFIG_BLANK = {
+    ConfigId: 0, CCCodes: [], EffectiveFrom: '',
+    PaymentCycle: 'Monthly', EmpLWFAmt: '0', EmprLWFAmt: '0',
+    DeductionMonths: '', Status: 'Active',
+};
+
+const LWFConfigTab = ({ userData, costCenters, costCentersLoading }) => {
+    const dispatch = useDispatch();
+    const { lwfConfigData, lwfConfigLoading, lwfConfigError, saveLoading, saveResult, saveError } =
+        useSelector((s) => s.labourConfig);
+
+    const toApiDate = (val) => {
+        if (!val) return '';
+        if (val instanceof Date) {
+            return `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')}`;
+        }
+        const str = String(val);
+        if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0, 10);
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) { const [d, m, y] = str.split('/'); return `${y}-${m}-${d}`; }
+        return str;
+    };
+
+    const [filterCC, setFilterCC] = useState('');
+    const [showForm, setShowForm] = useState(false);
+    const [form,     setForm]     = useState(LWF_CONFIG_BLANK);
+
+    const load = useCallback(() => {
+        dispatch(fetchLWFConfig(filterCC || undefined));
+    }, [dispatch, filterCC]);
+
+    useEffect(() => { load(); }, [load]);
+
+    useEffect(() => {
+        if (saveResult) {
+            const msg = saveResult?.Message || saveResult?.Result;
+            if (saveResult?.Result === 'SUCCESS') {
+                toast.success(msg || 'LWF config saved successfully.');
+                dispatch(clearSaveResult());
+                setShowForm(false);
+                setForm(LWF_CONFIG_BLANK);
+                load();
+            } else if (saveResult?.Result === 'DUPLICATE') {
+                toast.warning(msg || 'A LWF config already exists for this CC and effective date.');
+                dispatch(clearSaveResult());
+            } else {
+                toast.warning(msg || 'Saved.');
+                dispatch(clearSaveResult());
+            }
+        }
+        if (saveError) { toast.error(saveError); dispatch(clearSaveResult()); }
+    }, [saveResult, saveError]); // eslint-disable-line
+
+    const handleEdit = (row) => {
+        const raw = row.EffectiveFrom || '';
+        let dateVal = '';
+        if (raw) {
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                const [y, m, d] = raw.substring(0, 10).split('-');
+                dateVal = `${d}/${m}/${y}`;
+            } else { dateVal = raw; }
+        }
+        setForm({
+            ConfigId:        row.ConfigId || 0,
+            CCCodes:         [row.CCCode],
+            EffectiveFrom:   dateVal,
+            PaymentCycle:    row.PaymentCycle || 'Monthly',
+            EmpLWFAmt:       row.EmpLWFAmt  != null ? String(row.EmpLWFAmt)  : '0',
+            EmprLWFAmt:      row.EmprLWFAmt != null ? String(row.EmprLWFAmt) : '0',
+            DeductionMonths: row.DeductionMonths || '',
+            Status:          row.Status || 'Active',
+        });
+        setShowForm(true);
+    };
+
+    const handleSubmit = () => {
+        if (!form.CCCodes.length || !form.EffectiveFrom) {
+            toast.warning('Cost Centre and Effective Date are required.');
+            return;
+        }
+        dispatch(submitLWFConfig({
+            ConfigId:        form.ConfigId || 0,
+            CCCodes:         form.CCCodes,
+            EffectiveFrom:   toApiDate(form.EffectiveFrom),
+            PaymentCycle:    form.PaymentCycle,
+            EmpLWFAmt:       parseFloat(form.EmpLWFAmt)  || 0,
+            EmprLWFAmt:      parseFloat(form.EmprLWFAmt) || 0,
+            DeductionMonths: form.DeductionMonths,
+            Status:          form.Status,
+            ActionBy:        userData?.userName || userData?.empCode || '',
+        }));
+    };
+
+    const deductMonths = form.DeductionMonths
+        ? form.DeductionMonths.split(',').map(m => parseInt(m.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 12)
+        : [];
+
+    const toggleMonth = (n) => {
+        const updated = deductMonths.includes(n)
+            ? deductMonths.filter(m => m !== n)
+            : [...deductMonths, n].sort((a, b) => a - b);
+        setForm(p => ({ ...p, DeductionMonths: updated.join(',') }));
+    };
+
+    const fmtAmt = (v) => v != null ? `₹${parseFloat(v).toLocaleString('en-IN')}` : '—';
+    const fmtDeductMonths = (dm) => {
+        if (!dm || !dm.trim()) return 'Every Month';
+        return dm.split(',').map(m => MONTH_NAMES[parseInt(m.trim()) - 1] || m.trim()).filter(Boolean).join(', ');
+    };
+
+    return (
+        <div className="space-y-5">
+            <SectionCard>
+                <div className="p-4 flex flex-wrap gap-3 items-end">
+                    <div className="w-56">
+                        <Label>Cost Centre</Label>
+                        <SelectWrap loading={costCentersLoading}>
+                            <select className={selectCls} value={filterCC} onChange={(e) => setFilterCC(e.target.value)}>
+                                <option value="">All Cost Centres</option>
+                                {costCenters.map(c => <option key={c.CC_Code} value={c.CC_Code}>{c.CC_Name}</option>)}
+                            </select>
+                        </SelectWrap>
+                    </div>
+                    <Btn onClick={load} loading={lwfConfigLoading} variant="secondary">
+                        <Filter className="h-3.5 w-3.5" />Apply
+                    </Btn>
+                    <div className="ml-auto">
+                        <Btn onClick={() => { setForm(LWF_CONFIG_BLANK); setShowForm(true); }}>
+                            <Plus className="h-3.5 w-3.5" />Add LWF Config
+                        </Btn>
+                    </div>
+                </div>
+            </SectionCard>
+
+            {showForm && (
+                <SectionCard>
+                    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                            {form.ConfigId ? 'Edit LWF Configuration' : 'Add LWF Configuration'}
+                        </span>
+                        <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                    <div className="p-5 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <Label required>
+                                    Cost Centre
+                                    {!form.ConfigId && <span className="ml-1 font-normal text-gray-400 normal-case">(multiple allowed)</span>}
+                                </Label>
+                                {form.ConfigId ? (
+                                    <div className={`${inputCls} bg-gray-50 dark:bg-gray-700 cursor-not-allowed text-gray-500`}>
+                                        {costCenters.find(c => c.CC_Code === form.CCCodes?.[0])?.CC_Name || form.CCCodes?.[0] || '—'}
+                                    </div>
+                                ) : (
+                                    <MultiCCSelect
+                                        value={form.CCCodes}
+                                        onChange={(val) => setForm(p => ({ ...p, CCCodes: val }))}
+                                        costCenters={costCenters}
+                                        loading={costCentersLoading}
+                                    />
+                                )}
+                            </div>
+                            <div>
+                                <CustomDatePicker
+                                    label="Effective From"
+                                    required
+                                    value={form.EffectiveFrom}
+                                    onChange={(val) => {
+                                        if (val instanceof Date) {
+                                            const d = String(val.getDate()).padStart(2, '0');
+                                            const m = String(val.getMonth() + 1).padStart(2, '0');
+                                            const y = val.getFullYear();
+                                            setForm(p => ({ ...p, EffectiveFrom: `${d}/${m}/${y}` }));
+                                        } else {
+                                            setForm(p => ({ ...p, EffectiveFrom: val || '' }));
+                                        }
+                                    }}
+                                    placeholder="DD/MM/YYYY"
+                                    format="DD/MM/YYYY"
+                                />
+                            </div>
+                            <div>
+                                <Label required>Payment Cycle</Label>
+                                <SelectWrap>
+                                    <select className={selectCls} value={form.PaymentCycle}
+                                        onChange={(e) => setForm(p => ({ ...p, PaymentCycle: e.target.value }))}>
+                                        {PAYMENT_CYCLES.map(c => <option key={c}>{c}</option>)}
+                                    </select>
+                                </SelectWrap>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <Label required>Employee LWF (₹)</Label>
+                                <input type="number" min="0" step="0.01" className={inputCls}
+                                    value={form.EmpLWFAmt} placeholder="20"
+                                    onChange={(e) => setForm(p => ({ ...p, EmpLWFAmt: e.target.value }))} />
+                            </div>
+                            <div>
+                                <Label required>Employer LWF (₹)</Label>
+                                <input type="number" min="0" step="0.01" className={inputCls}
+                                    value={form.EmprLWFAmt} placeholder="40"
+                                    onChange={(e) => setForm(p => ({ ...p, EmprLWFAmt: e.target.value }))} />
+                            </div>
+                            <div>
+                                <Label>Status</Label>
+                                <SelectWrap>
+                                    <select className={selectCls} value={form.Status}
+                                        onChange={(e) => setForm(p => ({ ...p, Status: e.target.value }))}>
+                                        {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                                    </select>
+                                </SelectWrap>
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label>Deduction Months <span className="font-normal text-gray-400 normal-case">(none selected = every payroll month)</span></Label>
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                {MONTH_NAMES.map((name, i) => {
+                                    const n = i + 1;
+                                    const isOn = deductMonths.includes(n);
+                                    return (
+                                        <button key={n} type="button" onClick={() => toggleMonth(n)}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all
+                                                ${isOn
+                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-indigo-400'
+                                                }`}>
+                                            {name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1.5">
+                                {deductMonths.length === 0
+                                    ? 'Deduction applied every payroll month.'
+                                    : `Deducted in: ${deductMonths.map(n => MONTH_NAMES[n - 1]).join(', ')}`}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="px-5 pb-5 flex gap-3">
+                        <Btn onClick={handleSubmit} loading={saveLoading}>
+                            <Save className="h-3.5 w-3.5" />Save
+                        </Btn>
+                        <Btn variant="secondary" onClick={() => setShowForm(false)}>Cancel</Btn>
+                    </div>
+                </SectionCard>
+            )}
+
+            <SectionCard>
+                {lwfConfigLoading ? (
+                    <div className="py-10 flex justify-center"><Loader2 className="h-6 w-6 text-indigo-500 animate-spin" /></div>
+                ) : lwfConfigError ? (
+                    <div className="py-8 text-center text-rose-500 text-sm">{lwfConfigError}</div>
+                ) : lwfConfigData.length === 0 ? (
+                    <EmptyState message="No LWF configurations found." />
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-gray-50 dark:bg-gray-900/40 text-left">
+                                    {['CC Code','CC Name','Effective From','Payment Cycle','Emp LWF','Empr LWF','Deduction Months','Status','Created On',''].map(h => (
+                                        <th key={h} className="px-3 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                                {lwfConfigData.map((row, i) => (
+                                    <tr key={i} className="hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-colors">
+                                        <td className="px-3 py-2.5 font-semibold text-gray-800 dark:text-gray-100">{row.CCCode}</td>
+                                        <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.CCName || '—'}</td>
+                                        <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">{row.EffectiveFrom || '—'}</td>
+                                        <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">{row.PaymentCycle}</td>
+                                        <td className="px-3 py-2.5 font-semibold text-indigo-600 dark:text-indigo-400">{fmtAmt(row.EmpLWFAmt)}</td>
+                                        <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">{fmtAmt(row.EmprLWFAmt)}</td>
+                                        <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">{fmtDeductMonths(row.DeductionMonths)}</td>
+                                        <td className="px-3 py-2.5">
+                                            <Badge color={row.Status === 'Active' ? 'green' : 'red'}>{row.Status}</Badge>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-gray-400 text-xs">{row.CreatedOn || '—'}</td>
+                                        <td className="px-3 py-2.5">
+                                            <button onClick={() => handleEdit(row)}
+                                                className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors">
+                                                <Pencil className="h-3.5 w-3.5" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </SectionCard>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Page — loads shared lookups once, passes to all tabs
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1797,6 +2623,8 @@ const LabourRuleConfig = () => {
         holidays:     <HolidaysTab     {...sharedProps} />,
         pfconfig:     <PFConfigTab     {...sharedProps} />,
         esiconfig:    <ESIConfigTab    {...sharedProps} />,
+        ptconfig:     <PTConfigTab     {...sharedProps} />,
+        lwfconfig:    <LWFConfigTab    {...sharedProps} />,
     };
 
     return (
@@ -1810,7 +2638,7 @@ const LabourRuleConfig = () => {
                     <div>
                         <h1 className="text-xl font-bold text-white">Labour Rule Configuration</h1>
                         <p className="text-indigo-200 text-xs mt-0.5">
-                            Manage minimum wages, designations, wage accounts, holidays, PF and ESI configurations
+                            Manage minimum wages, designations, wage accounts, holidays, PF, ESI, PT and LWF configurations
                         </p>
                     </div>
                 </div>

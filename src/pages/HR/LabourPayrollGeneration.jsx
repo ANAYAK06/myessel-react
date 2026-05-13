@@ -14,6 +14,7 @@ import {
     clearPayrollState, clearGenerateResult,
 } from '../../slices/labourPayrollSlice/labourPayrollSlice';
 import { fetchAllCostCenters, fetchMinWageConfig, fetchPFConfig, fetchESIConfig } from '../../slices/labourConfigSlice/labourConfigSlice';
+import { getPTConfig, getPTSlabs, getLWFConfig } from '../../api/LabourConfigAPI/labourConfigAPI';
 
 // ─── shared ui helpers ────────────────────────────────────────────────────────
 const cn = (...c) => c.filter(Boolean).join(' ');
@@ -32,12 +33,13 @@ const Label = ({ children, required }) => (
     </label>
 );
 
-const SectionCard = ({ children, title, icon: Icon }) => (
+const SectionCard = ({ children, title, icon: Icon, titleRight }) => (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
         {title && (
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-gray-50/60 dark:bg-gray-900/40 rounded-t-2xl">
                 {Icon && <Icon className="h-4 w-4 text-indigo-500" />}
-                <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{title}</span>
+                <span className="text-sm font-bold text-gray-800 dark:text-gray-100 flex-1">{title}</span>
+                {titleRight}
             </div>
         )}
         {children}
@@ -76,6 +78,7 @@ const MONTHS = [
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ─── Excel parser ─────────────────────────────────────────────────────────────
 const parseAttendanceExcel = (file, payrollMonth, payrollYear) =>
@@ -372,6 +375,12 @@ const LabourPayrollGeneration = () => {
     const [overrides, setOverrides]   = useState({});
     const [lastGenerateError, setLastGenerateError] = useState('');
 
+    const [ptConfig,   setPTConfig]   = useState(null);
+    const [ptSlabs,    setPTSlabs]    = useState([]);
+    const [ptLoading,  setPTLoading]  = useState(false);
+    const [lwfConfig,  setLWFConfig]  = useState(null);
+    const [lwfLoading, setLWFLoading] = useState(false);
+
     const setField = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
     useEffect(() => {
@@ -393,7 +402,8 @@ const LabourPayrollGeneration = () => {
 
         dispatch(fetchPFConfig(form.ccCode)).unwrap()
             .then(data => {
-                const active = (data || [])
+                const records = Array.isArray(data) ? data : (data?.Data || []);
+                const active = records
                     .filter(c => c.Status === 'Active')
                     .sort((a, b) => parseDate(b.EffectiveFrom) - parseDate(a.EffectiveFrom))[0];
                 if (active) {
@@ -408,13 +418,13 @@ const LabourPayrollGeneration = () => {
                         pfCeilingAmt:     active.ThresholdAmt ? String(active.ThresholdAmt) : '',
                     }));
                 }
-                // no config for this CC → leave fields blank
             })
             .catch(() => setForm(p => ({ ...p, ...PF_BLANK })));
 
         dispatch(fetchESIConfig(form.ccCode)).unwrap()
             .then(data => {
-                const active = (data || [])
+                const records = Array.isArray(data) ? data : (data?.Data || []);
+                const active = records
                     .filter(c => c.Status === 'Active')
                     .sort((a, b) => parseDate(b.EffectiveFrom) - parseDate(a.EffectiveFrom))[0];
                 if (active) {
@@ -425,9 +435,40 @@ const LabourPayrollGeneration = () => {
                         esiApplicabilityAmt: String(active.ApplicabilityAmt),
                     }));
                 }
-                // no config for this CC → leave fields blank
             })
             .catch(() => setForm(p => ({ ...p, ...ESI_BLANK })));
+
+        // PT config + slabs
+        setPTConfig(null); setPTSlabs([]); setPTLoading(true);
+        getPTConfig(form.ccCode)
+            .then(data => {
+                const records = Array.isArray(data) ? data : (data?.Data || []);
+                const active = records
+                    .filter(c => c.Status === 'Active')
+                    .sort((a, b) => parseDate(b.EffectiveFrom) - parseDate(a.EffectiveFrom))[0];
+                setPTConfig(active || null);
+                if (active) return getPTSlabs(active.ConfigId);
+                return [];
+            })
+            .then(slabs => {
+                const slabRecords = Array.isArray(slabs) ? slabs : (slabs?.Data || []);
+                setPTSlabs(slabRecords);
+            })
+            .catch(() => { setPTConfig(null); setPTSlabs([]); })
+            .finally(() => setPTLoading(false));
+
+        // LWF config
+        setLWFConfig(null); setLWFLoading(true);
+        getLWFConfig(form.ccCode)
+            .then(data => {
+                const records = Array.isArray(data) ? data : (data?.Data || []);
+                const active = records
+                    .filter(c => c.Status === 'Active')
+                    .sort((a, b) => parseDate(b.EffectiveFrom) - parseDate(a.EffectiveFrom))[0];
+                setLWFConfig(active || null);
+            })
+            .catch(() => setLWFConfig(null))
+            .finally(() => setLWFLoading(false));
     }, [form.ccCode, dispatch]); // eslint-disable-line
 
     useEffect(() => {
@@ -496,9 +537,12 @@ const LabourPayrollGeneration = () => {
         setParseError('');
         setParsedRows([]);
         try {
+            console.log('[Upload] parsing file:', file.name, 'month:', form.month, 'year:', form.year);
             const rows = await parseAttendanceExcel(file, form.month, form.year);
+            console.log('[Upload] parsed rows:', rows.length, rows);
             setParsedRows(rows);
         } catch (msg) {
+            console.error('[Upload] parse error:', msg);
             setParseError(String(msg));
         }
         e.target.value = '';
@@ -550,6 +594,8 @@ const LabourPayrollGeneration = () => {
             PFCeiling:       form.pfCeiling,
             PFCeilingAmt:    form.pfCeiling ? (parseFloat(form.pfCeilingAmt) || null) : null,
             ESICeilingApply: form.esiCeilingApply,
+            PTApply:         !!ptConfig,
+            LWFApply:        !!lwfConfig,
             UploadBatchId:   uploadBatchId,
             RoleId:          userData?.roleId || 0,
             CreatedBy:       userData?.userName || userData?.empCode || '',
@@ -572,6 +618,8 @@ const LabourPayrollGeneration = () => {
         setParseError('');
         setOverrides({});
         setLastGenerateError('');
+        setPTConfig(null); setPTSlabs([]);
+        setLWFConfig(null);
     };
 
     const setOverride = (labourId, key, value) =>
@@ -733,6 +781,100 @@ const LabourPayrollGeneration = () => {
                             </div>
                         ) : null}
                     </div>
+
+                    {/* PT Configuration — only rendered when configured for this CC */}
+                    {(ptLoading || ptConfig) && (
+                        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                            <div className="flex items-center gap-2 mb-3 mt-4">
+                                <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Professional Tax (PT)</span>
+                                {ptLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-500" />}
+                                {!ptLoading && ptConfig && (
+                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">✓ Loaded from config</span>
+                                )}
+                            </div>
+                            {ptConfig && (
+                                <div className="space-y-3">
+                                    <div className="flex flex-wrap gap-5 text-xs text-gray-600 dark:text-gray-300">
+                                        <span>Payment Cycle: <strong className="text-teal-700 dark:text-teal-400">{ptConfig.PaymentCycle}</strong></span>
+                                        <span>Effective From: <strong>{ptConfig.EffectiveFrom || '—'}</strong></span>
+                                        {ptConfig.GenderBased && <span className="text-violet-600 dark:text-violet-400 font-semibold">Gender-Based slabs</span>}
+                                    </div>
+                                    {ptSlabs.length > 0 && (
+                                        <div className="overflow-x-auto rounded-xl border border-teal-100 dark:border-teal-800">
+                                            <table className="w-full text-xs">
+                                                <thead>
+                                                    <tr className="bg-teal-50 dark:bg-teal-900/20">
+                                                        {[
+                                                            ...(ptConfig.GenderBased ? ['Gender'] : []),
+                                                            'Income From (₹)', 'Income To (₹)', `PT Amount (₹/${ptConfig.PaymentCycle})`,
+                                                        ].map(h => (
+                                                            <th key={h} className="px-3 py-2 text-left font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-teal-50 dark:divide-teal-900/20">
+                                                    {ptSlabs.map((slab, i) => (
+                                                        <tr key={i} className="hover:bg-teal-50/50 dark:hover:bg-teal-900/10">
+                                                            {ptConfig.GenderBased && <td className="px-3 py-1.5 text-gray-600 dark:text-gray-300">{slab.Gender}</td>}
+                                                            <td className="px-3 py-1.5 text-gray-700 dark:text-gray-200">₹{Number(slab.SlabFrom).toLocaleString('en-IN')}</td>
+                                                            <td className="px-3 py-1.5 text-gray-700 dark:text-gray-200">
+                                                                {slab.SlabTo != null ? `₹${Number(slab.SlabTo).toLocaleString('en-IN')}` : <span className="text-gray-400 italic">No cap</span>}
+                                                            </td>
+                                                            <td className="px-3 py-1.5 font-semibold text-teal-700 dark:text-teal-400">
+                                                                {parseFloat(slab.PTAmount) === 0 ? 'Nil' : `₹${fmt(slab.PTAmount)}`}
+                                                                {slab.SpecialMonthNo != null && (
+                                                                    <span className="ml-2 text-xs font-normal text-gray-400">
+                                                                        ({MONTH_ABBR[parseInt(slab.SpecialMonthNo) - 1]}: ₹{fmt(slab.SpecialMonthAmount ?? slab.PTAmount)})
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* LWF Configuration — only rendered when configured for this CC */}
+                    {(lwfLoading || lwfConfig) && (
+                        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                            <div className="flex items-center gap-2 mb-3 mt-4">
+                                <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Labour Welfare Fund (LWF)</span>
+                                {lwfLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-rose-500" />}
+                                {!lwfLoading && lwfConfig && (
+                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">✓ Loaded from config</span>
+                                )}
+                            </div>
+                            {lwfConfig && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <Label>Payment Cycle</Label>
+                                        <div className="text-sm font-semibold text-rose-600 dark:text-rose-400">{lwfConfig.PaymentCycle}</div>
+                                    </div>
+                                    <div>
+                                        <Label>Employee LWF (₹)</Label>
+                                        <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">₹{fmt(lwfConfig.EmpLWFAmt)}</div>
+                                    </div>
+                                    <div>
+                                        <Label>Employer LWF (₹)</Label>
+                                        <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">₹{fmt(lwfConfig.EmprLWFAmt)}</div>
+                                    </div>
+                                    <div>
+                                        <Label>Deduction Months</Label>
+                                        <div className="text-sm text-gray-700 dark:text-gray-200">
+                                            {lwfConfig.DeductionMonths
+                                                ? String(lwfConfig.DeductionMonths).split(',').map(m => MONTH_ABBR[parseInt(m.trim()) - 1]).filter(Boolean).join(', ')
+                                                : <span className="text-gray-500 italic">Every month</span>}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </SectionCard>
 
@@ -863,18 +1005,47 @@ const LabourPayrollGeneration = () => {
 
         const pfEmprTotal = (parseFloat(form.pfEPS_Pct) || 0) + (parseFloat(form.pfEPF_Pct) || 0)
             + (parseFloat(form.pfEDLI_Pct) || 0) + (parseFloat(form.pfAdminCharge_Pct) || 0);
-        const pfEmp  = pfApply  ? Math.round(basicWage    * (parseFloat(form.pfEmpPct) || 0) / 100 * 100) / 100 : 0;
-        const pfEmpr = pfApply  ? Math.round(pfCeilingBase * pfEmprTotal               / 100 * 100) / 100 : 0;
-        const esiEmp  = esiApply ? Math.round(basicWage     * (parseFloat(form.esiEmpPct)  || 0) / 100 * 100) / 100 : 0;
-        const esiEmpr = esiApply ? Math.round(basicWage     * (parseFloat(form.esiEmprPct) || 0) / 100 * 100) / 100 : 0;
+        const pfEmp  = pfApply  ? Math.ceil(basicWage    * (parseFloat(form.pfEmpPct) || 0) / 100) : 0;
+        const pfEmpr = pfApply  ? Math.ceil(pfCeilingBase * pfEmprTotal               / 100) : 0;
+        const esiEmp  = esiApply ? Math.ceil(basicWage     * (parseFloat(form.esiEmpPct)  || 0) / 100) : 0;
+        const esiEmpr = esiApply ? Math.ceil(basicWage     * (parseFloat(form.esiEmprPct) || 0) / 100) : 0;
 
         const advance          = parseFloat(ov.advance)        || 0;
         const otherAllow       = parseFloat(ov.otherAllowance) || 0;
-        const basicPayable     = Math.round((basicWage - pfEmp - esiEmp) * 100) / 100;
+
+        // PT calculation — match income against active slabs
+        let ptEmp = 0;
+        if (ptSlabs.length > 0) {
+            const incomeForPT = grossAmount;
+            const matchSlab = [...ptSlabs]
+                .sort((a, b) => a.SlabFrom - b.SlabFrom)
+                .find(s => incomeForPT >= s.SlabFrom && (s.SlabTo == null || incomeForPT <= s.SlabTo));
+            if (matchSlab) {
+                const isSpecial = matchSlab.SpecialMonthNo != null && parseInt(matchSlab.SpecialMonthNo) === form.month;
+                ptEmp = isSpecial && matchSlab.SpecialMonthAmount != null
+                    ? parseFloat(matchSlab.SpecialMonthAmount) || 0
+                    : parseFloat(matchSlab.PTAmount) || 0;
+            }
+        }
+
+        // LWF calculation — flat amount, only in configured deduction months
+        let lwfEmp = 0, lwfEmpr = 0;
+        if (lwfConfig) {
+            const deductMonths = lwfConfig.DeductionMonths
+                ? String(lwfConfig.DeductionMonths).split(',').map(m => parseInt(m.trim())).filter(Boolean)
+                : [];
+            const applyLWF = deductMonths.length === 0 || deductMonths.includes(form.month);
+            if (applyLWF) {
+                lwfEmp  = parseFloat(lwfConfig.EmpLWFAmt)  || 0;
+                lwfEmpr = parseFloat(lwfConfig.EmprLWFAmt) || 0;
+            }
+        }
+
+        const basicPayable     = Math.round((basicWage - pfEmp - esiEmp - ptEmp - lwfEmp) * 100) / 100;
         const allowancePayable = Math.round((allowance - advance + otherAllow) * 100) / 100;
         const netPayable       = Math.round((basicPayable + allowancePayable) * 100) / 100;
 
-        return { govtRate, grossAmount, basicWage, allowance, pfEmp, pfEmpr, esiEmp, esiEmpr, advance, otherAllow, basicPayable, allowancePayable, netPayable, pfApply, esiApply };
+        return { govtRate, grossAmount, basicWage, allowance, pfEmp, pfEmpr, esiEmp, esiEmpr, ptEmp, lwfEmp, lwfEmpr, advance, otherAllow, basicPayable, allowancePayable, netPayable, pfApply, esiApply };
     };
 
     // ── Step 1: Preview + live calculation
@@ -883,10 +1054,14 @@ const LabourPayrollGeneration = () => {
         const calcAll   = previewRows.map(r => ({ ...r, ...calcRow(r), isValid: r.ValidationStatus === 'Valid' }));
         const validCalc = calcAll.filter(r => r.isValid);
 
-        const sum = (key) => validCalc.reduce((s, r) => s + r[key], 0);
+        const hasPT  = ptSlabs.length > 0;
+        const hasLWF = !!lwfConfig;
+
+        const sum = (key) => validCalc.reduce((s, r) => s + (r[key] || 0), 0);
         const grandTotal = {
             grossAmount: sum('grossAmount'), basicWage: sum('basicWage'), allowance: sum('allowance'),
             pfEmp: sum('pfEmp'), pfEmpr: sum('pfEmpr'), esiEmp: sum('esiEmp'), esiEmpr: sum('esiEmpr'),
+            ptEmp: sum('ptEmp'), lwfEmp: sum('lwfEmp'), lwfEmpr: sum('lwfEmpr'),
             advance: sum('advance'), otherAllow: sum('otherAllow'),
             basicPayable: sum('basicPayable'), allowancePayable: sum('allowancePayable'), netPayable: sum('netPayable'),
         };
@@ -895,18 +1070,102 @@ const LabourPayrollGeneration = () => {
         const catTotals = cats.map(cat => {
             const rows = validCalc.filter(r => r.Category === cat);
             if (!rows.length) return null;
-            const cs = (key) => rows.reduce((s, r) => s + r[key], 0);
+            const cs = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0);
             return { cat, workers: rows.length, grossAmount: cs('grossAmount'), basicWage: cs('basicWage'),
                 allowance: cs('allowance'), pfEmp: cs('pfEmp'), pfEmpr: cs('pfEmpr'),
-                esiEmp: cs('esiEmp'), esiEmpr: cs('esiEmpr'), advance: cs('advance'),
-                otherAllow: cs('otherAllow'), basicPayable: cs('basicPayable'),
-                allowancePayable: cs('allowancePayable'), netPayable: cs('netPayable') };
+                esiEmp: cs('esiEmp'), esiEmpr: cs('esiEmpr'),
+                ptEmp: cs('ptEmp'), lwfEmp: cs('lwfEmp'), lwfEmpr: cs('lwfEmpr'),
+                advance: cs('advance'), otherAllow: cs('otherAllow'),
+                basicPayable: cs('basicPayable'), allowancePayable: cs('allowancePayable'), netPayable: cs('netPayable') };
         }).filter(Boolean);
+
+        // Labour-type-wise grouping for summary
+        const typeGroups = [];
+        const ownRows = validCalc.filter(r => !r.LabourType || r.LabourType === 'Own Labour');
+        if (ownRows.length) {
+            const cs = (key) => ownRows.reduce((s, r) => s + (r[key] || 0), 0);
+            typeGroups.push({
+                key: '__own__', label: 'Own Labour', isOwn: true, workers: ownRows.length,
+                grossAmount: cs('grossAmount'), basicWage: cs('basicWage'), allowance: cs('allowance'),
+                pfEmp: cs('pfEmp'), pfEmpr: cs('pfEmpr'), esiEmp: cs('esiEmp'), esiEmpr: cs('esiEmpr'),
+                ptEmp: cs('ptEmp'), lwfEmp: cs('lwfEmp'), lwfEmpr: cs('lwfEmpr'),
+                advance: cs('advance'), otherAllow: cs('otherAllow'),
+                basicPayable: cs('basicPayable'), allowancePayable: cs('allowancePayable'), netPayable: cs('netPayable'),
+            });
+        }
+        const ctrMap = {};
+        validCalc.filter(r => r.LabourType && r.LabourType !== 'Own Labour').forEach(r => {
+            const name = r.ContractorName || 'Unknown';
+            if (!ctrMap[name]) ctrMap[name] = [];
+            ctrMap[name].push(r);
+        });
+        Object.entries(ctrMap).forEach(([name, rows]) => {
+            const cs = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0);
+            typeGroups.push({
+                key: `__ctr__${name}`, label: `Contractor — ${name}`, isOwn: false, workers: rows.length,
+                grossAmount: cs('grossAmount'), basicWage: cs('basicWage'), allowance: cs('allowance'),
+                pfEmp: cs('pfEmp'), pfEmpr: cs('pfEmpr'), esiEmp: cs('esiEmp'), esiEmpr: cs('esiEmpr'),
+                ptEmp: cs('ptEmp'), lwfEmp: cs('lwfEmp'), lwfEmpr: cs('lwfEmpr'),
+                advance: cs('advance'), otherAllow: cs('otherAllow'),
+                basicPayable: cs('basicPayable'), allowancePayable: cs('allowancePayable'), netPayable: cs('netPayable'),
+            });
+        });
 
         const th  = 'px-2 py-2 text-xs font-bold uppercase tracking-wider whitespace-nowrap text-center';
         const thl = 'px-2 py-2 text-xs font-bold uppercase tracking-wider whitespace-nowrap text-left';
         const td  = 'px-2 py-2 text-xs text-right text-gray-700 dark:text-gray-200';
         const numInput = 'w-20 rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 text-right';
+
+        const handleDownloadPreviewExcel = () => {
+            const headers = [
+                '#', 'Labour ID', 'Name', 'Category', 'Labour Type', 'Contractor',
+                'Days', 'Gross Amount', 'Govt Rate/Day', 'Basic Wage', 'Allowance',
+                'PF Emp (₹)', 'PF Empr (₹)', 'ESI Emp (₹)', 'ESI Empr (₹)',
+                'Advance', 'Other Allow', 'Basic Payable', 'Allow. Payable', 'Net Payable', 'Status',
+            ];
+            const aoa = [headers];
+            let lastGroupKey = null;
+            let rowNum = 0;
+            calcAll.forEach(r => {
+                const isOwn = !r.LabourType || r.LabourType === 'Own Labour';
+                const groupKey = isOwn ? '__own__' : `__ctr__${r.ContractorName || ''}`;
+                if (groupKey !== lastGroupKey) {
+                    lastGroupKey = groupKey;
+                    aoa.push(['', isOwn ? '-- Own Labour --' : `-- Contractor: ${r.ContractorName || 'Unknown'} --`]);
+                }
+                rowNum++;
+                aoa.push([
+                    rowNum, r.LabourId, r.LabourName, r.Category,
+                    r.LabourType || 'Own Labour', r.ContractorName || '',
+                    r.DaysWorked, r.grossAmount, r.govtRate || 0, r.basicWage, r.allowance,
+                    r.pfApply ? r.pfEmp : 0, r.pfApply ? r.pfEmpr : 0,
+                    r.esiApply ? r.esiEmp : 0, r.esiApply ? r.esiEmpr : 0,
+                    r.advance, r.otherAllow,
+                    r.isValid ? r.basicPayable : '', r.isValid ? r.allowancePayable : '', r.isValid ? r.netPayable : '',
+                    r.ValidationStatus,
+                ]);
+            });
+            const gsum = (key) => validCalc.reduce((s, r) => s + (r[key] || 0), 0);
+            aoa.push([]);
+            aoa.push([
+                '', 'GRAND TOTAL', `${validCalc.length} workers`, '', '', '', '',
+                gsum('grossAmount'), '', gsum('basicWage'), gsum('allowance'),
+                gsum('pfEmp'), gsum('pfEmpr'), gsum('esiEmp'), gsum('esiEmpr'),
+                gsum('advance'), gsum('otherAllow'),
+                gsum('basicPayable'), gsum('allowancePayable'), gsum('netPayable'), '',
+            ]);
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            ws['!cols'] = [
+                {wch:4},{wch:12},{wch:22},{wch:6},{wch:14},{wch:20},
+                {wch:6},{wch:12},{wch:12},{wch:12},{wch:12},
+                {wch:11},{wch:11},{wch:11},{wch:11},
+                {wch:10},{wch:10},{wch:12},{wch:12},{wch:12},{wch:18},
+            ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Payroll Preview');
+            const monthName = MONTHS.find(m => m.v === form.month)?.l || form.month;
+            XLSX.writeFile(wb, `LabourPayroll_Preview_${form.ccCode}_${monthName}_${form.year}.xlsx`);
+        };
 
         return (
             <div className="space-y-6">
@@ -917,7 +1176,19 @@ const LabourPayrollGeneration = () => {
                     </div>
                 )}
 
-                <SectionCard title={`Labour-wise Payroll Calculation — ${validRows.length} Valid / ${previewRows.length} Total Workers`} icon={Users}>
+                <SectionCard
+                    title={`Labour-wise Payroll Calculation — ${validRows.length} Valid / ${previewRows.length} Total Workers`}
+                    icon={Users}
+                    titleRight={
+                        <button
+                            onClick={handleDownloadPreviewExcel}
+                            disabled={!calcAll.length}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-xs font-semibold transition-all shadow-sm"
+                        >
+                            <Download className="h-3.5 w-3.5" /> Download Excel
+                        </button>
+                    }
+                >
                     {previewLoading ? (
                         <div className="py-10 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-indigo-500" /></div>
                     ) : previewError ? (
@@ -931,6 +1202,8 @@ const LabourPayrollGeneration = () => {
                                         <th colSpan={4} className={cn(th, 'text-blue-600 dark:text-blue-400 border-r border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20')}>Wage Breakup</th>
                                         <th colSpan={4} className={cn(th, 'text-purple-600 dark:text-purple-400 border-r border-gray-200 dark:border-gray-600 bg-purple-50 dark:bg-purple-900/20')}>PF</th>
                                         <th colSpan={4} className={cn(th, 'text-orange-600 dark:text-orange-400 border-r border-gray-200 dark:border-gray-600 bg-orange-50 dark:bg-orange-900/20')}>ESI</th>
+                                        {hasPT  && <th colSpan={1} className={cn(th, 'text-teal-600 dark:text-teal-400 border-r border-gray-200 dark:border-gray-600 bg-teal-50 dark:bg-teal-900/20')}>PT</th>}
+                                        {hasLWF && <th colSpan={2} className={cn(th, 'text-rose-600 dark:text-rose-400 border-r border-gray-200 dark:border-gray-600 bg-rose-50 dark:bg-rose-900/20')}>LWF</th>}
                                         <th colSpan={2} className={cn(th, 'text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-600')}>Adjustments</th>
                                         <th colSpan={3} className={cn(th, 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20')}>Payable</th>
                                     </tr>
@@ -956,6 +1229,10 @@ const LabourPayrollGeneration = () => {
                                         <th className={cn(th,  'text-orange-600 bg-orange-50/50 dark:bg-orange-900/10')}>Emp (₹)</th>
                                         <th className={cn(th,  'text-orange-600 bg-orange-50/50 dark:bg-orange-900/10 border-r border-gray-200 dark:border-gray-600')}>Empr (₹)</th>
 
+                                        {hasPT  && <th className={cn(th, 'text-teal-600 bg-teal-50/50 dark:bg-teal-900/10 border-r border-gray-200 dark:border-gray-600')}>PT (₹)</th>}
+                                        {hasLWF && <th className={cn(th, 'text-rose-500 bg-rose-50/50 dark:bg-rose-900/10')}>Emp (₹)</th>}
+                                        {hasLWF && <th className={cn(th, 'text-rose-600 bg-rose-50/50 dark:bg-rose-900/10 border-r border-gray-200 dark:border-gray-600')}>Empr (₹)</th>}
+
                                         <th className={cn(th,  'text-gray-500')}>Advance (₹)</th>
                                         <th className={cn(th,  'text-gray-500 border-r border-gray-200 dark:border-gray-600')}>Other (₹)</th>
 
@@ -965,81 +1242,121 @@ const LabourPayrollGeneration = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {calcAll.map((r, i) => {
-                                        const ov = overrides[r.LabourId] || {};
-                                        return (
-                                            <tr key={r.LabourId} className={cn(
-                                                'hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10',
-                                                !r.isValid && 'bg-rose-50/60 dark:bg-rose-900/10 opacity-60'
-                                            )}>
-                                                <td className="px-2 py-2 text-gray-400">{i + 1}</td>
-                                                <td className="px-2 py-2 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{r.LabourId}</td>
-                                                <td className="px-2 py-2 text-gray-700 dark:text-gray-200 whitespace-nowrap">{r.LabourName}</td>
-                                                <td className="px-2 py-2 text-center">
-                                                    <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold">{r.Category}</span>
-                                                </td>
-                                                <td className="px-2 py-2 text-center font-medium text-gray-700 dark:text-gray-200 border-r border-gray-100 dark:border-gray-700">{r.DaysWorked}</td>
+                                    {(() => {
+                                        const rows = [];
+                                        let lastGroupKey = null;
+                                        let rowNum = 0;
+                                        calcAll.forEach(r => {
+                                            const isOwn = !r.LabourType || r.LabourType === 'Own Labour';
+                                            const groupKey = isOwn ? '__own__' : `__ctr__${r.ContractorName || ''}`;
+                                            if (groupKey !== lastGroupKey) {
+                                                lastGroupKey = groupKey;
+                                                const totalCols = 22 + (hasPT ? 1 : 0) + (hasLWF ? 2 : 0);
+                                                rows.push(
+                                                    <tr key={`grp-${groupKey}`} className="bg-indigo-50/80 dark:bg-indigo-900/30">
+                                                        <td colSpan={totalCols} className="px-3 py-1.5 border-t-2 border-indigo-200 dark:border-indigo-700">
+                                                            <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                                                                {isOwn ? 'Own Labour' : `Contractor — ${r.ContractorName || 'Unknown'}`}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+                                            rowNum++;
+                                            const ov = overrides[r.LabourId] || {};
+                                            rows.push(
+                                                <tr key={r.LabourId} className={cn(
+                                                    'hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10',
+                                                    !r.isValid && 'bg-rose-50/60 dark:bg-rose-900/10 opacity-60'
+                                                )}>
+                                                    <td className="px-2 py-2 text-gray-400">{rowNum}</td>
+                                                    <td className="px-2 py-2 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{r.LabourId}</td>
+                                                    <td className="px-2 py-2 text-gray-700 dark:text-gray-200 whitespace-nowrap">{r.LabourName}</td>
+                                                    <td className="px-2 py-2 text-center">
+                                                        <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold">{r.Category}</span>
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center font-medium text-gray-700 dark:text-gray-200 border-r border-gray-100 dark:border-gray-700">{r.DaysWorked}</td>
 
-                                                <td className="px-2 py-2 text-right text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50/30 dark:bg-blue-900/5">₹{fmt(r.grossAmount)}</td>
-                                                <td className="px-2 py-2 text-right text-xs text-gray-500 dark:text-gray-400 bg-blue-50/30 dark:bg-blue-900/5">₹{fmt(r.govtRate || 0)}</td>
-                                                <td className="px-2 py-2 text-right text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50/30 dark:bg-blue-900/5">₹{fmt(r.basicWage)}</td>
-                                                <td className="px-2 py-2 text-right text-xs text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-900/5 border-r border-gray-100 dark:border-gray-700">₹{fmt(r.allowance)}</td>
+                                                    <td className="px-2 py-2 text-right text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50/30 dark:bg-blue-900/5">₹{fmt(r.grossAmount)}</td>
+                                                    <td className="px-2 py-2 text-right text-xs text-gray-500 dark:text-gray-400 bg-blue-50/30 dark:bg-blue-900/5">₹{fmt(r.govtRate || 0)}</td>
+                                                    <td className="px-2 py-2 text-right text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50/30 dark:bg-blue-900/5">₹{fmt(r.basicWage)}</td>
+                                                    <td className="px-2 py-2 text-right text-xs text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-900/5 border-r border-gray-100 dark:border-gray-700">₹{fmt(r.allowance)}</td>
 
-                                                <td className="px-2 py-2 text-center bg-purple-50/30 dark:bg-purple-900/5">
-                                                    <input type="checkbox"
-                                                        checked={ov.pfApplicable !== false}
-                                                        onChange={e => setOverride(r.LabourId, 'pfApplicable', e.target.checked)}
-                                                        className="w-3.5 h-3.5 accent-purple-600"
-                                                        disabled={!r.isValid} />
-                                                </td>
-                                                <td className="px-2 py-2 text-center text-xs text-purple-500 dark:text-purple-400 bg-purple-50/30 dark:bg-purple-900/5">{r.pfApply ? `${form.pfEmpPct}%` : '—'}</td>
-                                                <td className={cn('bg-purple-50/30 dark:bg-purple-900/5', r.pfApply ? 'px-2 py-2 text-right text-xs text-purple-700 dark:text-purple-300 font-semibold' : td + ' text-gray-300 dark:text-gray-600')}>
-                                                    {r.pfApply ? `₹${fmt(r.pfEmp)}` : '—'}
-                                                </td>
-                                                <td className={cn('bg-purple-50/30 dark:bg-purple-900/5 border-r border-gray-100 dark:border-gray-700', r.pfApply ? 'px-2 py-2 text-right text-xs text-purple-600 dark:text-purple-400' : td + ' text-gray-300 dark:text-gray-600')}>
-                                                    {r.pfApply ? `₹${fmt(r.pfEmpr)}` : '—'}
-                                                </td>
+                                                    <td className="px-2 py-2 text-center bg-purple-50/30 dark:bg-purple-900/5">
+                                                        <input type="checkbox"
+                                                            checked={ov.pfApplicable !== false}
+                                                            onChange={e => setOverride(r.LabourId, 'pfApplicable', e.target.checked)}
+                                                            className="w-3.5 h-3.5 accent-purple-600"
+                                                            disabled={!r.isValid} />
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center text-xs text-purple-500 dark:text-purple-400 bg-purple-50/30 dark:bg-purple-900/5">{r.pfApply ? `${form.pfEmpPct}%` : '—'}</td>
+                                                    <td className={cn('bg-purple-50/30 dark:bg-purple-900/5', r.pfApply ? 'px-2 py-2 text-right text-xs text-purple-700 dark:text-purple-300 font-semibold' : td + ' text-gray-300 dark:text-gray-600')}>
+                                                        {r.pfApply ? `₹${fmt(r.pfEmp)}` : '—'}
+                                                    </td>
+                                                    <td className={cn('bg-purple-50/30 dark:bg-purple-900/5 border-r border-gray-100 dark:border-gray-700', r.pfApply ? 'px-2 py-2 text-right text-xs text-purple-600 dark:text-purple-400' : td + ' text-gray-300 dark:text-gray-600')}>
+                                                        {r.pfApply ? `₹${fmt(r.pfEmpr)}` : '—'}
+                                                    </td>
 
-                                                <td className="px-2 py-2 text-center bg-orange-50/30 dark:bg-orange-900/5">
-                                                    <input type="checkbox"
-                                                        checked={ov.esiApplicable !== false}
-                                                        onChange={e => setOverride(r.LabourId, 'esiApplicable', e.target.checked)}
-                                                        className="w-3.5 h-3.5 accent-orange-500"
-                                                        disabled={!r.isValid} />
-                                                </td>
-                                                <td className="px-2 py-2 text-center text-xs text-orange-500 dark:text-orange-400 bg-orange-50/30 dark:bg-orange-900/5">{r.esiApply ? `${form.esiEmpPct}%` : '—'}</td>
-                                                <td className={cn('bg-orange-50/30 dark:bg-orange-900/5', r.esiApply ? 'px-2 py-2 text-right text-xs text-orange-700 dark:text-orange-300 font-semibold' : td + ' text-gray-300 dark:text-gray-600')}>
-                                                    {r.esiApply ? `₹${fmt(r.esiEmp)}` : '—'}
-                                                </td>
-                                                <td className={cn('bg-orange-50/30 dark:bg-orange-900/5 border-r border-gray-100 dark:border-gray-700', r.esiApply ? 'px-2 py-2 text-right text-xs text-orange-600 dark:text-orange-400' : td + ' text-gray-300 dark:text-gray-600')}>
-                                                    {r.esiApply ? `₹${fmt(r.esiEmpr)}` : '—'}
-                                                </td>
+                                                    <td className="px-2 py-2 text-center bg-orange-50/30 dark:bg-orange-900/5">
+                                                        <input type="checkbox"
+                                                            checked={ov.esiApplicable !== false}
+                                                            onChange={e => setOverride(r.LabourId, 'esiApplicable', e.target.checked)}
+                                                            className="w-3.5 h-3.5 accent-orange-500"
+                                                            disabled={!r.isValid} />
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center text-xs text-orange-500 dark:text-orange-400 bg-orange-50/30 dark:bg-orange-900/5">{r.esiApply ? `${form.esiEmpPct}%` : '—'}</td>
+                                                    <td className={cn('bg-orange-50/30 dark:bg-orange-900/5', r.esiApply ? 'px-2 py-2 text-right text-xs text-orange-700 dark:text-orange-300 font-semibold' : td + ' text-gray-300 dark:text-gray-600')}>
+                                                        {r.esiApply ? `₹${fmt(r.esiEmp)}` : '—'}
+                                                    </td>
+                                                    <td className={cn('bg-orange-50/30 dark:bg-orange-900/5 border-r border-gray-100 dark:border-gray-700', r.esiApply ? 'px-2 py-2 text-right text-xs text-orange-600 dark:text-orange-400' : td + ' text-gray-300 dark:text-gray-600')}>
+                                                        {r.esiApply ? `₹${fmt(r.esiEmpr)}` : '—'}
+                                                    </td>
 
-                                                <td className="px-2 py-2">
-                                                    <input type="number" min="0" step="0.01" className={numInput}
-                                                        placeholder="0" value={ov.advance || ''}
-                                                        onChange={e => setOverride(r.LabourId, 'advance', e.target.value)}
-                                                        disabled={!r.isValid} />
-                                                </td>
-                                                <td className="px-2 py-2 border-r border-gray-100 dark:border-gray-700">
-                                                    <input type="number" min="0" step="0.01" className={numInput}
-                                                        placeholder="0" value={ov.otherAllowance || ''}
-                                                        onChange={e => setOverride(r.LabourId, 'otherAllowance', e.target.value)}
-                                                        disabled={!r.isValid} />
-                                                </td>
+                                                    {hasPT && (
+                                                        <td className="px-2 py-2 text-right text-xs bg-teal-50/30 dark:bg-teal-900/5 border-r border-gray-100 dark:border-gray-700">
+                                                            {r.ptEmp > 0
+                                                                ? <span className="font-semibold text-teal-700 dark:text-teal-400">₹{fmt(r.ptEmp)}</span>
+                                                                : <span className="text-gray-300 dark:text-gray-600">Nil</span>}
+                                                        </td>
+                                                    )}
+                                                    {hasLWF && (
+                                                        <>
+                                                            <td className="px-2 py-2 text-right text-xs bg-rose-50/30 dark:bg-rose-900/5">
+                                                                {r.lwfEmp > 0 ? <span className="font-semibold text-rose-600 dark:text-rose-400">₹{fmt(r.lwfEmp)}</span> : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                                                            </td>
+                                                            <td className="px-2 py-2 text-right text-xs bg-rose-50/30 dark:bg-rose-900/5 border-r border-gray-100 dark:border-gray-700">
+                                                                {r.lwfEmpr > 0 ? <span className="text-rose-500">₹{fmt(r.lwfEmpr)}</span> : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                                                            </td>
+                                                        </>
+                                                    )}
 
-                                                <td className="px-2 py-2 text-right text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
-                                                    {r.isValid ? `₹${fmt(r.basicPayable)}` : '—'}
-                                                </td>
-                                                <td className="px-2 py-2 text-right text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
-                                                    {r.isValid ? `₹${fmt(r.allowancePayable)}` : '—'}
-                                                </td>
-                                                <td className="px-2 py-2 text-right text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
-                                                    {r.isValid ? `₹${fmt(r.netPayable)}` : '—'}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                                    <td className="px-2 py-2">
+                                                        <input type="number" min="0" step="0.01" className={numInput}
+                                                            placeholder="0" value={ov.advance || ''}
+                                                            onChange={e => setOverride(r.LabourId, 'advance', e.target.value)}
+                                                            disabled={!r.isValid} />
+                                                    </td>
+                                                    <td className="px-2 py-2 border-r border-gray-100 dark:border-gray-700">
+                                                        <input type="number" min="0" step="0.01" className={numInput}
+                                                            placeholder="0" value={ov.otherAllowance || ''}
+                                                            onChange={e => setOverride(r.LabourId, 'otherAllowance', e.target.value)}
+                                                            disabled={!r.isValid} />
+                                                    </td>
+
+                                                    <td className="px-2 py-2 text-right text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
+                                                        {r.isValid ? `₹${fmt(r.basicPayable)}` : '—'}
+                                                    </td>
+                                                    <td className="px-2 py-2 text-right text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
+                                                        {r.isValid ? `₹${fmt(r.allowancePayable)}` : '—'}
+                                                    </td>
+                                                    <td className="px-2 py-2 text-right text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
+                                                        {r.isValid ? `₹${fmt(r.netPayable)}` : '—'}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        });
+                                        return rows;
+                                    })()}
                                 </tbody>
                                 <tfoot>
                                     <tr className="bg-gray-100 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-500 font-bold">
@@ -1056,6 +1373,9 @@ const LabourPayrollGeneration = () => {
                                         <td colSpan={2} className="px-2 py-2.5 text-right text-xs text-gray-400"></td>
                                         <td className="px-2 py-2.5 text-right text-xs font-bold text-orange-700 dark:text-orange-300">₹{fmt(grandTotal.esiEmp)}</td>
                                         <td className="px-2 py-2.5 text-right text-xs font-bold text-orange-600 dark:text-orange-400">₹{fmt(grandTotal.esiEmpr)}</td>
+                                        {hasPT  && <td className="px-2 py-2.5 text-right text-xs font-bold text-teal-700 dark:text-teal-400">₹{fmt(grandTotal.ptEmp)}</td>}
+                                        {hasLWF && <td className="px-2 py-2.5 text-right text-xs font-bold text-rose-600 dark:text-rose-400">₹{fmt(grandTotal.lwfEmp)}</td>}
+                                        {hasLWF && <td className="px-2 py-2.5 text-right text-xs font-bold text-rose-500">₹{fmt(grandTotal.lwfEmpr)}</td>}
                                         <td className="px-2 py-2.5 text-right text-xs font-bold text-gray-700 dark:text-gray-200">₹{fmt(grandTotal.advance)}</td>
                                         <td className="px-2 py-2.5 text-right text-xs font-bold text-gray-700 dark:text-gray-200">₹{fmt(grandTotal.otherAllow)}</td>
                                         <td className="px-2 py-2.5 text-right text-xs font-bold text-emerald-600 dark:text-emerald-400">₹{fmt(grandTotal.basicPayable)}</td>
@@ -1067,6 +1387,58 @@ const LabourPayrollGeneration = () => {
                         </div>
                     )}
                 </SectionCard>
+
+                {typeGroups.length > 0 && (
+                    <SectionCard title="Labour Type Summary" icon={Users}>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {typeGroups.map(g => (
+                                <div key={g.key} className={cn(
+                                    'rounded-xl border p-4',
+                                    g.isOwn
+                                        ? 'border-indigo-200 dark:border-indigo-700 bg-indigo-50/30 dark:bg-indigo-900/10'
+                                        : 'border-teal-200 dark:border-teal-700 bg-teal-50/30 dark:bg-teal-900/10'
+                                )}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className={cn(
+                                            'px-2 py-0.5 rounded-lg text-xs font-bold',
+                                            g.isOwn
+                                                ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                                                : 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300'
+                                        )}>
+                                            {g.label}
+                                        </span>
+                                        <span className="text-xs text-gray-500">{g.workers} workers</span>
+                                    </div>
+                                    {[
+                                        ['Gross Amount',   g.grossAmount,      'text-blue-700 dark:text-blue-300'],
+                                        ['Basic Wage',     g.basicWage,        'text-blue-600 dark:text-blue-400'],
+                                        ['Allowance',      g.allowance,        'text-blue-500'],
+                                        ['PF Employee',    g.pfEmp,            'text-purple-600 dark:text-purple-400'],
+                                        ['PF Employer',    g.pfEmpr,           'text-purple-500'],
+                                        ['ESI Employee',   g.esiEmp,           'text-orange-600 dark:text-orange-400'],
+                                        ['ESI Employer',   g.esiEmpr,          'text-orange-500'],
+                                        ...(hasPT  ? [['PT (Employee)', g.ptEmp,   'text-teal-600 dark:text-teal-400']] : []),
+                                        ...(hasLWF ? [['LWF Employee',  g.lwfEmp,  'text-rose-600 dark:text-rose-400'],
+                                                      ['LWF Employer',  g.lwfEmpr, 'text-rose-500']] : []),
+                                        ['Advance',        g.advance,          'text-gray-600 dark:text-gray-400'],
+                                        ['Other Allow',    g.otherAllow,       'text-gray-600 dark:text-gray-400'],
+                                        ['Basic Payable',  g.basicPayable,     'text-emerald-600 dark:text-emerald-400'],
+                                        ['Allow. Payable', g.allowancePayable, 'text-emerald-500'],
+                                    ].map(([label, val, cls]) => (
+                                        <div key={label} className="flex justify-between text-xs py-0.5">
+                                            <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                                            <span className={cls}>₹{fmt(val)}</span>
+                                        </div>
+                                    ))}
+                                    <div className="flex justify-between text-xs font-bold border-t border-gray-100 dark:border-gray-700 pt-2 mt-2">
+                                        <span className="text-gray-700 dark:text-gray-200">Net Payable</span>
+                                        <span className="text-emerald-600 dark:text-emerald-400">₹{fmt(g.netPayable)}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </SectionCard>
+                )}
 
                 {catTotals.length > 0 && (
                     <SectionCard title="Category-wise Summary" icon={Users}>
@@ -1085,6 +1457,9 @@ const LabourPayrollGeneration = () => {
                                         ['PF Employer',      c.pfEmpr,          'text-purple-500'],
                                         ['ESI Employee',     c.esiEmp,          'text-orange-600 dark:text-orange-400'],
                                         ['ESI Employer',     c.esiEmpr,         'text-orange-500'],
+                                        ...(hasPT  ? [['PT (Employee)', c.ptEmp,   'text-teal-600 dark:text-teal-400']] : []),
+                                        ...(hasLWF ? [['LWF Employee',  c.lwfEmp,  'text-rose-600 dark:text-rose-400'],
+                                                      ['LWF Employer',  c.lwfEmpr, 'text-rose-500']] : []),
                                         ['Advance',          c.advance,         'text-gray-600 dark:text-gray-400'],
                                         ['Other Allow',      c.otherAllow,      'text-gray-600 dark:text-gray-400'],
                                         ['Basic Payable',    c.basicPayable,    'text-emerald-600 dark:text-emerald-400'],

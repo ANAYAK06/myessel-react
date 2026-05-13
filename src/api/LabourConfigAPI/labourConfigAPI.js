@@ -243,3 +243,99 @@ export const deleteHoliday = async (holidayId, actionBy) => {
         throw error.message || 'Failed to delete holiday';
     }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. PROFESSIONAL TAX (PT) CONFIGURATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getPTConfig = async (ccCode) => {
+    try {
+        const params = ccCode ? { ccCode } : {};
+        const response = await axios.get(`${API_BASE_URL}/LabourConfig/GetPTConfig`, { params });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch PT config';
+    }
+};
+
+export const savePTConfig = async (payload) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/LabourConfig/SavePTConfig`,
+            payload,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to save PT config';
+    }
+};
+
+export const getPTSlabs = async (configId) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/LabourConfig/GetPTSlabs`, {
+            params: { configId },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch PT slabs';
+    }
+};
+
+export const savePTSlab = async (payload) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/LabourConfig/SavePTSlab`,
+            payload,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to save PT slab';
+    }
+};
+
+export const deletePTSlab = async (slabId) => {
+    try {
+        const response = await axios.delete(`${API_BASE_URL}/LabourConfig/DeletePTSlab`, {
+            params: { slabId },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to delete PT slab';
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. LABOUR WELFARE FUND (LWF) CONFIGURATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getLWFConfig = async (ccCode) => {
+    try {
+        const params = ccCode ? { ccCode } : {};
+        const response = await axios.get(`${API_BASE_URL}/LabourConfig/GetLWFConfig`, { params });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to fetch LWF config';
+    }
+};
+
+export const saveLWFConfig = async (payload) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/LabourConfig/SaveLWFConfig`,
+            payload,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to save LWF config';
+    }
+};

@@ -312,7 +312,7 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
                                 {[
                                     { label: 'Gross Payable',    value: fmt(hdr.TotalGrossAmount),      icon: <DollarSign size={14} />,  color: 'text-blue-600 dark:text-blue-400',    bg: 'bg-blue-50 dark:bg-blue-900/20'    },
                                     { label: 'Basic Payable',    value: fmt(hdr.TotalBasicPayable),    icon: <Banknote size={14} />,    color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
-                                    { label: 'Total Deductions', value: fmt((hdr.TotalPFEmployee || 0) + (hdr.TotalESIEmployee || 0) + (hdr.TotalAdvance || 0)), icon: <TrendingDown size={14} />, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
+                                    { label: 'Total Deductions', value: fmt((hdr.TotalPFEmployee || 0) + (hdr.TotalESIEmployee || 0) + (hdr.TotalPTAmount || 0) + (hdr.TotalLWFEmployee || 0) + (hdr.TotalAdvance || 0)), icon: <TrendingDown size={14} />, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
                                     { label: 'Net Payable',      value: fmt(hdr.TotalNetPayable),     icon: <ShieldCheck size={14} />, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
                                 ].map(({ label, value, icon, color, bg }) => (
                                     <div key={label} className={`${bg} rounded-xl p-3`}>
@@ -338,7 +338,10 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
                         </div>
 
                         {/* ── Category Breakdown ── */}
-                        {cats.length > 0 && (
+                        {cats.length > 0 && (() => {
+                            const hasPT  = !!hdr.PTApply;
+                            const hasLWF = !!hdr.LWFApply;
+                            return (
                             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                                 <button
                                     onClick={() => setExpandedCategory(p => !p)}
@@ -357,7 +360,13 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
                                         <table className="w-full text-xs">
                                             <thead className="bg-gradient-to-r from-blue-600 to-indigo-700">
                                                 <tr>
-                                                    {['Category','Workers','Basic Payable','Allowance Payable','PF (Emp)','ESI (Emp)','Advance','Net Pay'].map(h => (
+                                                    {[
+                                                        'Category','Workers','Basic Payable','Allowance Payable',
+                                                        'PF (Emp)','ESI (Emp)',
+                                                        ...(hasPT  ? ['PT (Emp)']  : []),
+                                                        ...(hasLWF ? ['LWF (Emp)'] : []),
+                                                        'Advance','Net Pay',
+                                                    ].map(h => (
                                                         <th key={h} className="px-3 py-2.5 text-left font-semibold text-white whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
@@ -373,6 +382,8 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
                                                         <td className="px-3 py-2.5 text-right text-purple-700 dark:text-purple-300">{fmt(c.AllowancePayable)}</td>
                                                         <td className="px-3 py-2.5 text-right text-red-600 dark:text-red-400">{fmt(c.PFEmployee)}</td>
                                                         <td className="px-3 py-2.5 text-right text-red-600 dark:text-red-400">{fmt(c.ESIEmployee)}</td>
+                                                        {hasPT  && <td className="px-3 py-2.5 text-right text-teal-600 dark:text-teal-400">{fmt(c.PTAmount)}</td>}
+                                                        {hasLWF && <td className="px-3 py-2.5 text-right text-rose-600 dark:text-rose-400">{fmt(c.LWFEmployee)}</td>}
                                                         <td className="px-3 py-2.5 text-right text-orange-600 dark:text-orange-400">{fmt(c.Advance)}</td>
                                                         <td className="px-3 py-2.5 text-right font-bold text-green-700 dark:text-green-400">{fmt(c.NetPayable)}</td>
                                                     </tr>
@@ -387,6 +398,8 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
                                                         <td className="px-3 py-2.5 text-right font-bold text-purple-700 dark:text-purple-300">{fmt(hdr.TotalAllowancePayable)}</td>
                                                         <td className="px-3 py-2.5 text-right font-bold text-red-600 dark:text-red-400">{fmt(hdr.TotalPFEmployee)}</td>
                                                         <td className="px-3 py-2.5 text-right font-bold text-red-600 dark:text-red-400">{fmt(hdr.TotalESIEmployee)}</td>
+                                                        {hasPT  && <td className="px-3 py-2.5 text-right font-bold text-teal-600 dark:text-teal-400">{fmt(hdr.TotalPTAmount)}</td>}
+                                                        {hasLWF && <td className="px-3 py-2.5 text-right font-bold text-rose-600 dark:text-rose-400">{fmt(hdr.TotalLWFEmployee)}</td>}
                                                         <td className="px-3 py-2.5 text-right font-bold text-orange-600 dark:text-orange-400">{fmt(hdr.TotalAdvance)}</td>
                                                         <td className="px-3 py-2.5 text-right font-bold text-green-700 dark:text-green-400">{fmt(hdr.TotalNetPayable)}</td>
                                                     </tr>
@@ -396,10 +409,15 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
                                     </div>
                                 )}
                             </div>
-                        )}
+                            );
+                        })()}
 
                         {/* ── Worker-wise Breakdown (inline) ── */}
-                        {wkrs.length > 0 && (
+                        {wkrs.length > 0 && (() => {
+                            const hasPT  = !!hdr.PTApply;
+                            const hasLWF = !!hdr.LWFApply;
+                            const totalCols = 11 + (hasPT ? 1 : 0) + (hasLWF ? 1 : 0);
+                            return (
                             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                                 <button
                                     onClick={() => setExpandedWorkers(p => !p)}
@@ -418,35 +436,68 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
                                         <table className="w-full text-xs">
                                             <thead className="bg-gradient-to-r from-purple-600 to-indigo-700">
                                                 <tr>
-                                                    {['#','Labour ID','Name','Category','Days','Basic Payable','Allowance Payable','PF (Emp)','ESI (Emp)','Advance','Net Pay'].map(h => (
+                                                    {[
+                                                        '#','Labour ID','Name','Category','Days',
+                                                        'Basic Payable','Allowance Payable',
+                                                        'PF (Emp)','ESI (Emp)',
+                                                        ...(hasPT  ? ['PT (Emp)']  : []),
+                                                        ...(hasLWF ? ['LWF (Emp)'] : []),
+                                                        'Advance','Net Pay',
+                                                    ].map(h => (
                                                         <th key={h} className="px-3 py-2.5 text-left font-semibold text-white whitespace-nowrap">{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                                {wkrs.map((w, i) => (
-                                                    <tr key={w.LabourId || i} className="hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors">
-                                                        <td className="px-3 py-2 text-gray-400">{i + 1}</td>
-                                                        <td className="px-3 py-2 font-mono text-indigo-700 dark:text-indigo-300">{w.LabourId}</td>
-                                                        <td className="px-3 py-2 text-gray-800 dark:text-gray-200 whitespace-nowrap font-medium">{w.LabourName}</td>
-                                                        <td className="px-3 py-2">
-                                                            <span className="px-1.5 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">{w.Category}</span>
-                                                        </td>
-                                                        <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-semibold">{w.DaysWorked}</td>
-                                                        <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-300">{fmt(w.BasicPayable)}</td>
-                                                        <td className="px-3 py-2 text-right text-purple-700 dark:text-purple-300">{fmt(w.AllowancePayable)}</td>
-                                                        <td className="px-3 py-2 text-right text-red-600 dark:text-red-400">{fmt(w.PFEmployee)}</td>
-                                                        <td className="px-3 py-2 text-right text-red-600 dark:text-red-400">{fmt(w.ESIEmployee)}</td>
-                                                        <td className="px-3 py-2 text-right text-orange-600 dark:text-orange-400">{fmt(w.Advance)}</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-green-700 dark:text-green-400">{fmt(w.NetPayable)}</td>
-                                                    </tr>
-                                                ))}
+                                                {(() => {
+                                                    const rows = [];
+                                                    let lastGroupKey = null;
+                                                    let rowNum = 0;
+                                                    wkrs.forEach((w, i) => {
+                                                        const isOwn = !w.LabourType || w.LabourType === 'Own Labour';
+                                                        const groupKey = isOwn ? '__own__' : `__ctr__${w.ContractorName || ''}`;
+                                                        if (groupKey !== lastGroupKey) {
+                                                            lastGroupKey = groupKey;
+                                                            rows.push(
+                                                                <tr key={`grp-${groupKey}-${i}`} className="bg-purple-50/80 dark:bg-purple-900/20">
+                                                                    <td colSpan={totalCols} className="px-3 py-1.5 border-t-2 border-purple-200 dark:border-purple-700">
+                                                                        <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                                                                            {isOwn ? 'Own Labour' : `Contractor — ${w.ContractorName || 'Unknown'}`}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        }
+                                                        rowNum++;
+                                                        rows.push(
+                                                            <tr key={w.LabourId || i} className="hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors">
+                                                                <td className="px-3 py-2 text-gray-400">{rowNum}</td>
+                                                                <td className="px-3 py-2 font-mono text-indigo-700 dark:text-indigo-300">{w.LabourId}</td>
+                                                                <td className="px-3 py-2 text-gray-800 dark:text-gray-200 whitespace-nowrap font-medium">{w.LabourName}</td>
+                                                                <td className="px-3 py-2">
+                                                                    <span className="px-1.5 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">{w.Category}</span>
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-semibold">{w.DaysWorked}</td>
+                                                                <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-300">{fmt(w.BasicPayable)}</td>
+                                                                <td className="px-3 py-2 text-right text-purple-700 dark:text-purple-300">{fmt(w.AllowancePayable)}</td>
+                                                                <td className="px-3 py-2 text-right text-red-600 dark:text-red-400">{fmt(w.PFEmployee)}</td>
+                                                                <td className="px-3 py-2 text-right text-red-600 dark:text-red-400">{fmt(w.ESIEmployee)}</td>
+                                                                {hasPT  && <td className="px-3 py-2 text-right text-teal-600 dark:text-teal-400">{fmt(w.PTAmount)}</td>}
+                                                                {hasLWF && <td className="px-3 py-2 text-right text-rose-600 dark:text-rose-400">{fmt(w.LWFEmployee)}</td>}
+                                                                <td className="px-3 py-2 text-right text-orange-600 dark:text-orange-400">{fmt(w.Advance)}</td>
+                                                                <td className="px-3 py-2 text-right font-bold text-green-700 dark:text-green-400">{fmt(w.NetPayable)}</td>
+                                                            </tr>
+                                                        );
+                                                    });
+                                                    return rows;
+                                                })()}
                                             </tbody>
                                         </table>
                                     </div>
                                 )}
                             </div>
-                        )}
+                            );
+                        })()}
                     </>
                 )}
 

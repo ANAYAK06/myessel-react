@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
     Users, Download, RotateCcw, Eye, Search,
     AlertTriangle, ChevronRight, Phone, HardHat,
-    IdCard, ShieldCheck, PhoneCall
+    IdCard, ShieldCheck, UserCheck
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import {
@@ -41,6 +41,8 @@ const downloadAsCSV = (data, filename) => {
     toast.success('Downloaded successfully');
 };
 
+const fmt = (dateStr) => dateStr ? dateStr.split(' ')[0] : '-';
+
 const StatCard = ({ label, value, icon: Icon, gradient, iconGradient, border, textColor, subTextColor }) => (
     <div className={`bg-gradient-to-br ${gradient} rounded-xl p-5 border ${border} shadow-sm`}>
         <div className="flex items-center justify-between">
@@ -54,6 +56,37 @@ const StatCard = ({ label, value, icon: Icon, gradient, iconGradient, border, te
         </div>
     </div>
 );
+
+const COLUMNS = [
+    { key: '#',            label: '#' },
+    { key: 'LabourId',     label: 'Labour ID' },
+    { key: 'LabourName',   label: 'Name' },
+    { key: 'Gender',       label: 'Gender' },
+    { key: 'Age',          label: 'Age' },
+    { key: 'DOB',          label: 'DOB' },
+    { key: 'FatherName',   label: 'Father Name' },
+    { key: 'Department',   label: 'Department' },
+    { key: 'DesignationName', label: 'Designation' },
+    { key: 'Category',     label: 'Category' },
+    { key: 'CostCenterName', label: 'Cost Center' },
+    { key: 'ContractorName', label: 'Contractor' },
+    { key: 'ContactMobile', label: 'Mobile' },
+    { key: 'JoiningDate',  label: 'Joining Date' },
+    { key: 'DateofExit',   label: 'Date of Exit' },
+    { key: 'UANNumber',    label: 'UAN Number' },
+    { key: 'PFNumber',     label: 'PF Number' },
+    { key: 'ESINumber',    label: 'ESI Number' },
+    { key: 'BankName',     label: 'Bank Name' },
+    { key: 'BankAccountNo', label: 'A/C Number' },
+    { key: 'IFSCCode',     label: 'IFSC' },
+    { key: 'BankBranch',   label: 'Branch' },
+];
+
+const Cell = ({ children, className = '' }) => (
+    <td className={`px-4 py-3 text-sm whitespace-nowrap ${className}`}>{children}</td>
+);
+
+const Dash = () => <span className="text-gray-400">-</span>;
 
 const LabourReportPage = () => {
     const dispatch = useDispatch();
@@ -95,28 +128,48 @@ const LabourReportPage = () => {
             item.LabourId?.toLowerCase().includes(q) ||
             item.DesignationName?.toLowerCase().includes(q) ||
             item.ContractorName?.toLowerCase().includes(q) ||
-            item.Department?.toLowerCase().includes(q)
+            item.Department?.toLowerCase().includes(q) ||
+            item.FatherName?.toLowerCase().includes(q) ||
+            item.UANNumber?.toLowerCase().includes(q) ||
+            item.PFNumber?.toLowerCase().includes(q) ||
+            item.ESINumber?.toLowerCase().includes(q) ||
+            item.CostCenterName?.toLowerCase().includes(q) ||
+            item.BankName?.toLowerCase().includes(q) ||
+            item.BankAccountNo?.toLowerCase().includes(q) ||
+            item.ContactMobile?.includes(q)
         );
     });
 
     const totalLabours = rawData.length;
+    const activeLabours = rawData.filter(l => !l.DateofExit).length;
     const pfEnrolled  = rawData.filter(l => l.PFNumber).length;
     const esiEnrolled = rawData.filter(l => l.ESINumber).length;
-    const withContact = rawData.filter(l => l.ContactMobile).length;
 
     const handleExcelDownload = () => {
         const data = filteredData.map(item => ({
-            'Labour ID':    item.LabourId       || '-',
-            'Labour Name':  item.LabourName      || '-',
-            'Labour Type':  item.LabourType      || '-',
-            'Gender':       item.Gender          || '-',
-            'Designation':  item.DesignationName || '-',
-            'Contractor':   item.ContractorName  || '-',
-            'Department':   item.Department      || '-',
-            'Mobile':       item.ContactMobile   || '-',
-            'Joining Date': item.JoiningDate ? item.JoiningDate.split(' ')[0] : '-',
-            'PF Number':    item.PFNumber        || '-',
-            'ESI Number':   item.ESINumber       || '-',
+            'Labour ID':      item.LabourId         || '-',
+            'Labour Name':    item.LabourName        || '-',
+            'Labour Type':    item.LabourType        || '-',
+            'Gender':         item.Gender            || '-',
+            'Age':            item.Age               || '-',
+            'DOB':            fmt(item.DOB),
+            'Father Name':    item.FatherName        || '-',
+            'Department':     item.Department        || '-',
+            'Designation':    item.DesignationName   || '-',
+            'Category':       item.Category          || '-',
+            'Cost Center':    item.CostCenter        || '-',
+            'Cost Center Name': item.CostCenterName  || '-',
+            'Contractor':     item.ContractorName    || '-',
+            'Mobile':         item.ContactMobile     || '-',
+            'Joining Date':   fmt(item.JoiningDate),
+            'Date of Exit':   fmt(item.DateofExit),
+            'UAN Number':     item.UANNumber         || '-',
+            'PF Number':      item.PFNumber          || '-',
+            'ESI Number':     item.ESINumber         || '-',
+            'Bank Name':      item.BankName          || '-',
+            'Account No':     item.BankAccountNo     || '-',
+            'IFSC Code':      item.IFSCCode          || '-',
+            'Bank Branch':    item.BankBranch        || '-',
         }));
         downloadAsCSV(
             data,
@@ -127,7 +180,7 @@ const LabourReportPage = () => {
     return (
         <div className="space-y-6 p-6">
 
-            {/* ── Header ────────────────────────────────────────────── */}
+            {/* ── Header ─────────────────────────────────────── */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                     <div>
@@ -160,7 +213,7 @@ const LabourReportPage = () => {
                 </nav>
             </div>
 
-            {/* ── Stat Cards ────────────────────────────────────────── */}
+            {/* ── Stat Cards ─────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     label="Total Labours"
@@ -171,6 +224,16 @@ const LabourReportPage = () => {
                     border="border-blue-200 dark:border-blue-700"
                     textColor="text-blue-900 dark:text-white"
                     subTextColor="text-blue-600 dark:text-blue-400"
+                />
+                <StatCard
+                    label="Active Labours"
+                    value={activeLabours}
+                    icon={UserCheck}
+                    gradient="from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20"
+                    iconGradient="from-emerald-500 to-emerald-700"
+                    border="border-emerald-200 dark:border-emerald-700"
+                    textColor="text-emerald-900 dark:text-white"
+                    subTextColor="text-emerald-600 dark:text-emerald-400"
                 />
                 <StatCard
                     label="PF Enrolled"
@@ -192,19 +255,9 @@ const LabourReportPage = () => {
                     textColor="text-violet-900 dark:text-white"
                     subTextColor="text-violet-600 dark:text-violet-400"
                 />
-                <StatCard
-                    label="With Contact"
-                    value={withContact}
-                    icon={PhoneCall}
-                    gradient="from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20"
-                    iconGradient="from-purple-500 to-purple-700"
-                    border="border-purple-200 dark:border-purple-700"
-                    textColor="text-purple-900 dark:text-white"
-                    subTextColor="text-purple-600 dark:text-purple-400"
-                />
             </div>
 
-            {/* ── Filters & Actions ─────────────────────────────────── */}
+            {/* ── Filters & Actions ──────────────────────────── */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
@@ -241,7 +294,7 @@ const LabourReportPage = () => {
                                 type="text"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="Search by name, ID, designation, department..."
+                                placeholder="Search by name, ID, UAN, bank, department, cost center..."
                                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-colors"
                             />
                         </div>
@@ -275,25 +328,21 @@ const LabourReportPage = () => {
                         className="px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
                     >
                         <Download className="h-5 w-5" />
-                        Export Excel
+                        Export CSV
                     </button>
                 </div>
             </div>
 
-            {/* ── Table ─────────────────────────────────────────────── */}
+            {/* ── Table ─────────────────────────────────────── */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {filteredData.length > 0 ? (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                             <thead>
                                 <tr className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700">
-                                    {[
-                                        '#', 'Labour ID', 'Name', 'Gender', 'Designation',
-                                        labourType === 'Contractor' ? 'Contractor' : 'Department',
-                                        'Mobile', 'Joining Date', 'PF Number', 'ESI Number'
-                                    ].map(col => (
-                                        <th key={col} className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
-                                            {col}
+                                    {COLUMNS.map(col => (
+                                        <th key={col.key} className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
+                                            {col.label}
                                         </th>
                                     ))}
                                 </tr>
@@ -304,14 +353,21 @@ const LabourReportPage = () => {
                                         key={item.LabourId || idx}
                                         className="hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors"
                                     >
-                                        <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">{idx + 1}</td>
-                                        <td className="px-4 py-3 text-sm font-semibold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                                            {item.LabourId || '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                                            {item.LabourName || '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        {/* # */}
+                                        <Cell className="text-gray-400 dark:text-gray-500">{idx + 1}</Cell>
+
+                                        {/* Labour ID */}
+                                        <Cell className="font-semibold text-indigo-600 dark:text-indigo-400">
+                                            {item.LabourId || <Dash />}
+                                        </Cell>
+
+                                        {/* Name */}
+                                        <Cell className="font-medium text-gray-900 dark:text-white">
+                                            {item.LabourName || <Dash />}
+                                        </Cell>
+
+                                        {/* Gender */}
+                                        <Cell>
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                                                 item.Gender === 'Female'
                                                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
@@ -319,36 +375,113 @@ const LabourReportPage = () => {
                                             }`}>
                                                 {item.Gender || '-'}
                                             </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                            {item.DesignationName || <span className="text-gray-400">-</span>}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                            {labourType === 'Contractor'
-                                                ? (item.ContractorName || <span className="text-gray-400">-</span>)
-                                                : (item.Department || <span className="text-gray-400">-</span>)}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                            {item.ContactMobile ? (
-                                                <span className="flex items-center gap-1.5">
-                                                    <Phone className="w-3 h-3 text-indigo-400" />
-                                                    {item.ContactMobile}
-                                                </span>
-                                            ) : <span className="text-gray-400">-</span>}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                            {item.JoiningDate ? item.JoiningDate.split(' ')[0] : <span className="text-gray-400">-</span>}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
+                                        </Cell>
+
+                                        {/* Age */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.Age || <Dash />}
+                                        </Cell>
+
+                                        {/* DOB */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.DOB ? fmt(item.DOB) : <Dash />}
+                                        </Cell>
+
+                                        {/* Father Name */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.FatherName || <Dash />}
+                                        </Cell>
+
+                                        {/* Department */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.Department || <Dash />}
+                                        </Cell>
+
+                                        {/* Designation */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.DesignationName || <Dash />}
+                                        </Cell>
+
+                                        {/* Category */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.Category || <Dash />}
+                                        </Cell>
+
+                                        {/* Cost Center */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.CostCenterName
+                                                ? <span title={item.CostCenter}>{item.CostCenterName}</span>
+                                                : <Dash />}
+                                        </Cell>
+
+                                        {/* Contractor */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.ContractorName || <Dash />}
+                                        </Cell>
+
+                                        {/* Mobile */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.ContactMobile
+                                                ? <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-indigo-400" />{item.ContactMobile}</span>
+                                                : <Dash />}
+                                        </Cell>
+
+                                        {/* Joining Date */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.JoiningDate ? fmt(item.JoiningDate) : <Dash />}
+                                        </Cell>
+
+                                        {/* Date of Exit */}
+                                        <Cell>
+                                            {item.DateofExit
+                                                ? <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">{fmt(item.DateofExit)}</span>
+                                                : <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Active</span>}
+                                        </Cell>
+
+                                        {/* UAN Number */}
+                                        <Cell>
+                                            {item.UANNumber
+                                                ? <span className="text-xs font-mono bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-2 py-1 rounded">{item.UANNumber}</span>
+                                                : <Dash />}
+                                        </Cell>
+
+                                        {/* PF Number */}
+                                        <Cell>
                                             {item.PFNumber
                                                 ? <span className="text-xs font-mono bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded">{item.PFNumber}</span>
-                                                : <span className="text-gray-400 text-sm">-</span>}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                : <Dash />}
+                                        </Cell>
+
+                                        {/* ESI Number */}
+                                        <Cell>
                                             {item.ESINumber
                                                 ? <span className="text-xs font-mono bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 px-2 py-1 rounded">{item.ESINumber}</span>
-                                                : <span className="text-gray-400 text-sm">-</span>}
-                                        </td>
+                                                : <Dash />}
+                                        </Cell>
+
+                                        {/* Bank Name */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.BankName || <Dash />}
+                                        </Cell>
+
+                                        {/* Account No */}
+                                        <Cell>
+                                            {item.BankAccountNo
+                                                ? <span className="text-xs font-mono text-gray-700 dark:text-gray-300">{item.BankAccountNo}</span>
+                                                : <Dash />}
+                                        </Cell>
+
+                                        {/* IFSC */}
+                                        <Cell>
+                                            {item.IFSCCode
+                                                ? <span className="text-xs font-mono text-gray-700 dark:text-gray-300">{item.IFSCCode}</span>
+                                                : <Dash />}
+                                        </Cell>
+
+                                        {/* Branch */}
+                                        <Cell className="text-gray-700 dark:text-gray-300">
+                                            {item.BankBranch || <Dash />}
+                                        </Cell>
                                     </tr>
                                 ))}
                             </tbody>
@@ -382,7 +515,7 @@ const LabourReportPage = () => {
                 )}
             </div>
 
-            {/* ── Error ─────────────────────────────────────────────── */}
+            {/* ── Error ─────────────────────────────────────── */}
             {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center gap-3">
                     <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />

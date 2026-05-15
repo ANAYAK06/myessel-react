@@ -63,6 +63,7 @@ import StaffCMSPayCreation from '../HR/StaffCMSPayCreation';
 import LabourCMSPayCreation from '../HR/LabourCMSPayCreation';
 import StaffPayrollGeneration from '../HR/StaffPayrollGeneration';
 import LabourPayrollGeneration from '../HR/LabourPayrollGeneration';
+import LabourBankChange from '../HR/LabourBankChange';
 import StaffSalaryDeductionArrear from '../HR/StaffSalaryDeductionArrear';
 import StaffJoinRegistration from '../HR/StaffJoinRegistration';
 import BulkWorkerRegistration from '../HR/BulkWorkerRegistration';
@@ -1111,6 +1112,16 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     }
 
+    const isLabourBankChangePage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/LabourBankChange' ||
+            menuData.path?.toLowerCase().includes('labourbankchange');
+        const nameMatches = menuData.name?.toLowerCase().includes('labourbankchange') ||
+            menuData.name?.toLowerCase().includes('labour bank change');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('labourbankchange');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
     const isStaffSalaryDeductionandArrear = (menuData) => {
         if (!menuData) return false;
         const pathMatches = menuData.path === '/HR/SalaryDeductions?Type=Staff' ||  
@@ -1474,6 +1485,11 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isLabourPayrollGenerationPage(currentMenuData)) {
             console.log('✅ Rendering LabourPayrollGeneration for:', currentMenuData.name);
             return <LabourPayrollGeneration menuData={currentMenuData} />;
+        }
+        // check if the menu item should show Labour Bank Change page
+        if (currentMenuData && isLabourBankChangePage(currentMenuData)) {
+            console.log('✅ Rendering LabourBankChange for:', currentMenuData.name);
+            return <LabourBankChange menuData={currentMenuData} />;
         }
         // check if the menu item should show staff Salary Deduction and Arrear page
         if (currentMenuData && isStaffSalaryDeductionandArrear(currentMenuData)) {

@@ -49,6 +49,8 @@ import VerifyLoadWallet from '../../pages/Accounts/VerifyLoadWallet';
 import VerifyLabourCMSPay from '../../pages/HR/VerifyLabourCMSPay';
 import VerifyBulkWorker from '../../pages/HR/VerifyBulkWorker';
 import VerifyWorkerStaffReg from '../../pages/HR/VerifyWorkerStaffReg';
+import VerifyLabourBankChange from '../../pages/HR/VerifyLabourBankChange';
+import VerifyItemCode from '../../pages/Purchase/VerifyItemCode';
 
 
 // ============================================================================
@@ -889,6 +891,31 @@ const isWorkerStaffRegVerification = (path, category, title, displayName, workfl
     return isMatch;
 };
 
+const isLabourBankChangeVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifylabourbankchange',
+        '/hr/approvelabourbankchange',
+        'verifylabourbankchange',
+        'labour bank change',
+        'labourbankchange',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('labour bank change') ||
+        category.includes('labourbankchange') ||
+        title.includes('labour bank change') ||
+        title.includes('labourbankchange') ||
+        displayName.includes('labour bank change') ||
+        displayName.includes('labourbankchange') ||
+        workflowType.includes('labour bank change') ||
+        workflowType.includes('labourbankchange');
+    if (isMatch) {
+        console.log('✅ Labour Bank Change Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Labour Bank Change Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isBulkWorkerVerification = (path, category, title, displayName, workflowType) => {
     const pathMatches = [
         '/hr/verifybulkworker',
@@ -910,6 +937,32 @@ const isBulkWorkerVerification = (path, category, title, displayName, workflowTy
         console.log('✅ Bulk Worker Verification detected by:', { path, category, title, displayName, workflowType });
     } else {
         console.log('❌ Bulk Worker Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
+const isItemCodeVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/purchase/verifyitemcode',
+        '/purchase/verifyitemcodecreation',
+        'verifyitemcode',
+        'item code creation',
+        'itemcodecreation',
+        'itemcode',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('item code') ||
+        category.includes('itemcode') ||
+        title.includes('item code') ||
+        title.includes('itemcode') ||
+        displayName.includes('item code') ||
+        displayName.includes('itemcode') ||
+        workflowType.includes('item code') ||
+        workflowType.includes('itemcode');
+    if (isMatch) {
+        console.log('✅ Item Code Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Item Code Verification not detected. Path:', path);
     }
     return isMatch;
 };
@@ -1460,11 +1513,33 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         }
 
         // ====================================================================
+        // LABOUR BANK CHANGE VERIFICATION
+        // ====================================================================
+        if (isLabourBankChangeVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyLabourBankChange');
+            return <VerifyLabourBankChange
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
         // BULK WORKER REGISTRATION VERIFICATION
         // ====================================================================
         if (isBulkWorkerVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyBulkWorker');
             return <VerifyBulkWorker
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // ITEM CODE VERIFICATION
+        // ====================================================================
+        if (isItemCodeVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyItemCode');
+            return <VerifyItemCode
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

@@ -125,6 +125,8 @@ import bulkWorkerRegReducer from "../slices/HRSlice/bulkWorkerRegistrationSlice"
 import bulkWorkerVerifyReducer from "../slices/HRSlice/bulkWorkerVerificationSlice";
 import generalPaymentReducer from "../slices/accountsSlice/generalPaymentSlice";
 import labourReportReducer from "../slices/HrReportSlice/labourReportSlice";
+import labourBankChangeReducer from "../slices/HRSlice/labourBankChangeSlice";
+import itemCodeVerificationReducer from "../slices/purchaseSlice/itemCodeVerificationSlice";
 
 const store = configureStore({
   
@@ -254,6 +256,8 @@ const store = configureStore({
     bulkWorkerVerify:      bulkWorkerVerifyReducer,
     generalPayment:        generalPaymentReducer,
     labourreport:          labourReportReducer,
+    labourBankChange:      labourBankChangeReducer,
+    itemCodeVerification:  itemCodeVerificationReducer,
 
   }
 

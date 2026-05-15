@@ -25,6 +25,7 @@ import {
     logout
 } from '../../slices/auth/authSlice';
 import ThemeToggle from '../../components/ThemeToggle';
+import ForgotPasswordModal from '../../components/ForgotPasswordModal';
 
 // Validation Schema for Role Login
 const roleValidationSchema = Yup.object({
@@ -38,6 +39,7 @@ const LoginOptions = () => {
     const navigate = useNavigate();
     const [showRolePassword, setShowRolePassword] = useState(false);
     const [isProcessingLogin, setIsProcessingLogin] = useState(false); // ADDED: Track login processing
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
 
     const {
         employeeId,
@@ -389,11 +391,26 @@ const LoginOptions = () => {
                                         </p>
                                     </div>
                                 )}
+
+                                <div className="text-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowForgotPassword(true)}
+                                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 font-medium"
+                                    >
+                                        Forgot password?
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        <ForgotPasswordModal
+            isOpen={showForgotPassword}
+            onClose={() => setShowForgotPassword(false)}
+            loginType="role"
+        />
         </div>
     );
 };

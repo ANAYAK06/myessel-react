@@ -67,7 +67,7 @@ const Btn = ({ children, onClick, loading, disabled, variant = 'primary', size =
     );
 };
 
-const fmt = (n) => (Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = (n) => (Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 const MONTHS = [
     { v: 1, l: 'January' }, { v: 2, l: 'February' }, { v: 3, l: 'March' },

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { Eye, EyeOff, Building2, Shield, User, Loader2, CheckCircle, BarChart3, Users, HardHat } from 'lucide-react';
+import { Eye, EyeOff, Building2, Shield, User, Loader2, CheckCircle, BarChart3, Users, HardHat, ShieldCheck } from 'lucide-react';
 import {
     validateEmployee,
     clearErrors,
@@ -15,6 +15,7 @@ import {
 } from '../../slices/auth/authSlice';
 import ThemeToggle from '../../components/ThemeToggle';
 import sessionManager from '../../utilities/SessionManager'; // FIXED: Removed 's' from SessionsManager
+import ForgotPasswordModal from '../../components/ForgotPasswordModal';
 
 // Validation Schema
 const validationSchema = Yup.object({
@@ -31,6 +32,7 @@ const Login = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState('');
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
 
     // Redux state
     const {
@@ -152,20 +154,20 @@ const Login = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-orange-50 dark:from-gray-900 dark:via-[#0d1b5e] dark:to-gray-900 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
 
             {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-20 dark:opacity-10">
+            <div className="absolute inset-0 opacity-30 dark:opacity-10">
                 <div className="absolute top-0 left-0 w-full h-full" style={{
-                    backgroundImage: `radial-gradient(circle at 25% 25%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-                                     radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.3) 0%, transparent 50%)`
+                    backgroundImage: `radial-gradient(circle at 20% 30%, rgba(13, 27, 94, 0.12) 0%, transparent 50%),
+                                     radial-gradient(circle at 80% 70%, rgba(234, 88, 12, 0.10) 0%, transparent 50%)`
                 }}></div>
             </div>
 
             {/* Floating shapes */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-r from-[#0d1b5e] to-blue-800 rounded-full opacity-10 blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-1/4 right-1/6 w-80 h-80 bg-gradient-to-r from-orange-500 to-orange-300 rounded-full opacity-10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
             </div>
 
             {/* Theme Toggle */}
@@ -225,10 +227,10 @@ const Login = () => {
                                     onFocus={() => setFocusedField('employeeId')}
                                     onKeyPress={handleKeyPress}
                                     className={`w-full px-4 py-4 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${focusedField === 'employeeId' || formik.values.employeeId
-                                            ? 'border-purple-500 focus:border-purple-600'
+                                            ? 'border-orange-500 focus:border-orange-600'
                                             : formik.touched.employeeId && formik.errors.employeeId
                                                 ? 'border-red-300 dark:border-red-600'
-                                                : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
+                                                : 'border-gray-200 dark:border-gray-600 focus:border-orange-500'
                                         }`}
                                     placeholder="Employee ID"
                                     disabled={loading.validateEmployee}
@@ -237,7 +239,7 @@ const Login = () => {
                                 <label
                                     htmlFor="employeeId"
                                     className={`absolute left-4 transition-all duration-200 pointer-events-none ${shouldShowFloatingLabel('employeeId')
-                                            ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-purple-600 dark:text-purple-400 font-medium'
+                                            ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-orange-600 dark:text-orange-400 font-medium'
                                             : 'top-4 text-gray-500 dark:text-gray-400'
                                         }`}
                                 >
@@ -260,10 +262,10 @@ const Login = () => {
                                     onFocus={() => setFocusedField('password')}
                                     onKeyPress={handleKeyPress}
                                     className={`w-full px-4 py-4 pr-12 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${focusedField === 'password' || formik.values.password
-                                            ? 'border-purple-500 focus:border-purple-600'
+                                            ? 'border-orange-500 focus:border-orange-600'
                                             : formik.touched.password && formik.errors.password
                                                 ? 'border-red-300 dark:border-red-600'
-                                                : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
+                                                : 'border-gray-200 dark:border-gray-600 focus:border-orange-500'
                                         }`}
                                     placeholder="Password"
                                     disabled={loading.validateEmployee}
@@ -272,7 +274,7 @@ const Login = () => {
                                 <label
                                     htmlFor="password"
                                     className={`absolute left-4 transition-all duration-200 pointer-events-none ${shouldShowFloatingLabel('password')
-                                            ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-purple-600 dark:text-purple-400 font-medium'
+                                            ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-orange-600 dark:text-orange-400 font-medium'
                                             : 'top-4 text-gray-500 dark:text-gray-400'
                                         }`}
                                 >
@@ -281,7 +283,7 @@ const Login = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                                    className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                                     disabled={loading.validateEmployee}
                                 >
                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -300,14 +302,18 @@ const Login = () => {
                                         type="checkbox"
                                         checked={formik.values.rememberMe}
                                         onChange={formik.handleChange}
-                                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-600 rounded"
+                                        className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-gray-300 dark:border-gray-600 rounded"
                                         disabled={loading.validateEmployee}
                                     />
                                     <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600 dark:text-gray-300">
                                         Remember me
                                     </label>
                                 </div>
-                                <button className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 font-medium">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgotPassword(true)}
+                                    className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-500 dark:hover:text-orange-300 font-medium"
+                                >
                                     Forgot password?
                                 </button>
                             </div>
@@ -317,7 +323,7 @@ const Login = () => {
                                 type='submit'
                                 onClick={formik.handleSubmit}
                                 disabled={loading.validateEmployee || !formik.isValid}
-                                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                                className="w-full bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white py-4 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 {loading.validateEmployee ? (
                                     <div className="flex items-center justify-center space-x-2">
@@ -333,7 +339,7 @@ const Login = () => {
                             <div className="text-center">
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                     Having trouble? Contact{' '}
-                                    <a href="mailto:it-support@sltouch.in" className="text-purple-600 dark:text-purple-400 hover:text-purple-500 font-medium">
+                                    <a href="mailto:it-support@sltouch.in" className="text-orange-600 dark:text-orange-400 hover:text-orange-500 font-medium">
                                         IT Support
                                     </a>
                                 </p>
@@ -342,59 +348,66 @@ const Login = () => {
                     </div>
 
                     {/* Right Side - Compact Visual Content */}
-                    <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 p-8 md:p-12 flex flex-col justify-center items-center text-white relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-[#0d1b5e] via-[#112272] to-[#0a1545] p-8 md:p-12 flex flex-col justify-center items-center text-white relative overflow-hidden">
+
+                        {/* Orange accent stripe — echoes the logo's horizontal orange bands */}
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-600 via-orange-400 to-orange-600"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-700 via-orange-500 to-orange-700 opacity-60"></div>
 
                         {/* Background decorative elements */}
                         <div className="absolute inset-0 opacity-10">
-                            <div className="absolute top-10 right-10 w-20 h-20 border-2 border-white rounded-full animate-bounce"></div>
-                            <div className="absolute bottom-10 left-10 w-16 h-16 border-2 border-white rotate-45"></div>
+                            <div className="absolute top-10 right-10 w-20 h-20 border-2 border-orange-400 rounded-full animate-bounce"></div>
+                            <div className="absolute bottom-10 left-10 w-16 h-16 border-2 border-orange-300 rotate-45"></div>
                             <div className="absolute top-1/2 left-10 w-12 h-12 border-2 border-white rounded-full"></div>
                         </div>
+
+                        {/* Subtle orange radial glow */}
+                        <div className="absolute bottom-0 right-0 w-64 h-64 bg-orange-500 opacity-5 rounded-full blur-3xl"></div>
 
                         <div className="relative z-10 text-center">
                             {/* Main Visual Element */}
                             <div className="mb-8">
-                                <div className="w-32 h-32 mx-auto bg-white/75 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-white/30">
-                                    <img src="/sllogo.png" alt="logo" className='w-28  h-28 object-contain rounded-full' />
+                                <div className="w-32 h-32 mx-auto bg-white/80 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm ring-4 ring-orange-400/40 shadow-lg shadow-orange-500/20">
+                                    <img src="/sllogo.png" alt="logo" className='w-28 h-28 object-contain rounded-full' />
                                 </div>
 
-                                <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+                                <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">
                                     Essel Projects Pvt Ltd
                                 </h2>
 
-                                <p className="text-purple-200 text-lg">
-                                    Building Tomorrow's Infrastructure
+                                <p className="text-orange-200 text-base tracking-wide">
+                                    Built On Integrity. Driven By Performance
                                 </p>
                             </div>
 
                             {/* Key Stats Grid */}
                             <div className="grid grid-cols-3 gap-4 mb-8">
                                 <div className="text-center">
-                                    <div className="w-12 h-12 mx-auto bg-white/20 rounded-lg flex items-center justify-center mb-2">
-                                        <BarChart3 className="w-6 h-6" />
+                                    <div className="w-12 h-12 mx-auto bg-white/10 border border-orange-400/30 rounded-lg flex items-center justify-center mb-2">
+                                        <BarChart3 className="w-6 h-6 text-orange-300" />
                                     </div>
                                     <div className="text-2xl font-bold">150+</div>
-                                    <div className="text-xs text-purple-200">Projects</div>
+                                    <div className="text-xs text-orange-200">Projects</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="w-12 h-12 mx-auto bg-white/20 rounded-lg flex items-center justify-center mb-2">
-                                        <Users className="w-6 h-6" />
+                                    <div className="w-12 h-12 mx-auto bg-white/10 border border-orange-400/30 rounded-lg flex items-center justify-center mb-2">
+                                        <Users className="w-6 h-6 text-orange-300" />
                                     </div>
                                     <div className="text-2xl font-bold">800+</div>
-                                    <div className="text-xs text-purple-200">Employees</div>
+                                    <div className="text-xs text-orange-200">Employees</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="w-12 h-12 mx-auto bg-white/20 rounded-lg flex items-center justify-center mb-2">
-                                        <CheckCircle className="w-6 h-6" />
+                                    <div className="w-12 h-12 mx-auto bg-white/10 border border-orange-400/30 rounded-lg flex items-center justify-center mb-2">
+                                        <HardHat className="w-6 h-6 text-orange-300" />
                                     </div>
-                                    <div className="text-2xl font-bold">99.9%</div>
-                                    <div className="text-xs text-purple-200">Uptime</div>
+                                    <div className="text-2xl font-bold">100%</div>
+                                    <div className="text-xs text-orange-200">Safety Record</div>
                                 </div>
                             </div>
 
                             {/* Trust Badge */}
-                            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                                <p className="text-sm font-medium text-center">
+                            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-orange-400/20">
+                                <p className="text-sm font-medium text-center text-orange-100">
                                     Trusted by leading construction and manufacturing companies
                                 </p>
                             </div>
@@ -402,6 +415,11 @@ const Login = () => {
                     </div>
                 </div>
             </div>
+        <ForgotPasswordModal
+            isOpen={showForgotPassword}
+            onClose={() => setShowForgotPassword(false)}
+            loginType=""
+        />
         </div>
     );
 };

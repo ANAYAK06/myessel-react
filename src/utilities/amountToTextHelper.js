@@ -106,28 +106,16 @@ export const convertNumberToWords = (number) => {
 export const formatIndianCurrency = (amount) => {
     try {
         const num = typeof amount === 'string' ? parseFloat(amount.replace(/,/g, '')) : Number(amount);
-        
+
         if (isNaN(num)) {
             return '0.00';
         }
-        
-        const [integerPart, decimalPart] = num.toFixed(2).split('.');
-        
-        // Add commas in Indian format
-        let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        
-        // Indian numbering system adjustment
-        if (integerPart.length > 3) {
-            formatted = integerPart.replace(/(\d+?)(\d{2})(\d{3})$/, (match, p1, p2, p3) => {
-                if (p1.length > 0) {
-                    p1 = p1.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-                }
-                return p1 + ',' + p2 + ',' + p3;
-            });
-        }
-        
-        return formatted + '.' + decimalPart;
-        
+
+        return new Intl.NumberFormat('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(num);
+
     } catch (error) {
         console.error('Error formatting currency:', error);
         return '0.00';

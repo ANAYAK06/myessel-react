@@ -245,12 +245,12 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
     return (
         <div className="space-y-6">
             {/* Welcome Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 rounded-lg p-6 text-white transition-colors">
+            <div className="bg-gradient-to-r from-[#0d1b5e] to-[#0a1240] dark:from-[#0a1240] dark:to-gray-900 rounded-lg p-6 text-white transition-colors">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold mb-2">Welcome Back!</h1>
-                        <p className="text-indigo-100 dark:text-indigo-200">Employee: {userData?.firstName} | Role: {userData?.roleCode} </p>
-                        <p className="text-indigo-100 dark:text-indigo-200 text-sm">
+                        <p className="text-orange-200 dark:text-orange-300">Employee: {userData?.firstName} | Role: {userData?.roleCode} </p>
+                        <p className="text-orange-200 dark:text-orange-300 text-sm">
                             Access to {roleData?.menuItems?.length || 0} system modules
                             {totalClicks > 0 && (
                                 <span className="ml-2 inline-flex items-center">
@@ -260,7 +260,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                         </p>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <div className="text-right text-indigo-100 dark:text-indigo-200">
+                        <div className="text-right text-orange-200 dark:text-orange-300">
                             <p className="text-sm">This Month Performance</p>
                             <p className="text-xl font-bold">
                                 {dashboardData.sales.growth > 0 ? '📈' : '📉'} {Math.abs(dashboardData.sales.growth)}%
@@ -328,8 +328,8 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                 )}
                             </div>
                         </div>
-                        <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                            <ShoppingCart className="w-6 h-6 text-indigo-600 dark:text-indigo-500" />
+                        <div className="w-12 h-12 bg-[#0d1b5e]/10 dark:bg-[#0d1b5e]/30 rounded-lg flex items-center justify-center">
+                            <ShoppingCart className="w-6 h-6 text-[#0d1b5e] dark:text-blue-300" />
                         </div>
                     </div>
                 </div>
@@ -451,12 +451,12 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                 <button
                                     key={`${link.id}-${index}`}
                                     onClick={() => handleLinkClick(link.path, link)}
-                                    className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group text-left relative"
+                                    className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-orange-300 dark:hover:border-orange-600 hover:bg-orange-50 dark:hover:bg-[#0d1b5e]/10 transition-all group text-left relative"
                                     title={`${link.section} - ${link.name}${link.frequency > 0 ? ` (${link.frequency} clicks)` : ''}`}
                                 >
                                     {/* Frequency badge */}
                                     {isFrequent && (
-                                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#0d1b5e] text-white text-xs rounded-full flex items-center justify-center font-bold">
                                             {link.frequency}
                                         </div>
                                     )}
@@ -467,12 +467,12 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                     )}
 
                                     <IconComponent className={`w-4 h-4 mr-3 flex-shrink-0 ${isFrequent
-                                        ? 'text-indigo-600 dark:text-indigo-400'
-                                        : 'text-gray-400 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                                        ? 'text-[#0d1b5e] dark:text-orange-400'
+                                        : 'text-gray-400 dark:text-gray-500 group-hover:text-[#0d1b5e] dark:group-hover:text-orange-400'
                                         }`} />
                                     <div className="min-w-0 flex-1">
                                         <p className={`text-sm font-medium truncate ${isFrequent
-                                            ? 'text-indigo-900 dark:text-indigo-300'
+                                            ? 'text-[#0d1b5e] dark:text-white'
                                             : 'text-gray-900 dark:text-white'
                                             }`}>
                                             {link.name}
@@ -480,7 +480,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                             {link.section}
                                             {isFrequent && (
-                                                <span className="ml-1 text-indigo-600 dark:text-indigo-400">
+                                                <span className="ml-1 text-orange-600 dark:text-orange-400">
                                                     • {link.frequency} clicks
                                                 </span>
                                             )}
@@ -518,7 +518,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Transaction Tracking</h3>
-                        <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center transition-colors">
+                        <button className="text-sm text-[#0d1b5e] dark:text-orange-400 hover:text-[#0a1240] dark:hover:text-orange-300 flex items-center transition-colors">
                             <ExternalLink className="w-4 h-4 mr-1" />
                             Track All
                         </button>
@@ -536,15 +536,15 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                             <span className="text-lg font-bold text-green-600 dark:text-green-500">{dashboardData.transactions.approved}</span>
                         </div>
 
-                        <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg transition-colors">
+                        <div className="flex items-center justify-between p-3 bg-[#0d1b5e]/5 dark:bg-[#0d1b5e]/20 border border-[#0d1b5e]/15 dark:border-[#0d1b5e]/30 rounded-lg transition-colors">
                             <div className="flex items-center">
-                                <Activity className="w-5 h-5 text-indigo-600 dark:text-indigo-500 mr-3" />
+                                <Activity className="w-5 h-5 text-[#0d1b5e] dark:text-blue-300 mr-3" />
                                 <div>
                                     <p className="text-sm font-medium text-gray-900 dark:text-white">In Transit</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Currently processing</p>
                                 </div>
                             </div>
-                            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-500">{dashboardData.tracking.inTransit}</span>
+                            <span className="text-lg font-bold text-[#0d1b5e] dark:text-blue-300">{dashboardData.tracking.inTransit}</span>
                         </div>
 
                         <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 rounded-lg transition-colors">
@@ -578,12 +578,12 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                 <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Today's Recent Activity</h3>
-                        <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">View All</button>
+                        <button className="text-sm text-[#0d1b5e] dark:text-orange-400 hover:text-[#0a1240] dark:hover:text-orange-300 transition-colors">View All</button>
                     </div>
 
                     {todayTransactionsLoading ? (
                         <div className="flex items-center justify-center py-8">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0d1b5e] dark:border-orange-400"></div>
                             <span className="ml-2 text-gray-500 dark:text-gray-400">Loading today's transactions...</span>
                         </div>
                     ) : (
@@ -623,7 +623,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                                <span className="px-2 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full">
+                                                <span className="px-2 py-1 text-xs font-medium bg-[#0d1b5e]/10 dark:bg-[#0d1b5e]/30 text-[#0d1b5e] dark:text-white rounded-full">
                                                     {transaction.VoucherType || transaction.TranType || transaction.TransactionType || '-'}
                                                 </span>
                                             </td>
@@ -686,12 +686,12 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                             </div>
                         </div>
 
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg transition-colors">
+                        <div className="p-3 bg-[#0d1b5e]/5 dark:bg-[#0d1b5e]/20 border border-[#0d1b5e]/20 dark:border-[#0d1b5e]/40 rounded-lg transition-colors">
                             <div className="flex items-start">
-                                <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-500 mt-0.5 mr-2" />
+                                <Target className="w-4 h-4 text-[#0d1b5e] dark:text-blue-300 mt-0.5 mr-2" />
                                 <div>
-                                    <p className="text-sm font-medium text-indigo-900 dark:text-indigo-300">Monthly Target</p>
-                                    <p className="text-xs text-indigo-700 dark:text-indigo-400">85% achieved this month</p>
+                                    <p className="text-sm font-medium text-[#0d1b5e] dark:text-white">Monthly Target</p>
+                                    <p className="text-xs text-[#0d1b5e]/70 dark:text-white/60">85% achieved this month</p>
                                 </div>
                             </div>
                         </div>
@@ -761,7 +761,7 @@ const DashboardContent = ({ onNavigate, linkFrequency = {}, trackMenuUsage }) =>
                                             <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                                                 <td className="px-4 py-3 text-gray-400">{idx + 1}</td>
                                                 <td className="px-4 py-3">
-                                                    <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+                                                    <span className="text-xs font-mono font-bold text-[#0d1b5e] dark:text-orange-300 bg-[#0d1b5e]/8 dark:bg-[#0d1b5e]/30 px-2 py-0.5 rounded">
                                                         {row.Refno || '—'}
                                                     </span>
                                                 </td>

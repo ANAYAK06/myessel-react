@@ -127,6 +127,7 @@ import generalPaymentReducer from "../slices/accountsSlice/generalPaymentSlice";
 import labourReportReducer from "../slices/HrReportSlice/labourReportSlice";
 import labourBankChangeReducer from "../slices/HRSlice/labourBankChangeSlice";
 import itemCodeVerificationReducer from "../slices/purchaseSlice/itemCodeVerificationSlice";
+import labourTypeChangeReducer from "../slices/HRSlice/labourTypeChangeSlice";
 
 const store = configureStore({
   
@@ -258,6 +259,7 @@ const store = configureStore({
     labourreport:          labourReportReducer,
     labourBankChange:      labourBankChangeReducer,
     itemCodeVerification:  itemCodeVerificationReducer,
+    labourTypeChange:      labourTypeChangeReducer,
 
   }
 

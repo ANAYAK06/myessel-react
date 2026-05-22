@@ -600,6 +600,12 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
                                 maxHeight: '100%',
                                 headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
                             }}
+                            renderPopupContent={renderDetailContent}
+                            popupConfig={{
+                                title: 'Labour CMS Verification',
+                                icon: HardHat,
+                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                            }}
                         />
                     </div>
 

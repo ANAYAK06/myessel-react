@@ -50,6 +50,7 @@ import VerifyLabourCMSPay from '../../pages/HR/VerifyLabourCMSPay';
 import VerifyBulkWorker from '../../pages/HR/VerifyBulkWorker';
 import VerifyWorkerStaffReg from '../../pages/HR/VerifyWorkerStaffReg';
 import VerifyLabourBankChange from '../../pages/HR/VerifyLabourBankChange';
+import VerifyLabourTypeChange from '../../pages/HR/VerifyLabourTypeChange';
 import VerifyItemCode from '../../pages/Purchase/VerifyItemCode';
 
 
@@ -941,6 +942,31 @@ const isBulkWorkerVerification = (path, category, title, displayName, workflowTy
     return isMatch;
 };
 
+const isLabourTypeChangeVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifylabourtypechange',
+        '/hr/labourtypechange',
+        'verifylabourtypechange',
+        'labour type change',
+        'labourtypechange',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('labour type change') ||
+        category.includes('labourtypechange') ||
+        title.includes('labour type change') ||
+        title.includes('labourtypechange') ||
+        displayName.includes('labour type change') ||
+        displayName.includes('labourtypechange') ||
+        workflowType.includes('labour type change') ||
+        workflowType.includes('labourtypechange');
+    if (isMatch) {
+        console.log('✅ Labour Type Change Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Labour Type Change Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isItemCodeVerification = (path, category, title, displayName, workflowType) => {
     const pathMatches = [
         '/purchase/verifyitemcode',
@@ -1529,6 +1555,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isBulkWorkerVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyBulkWorker');
             return <VerifyBulkWorker
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // LABOUR TYPE CHANGE VERIFICATION
+        // ====================================================================
+        if (isLabourTypeChangeVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyLabourTypeChange');
+            return <VerifyLabourTypeChange
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

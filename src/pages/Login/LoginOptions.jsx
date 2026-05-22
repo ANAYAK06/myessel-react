@@ -173,20 +173,20 @@ const LoginOptions = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-orange-50 dark:from-gray-900 dark:via-[#0d1b5e] dark:to-gray-900 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
 
             {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-20 dark:opacity-10">
+            <div className="absolute inset-0 opacity-30 dark:opacity-10">
                 <div className="absolute top-0 left-0 w-full h-full" style={{
-                    backgroundImage: `radial-gradient(circle at 25% 25%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-                                     radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.3) 0%, transparent 50%)`
+                    backgroundImage: `radial-gradient(circle at 25% 25%, rgba(13,27,94,0.12) 0%, transparent 50%),
+                                     radial-gradient(circle at 75% 75%, rgba(234,88,12,0.10) 0%, transparent 50%)`
                 }}></div>
             </div>
 
             {/* Floating shapes */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-gradient-to-r from-[#0d1b5e] to-blue-800 rounded-full opacity-10 blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-r from-orange-500 to-orange-300 rounded-full opacity-10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
             </div>
 
             {/* Theme Toggle */}
@@ -205,15 +205,15 @@ const LoginOptions = () => {
             </button>
 
             {/* Main Container Card - Made more compact */}
-            <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-gray-600 backdrop-blur-sm transition-colors">
+            <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-gray-700 backdrop-blur-sm transition-colors">
 
                 {/* Header - Made more compact */}
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white text-center">
+                <div className="bg-[#0d1b5e] dark:bg-[#0a1240] p-4 text-white text-center transition-colors">
                     <h1 className="text-2xl font-bold mb-1">Choose Your Access Level</h1>
-                    <p className="text-indigo-200 text-sm mb-3">Select how you want to proceed with your session</p>
+                    <p className="text-orange-200 dark:text-orange-300 text-sm mb-3">Select how you want to proceed with your session</p>
                     <div className="flex items-center justify-center space-x-3 text-sm">
                         <span>Employee ID: <span className="font-semibold">{employeeId}</span></span>
-                        <div className="w-1 h-3 bg-indigo-300 rounded-full"></div>
+                        <div className="w-1 h-3 bg-orange-300 rounded-full"></div>
                         <span>Authenticated Successfully</span>
                     </div>
                 </div>
@@ -222,37 +222,37 @@ const LoginOptions = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2">
 
                     {/* Left Side - Employee Portal */}
-                    <div className="p-6 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-600 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+                    <div className="p-6 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e2535] transition-colors">
                         <div className="text-center mb-6">
-                            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-transform">
+                            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-[#0d1b5e] to-blue-900 rounded-xl flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-transform">
                                 <User className="w-8 h-8 text-white" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                            <h2 className="text-xl font-bold text-[#0d1b5e] dark:text-white mb-2">
                                 Employee Portal
                             </h2>
-                            <p className="text-gray-600 dark:text-gray-300 text-sm">
+                            <p className="text-[#0d1b5e]/70 dark:text-white/70 text-sm">
                                 Access your personal employee information and details
                             </p>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="bg-white dark:bg-gray-800 border border-indigo-100 dark:border-gray-600 rounded-lg p-4 transition-colors">
-                                <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 mb-3 text-sm">What you can access:</h3>
-                                <ul className="text-gray-700 dark:text-gray-200 space-y-1.5 text-sm">
+                            <div className="bg-white dark:bg-gray-800 border border-[#0d1b5e]/15 dark:border-white/10 rounded-lg p-4 transition-colors">
+                                <h3 className="font-semibold text-[#0d1b5e] dark:text-white mb-3 text-sm">What you can access:</h3>
+                                <ul className="text-[#0d1b5e]/80 dark:text-white/80 space-y-1.5 text-sm">
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Personal Information</span>
                                     </li>
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Employment Details</span>
                                     </li>
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Pay Stubs & Benefits</span>
                                     </li>
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Time & Attendance</span>
                                     </li>
                                 </ul>
@@ -261,7 +261,7 @@ const LoginOptions = () => {
                             <button
                                 onClick={handleEmployeeLogin}
                                 disabled={loading.getEmployeeDetails || isProcessingLogin} // IMPROVED: Better disabled state
-                                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                                className="w-full bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#1e2535] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 {(loading.getEmployeeDetails || isProcessingLogin) ? (
                                     <div className="flex items-center justify-center space-x-2">
@@ -287,41 +287,41 @@ const LoginOptions = () => {
                     </div>
 
                     {/* Right Side - Role Access */}
-                    <div className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
+                    <div className="p-6 bg-[#0d1b5e]/5 dark:bg-[#1e2535] transition-colors">
                         <div className="text-center mb-6">
-                            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-transform">
+                            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-[#0d1b5e] to-orange-500 rounded-xl flex items-center justify-center mb-4 shadow-lg transform hover:scale-105 transition-transform">
                                 <Shield className="w-8 h-8 text-white" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                            <h2 className="text-xl font-bold text-[#0d1b5e] dark:text-white mb-2">
                                 Role Access Portal
                             </h2>
-                            <p className="text-gray-600 dark:text-gray-300 text-sm">
+                            <p className="text-[#0d1b5e]/70 dark:text-white/70 text-sm">
                                 Login with your role credentials to access advanced system features
                             </p>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="bg-white dark:bg-gray-800 border border-purple-100 dark:border-gray-600 rounded-lg p-4 transition-colors">
-                                <h3 className="font-semibold text-purple-900 dark:text-purple-200 mb-3 text-sm">Role-based access to:</h3>
-                                <ul className="text-gray-700 dark:text-gray-200 space-y-1.5 text-sm">
+                            <div className="bg-white dark:bg-gray-800 border border-[#0d1b5e]/15 dark:border-white/10 rounded-lg p-4 transition-colors">
+                                <h3 className="font-semibold text-[#0d1b5e] dark:text-white mb-3 text-sm">Role-based access to:</h3>
+                                <ul className="text-[#0d1b5e]/80 dark:text-white/80 space-y-1.5 text-sm">
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Company Reports & Analytics</span>
                                     </li>
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Role-specific Modules</span>
                                     </li>
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Voucher Management</span>
                                     </li>
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Work Order/PO Management</span>
                                     </li>
                                     <li className="flex items-center space-x-2">
-                                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full flex-shrink-0"></div>
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></div>
                                         <span>Inventory Management</span>
                                     </li>
                                 </ul>
@@ -330,7 +330,7 @@ const LoginOptions = () => {
                             {/* Role Password Form */}
                             <div className="space-y-3">
                                 <div className="space-y-2">
-                                    <label htmlFor="rolePassword" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    <label htmlFor="rolePassword" className="block text-sm font-semibold text-[#0d1b5e] dark:text-white/80">
                                         Role Password
                                     </label>
                                     <div className="relative">
@@ -341,9 +341,9 @@ const LoginOptions = () => {
                                             value={roleFormik.values.password}
                                             onChange={roleFormik.handleChange}
                                             onBlur={roleFormik.handleBlur}
-                                            className={`w-full pl-3 pr-10 py-3 border-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm ${roleFormik.touched.password && roleFormik.errors.password
+                                            className={`w-full pl-3 pr-10 py-3 border-2 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm ${roleFormik.touched.password && roleFormik.errors.password
                                                 ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
-                                                : 'border-gray-300 dark:border-gray-500'
+                                                : 'border-[#0d1b5e]/25 dark:border-gray-500'
                                                 }`}
                                             placeholder="Enter your role password"
                                             disabled={loading.validateUser || loading.getMenu || isProcessingLogin} // IMPROVED: Better disabled state
@@ -369,7 +369,7 @@ const LoginOptions = () => {
                                 <button
                                     onClick={roleFormik.handleSubmit}
                                     disabled={loading.validateUser || loading.getMenu || !roleFormik.isValid || isProcessingLogin} // IMPROVED: Better disabled state
-                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                                    className="w-full bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#1e2535] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     {(loading.validateUser || loading.getMenu || isProcessingLogin) ? (
                                         <div className="flex items-center justify-center space-x-2">
@@ -396,7 +396,7 @@ const LoginOptions = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowForgotPassword(true)}
-                                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 font-medium"
+                                        className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-500 dark:hover:text-orange-300 font-medium"
                                     >
                                         Forgot password?
                                     </button>

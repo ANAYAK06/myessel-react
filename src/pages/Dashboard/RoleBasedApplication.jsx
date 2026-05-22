@@ -64,6 +64,7 @@ import LabourCMSPayCreation from '../HR/LabourCMSPayCreation';
 import StaffPayrollGeneration from '../HR/StaffPayrollGeneration';
 import LabourPayrollGeneration from '../HR/LabourPayrollGeneration';
 import LabourBankChange from '../HR/LabourBankChange';
+import LabourTypeChange from '../HR/LabourTypeChange';
 import StaffSalaryDeductionArrear from '../HR/StaffSalaryDeductionArrear';
 import StaffJoinRegistration from '../HR/StaffJoinRegistration';
 import BulkWorkerRegistration from '../HR/BulkWorkerRegistration';
@@ -1122,6 +1123,16 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     }
 
+    const isLabourTypeChangePage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/LabourTypeChange' ||
+            menuData.path?.toLowerCase().includes('labourtypechange');
+        const nameMatches = menuData.name?.toLowerCase().includes('labourtypechange') ||
+            menuData.name?.toLowerCase().includes('labour type change');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('labourtypechange');
+        return pathMatches || nameMatches || routeMatches;
+    }
+
     const isStaffSalaryDeductionandArrear = (menuData) => {
         if (!menuData) return false;
         const pathMatches = menuData.path === '/HR/SalaryDeductions?Type=Staff' ||  
@@ -1490,6 +1501,11 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isLabourBankChangePage(currentMenuData)) {
             console.log('✅ Rendering LabourBankChange for:', currentMenuData.name);
             return <LabourBankChange menuData={currentMenuData} />;
+        }
+        // check if the menu item should show Labour Type Change page
+        if (currentMenuData && isLabourTypeChangePage(currentMenuData)) {
+            console.log('✅ Rendering LabourTypeChange for:', currentMenuData.name);
+            return <LabourTypeChange menuData={currentMenuData} />;
         }
         // check if the menu item should show staff Salary Deduction and Arrear page
         if (currentMenuData && isStaffSalaryDeductionandArrear(currentMenuData)) {
@@ -1883,7 +1899,7 @@ const RoleBasedApplication = () => {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0d1b5e] dark:border-orange-400 mx-auto mb-4"></div>
                     <p className="text-gray-600 dark:text-gray-300">Loading menu data...</p>
                 </div>
             </div>
@@ -1931,7 +1947,7 @@ const BudgetModulePlaceholder = ({ menuData }) => {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{moduleType} Module</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-xs rounded-full transition-colors">
+                        <div className="px-3 py-1 bg-[#0d1b5e]/10 dark:bg-[#0d1b5e]/30 text-[#0d1b5e] dark:text-white text-xs rounded-full transition-colors">
                             Budget Module
                         </div>
                         <div className="px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 text-xs rounded-full transition-colors">
@@ -2114,9 +2130,9 @@ const MenuItemContent = ({ menuData, currentPage }) => {
                 </div>
 
                 {/* Implementation Notes */}
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 transition-colors">
-                    <h3 className="font-medium text-indigo-900 dark:text-indigo-300 mb-2">Implementation Notes</h3>
-                    <ul className="text-sm text-indigo-800 dark:text-indigo-200 space-y-1">
+                <div className="bg-[#0d1b5e]/5 dark:bg-[#0d1b5e]/20 border border-[#0d1b5e]/20 dark:border-[#0d1b5e]/40 rounded-lg p-4 transition-colors">
+                    <h3 className="font-medium text-[#0d1b5e] dark:text-white mb-2">Implementation Notes</h3>
+                    <ul className="text-sm text-[#0d1b5e]/80 dark:text-white/80 space-y-1">
                         <li>• This is where you'll implement the functionality for "{menuData.name}"</li>
                         <li>• Original MVC path: {menuData.path}</li>
                         <li>• Connect to your existing .NET API endpoints</li>

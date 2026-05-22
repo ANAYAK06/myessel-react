@@ -137,8 +137,7 @@ const RoleOperationsTab = () => {
             return;
         }
 
-        // Validate that at least one permission is selected
-        const hasPermissions = Object.values(permissions).some(perms => 
+        const hasPermissions = Object.values(permissions).some(perms =>
             perms.create || perms.read || perms.update || perms.delete
         );
 
@@ -147,30 +146,36 @@ const RoleOperationsTab = () => {
             return;
         }
 
-        // Build the payload according to the required format
         const createRoleIds = [];
-        const readRoleIds = [];
+        const readRoleIds   = [];
         const updateRoleIds = [];
         const deleteRoleIds = [];
 
         Object.keys(permissions).forEach(roleId => {
             const perms = permissions[roleId];
             if (perms.create) createRoleIds.push(roleId);
-            if (perms.read) readRoleIds.push(roleId);
+            if (perms.read)   readRoleIds.push(roleId);
             if (perms.update) updateRoleIds.push(roleId);
             if (perms.delete) deleteRoleIds.push(roleId);
         });
+
+        // The SP loops with WHILE (charindex(',', @param) <> 0) which only
+        // processes values that are followed by a comma — the last value is
+        // always skipped. A trailing comma ensures every role ID (including
+        // the only one in a single-role list) is processed. Empty lists stay
+        // empty so the SP's IF(@param != '') guard works correctly.
+        const fmt = (ids) => ids.length > 0 ? ids.join(',') + ',' : '';
 
         const payload = {
             masterOperationId: selectedOperation.MasterOperationID,
             createStatus: createRoleIds.length > 0 ? 1 : 0,
             updateStatus: updateRoleIds.length > 0 ? 1 : 0,
-            readStatus: readRoleIds.length > 0 ? 1 : 0,
+            readStatus:   readRoleIds.length   > 0 ? 1 : 0,
             deleteStatus: deleteRoleIds.length > 0 ? 1 : 0,
-            createOperRoleIds: createRoleIds.join(','),
-            updateOperRoleIds: updateRoleIds.join(','),
-            readOperRoleIds: readRoleIds.join(','),
-            deleteOperRoleIds: deleteRoleIds.join(','),
+            createOperRoleIds: fmt(createRoleIds),
+            updateOperRoleIds: fmt(updateRoleIds),
+            readOperRoleIds:   fmt(readRoleIds),
+            deleteOperRoleIds: fmt(deleteRoleIds),
             createdBy: employeeId || 'Admin',
             workFlowType: 0
         };
@@ -181,21 +186,17 @@ const RoleOperationsTab = () => {
             setIsSaving(true);
             setSaveSuccess(false);
             await dispatch(saveRoleOperations(payload)).unwrap();
+
             toast.success('Role operations saved successfully!');
-            
-            // Show success state
             setSaveSuccess(true);
-            
-            // Refresh workflow master operations list
+
             await dispatch(fetchWorkflowMasterOperations()).unwrap();
-            
-            // Clear the selected operation and permissions to reset the form
+
             setSelectedOperation(null);
             setPermissions({});
-            
-            // Hide success state after 3 seconds
+
             setTimeout(() => setSaveSuccess(false), 3000);
-            
+
         } catch (error) {
             toast.error(error || 'Failed to save role operations');
             console.error('❌ Save error:', error);

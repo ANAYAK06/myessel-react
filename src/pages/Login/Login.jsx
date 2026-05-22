@@ -1,11 +1,11 @@
-// src/pages/Login/Login.js - FIXED VERSION
+// src/pages/Login/Login.js
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { Eye, EyeOff, Building2, Shield, User, Loader2, CheckCircle, BarChart3, Users, HardHat, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Shield, Loader2, BarChart3, Users, HardHat } from 'lucide-react';
 import {
     validateEmployee,
     clearErrors,
@@ -14,7 +14,7 @@ import {
     logout
 } from '../../slices/auth/authSlice';
 import ThemeToggle from '../../components/ThemeToggle';
-import sessionManager from '../../utilities/SessionManager'; // FIXED: Removed 's' from SessionsManager
+import sessionManager from '../../utilities/SessionManager';
 import ForgotPasswordModal from '../../components/ForgotPasswordModal';
 
 // Validation Schema
@@ -34,7 +34,6 @@ const Login = () => {
     const [focusedField, setFocusedField] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-    // Redux state
     const {
         loading,
         error,
@@ -43,14 +42,12 @@ const Login = () => {
         loginType
     } = useSelector((state) => state.auth);
 
-    // Check for existing session on component mount
     useEffect(() => {
         console.log('🔄 Login page mounted - clearing any existing sessions');
         sessionManager.clearSession();
         dispatch(loadUserFromStorage());
     }, [dispatch]);
 
-    // Formik setup
     const formik = useFormik({
         initialValues: {
             employeeId: '',
@@ -59,27 +56,21 @@ const Login = () => {
         },
         validationSchema,
         onSubmit: async (values) => {
-            console.log('Form submitted with values:', values); // DEBUG
             const credentials = {
                 employeeId: values.employeeId,
                 password: values.password
             };
-            console.log('Dispatching validateEmployee with:', credentials);
-
             dispatch(validateEmployee(credentials));
         }
     });
 
-    // Handle success states - Navigate to options page after successful employee validation
     useEffect(() => {
         if (success.validateEmployee) {
-            console.log('✅ Employee validation successful - navigating to options page');
             dispatch(clearSuccess());
             navigate('/login-options');
         }
     }, [success.validateEmployee, dispatch, navigate]);
 
-    // Handle direct dashboard redirects (for already authenticated users)
     useEffect(() => {
         if (success.getEmployeeDetails) {
             dispatch(clearSuccess());
@@ -94,36 +85,25 @@ const Login = () => {
         }
     }, [success.getMenu, dispatch, navigate]);
 
-    // Handle error states
     useEffect(() => {
         if (error.validateEmployee) {
-            console.log('Employee validation error:', error.validateEmployee); // DEBUG
             toast.error(error.validateEmployee);
             dispatch(clearErrors());
         }
     }, [error.validateEmployee, dispatch]);
 
-    // Redirect if already authenticated (with session validation)
     useEffect(() => {
         if (isAuthenticated && loginType) {
-            // Check if session is still valid
             const isSessionValid = sessionManager.isAuthenticated();
-            
             if (isSessionValid) {
-                console.log('✅ Valid session found - redirecting to dashboard');
-                if (loginType === 'employee') {
-                    navigate('/employee-dashboard');
-                } else if (loginType === 'role') {
-                    navigate('/role-dashboard');
-                }
+                if (loginType === 'employee') navigate('/employee-dashboard');
+                else if (loginType === 'role') navigate('/role-dashboard');
             } else {
-                console.log('❌ Session invalid - clearing auth state');
                 dispatch(logout());
             }
         }
     }, [isAuthenticated, loginType, navigate, dispatch]);
 
-    // Clear errors when user starts typing
     useEffect(() => {
         if (formik.touched.employeeId || formik.touched.password) {
             dispatch(clearErrors());
@@ -136,12 +116,11 @@ const Login = () => {
         }
     };
 
-    // Floating label logic
     const shouldShowFloatingLabel = (fieldName) => {
         return formik.values[fieldName] || focusedField === fieldName;
     };
 
-    // Show loading screen while checking authentication
+    // ─── Loading screen ───────────────────────────────────────────────────────
     if (loading.loadFromStorage) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center transition-colors">
@@ -153,21 +132,22 @@ const Login = () => {
         );
     }
 
+    // ─── Main render ─────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-orange-50 dark:from-gray-900 dark:via-[#0d1b5e] dark:to-gray-900 flex items-center justify-center p-4 transition-colors relative overflow-hidden">
 
-            {/* Background Pattern */}
+            {/* Background pattern */}
             <div className="absolute inset-0 opacity-30 dark:opacity-10">
                 <div className="absolute top-0 left-0 w-full h-full" style={{
-                    backgroundImage: `radial-gradient(circle at 20% 30%, rgba(13, 27, 94, 0.12) 0%, transparent 50%),
-                                     radial-gradient(circle at 80% 70%, rgba(234, 88, 12, 0.10) 0%, transparent 50%)`
-                }}></div>
+                    backgroundImage: `radial-gradient(circle at 20% 30%, rgba(13,27,94,0.12) 0%, transparent 50%),
+                                     radial-gradient(circle at 80% 70%, rgba(234,88,12,0.10) 0%, transparent 50%)`
+                }} />
             </div>
 
-            {/* Floating shapes */}
+            {/* Floating ambient blobs */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-r from-[#0d1b5e] to-blue-800 rounded-full opacity-10 blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/6 w-80 h-80 bg-gradient-to-r from-orange-500 to-orange-300 rounded-full opacity-10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-r from-[#0d1b5e] to-blue-800 rounded-full opacity-10 blur-3xl animate-pulse" />
+                <div className="absolute bottom-1/4 right-1/6 w-80 h-80 bg-gradient-to-r from-orange-500 to-orange-300 rounded-full opacity-10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
             </div>
 
             {/* Theme Toggle */}
@@ -175,251 +155,362 @@ const Login = () => {
                 <ThemeToggle variant="simple" showLabel={false} />
             </div>
 
-            {/* Main Container Card */}
-            <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-white/20 dark:border-gray-700 backdrop-blur-sm transition-colors">
+            {/* ── Card ─────────────────────────────────────────────────────── */}
+            <div className="w-full max-w-5xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-white/20 dark:border-gray-700 backdrop-blur-sm transition-colors">
                 <div className="grid md:grid-cols-2 min-h-[600px]">
 
-                    {/* Left Side - Login Form */}
-                    <div className="p-8 md:p-12 flex flex-col justify-center bg-white dark:bg-gray-800 transition-colors">
+                    {/* ══════════════════════════════════════════════════════
+                        LEFT PANEL — Login Form
+                        Light mode : Navy blue  (#0d1b5e)  background
+                        Dark mode  : Deeper navy (#0a1240)  background
+                        Fonts      : white / orange-tinted whites
+                    ══════════════════════════════════════════════════════ */}
+                    <div className="p-8 md:p-12 flex flex-col justify-between
+                                    bg-[#0d1b5e] dark:bg-[#0a1240]
+                                    transition-colors">
 
-                        {/* Logo Section */}
-                        <div className="text-center mb-8">
-                            <div className="flex items-center justify-center mb-4">
-                                <div className="relative">
-                                    <div className=" rounded-full flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
-                                        {/* <User className="w-10 h-10 text-white" /> */}
-                                        <img src="/logoicon.png" alt="logoicon"  className="w-16 h-16 rounded-full"/>
+                        <div className="flex flex-col justify-center flex-1">
+
+                            {/* Logo / heading */}
+                            <div className="text-center mb-8">
+                                {/* <div className="flex items-center justify-center mb-4">
+                                    <div className="relative">
+                                        <img
+                                            src="/logoicon.png"
+                                            alt="Corex logo"
+                                            className="w-16 h-16 rounded-full border-2 border-orange-400 shadow-lg"
+                                        />
                                     </div>
-                                    {/* <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800">
-                                        <CheckCircle className="w-2.5 h-2.5 text-white" />
-                                    </div> */}
-                                </div>
+                                </div> */}
+
+                                {/* ── Title ── */}
+                                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                                    Log In
+                                </h1>
+                                {/* ── Subtitle ── */}
+                                <p className="text-orange-200 dark:text-orange-300">
+                                    Welcome back to your account
+                                </p>
                             </div>
 
-                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
-                                Log In
-                            </h1>
-                            <p className="text-gray-600 dark:text-gray-300 transition-colors">
-                                Welcome back to your account
+                            {/* ── Form ── */}
+                            <div className="space-y-6">
+
+                                {/* General error banner */}
+                                {error.validateEmployee && (
+                                    <div className="bg-red-500/20 border border-red-400/40 rounded-lg p-4 flex items-center space-x-3">
+                                        <Shield className="w-5 h-5 text-red-300 flex-shrink-0" />
+                                        <p className="text-red-200 text-sm">{error.validateEmployee}</p>
+                                    </div>
+                                )}
+
+                                {/* Employee ID */}
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        id="employeeId"
+                                        name="employeeId"
+                                        value={formik.values.employeeId}
+                                        onChange={formik.handleChange}
+                                        onBlur={(e) => { formik.handleBlur(e); setFocusedField(''); }}
+                                        onFocus={() => setFocusedField('employeeId')}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Employee ID"
+                                        disabled={loading.validateEmployee}
+                                        required
+                                        className={`w-full px-4 py-4 border-2 rounded-xl transition-all duration-200
+                                            bg-white/10 dark:bg-white/5
+                                            text-white dark:text-white
+                                            placeholder-transparent
+                                            focus:bg-white/15 dark:focus:bg-white/10
+                                            focus:outline-none
+                                            ${focusedField === 'employeeId' || formik.values.employeeId
+                                                ? 'border-orange-400 focus:border-orange-300'
+                                                : formik.touched.employeeId && formik.errors.employeeId
+                                                    ? 'border-red-400'
+                                                    : 'border-white/25 focus:border-orange-400'
+                                            }`}
+                                    />
+                                    {/* Floating label */}
+                                    <label
+                                        htmlFor="employeeId"
+                                        className={`absolute left-4 transition-all duration-200 pointer-events-none
+                                            ${shouldShowFloatingLabel('employeeId')
+                                                ? '-top-2.5 text-sm bg-[#0d1b5e] dark:bg-[#0a1240] px-2 text-orange-400 font-medium'
+                                                : 'top-4 text-white/50'
+                                            }`}
+                                    >
+                                        Employee ID
+                                    </label>
+                                    {formik.touched.employeeId && formik.errors.employeeId && (
+                                        <p className="text-red-300 text-sm mt-1">{formik.errors.employeeId}</p>
+                                    )}
+                                </div>
+
+                                {/* Password */}
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        id="password"
+                                        name="password"
+                                        value={formik.values.password}
+                                        onChange={formik.handleChange}
+                                        onBlur={(e) => { formik.handleBlur(e); setFocusedField(''); }}
+                                        onFocus={() => setFocusedField('password')}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Password"
+                                        disabled={loading.validateEmployee}
+                                        required
+                                        className={`w-full px-4 py-4 pr-12 border-2 rounded-xl transition-all duration-200
+                                            bg-white/10 dark:bg-white/5
+                                            text-white dark:text-white
+                                            placeholder-transparent
+                                            focus:bg-white/15 dark:focus:bg-white/10
+                                            focus:outline-none
+                                            ${focusedField === 'password' || formik.values.password
+                                                ? 'border-orange-400 focus:border-orange-300'
+                                                : formik.touched.password && formik.errors.password
+                                                    ? 'border-red-400'
+                                                    : 'border-white/25 focus:border-orange-400'
+                                            }`}
+                                    />
+                                    {/* Floating label */}
+                                    <label
+                                        htmlFor="password"
+                                        className={`absolute left-4 transition-all duration-200 pointer-events-none
+                                            ${shouldShowFloatingLabel('password')
+                                                ? '-top-2.5 text-sm bg-[#0d1b5e] dark:bg-[#0a1240] px-2 text-orange-400 font-medium'
+                                                : 'top-4 text-white/50'
+                                            }`}
+                                    >
+                                        Password
+                                    </label>
+                                    {/* Eye toggle */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        disabled={loading.validateEmployee}
+                                        className="absolute right-4 top-4 text-white/40 hover:text-orange-400 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                    </button>
+                                    {formik.touched.password && formik.errors.password && (
+                                        <p className="text-red-300 text-sm mt-1">{formik.errors.password}</p>
+                                    )}
+                                </div>
+
+                                {/* Remember me + Forgot password */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <input
+                                            id="rememberMe"
+                                            name="rememberMe"
+                                            type="checkbox"
+                                            checked={formik.values.rememberMe}
+                                            onChange={formik.handleChange}
+                                            disabled={loading.validateEmployee}
+                                            className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-white/30 rounded bg-white/10"
+                                        />
+                                        {/* ── Remember me label ── */}
+                                        <label htmlFor="rememberMe" className="ml-2 text-sm text-white/80 dark:text-white/70">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowForgotPassword(true)}
+                                        className="text-sm text-orange-400 hover:text-orange-300 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors"
+                                    >
+                                        Forgot password?
+                                    </button>
+                                </div>
+
+                                {/* Submit button */}
+                                <button
+                                    type="submit"
+                                    onClick={formik.handleSubmit}
+                                    disabled={loading.validateEmployee || !formik.isValid}
+                                    className="w-full bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600
+                                               text-white py-4 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl
+                                               focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-[#0d1b5e]
+                                               dark:focus:ring-offset-[#0a1240]
+                                               transition-all duration-200
+                                               disabled:opacity-50 disabled:cursor-not-allowed
+                                               transform hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    {loading.validateEmployee ? (
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Verifying...</span>
+                                        </div>
+                                    ) : (
+                                        'Log In'
+                                    )}
+                                </button>
+
+                                {/* IT Support */}
+                                <div className="text-center">
+                                    {/* ── Support text ── */}
+                                    <p className="text-sm text-white/50 dark:text-white/40">
+                                        Having trouble? Contact{' '}
+                                        <a
+                                            href="mailto:it-support@sltouch.in"
+                                            className="text-orange-400 hover:text-orange-300 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors"
+                                        >
+                                            IT Support
+                                        </a>
+                                    </p>
+                                </div>
+
+                            </div>{/* end space-y-6 */}
+                        </div>
+
+                        {/* ── Copyright footer ── */}
+                        <div className="mt-8 pt-4 border-t border-white/10">
+                            <p className="text-xs text-white/35 dark:text-white/30 text-center">
+                                © 2026 SL Touch IT Solutions Pvt Ltd &nbsp;·&nbsp;
+                                Powered by{' '} <br />
+                                <span className="text-orange-400 font-medium">
+                                   <img src="/corexlogo-full.png" alt="SL Touch logo" className=" inline w-16" />
+                                </span>
+                                <br />
+                                 All rights reserved
                             </p>
                         </div>
 
-                        {/* Login Form */}
-                        <div className="space-y-6">
+                    </div>{/* end LEFT PANEL */}
 
-                            {/* General Error */}
-                            {error.validateEmployee && (
-                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-3">
-                                    <Shield className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
-                                    <p className="text-red-700 dark:text-red-300 text-sm">{error.validateEmployee}</p>
-                                </div>
-                            )}
 
-                            {/* Employee ID Field */}
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    id="employeeId"
-                                    name="employeeId"
-                                    value={formik.values.employeeId}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    onFocus={() => setFocusedField('employeeId')}
-                                    onKeyPress={handleKeyPress}
-                                    className={`w-full px-4 py-4 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${focusedField === 'employeeId' || formik.values.employeeId
-                                            ? 'border-orange-500 focus:border-orange-600'
-                                            : formik.touched.employeeId && formik.errors.employeeId
-                                                ? 'border-red-300 dark:border-red-600'
-                                                : 'border-gray-200 dark:border-gray-600 focus:border-orange-500'
-                                        }`}
-                                    placeholder="Employee ID"
-                                    disabled={loading.validateEmployee}
-                                    required
-                                />
-                                <label
-                                    htmlFor="employeeId"
-                                    className={`absolute left-4 transition-all duration-200 pointer-events-none ${shouldShowFloatingLabel('employeeId')
-                                            ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-orange-600 dark:text-orange-400 font-medium'
-                                            : 'top-4 text-gray-500 dark:text-gray-400'
-                                        }`}
-                                >
-                                    Employee ID
-                                </label>
-                                {formik.touched.employeeId && formik.errors.employeeId && (
-                                    <p className="text-red-600 dark:text-red-400 text-sm mt-1">{formik.errors.employeeId}</p>
-                                )}
-                            </div>
+                    {/* ══════════════════════════════════════════════════════
+                        RIGHT PANEL — Branding
+                        Light mode : White background — logo/text in navy + orange
+                        Dark mode  : Soft dark card (#1e2535) — logo/text in light tones
+                    ══════════════════════════════════════════════════════ */}
+                    <div className="p-8 md:p-12 flex flex-col justify-center items-center relative overflow-hidden
+                                    bg-white dark:bg-[#1e2535]
+                                    transition-colors">
 
-                            {/* Password Field */}
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    id="password"
-                                    name="password"
-                                    value={formik.values.password}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    onFocus={() => setFocusedField('password')}
-                                    onKeyPress={handleKeyPress}
-                                    className={`w-full px-4 py-4 pr-12 border-2 rounded-xl transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-transparent focus:bg-white dark:focus:bg-gray-600 focus:outline-none ${focusedField === 'password' || formik.values.password
-                                            ? 'border-orange-500 focus:border-orange-600'
-                                            : formik.touched.password && formik.errors.password
-                                                ? 'border-red-300 dark:border-red-600'
-                                                : 'border-gray-200 dark:border-gray-600 focus:border-orange-500'
-                                        }`}
-                                    placeholder="Password"
-                                    disabled={loading.validateEmployee}
-                                    required
-                                />
-                                <label
-                                    htmlFor="password"
-                                    className={`absolute left-4 transition-all duration-200 pointer-events-none ${shouldShowFloatingLabel('password')
-                                            ? '-top-2.5 text-sm bg-white dark:bg-gray-800 px-2 text-orange-600 dark:text-orange-400 font-medium'
-                                            : 'top-4 text-gray-500 dark:text-gray-400'
-                                        }`}
-                                >
-                                    Password
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-4 text-gray-400 dark:text-gray-500 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                                    disabled={loading.validateEmployee}
-                                >
-                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                                {formik.touched.password && formik.errors.password && (
-                                    <p className="text-red-600 dark:text-red-400 text-sm mt-1">{formik.errors.password}</p>
-                                )}
-                            </div>
+                        {/* Orange top accent stripe */}
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-600 via-orange-400 to-orange-600" />
+                        {/* Subtle bottom stripe */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-700 via-orange-500 to-orange-700 opacity-40" />
 
-                            {/* Remember Me & Forgot Password */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                    <input
-                                        id="rememberMe"
-                                        name="rememberMe"
-                                        type="checkbox"
-                                        checked={formik.values.rememberMe}
-                                        onChange={formik.handleChange}
-                                        className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-gray-300 dark:border-gray-600 rounded"
-                                        disabled={loading.validateEmployee}
-                                    />
-                                    <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600 dark:text-gray-300">
-                                        Remember me
-                                    </label>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForgotPassword(true)}
-                                    className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-500 dark:hover:text-orange-300 font-medium"
-                                >
-                                    Forgot password?
-                                </button>
-                            </div>
-
-                            {/* Submit Button */}
-                            <button
-                                type='submit'
-                                onClick={formik.handleSubmit}
-                                disabled={loading.validateEmployee || !formik.isValid}
-                                className="w-full bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white py-4 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                {loading.validateEmployee ? (
-                                    <div className="flex items-center justify-center space-x-2">
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        <span>Verifying...</span>
-                                    </div>
-                                ) : (
-                                    'Log In'
-                                )}
-                            </button>
-
-                            {/* Support Contact */}
-                            <div className="text-center">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Having trouble? Contact{' '}
-                                    <a href="mailto:it-support@sltouch.in" className="text-orange-600 dark:text-orange-400 hover:text-orange-500 font-medium">
-                                        IT Support
-                                    </a>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Side - Compact Visual Content */}
-                    <div className="bg-gradient-to-br from-[#0d1b5e] via-[#112272] to-[#0a1545] p-8 md:p-12 flex flex-col justify-center items-center text-white relative overflow-hidden">
-
-                        {/* Orange accent stripe — echoes the logo's horizontal orange bands */}
-                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-600 via-orange-400 to-orange-600"></div>
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-700 via-orange-500 to-orange-700 opacity-60"></div>
-
-                        {/* Background decorative elements */}
-                        <div className="absolute inset-0 opacity-10">
-                            <div className="absolute top-10 right-10 w-20 h-20 border-2 border-orange-400 rounded-full animate-bounce"></div>
-                            <div className="absolute bottom-10 left-10 w-16 h-16 border-2 border-orange-300 rotate-45"></div>
-                            <div className="absolute top-1/2 left-10 w-12 h-12 border-2 border-white rounded-full"></div>
+                        {/* Decorative shapes — navy in light, white-tinted in dark */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute top-10 right-10 w-20 h-20 border-2 border-orange-400/30 dark:border-orange-400/20 rounded-full animate-bounce" />
+                            <div className="absolute bottom-10 left-10 w-16 h-16 border-2 border-[#0d1b5e]/15 dark:border-white/10 rotate-45" />
+                            <div className="absolute top-1/2 left-8 w-12 h-12 border-2 border-[#0d1b5e]/10 dark:border-white/8 rounded-full" />
                         </div>
 
-                        {/* Subtle orange radial glow */}
-                        <div className="absolute bottom-0 right-0 w-64 h-64 bg-orange-500 opacity-5 rounded-full blur-3xl"></div>
+                        {/* Ambient glow */}
+                        <div className="absolute bottom-0 right-0 w-64 h-64 bg-orange-400 opacity-5 dark:opacity-10 rounded-full blur-3xl" />
 
                         <div className="relative z-10 text-center">
-                            {/* Main Visual Element */}
-                            <div className="mb-8">
-                                <div className="w-32 h-32 mx-auto bg-white/80 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm ring-4 ring-orange-400/40 shadow-lg shadow-orange-500/20">
-                                    <img src="/sllogo.png" alt="logo" className='w-28 h-28 object-contain rounded-full' />
+
+
+                            {/* ── SL Logo — diamond with flat bottom, matching actual logo shape ── */}
+                            {/* ── SL Logo — diamond with flat bottom, no border ── */}
+                            <div className="relative mx-auto mb-8" style={{ width: '150px', height: '150px' }}>
+
+                                {/* Shape fill only — no border */}
+                                <div
+                                    className="absolute inset-0 bg-white dark:bg-[#1e2535]"
+                                    style={{
+                                        clipPath: 'polygon(50% 0%, 100% 50%, 70% 88%, 30% 88%, 0% 50%)'
+                                    }}
+                                />
+
+                                {/* Logo centered inside */}
+                                <div
+                                    className="absolute flex items-center justify-center"
+                                    style={{
+                                        top: '50%', left: '50%',
+                                        transform: 'translate(-50%, -48%)',
+                                        width: '150px', height: '150px',
+                                        zIndex: 10,
+                                    }}
+                                >
+                                    <img
+                                        src="/sllogo.png"
+                                        alt="Essel Projects logo"
+                                        className="w-full h-full object-contain"
+                                    />
                                 </div>
 
-                                <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">
-                                    Essel Projects Pvt Ltd
-                                </h2>
-
-                                <p className="text-orange-200 text-base tracking-wide">
-                                    Built On Integrity. Driven By Performance
-                                </p>
                             </div>
 
-                            {/* Key Stats Grid */}
+                            {/* ── Company name ── */}
+                            <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight
+                                           text-[#0d1b5e] dark:text-white">
+                                Essel Projects Pvt Ltd
+                            </h2>
+
+                            {/* ── Tagline ── */}
+                            <p className="text-base tracking-wide mb-8
+                                          text-orange-600 dark:text-orange-400">
+                                Built On Integrity. Driven By Performance
+                            </p>
+
+                            {/* ── Stats grid ── */}
                             <div className="grid grid-cols-3 gap-4 mb-8">
+
+                                {/* Projects */}
                                 <div className="text-center">
-                                    <div className="w-12 h-12 mx-auto bg-white/10 border border-orange-400/30 rounded-lg flex items-center justify-center mb-2">
-                                        <BarChart3 className="w-6 h-6 text-orange-300" />
+                                    <div className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center mb-2
+                                                    bg-[#0d1b5e]/8 dark:bg-white/8
+                                                    border border-[#0d1b5e]/15 dark:border-white/10">
+                                        <BarChart3 className="w-6 h-6 text-orange-500 dark:text-orange-400" />
                                     </div>
-                                    <div className="text-2xl font-bold">150+</div>
-                                    <div className="text-xs text-orange-200">Projects</div>
+                                    <div className="text-2xl font-bold text-[#0d1b5e] dark:text-white">150+</div>
+                                    <div className="text-xs text-[#0d1b5e]/55 dark:text-white/55">Projects</div>
                                 </div>
+
+                                {/* Employees */}
                                 <div className="text-center">
-                                    <div className="w-12 h-12 mx-auto bg-white/10 border border-orange-400/30 rounded-lg flex items-center justify-center mb-2">
-                                        <Users className="w-6 h-6 text-orange-300" />
+                                    <div className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center mb-2
+                                                    bg-[#0d1b5e]/8 dark:bg-white/8
+                                                    border border-[#0d1b5e]/15 dark:border-white/10">
+                                        <Users className="w-6 h-6 text-orange-500 dark:text-orange-400" />
                                     </div>
-                                    <div className="text-2xl font-bold">800+</div>
-                                    <div className="text-xs text-orange-200">Employees</div>
+                                    <div className="text-2xl font-bold text-[#0d1b5e] dark:text-white">800+</div>
+                                    <div className="text-xs text-[#0d1b5e]/55 dark:text-white/55">Employees</div>
                                 </div>
+
+                                {/* Safety */}
                                 <div className="text-center">
-                                    <div className="w-12 h-12 mx-auto bg-white/10 border border-orange-400/30 rounded-lg flex items-center justify-center mb-2">
-                                        <HardHat className="w-6 h-6 text-orange-300" />
+                                    <div className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center mb-2
+                                                    bg-[#0d1b5e]/8 dark:bg-white/8
+                                                    border border-[#0d1b5e]/15 dark:border-white/10">
+                                        <HardHat className="w-6 h-6 text-orange-500 dark:text-orange-400" />
                                     </div>
-                                    <div className="text-2xl font-bold">100%</div>
-                                    <div className="text-xs text-orange-200">Safety Record</div>
+                                    <div className="text-2xl font-bold text-[#0d1b5e] dark:text-white">100%</div>
+                                    <div className="text-xs text-[#0d1b5e]/55 dark:text-white/55">Safety Record</div>
                                 </div>
+
                             </div>
 
-                            {/* Trust Badge */}
-                            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-orange-400/20">
-                                <p className="text-sm font-medium text-center text-orange-100">
+                            {/* ── Trust badge ── */}
+                            <div className="rounded-xl p-4
+                                            bg-[#0d1b5e]/5 dark:bg-white/5
+                                            border border-[#0d1b5e]/12 dark:border-white/10">
+                                <p className="text-sm font-medium text-center
+                                              text-[#0d1b5e]/65 dark:text-white/60">
                                     Trusted by leading construction and manufacturing companies
                                 </p>
                             </div>
+
                         </div>
-                    </div>
+                    </div>{/* end RIGHT PANEL */}
+
                 </div>
-            </div>
-        <ForgotPasswordModal
-            isOpen={showForgotPassword}
-            onClose={() => setShowForgotPassword(false)}
-            loginType=""
-        />
+            </div>{/* end card */}
+
+            <ForgotPasswordModal
+                isOpen={showForgotPassword}
+                onClose={() => setShowForgotPassword(false)}
+                loginType=""
+            />
+
         </div>
     );
 };

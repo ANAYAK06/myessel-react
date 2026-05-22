@@ -139,7 +139,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
     const getPriorityColor = (notification) => {
         if (notification.Status === 1) return 'bg-red-500'; // High priority
         if (notification.Priority === 'High') return 'bg-orange-500';
-        return 'bg-indigo-500'; // Normal priority
+        return 'bg-[#0d1b5e]'; // Normal priority
     };
 
     // Get category icon for notifications
@@ -307,94 +307,33 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
         return organized;
     };
 
-    // Get color for menu items - Professional indigo/purple theme
+    // Get color for menu items - Navy/orange theme
     const getMenuColor = (menuName) => {
-        const colorMap = {
-            'Reports': 'text-indigo-600',
-            'Hr': 'text-indigo-600',
-            'HR': 'text-indigo-600',
-            'Configuration': 'text-purple-600',
-            'Masters': 'text-indigo-700',
-            'Sales': 'text-indigo-600',
-            'Purchase': 'text-purple-600',
-            'Inventory': 'text-indigo-700',
-            'Warehouse': 'text-purple-700',
-            'Finance': 'text-indigo-600',
-            'Accounts': 'text-purple-600'
-        };
-        return colorMap[menuName] || 'text-indigo-600';
+        return 'text-[#0d1b5e] dark:text-blue-200';
     };
 
-    // Get gradient backgrounds for menu headers - Professional theme
+    // Get gradient backgrounds for menu headers - Navy/orange theme
     const getMenuGradient = (menuName) => {
         const gradientMap = {
-            'Reports': 'from-indigo-500 to-indigo-600',
-            'Hr': 'from-indigo-500 to-purple-600',
-            'HR': 'from-indigo-500 to-purple-600',
-            'Configuration': 'from-purple-500 to-purple-600',
-            'Masters': 'from-indigo-600 to-indigo-700',
-            'Sales': 'from-indigo-500 to-indigo-600',
-            'Purchase': 'from-purple-500 to-indigo-600',
-            'Inventory': 'from-indigo-600 to-purple-600',
-            'Warehouse': 'from-purple-600 to-purple-700',
-            'Finance': 'from-indigo-500 to-indigo-600',
-            'Accounts': 'from-purple-500 to-purple-600'
+            'Purchase': 'from-[#0d1b5e] to-orange-600',
+            'Accounts': 'from-[#0d1b5e] to-orange-600',
         };
-        return gradientMap[menuName] || 'from-indigo-500 to-indigo-600';
+        return gradientMap[menuName] || 'from-[#0d1b5e] to-[#0a1240]';
     };
 
-    // Get background colors for section headers - Professional theme
+    // Get background colors for section headers - Navy/orange theme
     const getMenuBgColor = (menuName) => {
-        const bgMap = {
-            'Reports': 'bg-indigo-50',
-            'Hr': 'bg-indigo-50',
-            'HR': 'bg-indigo-50',
-            'Configuration': 'bg-purple-50',
-            'Masters': 'bg-indigo-50',
-            'Sales': 'bg-indigo-50',
-            'Purchase': 'bg-purple-50',
-            'Inventory': 'bg-indigo-50',
-            'Warehouse': 'bg-purple-50',
-            'Finance': 'bg-indigo-50',
-            'Accounts': 'bg-purple-50'
-        };
-        return bgMap[menuName] || 'bg-indigo-50';
+        return 'bg-[#0d1b5e]/8';
     };
 
-    // Get text colors for section headers - Professional theme
+    // Get text colors for section headers - Navy/orange theme
     const getMenuTextColor = (menuName) => {
-        const textMap = {
-            'Reports': 'text-indigo-700',
-            'Hr': 'text-indigo-700',
-            'HR': 'text-indigo-700',
-            'Configuration': 'text-purple-700',
-            'Masters': 'text-indigo-800',
-            'Sales': 'text-indigo-700',
-            'Purchase': 'text-purple-700',
-            'Inventory': 'text-indigo-800',
-            'Warehouse': 'text-purple-800',
-            'Finance': 'text-indigo-700',
-            'Accounts': 'text-purple-700'
-        };
-        return textMap[menuName] || 'text-indigo-700';
+        return 'text-[#0d1b5e]';
     };
 
-    // Get hover gradient for menu items - Professional theme
+    // Get hover gradient for menu items - Navy/orange theme
     const getMenuHoverGradient = (menuName) => {
-        const hoverMap = {
-            'Reports': 'from-indigo-500 to-indigo-600',
-            'Hr': 'from-indigo-500 to-purple-600',
-            'HR': 'from-indigo-500 to-purple-600',
-            'Configuration': 'from-purple-500 to-purple-600',
-            'Masters': 'from-indigo-600 to-indigo-700',
-            'Sales': 'from-indigo-500 to-indigo-600',
-            'Purchase': 'from-purple-500 to-indigo-600',
-            'Inventory': 'from-indigo-600 to-purple-600',
-            'Warehouse': 'from-purple-600 to-purple-700',
-            'Finance': 'from-indigo-500 to-indigo-600',
-            'Accounts': 'from-purple-500 to-purple-600'
-        };
-        return hoverMap[menuName] || 'from-indigo-500 to-indigo-600';
+        return 'from-[#0d1b5e] to-orange-500';
     };
 
     const [organizedMenu, setOrganizedMenu] = useState({});
@@ -809,7 +748,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                 onClick={() => onNavigate && onNavigate('dashboard', { name: 'Dashboard', type: 'dashboard' })}
                                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                                     currentPage === 'dashboard'
-                                        ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300'
+                                        ? 'bg-[#0d1b5e]/10 dark:bg-[#0d1b5e]/40 text-[#0d1b5e] dark:text-orange-300'
                                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                             >
@@ -832,7 +771,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                             onClick={() => hasSections ? handleDropdownToggle(menuKey) : null}
                                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 whitespace-nowrap ${
                                                 activeDropdown === menuKey || currentPage?.startsWith(menuKey.toLowerCase())
-                                                    ? `bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border-b-2 border-indigo-500`
+                                                    ? `bg-[#0d1b5e]/10 dark:bg-[#0d1b5e]/40 text-[#0d1b5e] dark:text-orange-300 border-b-2 border-orange-500`
                                                     : `text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 ${menuData.color}`
                                             }`}
                                         >
@@ -1145,7 +1084,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                         </span>
                                     )}
                                     {notificationsLoading && (
-                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full animate-pulse"></div>
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full animate-pulse"></div>
                                     )}
                                 </button>
 
@@ -1153,7 +1092,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                 {isNotificationMenuOpen && (
                                     <div className="absolute right-0 top-full mt-1 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 transition-colors max-h-96 overflow-hidden">
                                         {/* Notifications Header */}
-                                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-500 to-purple-600">
+                                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-[#0d1b5e] to-[#0a1240]">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-2">
                                                     <Mail className="w-5 h-5 text-white" />
@@ -1181,7 +1120,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                         <div className="max-h-80 overflow-y-auto">
                                             {notificationsLoading ? (
                                                 <div className="p-6 text-center">
-                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
                                                     <p className="text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
                                                 </div>
                                             ) : notificationsSummary.length === 0 ? (
@@ -1229,7 +1168,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                                                             {notification.CCCodes && notification.CCCodes.length > 0 && (
                                                                                 <>
                                                                                     <span className="text-xs text-gray-400">•</span>
-                                                                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">
+                                                                                    <span className="text-xs text-orange-600 dark:text-orange-400 font-mono">
                                                                                         {notification.CCCodes.length} CC{notification.CCCodes.length > 1 ? 's' : ''}
                                                                                     </span>
                                                                                 </>
@@ -1237,7 +1176,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                                                             <span className="text-xs text-gray-400">•</span>
                                                                             <span className={`text-xs px-1.5 py-0.5 rounded text-white ${
                                                                                 notification.Status === 1 ? 'bg-red-500' : 
-                                                                                notification.Status === 2 ? 'bg-orange-500' : 'bg-indigo-500'
+                                                                                notification.Status === 2 ? 'bg-orange-500' : 'bg-[#0d1b5e]'
                                                                             }`}>
                                                                                 {notification.Status === 1 ? 'Urgent' : 
                                                                                  notification.Status === 2 ? 'Active' : 'Pending'}
@@ -1280,7 +1219,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                     }}
                                     className="flex items-center space-x-2 p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                 >
-                                    <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-[#0d1b5e] to-orange-500 rounded-full flex items-center justify-center">
                                         <span className="text-white text-sm font-bold">
                                             {userDetails.name.charAt(0).toUpperCase()}
                                         </span>
@@ -1301,7 +1240,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                     <div className="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 transition-colors">
                                         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                                             <div className="flex items-center space-x-3 mb-3">
-                                                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                                                <div className="w-12 h-12 bg-gradient-to-r from-[#0d1b5e] to-orange-500 rounded-full flex items-center justify-center">
                                                     <span className="text-white text-lg font-bold">
                                                         {userDetails.name.charAt(0).toUpperCase()}
                                                     </span>
@@ -1419,7 +1358,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
                                     placeholder="Type to search menu items..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
+                                    className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
                                 />
                                 <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                             </div>
@@ -1488,7 +1427,7 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
             </main>
 
             {/* Footer */}
-            <footer className="bg-gray-800 dark:bg-gray-900 text-white py-4 mt-auto transition-colors">
+            <footer className="bg-[#0d1b5e] dark:bg-[#0a1240] text-white py-4 mt-auto transition-colors">
                 <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center">
                         <p className="text-sm">Copyright © . All Rights Reserved</p>

@@ -128,6 +128,8 @@ import labourReportReducer from "../slices/HrReportSlice/labourReportSlice";
 import labourBankChangeReducer from "../slices/HRSlice/labourBankChangeSlice";
 import itemCodeVerificationReducer from "../slices/purchaseSlice/itemCodeVerificationSlice";
 import labourTypeChangeReducer from "../slices/HRSlice/labourTypeChangeSlice";
+import labourAttendanceReportReducer from "../slices/HrReportSlice/labourAttendanceReportSlice";
+import labourExitReducer from "../slices/HRSlice/labourExitSlice";
 
 const store = configureStore({
   
@@ -260,6 +262,8 @@ const store = configureStore({
     labourBankChange:      labourBankChangeReducer,
     itemCodeVerification:  itemCodeVerificationReducer,
     labourTypeChange:      labourTypeChangeReducer,
+    labourattendancereport: labourAttendanceReportReducer,
+    labourExit:            labourExitReducer,
 
   }
 

@@ -107,17 +107,36 @@ const SessionProvider = ({ children }) => {
         // IMPROVED: Set up session status monitoring with better performance
         statusIntervalRef.current = setInterval(() => {
             const status = sessionManager.getSessionStatus();
-            
+
             setSessionStatus(prev => ({
                 ...prev,
                 isValid: status.isValid,
                 remainingTime: status.remainingTime
             }));
 
-            // Auto-logout if session becomes invalid - use current ref values
-            if (!status.isValid && authRef.current.isAuthenticated) {
-                console.log('⏰ Session became invalid during monitoring - auto logout');
-                handleSessionExpiry();
+            // FIX: Only auto-logout when the session is truly expired.
+            //
+            // With the storage-refresh throttle in SessionManager (60 s), the
+            // stored expiresAt can lag behind real activity by up to 60 seconds.
+            // We add a 90-second grace margin here so that an active user who
+            // happens to be checked right before the next storage refresh is NOT
+            // wrongly logged out.  The real inactivity timer inside SessionManager
+            // will still fire correctly after 30 min of genuine inactivity.
+            const GRACE_MS = 90 * 1000; // 90-second grace period
+            const isGenuinelyExpired = !status.isValid && status.remainingTime === 0;
+            if (isGenuinelyExpired && authRef.current.isAuthenticated) {
+                // Double-check: only act if the stored time is truly past the grace window
+                const rawEntry =
+                    sessionStorage.getItem('auth_employeeId') ||
+                    sessionStorage.getItem('auth_userData');
+                let storageExpiresAt = 0;
+                if (rawEntry) {
+                    try { storageExpiresAt = JSON.parse(rawEntry).expiresAt || 0; } catch (e) {}
+                }
+                if (storageExpiresAt === 0 || Date.now() > storageExpiresAt + GRACE_MS) {
+                    console.log('⏰ Session became invalid during monitoring - auto logout');
+                    handleSessionExpiry();
+                }
             }
         }, 120000); // IMPROVED: Check every 2 minutes instead of 1 to reduce overhead
 

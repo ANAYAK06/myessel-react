@@ -167,15 +167,34 @@ const staffDailyAttendanceSlice = createSlice({
             .addCase(approveStaffAttendance.pending, (state) => {
                 state.loading.approveAttendance = true;
                 state.errors.approveAttendance = null;
+                state.approvalStatus = null;
             })
             .addCase(approveStaffAttendance.fulfilled, (state, action) => {
                 state.loading.approveAttendance = false;
                 state.approvalResult = action.payload;
-                state.approvalStatus = 'approved';
+
+                // Real success only when Data === "Submited" (case-insensitive).
+                // Any other string in Data is a business-rule blocking message —
+                // treat it as a soft failure so the inbox is not prematurely cleared.
+                const dataVal = typeof action.payload === 'string'
+                    ? action.payload
+                    : (action.payload?.Data ?? action.payload?.Message ?? '');
+                const dataCore = typeof dataVal === 'string'
+                    ? dataVal.split('$')[0].trim().toLowerCase()
+                    : '';
+                const isRealSuccess = dataCore === 'submited';
+
+                state.approvalStatus = isRealSuccess ? 'approved' : 'blocked';
+                if (!isRealSuccess && dataVal) {
+                    state.errors.approveAttendance = typeof dataVal === 'string'
+                        ? dataVal.split('$')[0].trim()
+                        : String(dataVal);
+                }
             })
             .addCase(approveStaffAttendance.rejected, (state, action) => {
                 state.loading.approveAttendance = false;
                 state.errors.approveAttendance = action.payload;
+                state.approvalStatus = 'failed';
             });
     },
 });

@@ -9,12 +9,14 @@ export const initializeSession = async (userId, roleId) => {
     return response.data;
 };
 
-export const queryChat = async (userId, roleId, message, sessionId) => {
+export const queryChat = async (userId, roleId, message, sessionId, chatMode, pendingModule) => {
     const response = await axios.post(`${API_BASE_URL}/Chat/Query`, {
         userId,
         roleId,
         message,
         sessionId,
+        chatMode:      chatMode      || 'Report',
+        pendingModule: pendingModule || null,
     });
     return response.data;
 };

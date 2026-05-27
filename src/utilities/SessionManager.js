@@ -17,6 +17,13 @@ class SessionManager {
         // ADDED: Flag to track if we're in a context where session validation is expected
         this.expectSession = false;
 
+        // FIX: Track last time we wrote the refreshed expiresAt back to storage.
+        // resetInactivityTimer() is called on every mouse-move / click, so we
+        // throttle storage writes to once per minute to avoid excessive I/O while
+        // still keeping the stored expiresAt in sync with real user activity.
+        this.lastStorageRefreshTime = 0;
+        this.storageRefreshThrottle = 60 * 1000; // 60 seconds
+
         this.initializeSessionTracking();
     }
 
@@ -120,11 +127,15 @@ class SessionManager {
         });
 
         this.clearInactivityTimer();
-        
+
         // ADDED: Reset validation cache and expectation
         this.lastValidationTime = 0;
         this.lastValidationResult = false;
         this.expectSession = false;
+
+        // FIX: Reset throttle counter so the first activity after next login
+        // always writes a fresh expiresAt immediately.
+        this.lastStorageRefreshTime = 0;
     }
 
     // ADDED: Helper method to check if any session data exists
@@ -211,6 +222,37 @@ class SessionManager {
     // Reset inactivity timer
     resetInactivityTimer() {
         this.clearInactivityTimer();
+
+        // FIX: Keep storage-based expiresAt in sync with real user activity.
+        //
+        // Previously, expiresAt was only written on login or an explicit
+        // extendSession() call.  The JavaScript timers (below) were correctly
+        // reset on every activity event, but getSessionStatus() / getSession()
+        // read expiresAt from sessionStorage — so after 30 min from login the
+        // storage check would declare the session expired and log the user out
+        // even though they had been working continuously in the inbox.
+        //
+        // We throttle the storage write to once per minute so that frequent
+        // events like mousemove don't cause excessive sessionStorage I/O.
+        const now = Date.now();
+        if (this.expectSession && (now - this.lastStorageRefreshTime >= this.storageRefreshThrottle)) {
+            this.lastStorageRefreshTime = now;
+            const newExpiresAt = now + this.SESSION_TIMEOUT;
+            const keysToRefresh = ['employeeId', 'userData', 'roleData', 'roleId', 'employeeData'];
+            keysToRefresh.forEach(key => {
+                const storageKey = this.STORAGE_KEY_PREFIX + key;
+                const raw = sessionStorage.getItem(storageKey);
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        parsed.expiresAt = newExpiresAt;
+                        sessionStorage.setItem(storageKey, JSON.stringify(parsed));
+                    } catch (e) {
+                        // Ignore – malformed entry will be caught on next getSession() call
+                    }
+                }
+            });
+        }
 
         // Set warning timer (5 minutes before expiry)
         this.warningTimer = setTimeout(() => {

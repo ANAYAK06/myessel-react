@@ -5,7 +5,8 @@ import {
     FileText, Clock, CheckCircle2, Users,
     Calendar, Building2, Hash, User,
     TrendingUp, AlertCircle, CalendarCheck,
-    CalendarDays, UserCheck, UserX, CheckSquare
+    CalendarDays, UserCheck, UserX, CheckSquare,
+    Pencil, RotateCcw
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
@@ -88,6 +89,8 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
     const [filterDate, setFilterDate] = useState('All');
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [isLeftPanelHovered, setIsLeftPanelHovered] = useState(false);
+    // editedAttendance: { [EmpId]: 'P' | 'A' | 'L' | 'H' } — overrides from the verifier
+    const [editedAttendance, setEditedAttendance] = useState({});
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -118,6 +121,28 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
         return `${existingRemarks.trim()}||${formattedNewComment}`;
     };
 
+    // ── Attendance edit helpers ────────────────────────────────────────────────
+    /** Returns the effective (possibly edited) attendance type for an employee */
+    const getEffectiveAttendance = (emp) =>
+        editedAttendance[emp.EmpId] ?? emp.AttendanceType;
+
+    /** Toggle attendance type for a single employee */
+    const handleAttendanceChange = (empId, newType) => {
+        setEditedAttendance(prev => ({ ...prev, [empId]: newType }));
+    };
+
+    /** Reset a single employee's attendance to the original value */
+    const handleAttendanceReset = (empId) => {
+        setEditedAttendance(prev => {
+            const next = { ...prev };
+            delete next[empId];
+            return next;
+        });
+    };
+
+    /** Count of rows where the verifier changed the value */
+    const editedCount = Object.keys(editedAttendance).length;
+
     // Initialize - Fetch attendance inbox
     useEffect(() => {
         if (roleId) {
@@ -147,6 +172,7 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
             setIsVerified(false);
             setVerificationComment('');
             setShowRemarksHistory(false);
+            setEditedAttendance({});   // clear any previous edits when switching records
         }
     }, [selectedItem, dispatch]);
 
@@ -217,13 +243,13 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
         verificationComment.trim()
     );
 
-    // Extract employee IDs and attendance types from the attendance details
+    // Extract employee IDs and attendance types — use verifier overrides where set
     const employeeIds = attendanceDetails?.CCEmplistforDate
         ?.map(emp => emp.EmpId)
         .join(',') + ',' || '';
-    
+
     const attendanceTypes = attendanceDetails?.CCEmplistforDate
-        ?.map(emp => emp.AttendanceType)
+        ?.map(emp => editedAttendance[emp.EmpId] ?? emp.AttendanceType)
         .join(',') + ',' || '';
 
     const payload = {
@@ -271,49 +297,63 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
 
         try {
             const payload = buildApprovalPayload(actionValue);
+            const result  = await dispatch(approveStaffAttendance(payload)).unwrap();
 
-            const result = await dispatch(approveStaffAttendance(payload)).unwrap();
+            // ── Resolve the Data string from whatever shape the API returns ──
+            // API returns: { Data: "Submited" | "<business-rule message>", IsSuccessful: bool, ... }
+            // Older APIs may return a plain string directly.
+            const dataVal = typeof result === 'string'
+                ? result
+                : (result?.Data ?? result?.Message ?? '');
 
-            if (result && typeof result === 'string') {
-                if (result.includes('$')) {
-                    const [status, additionalInfo] = result.split('$');
-                    toast.success(`${action.text || actionValue} completed successfully!`);
-                    if (additionalInfo) {
-                        setTimeout(() => {
-                            toast.info(additionalInfo, { autoClose: 6000 });
-                        }, 500);
-                    }
-                } else {
-                    toast.success(result || `${action.text || actionValue} completed successfully!`);
-                }
-            } else {
+            // Handle "$"-delimited extra info (e.g. "Submited$Some note")
+            const [dataCore, extraInfo] = typeof dataVal === 'string'
+                ? dataVal.split('$')
+                : [dataVal, null];
+
+            const isRealSuccess =
+                typeof dataCore === 'string' &&
+                dataCore.trim().toLowerCase() === 'submited';
+
+            if (isRealSuccess) {
+                // ── Genuine success ──────────────────────────────────────────
                 toast.success(`${action.text || actionValue} completed successfully!`);
-            }
+                if (extraInfo?.trim()) {
+                    setTimeout(() => toast.info(extraInfo.trim(), { autoClose: 6000 }), 500);
+                }
 
-            setTimeout(() => {
+                setTimeout(() => {
+                    dispatch(fetchVerificationAttendance(roleId));
+                    setSelectedItem(null);
+                    setVerificationComment('');
+                    setIsVerified(false);
+                    setShowRemarksHistory(false);
+                    setIsLeftPanelCollapsed(false);
+                    setEditedAttendance({});
+                    dispatch(resetAttendanceDetails());
+                    dispatch(resetApprovalData());
+                    dispatch(clearApprovalResult());
+                }, 1000);
+
+            } else {
+                // ── Business-rule block — show the actual backend message ──
+                const displayMsg = dataCore?.trim() ||
+                    'Approval could not be completed. Please check the details and try again.';
+
+                toast.warning(displayMsg, { autoClose: false });
+
+                // Re-fetch inbox in case any partial state changed on the server,
+                // but keep the current record selected so the user can take action.
                 dispatch(fetchVerificationAttendance(roleId));
-                setSelectedItem(null);
-                setVerificationComment('');
-                setIsVerified(false);
-                setShowRemarksHistory(false);
-                setIsLeftPanelCollapsed(false);
-                dispatch(resetAttendanceDetails());
-                dispatch(resetApprovalData());
-                dispatch(clearApprovalResult());
-            }, 1000);
+            }
 
         } catch (error) {
             console.error('❌ Approval Error:', error);
 
-            let errorMessage = `Failed to ${action.text?.toLowerCase() || actionValue.toLowerCase()}`;
-
-            if (error && typeof error === 'string') {
-                errorMessage = error;
-            } else if (error?.message) {
-                errorMessage = error.message;
-            } else if (error?.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
+            const errorMessage =
+                (typeof error === 'string' ? error : null) ||
+                error?.message ||
+                `Failed to ${action.text?.toLowerCase() || actionValue.toLowerCase()}`;
 
             toast.error(errorMessage, { autoClose: 10000 });
         }
@@ -409,6 +449,22 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // colour maps for attendance type buttons
+    const ATT_ACTIVE = {
+        P: 'bg-green-500 text-white border-green-500 shadow-sm shadow-green-200 dark:shadow-green-900',
+        A: 'bg-red-500   text-white border-red-500   shadow-sm shadow-red-200   dark:shadow-red-900',
+        L: 'bg-yellow-500 text-white border-yellow-500 shadow-sm shadow-yellow-200 dark:shadow-yellow-900',
+        H: 'bg-blue-500  text-white border-blue-500  shadow-sm shadow-blue-200  dark:shadow-blue-900',
+    };
+    const ATT_IDLE = {
+        P: 'border-green-300  text-green-600  dark:border-green-600 dark:text-green-400 hover:bg-green-50  dark:hover:bg-green-900/20',
+        A: 'border-red-300    text-red-600    dark:border-red-600   dark:text-red-400   hover:bg-red-50    dark:hover:bg-red-900/20',
+        L: 'border-yellow-300 text-yellow-600 dark:border-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20',
+        H: 'border-blue-300   text-blue-600   dark:border-blue-600  dark:text-blue-400  hover:bg-blue-50   dark:hover:bg-blue-900/20',
+    };
+    const ATT_TYPES = ['P', 'A', 'L', 'H'];
+    const ATT_LABELS = { P: 'Present', A: 'Absent', L: 'Leave', H: 'Holiday' };
+
     const renderAttendanceTable = () => {
         if (!attendanceDetails?.CCEmplistforDate || attendanceDetails.CCEmplistforDate.length === 0) {
             return null;
@@ -416,27 +472,40 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
 
         return (
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-6">
+                {/* ── Table header ── */}
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                     <div className="flex items-center space-x-3">
                         <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
                             <Users className="w-5 h-5 text-white" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                            Employee Attendance List
-                        </h3>
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                                Employee Attendance List
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                                <Pencil className="w-3 h-3" />
+                                Click <span className="font-semibold">P / A / L / H</span> buttons to change attendance
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex items-center space-x-4 text-xs">
-                        <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 rounded bg-green-500"></div>
-                            <span className="text-gray-600 dark:text-gray-400">P - Present</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 rounded bg-red-500"></div>
-                            <span className="text-gray-600 dark:text-gray-400">A - Absent</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 rounded bg-yellow-500"></div>
-                            <span className="text-gray-600 dark:text-gray-400">L - Leave</span>
+
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {/* Changed-rows badge */}
+                        {editedCount > 0 && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-300 dark:border-amber-600">
+                                <Pencil className="w-3 h-3" />
+                                {editedCount} row{editedCount > 1 ? 's' : ''} edited
+                            </span>
+                        )}
+
+                        {/* Legend */}
+                        <div className="flex items-center gap-3 text-xs">
+                            {ATT_TYPES.map(t => (
+                                <span key={t} className="flex items-center gap-1">
+                                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-white text-[10px] font-bold ${ATT_ACTIVE[t]}`}>{t}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{ATT_LABELS[t]}</span>
+                                </span>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -445,74 +514,111 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                    #
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">#</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider min-w-[180px]">Employee Name</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Employee ID</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Category</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Group</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider min-w-[180px]">
+                                    <span className="flex items-center justify-center gap-1">
+                                        <Pencil className="w-3 h-3 text-blue-500" />
+                                        Attendance
+                                    </span>
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">
-                                    Employee Name
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                    Employee ID
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                    Category
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                    Group
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                    Attendance
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                    LOP Status
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                    Reports To
-                                </th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">LOP Status</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Reports To</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {attendanceDetails.CCEmplistforDate.map((employee, index) => {
-                                let attendanceBg = 'bg-gray-100 dark:bg-gray-700';
-                                let attendanceText = 'text-gray-700 dark:text-gray-300';
-
-                                if (employee.AttendanceType === 'P') {
-                                    attendanceBg = 'bg-green-100 dark:bg-green-900/30';
-                                    attendanceText = 'text-green-700 dark:text-green-300';
-                                } else if (employee.AttendanceType === 'A') {
-                                    attendanceBg = 'bg-red-100 dark:bg-red-900/30';
-                                    attendanceText = 'text-red-700 dark:text-red-300';
-                                } else if (employee.AttendanceType === 'L') {
-                                    attendanceBg = 'bg-yellow-100 dark:bg-yellow-900/30';
-                                    attendanceText = 'text-yellow-700 dark:text-yellow-300';
-                                }
+                                const effective   = getEffectiveAttendance(employee);
+                                const wasEdited   = editedAttendance[employee.EmpId] !== undefined;
+                                const original    = employee.AttendanceType;
 
                                 return (
-                                    <tr key={employee.EmpId || index} className="hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
+                                    <tr
+                                        key={employee.EmpId || index}
+                                        className={`transition-colors ${
+                                            wasEdited
+                                                ? 'bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20'
+                                                : 'hover:bg-blue-50 dark:hover:bg-blue-900/10'
+                                        }`}
+                                    >
+                                        {/* # */}
                                         <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                             {index + 1}
                                         </td>
+
+                                        {/* Name — show edit dot if changed */}
                                         <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                                            {employee.EmpName}
+                                            <div className="flex items-center gap-2">
+                                                {wasEdited && (
+                                                    <span className="flex-shrink-0 w-2 h-2 rounded-full bg-amber-500" title="Attendance changed by verifier" />
+                                                )}
+                                                {employee.EmpName}
+                                            </div>
                                         </td>
+
+                                        {/* EmpId */}
                                         <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                             {employee.EmpId}
                                         </td>
+
+                                        {/* Category */}
                                         <td className="px-4 py-3 text-center">
                                             <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
                                                 {employee.Category}
                                             </span>
                                         </td>
+
+                                        {/* Group */}
                                         <td className="px-4 py-3 text-center">
                                             <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded text-xs font-medium">
                                                 {employee.GroupName}
                                             </span>
                                         </td>
+
+                                        {/* ── Editable Attendance column ── */}
                                         <td className="px-4 py-3 text-center">
-                                            <span className={`inline-flex items-center justify-center w-10 h-10 rounded-lg font-bold ${attendanceBg} ${attendanceText}`}>
-                                                {employee.AttendanceType || '-'}
-                                            </span>
+                                            <div className="flex items-center justify-center gap-1">
+                                                {ATT_TYPES.map(type => (
+                                                    <button
+                                                        key={type}
+                                                        type="button"
+                                                        onClick={() => handleAttendanceChange(employee.EmpId, type)}
+                                                        title={`Mark ${ATT_LABELS[type]}`}
+                                                        className={`w-8 h-8 rounded-lg text-xs font-bold border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 ${
+                                                            effective === type
+                                                                ? ATT_ACTIVE[type]
+                                                                : `bg-white dark:bg-gray-800 ${ATT_IDLE[type]}`
+                                                        }`}
+                                                    >
+                                                        {type}
+                                                    </button>
+                                                ))}
+
+                                                {/* Reset button — only visible when this row was edited */}
+                                                {wasEdited && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAttendanceReset(employee.EmpId)}
+                                                        title={`Reset to original (${original})`}
+                                                        className="w-7 h-7 ml-1 rounded-md flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 transition-colors"
+                                                    >
+                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Show original value when it was changed */}
+                                            {wasEdited && (
+                                                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                                                    was: <span className="font-semibold">{original || '—'}</span>
+                                                </p>
+                                            )}
                                         </td>
+
+                                        {/* LOP Status */}
                                         <td className="px-4 py-3 text-center">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${
                                                 employee.LOPStatus === 'NoLOP'
@@ -522,6 +628,8 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
                                                 {employee.LOPStatus || '-'}
                                             </span>
                                         </td>
+
+                                        {/* Reports To */}
                                         <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                             {employee.ReportToName || '-'}
                                         </td>
@@ -531,6 +639,26 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* ── Bottom summary when there are edits ── */}
+                {editedCount > 0 && (
+                    <div className="mt-4 flex items-center justify-between flex-wrap gap-2 px-2 py-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700">
+                        <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                            <Pencil className="w-4 h-4" />
+                            <span>
+                                <span className="font-bold">{editedCount}</span> attendance value{editedCount > 1 ? 's' : ''} changed — these will be submitted with your approval.
+                            </span>
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setEditedAttendance({})}
+                            className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 font-medium underline underline-offset-2 transition-colors"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            Reset all changes
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };

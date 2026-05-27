@@ -38,6 +38,7 @@ import VerifyStaffPayroll from '../../pages/HR/VerifyStaffPayroll';
 import VerifySalaryDeductionArear from '../../pages/HR/VerifySalaryDeductionArear';
 import VerifyEmployeeTransfer from '../../pages/HR/VerifyEmployeeTransfer';
 import VerifyEmployeeExit    from '../../pages/HR/VerifyEmployeeExit';
+import VerifyLabourExit      from '../../pages/HR/VerifyLabourExit';
 import VerifyStaffFullFinal from '../../pages/HR/VerifyStaffFullFinal';
 import VerifyStaffAdvance from '../../pages/HR/VerifyStaffAdvance';
 import VerifyStaffAppraisal from '../../pages/HR/VerifyStaffAppraisal';
@@ -993,6 +994,37 @@ const isItemCodeVerification = (path, category, title, displayName, workflowType
     return isMatch;
 };
 
+const isLabourExitVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifylbexit',
+        '/hr/verifylaborexit',
+        '/hr/verifylabourexit',
+        'verifylbexit',
+        'labour exit',
+        'labourexit',
+        'lbexit',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('labour exit') ||
+        category.includes('labourexit') ||
+        category.includes('lbexit') ||
+        title.includes('labour exit') ||
+        title.includes('labourexit') ||
+        title.includes('lbexit') ||
+        displayName.includes('labour exit') ||
+        displayName.includes('labourexit') ||
+        displayName.includes('lbexit') ||
+        workflowType.includes('labour exit') ||
+        workflowType.includes('labourexit') ||
+        workflowType.includes('lbexit');
+    if (isMatch) {
+        console.log('✅ Labour Exit Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Labour Exit Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isAppraisalObjectiveVerification = (path) => {
     const isMatch = path.includes('/hr/verifyappraisalobjectives') ||
         path.includes('/hr/verifyempobjectivesgoals') ||
@@ -1419,6 +1451,16 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (path.includes('/hr/verifyempexit') || path.includes('/HR/VerifyEmpExit')) {
             console.log('✅ Routing to EmployeeExitVerify');
             return <VerifyEmployeeExit
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // LABOUR EXIT VERIFICATION
+        if (isLabourExitVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyLabourExit');
+            return <VerifyLabourExit
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

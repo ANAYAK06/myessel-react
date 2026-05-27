@@ -49,6 +49,7 @@ import LabourSalaryReportPage from '../HRReports/LabourSalaryReportPage';
 import StaffReportPage from '../HRReports/StaffReportPage';
 import StaffCTCReportPage from '../HRReports/StaffCTCReportPage';
 import LabourReportPage from '../HRReports/LabourReportPage';
+import LabourAttendanceReportPage from '../HRReports/LabourAttendanceReportPage';
 
 
 //============================================================================
@@ -70,6 +71,7 @@ import StaffJoinRegistration from '../HR/StaffJoinRegistration';
 import BulkWorkerRegistration from '../HR/BulkWorkerRegistration';
 import EmployeeTransfer from '../HR/EmployeeTransfer';
 import EmployeeExit from '../HR/EmployeeExit';
+import LabourExit from '../HR/LabourExit';
 import StaffFullFinal from '../HR/StaffFullFinal';
 import EmployeeLeaveRequest from '../HR/EmployeeLeaveRequest';
 import StaffAdvanceRequest from '../HR/StaffAdvanceRequest';
@@ -1064,6 +1066,16 @@ const RoleBasedApplication = () => {
             menuData.reactRoute?.toLowerCase().includes('labourreport');
     }
 
+    const isLabourAttendanceReportPage = (menuData) => {
+        if (!menuData) return false;
+        return menuData.path === '/HR/LabourAttendenceView' ||
+            menuData.path?.toLowerCase().includes('labourattendancereport') ||
+            menuData.path?.toLowerCase().includes('getlabourattdata') ||
+            menuData.name?.toLowerCase().includes('labour attendance report') ||
+            menuData.name?.toLowerCase().includes('labourattendancereport') ||
+            menuData.reactRoute?.toLowerCase().includes('labourattendancereport');
+    };
+
     const isStaffCTCReportPage = (menuData) => {
         if (!menuData) return false;
         const pathMatches = menuData.path === '/HR/PayRollStructureReport' ||
@@ -1472,6 +1484,11 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering LabourReportPage for:', currentMenuData.name);
             return <LabourReportPage menuData={currentMenuData} />;
         }
+        // check if the menu item should show labour attendance report page
+        if (currentMenuData && isLabourAttendanceReportPage(currentMenuData)) {
+            console.log('✅ Rendering LabourAttendanceReportPage for:', currentMenuData.name);
+            return <LabourAttendanceReportPage menuData={currentMenuData} />;
+        }
         // check if the menu item should show staff CTC report page
         if (currentMenuData && isStaffCTCReportPage(currentMenuData)) {
             console.log('✅ Rendering StaffCTCReportPage for:', currentMenuData.name);
@@ -1536,6 +1553,16 @@ const RoleBasedApplication = () => {
         )) {
             console.log('✅ Rendering EmployeeExitPage for:', currentMenuData.name);
             return <EmployeeExit menuData={currentMenuData} />;
+        }
+        // check if the menu item should show labour exit page
+        if (currentMenuData && (
+            currentMenuData.path === '/HR/LabourExit' ||
+            currentMenuData.path?.toLowerCase().includes('labourexit') ||
+            currentMenuData.name?.toLowerCase().includes('labour exit') ||
+            currentMenuData.name?.toLowerCase().includes('labourexit')
+        )) {
+            console.log('✅ Rendering LabourExit for:', currentMenuData.name);
+            return <LabourExit menuData={currentMenuData} />;
         }
         // check if the menu item should show staff full & final page
         if (currentMenuData && (

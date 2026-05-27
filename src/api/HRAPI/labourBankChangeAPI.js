@@ -95,3 +95,30 @@ export const approveLBBankChange = async (payload) => {
         throw error;
     }
 };
+
+// 8. Get master list of available employee banks
+export const getEmployeeBanks = async () => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/HR/GetEmployeeBanks`, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error;
+    }
+};
+
+// 9. Save (insert) a new bank into the master bank list
+// payload: { Action, BankName, Bankid, CreatedBy }
+export const saveEmployeeBank = async (payload) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/HR/SaveEmployeeBank`, payload, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response?.data) throw error.response.data;
+        throw error;
+    }
+};

@@ -1,6 +1,33 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as api from '../../api/HRAPI/labourBankChangeAPI';
 
+// ── Bank master thunks ────────────────────────────────────────────────────────
+
+export const fetchEmployeeBanks = createAsyncThunk(
+    'labourBankChange/fetchEmployeeBanks',
+    async (_, { rejectWithValue }) => {
+        try {
+            const res = await api.getEmployeeBanks();
+            return res?.Data || [];
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to fetch banks list');
+        }
+    }
+);
+
+export const saveNewBank = createAsyncThunk(
+    'labourBankChange/saveNewBank',
+    async (payload, { rejectWithValue }) => {
+        try {
+            const res = await api.saveEmployeeBank(payload);
+            // API returns "Submited" | "Exist" | error string
+            return res?.Data ?? res;
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to save bank');
+        }
+    }
+);
+
 // ── Thunks ────────────────────────────────────────────────────────────────────
 
 export const fetchActiveLBContractors = createAsyncThunk(
@@ -95,6 +122,9 @@ const initialState = {
     currentBankDetails: null,
     submitResult: null,
 
+    employeeBanks: [],
+    saveNewBankResult: null,
+
     inbox: [],
     changeDetail: null,
     approvalResult: null,
@@ -104,6 +134,8 @@ const initialState = {
         labourSearch: false,
         bankDetails: false,
         submit: false,
+        employeeBanks: false,
+        saveNewBank: false,
         inbox: false,
         detail: false,
         approval: false,
@@ -113,6 +145,8 @@ const initialState = {
         labourSearch: null,
         bankDetails: null,
         submit: null,
+        employeeBanks: null,
+        saveNewBank: null,
         inbox: null,
         detail: null,
         approval: null,
@@ -139,6 +173,10 @@ const labourBankChangeSlice = createSlice({
         clearApprovalResult: (state) => {
             state.approvalResult = null;
             state.errors.approval = null;
+        },
+        clearSaveNewBankResult: (state) => {
+            state.saveNewBankResult = null;
+            state.errors.saveNewBank = null;
         },
         resetChangeDetail: (state) => {
             state.changeDetail = null;
@@ -197,6 +235,30 @@ const labourBankChangeSlice = createSlice({
                 s.loading.submit = false; s.errors.submit = a.payload;
             });
 
+        // employee banks list
+        builder
+            .addCase(fetchEmployeeBanks.pending, (s) => {
+                s.loading.employeeBanks = true; s.errors.employeeBanks = null;
+            })
+            .addCase(fetchEmployeeBanks.fulfilled, (s, a) => {
+                s.loading.employeeBanks = false; s.employeeBanks = a.payload;
+            })
+            .addCase(fetchEmployeeBanks.rejected, (s, a) => {
+                s.loading.employeeBanks = false; s.errors.employeeBanks = a.payload;
+            });
+
+        // save new bank
+        builder
+            .addCase(saveNewBank.pending, (s) => {
+                s.loading.saveNewBank = true; s.errors.saveNewBank = null; s.saveNewBankResult = null;
+            })
+            .addCase(saveNewBank.fulfilled, (s, a) => {
+                s.loading.saveNewBank = false; s.saveNewBankResult = a.payload;
+            })
+            .addCase(saveNewBank.rejected, (s, a) => {
+                s.loading.saveNewBank = false; s.errors.saveNewBank = a.payload;
+            });
+
         // inbox
         builder
             .addCase(fetchVerifyLBBankChange.pending, (s) => {
@@ -240,6 +302,7 @@ export const {
     clearBankDetails,
     clearSubmitResult,
     clearApprovalResult,
+    clearSaveNewBankResult,
     resetChangeDetail,
     resetAll,
 } = labourBankChangeSlice.actions;
@@ -250,6 +313,8 @@ export const selectContractors      = (s) => s.labourBankChange.contractors;
 export const selectLabourResults    = (s) => Array.isArray(s.labourBankChange.labourSearchResults) ? s.labourBankChange.labourSearchResults : [];
 export const selectCurrentBank      = (s) => s.labourBankChange.currentBankDetails;
 export const selectSubmitResult     = (s) => s.labourBankChange.submitResult;
+export const selectEmployeeBanks    = (s) => Array.isArray(s.labourBankChange.employeeBanks) ? s.labourBankChange.employeeBanks : [];
+export const selectSaveNewBankResult = (s) => s.labourBankChange.saveNewBankResult;
 export const selectInbox            = (s) => Array.isArray(s.labourBankChange.inbox) ? s.labourBankChange.inbox : [];
 export const selectChangeDetail     = (s) => s.labourBankChange.changeDetail;
 export const selectApprovalResult   = (s) => s.labourBankChange.approvalResult;

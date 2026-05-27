@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import {
     Banknote, User, Building2, Search, CheckCircle2,
     Loader2, ChevronDown, X, CreditCard, Hash,
-    MapPin, ArrowRight, RefreshCw, Users
+    MapPin, ArrowRight, RefreshCw, Users, Plus, AlertCircle
 } from 'lucide-react';
 
 import CustomDatePicker from '../../components/CustomDatePicker';
@@ -14,12 +14,17 @@ import {
     fetchLabourByType,
     fetchLabourBankDetails,
     submitLabourBankChange,
+    fetchEmployeeBanks,
+    saveNewBank,
     clearLabourSearch,
     clearSubmitResult,
+    clearSaveNewBankResult,
     selectContractors,
     selectLabourResults,
     selectCurrentBank,
     selectSubmitResult,
+    selectEmployeeBanks,
+    selectSaveNewBankResult,
     selectLoading,
     selectErrors,
 } from '../../slices/HRSlice/labourBankChangeSlice';
@@ -54,6 +59,7 @@ const Btn = ({ children, onClick, loading, disabled, variant = 'primary', size =
         primary: 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white focus:ring-indigo-500 shadow-sm',
         secondary: 'border-2 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-gray-400',
         danger: 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white focus:ring-rose-500 shadow-sm',
+        success: 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white focus:ring-emerald-500 shadow-sm',
     };
     return (
         <button type={type} onClick={onClick} disabled={loading || disabled} className={cn(base, sizes[size], variants[variant])}>
@@ -72,11 +78,256 @@ const InfoRow = ({ label, value, mono }) => (
     </div>
 );
 
+// ── Add New Bank Modal ────────────────────────────────────────────────────────
+
+const AddBankModal = ({ onClose, onSuccess, userName }) => {
+    const dispatch = useDispatch();
+    const loading = useSelector(selectLoading);
+    const saveResult = useSelector(selectSaveNewBankResult);
+    const [bankName, setBankName] = useState('');
+
+    // Handle save result
+    useEffect(() => {
+        if (!saveResult) return;
+        const result = typeof saveResult === 'string' ? saveResult : JSON.stringify(saveResult);
+        if (result.toLowerCase().includes('submited') || result.toLowerCase().includes('submit')) {
+            toast.success('Bank added successfully!');
+            dispatch(clearSaveNewBankResult());
+            onSuccess(bankName.trim().toUpperCase());
+        } else if (result.toLowerCase().includes('exist')) {
+            toast.warning('This bank already exists in the list.');
+            dispatch(clearSaveNewBankResult());
+        } else {
+            toast.error(result || 'Failed to save bank.');
+            dispatch(clearSaveNewBankResult());
+        }
+    }, [saveResult, dispatch, bankName, onSuccess]);
+
+    const handleSave = () => {
+        const trimmed = bankName.trim();
+        if (!trimmed) { toast.error('Please enter a bank name.'); return; }
+        dispatch(saveNewBank({
+            Action: 'INSERT',
+            BankName: trimmed.toUpperCase(),
+            Bankid: 0,
+            CreatedBy: userName,
+        }));
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-violet-600">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                            <Plus className="h-4 w-4 text-white" />
+                        </div>
+                        <h2 className="text-base font-bold text-white">Add New Bank</h2>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        disabled={loading.saveNewBank}
+                        className="text-white/70 hover:text-white transition-colors disabled:opacity-50"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 space-y-4">
+                    <div className="flex items-start gap-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl px-4 py-3 border border-indigo-200 dark:border-indigo-700">
+                        <AlertCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+                        <p className="text-xs text-indigo-700 dark:text-indigo-300">
+                            The bank name will be added to the master list and will be available for selection.
+                        </p>
+                    </div>
+
+                    <div>
+                        <Label required>Bank Name</Label>
+                        <input
+                            type="text"
+                            value={bankName}
+                            onChange={(e) => setBankName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                            placeholder="e.g. HDFC BANK"
+                            autoFocus
+                            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
+                            style={{ textTransform: 'uppercase' }}
+                        />
+                    </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="px-6 pb-6 flex items-center justify-end gap-3">
+                    <Btn variant="secondary" onClick={onClose} disabled={loading.saveNewBank}>
+                        Cancel
+                    </Btn>
+                    <Btn
+                        onClick={handleSave}
+                        loading={loading.saveNewBank}
+                        disabled={!bankName.trim()}
+                        variant="success"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Bank
+                    </Btn>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ── Bank Selector Dropdown ────────────────────────────────────────────────────
+
+const BankSelector = ({ value, bankId, onChange, banks, loading, onAddNew }) => {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const containerRef = useRef(null);
+    const searchInputRef = useRef(null);
+
+    // Close on outside click
+    useEffect(() => {
+        const handler = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+                setSearch('');
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    // Focus search when opened
+    useEffect(() => {
+        if (open && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [open]);
+
+    const filtered = banks.filter((b) =>
+        b.Bank_Name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const handleSelect = (bank) => {
+        onChange({ BankName: bank.Bank_Name, Bankid: parseInt(bank.Bank_Id, 10) || 0 });
+        setOpen(false);
+        setSearch('');
+    };
+
+    const handleClear = (e) => {
+        e.stopPropagation();
+        onChange({ BankName: '', Bankid: 0 });
+    };
+
+    return (
+        <div ref={containerRef} className="relative">
+            {/* Trigger */}
+            <button
+                type="button"
+                onClick={() => setOpen((p) => !p)}
+                className={cn(
+                    'w-full flex items-center justify-between gap-2 rounded-xl border px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                    open
+                        ? 'border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-800 bg-white dark:bg-gray-700'
+                        : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-indigo-300',
+                    value ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+                )}
+            >
+                <div className="flex items-center gap-2 min-w-0">
+                    <Banknote className="h-4 w-4 text-gray-400 shrink-0" />
+                    <span className="truncate">{value || 'Select a bank...'}</span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                    {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-500" />}
+                    {value && !open && (
+                        <button
+                            type="button"
+                            onClick={handleClear}
+                            className="p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                    <ChevronDown className={cn('h-4 w-4 text-gray-400 transition-transform duration-200', open && 'rotate-180')} />
+                </div>
+            </button>
+
+            {/* Dropdown panel */}
+            {open && (
+                <div className="absolute z-40 w-full mt-1.5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
+                    {/* Search inside dropdown */}
+                    <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+                        <div className="relative">
+                            <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search bank..."
+                                className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Bank list */}
+                    <div className="max-h-52 overflow-y-auto">
+                        {loading ? (
+                            <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-500">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Loading banks...
+                            </div>
+                        ) : filtered.length === 0 ? (
+                            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                                {search ? `No banks matching "${search}"` : 'No banks available'}
+                            </div>
+                        ) : (
+                            filtered.map((bank) => (
+                                <button
+                                    key={bank.Bank_Id}
+                                    type="button"
+                                    onMouseDown={() => handleSelect(bank)}
+                                    className={cn(
+                                        'w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center gap-2 transition-colors border-b border-gray-50 dark:border-gray-700/50 last:border-0',
+                                        bankId === parseInt(bank.Bank_Id, 10) && 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-semibold'
+                                    )}
+                                >
+                                    <Banknote className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                    <span className="truncate">{bank.Bank_Name}</span>
+                                    {bankId === parseInt(bank.Bank_Id, 10) && (
+                                        <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                                    )}
+                                </button>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Add New Bank button */}
+                    <div className="border-t border-gray-100 dark:border-gray-700 p-2">
+                        <button
+                            type="button"
+                            onMouseDown={(e) => { e.preventDefault(); setOpen(false); setSearch(''); onAddNew(); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                        >
+                            <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+                                <Plus className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                            Add New Bank to List
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const LABOUR_TYPES = ['Own Labour', 'Contractor'];
 
 const emptyForm = {
+    Bankid: 0,
     BankName: '',
     BankAccountNo: '',
     IFSCcode: '',
@@ -87,32 +338,43 @@ const emptyForm = {
 const LabourBankChange = () => {
     const dispatch = useDispatch();
 
-    const contractors   = useSelector(selectContractors);
-    const labourResults = useSelector(selectLabourResults);
-    const currentBank   = useSelector(selectCurrentBank);
-    const submitResult  = useSelector(selectSubmitResult);
-    const loading       = useSelector(selectLoading);
-    const errors        = useSelector(selectErrors);
+    const contractors    = useSelector(selectContractors);
+    const labourResults  = useSelector(selectLabourResults);
+    const currentBank    = useSelector(selectCurrentBank);
+    const submitResult   = useSelector(selectSubmitResult);
+    const employeeBanks  = useSelector(selectEmployeeBanks);
+    const loading        = useSelector(selectLoading);
+    const errors         = useSelector(selectErrors);
 
     const { userData } = useSelector((s) => s.auth);
     const roleId   = userData?.roleId || userData?.RID;
     const userName = userData?.userName || userData?.UserName || 'system';
 
     // Selection state
-    const [labourType,         setLabourType]         = useState('');
-    const [contractor,         setContractor]         = useState('');
-    const [searchText,         setSearchText]         = useState('');
-    const [showDropdown,       setShowDropdown]       = useState(false);
-    const [selectedLabour,     setSelectedLabour]     = useState(null);
+    const [labourType,     setLabourType]     = useState('');
+    const [contractor,     setContractor]     = useState('');
+    const [searchText,     setSearchText]     = useState('');
+    const [showDropdown,   setShowDropdown]   = useState(false);
+    const [selectedLabour, setSelectedLabour] = useState(null);
 
     // Form state
     const [form, setForm] = useState(emptyForm);
 
-    const searchRef  = useRef(null);
+    // Add bank modal state
+    const [showAddBankModal, setShowAddBankModal] = useState(false);
+    // Track which bank name was just added so we can auto-select it after refresh
+    const pendingBankNameRef = useRef(null);
+
+    const searchRef   = useRef(null);
     const dropdownRef = useRef(null);
     const debounceRef = useRef(null);
 
     // ── Effects ──────────────────────────────────────────────────────────────
+
+    // Load the banks master list once on mount
+    useEffect(() => {
+        dispatch(fetchEmployeeBanks());
+    }, [dispatch]);
 
     useEffect(() => {
         return () => {
@@ -128,7 +390,6 @@ const LabourBankChange = () => {
         } else {
             setContractor('');
         }
-        // Reset downstream selections when type changes
         setSelectedLabour(null);
         setSearchText('');
         dispatch(clearLabourSearch());
@@ -178,20 +439,17 @@ const LabourBankChange = () => {
         }));
     }, [selectedLabour, labourType, contractor, dispatch]);
 
-    // Handle submit result
-    useEffect(() => {
-        if (!submitResult) return;
-        const result = typeof submitResult === 'string' ? submitResult : JSON.stringify(submitResult);
-        if (result.toLowerCase().includes('submit') || result.toLowerCase().includes('success')) {
-            toast.success('Bank change request submitted successfully!');
-            handleReset();
-        } else {
-            toast.error(result || 'Submission failed. Please try again.');
-        }
-        dispatch(clearSubmitResult());
-    }, [submitResult, dispatch]);
-
     // ── Handlers ─────────────────────────────────────────────────────────────
+
+    const handleReset = useCallback(() => {
+        setLabourType('');
+        setContractor('');
+        setSearchText('');
+        setSelectedLabour(null);
+        setForm(emptyForm);
+        dispatch(clearLabourSearch());
+        dispatch(clearSubmitResult());
+    }, [dispatch]);
 
     const handleLabourSelect = useCallback((labour) => {
         setSelectedLabour(labour);
@@ -204,15 +462,34 @@ const LabourBankChange = () => {
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleReset = () => {
-        setLabourType('');
-        setContractor('');
-        setSearchText('');
-        setSelectedLabour(null);
-        setForm(emptyForm);
-        dispatch(clearLabourSearch());
-        dispatch(clearSubmitResult());
+    const handleBankSelect = ({ BankName, Bankid }) => {
+        setForm(prev => ({ ...prev, BankName, Bankid }));
     };
+
+    // Handle submit result
+    useEffect(() => {
+        if (!submitResult) return;
+        const result = typeof submitResult === 'string' ? submitResult : JSON.stringify(submitResult);
+        if (result.toLowerCase().includes('submit') || result.toLowerCase().includes('success')) {
+            toast.success('Bank change request submitted successfully!');
+            handleReset();
+        } else {
+            toast.error(result || 'Submission failed. Please try again.');
+        }
+        dispatch(clearSubmitResult());
+    }, [submitResult, dispatch, handleReset]);
+
+    // After banks list refreshes, auto-select the newly added bank
+    useEffect(() => {
+        if (!pendingBankNameRef.current || employeeBanks.length === 0) return;
+        const match = employeeBanks.find(
+            (b) => b.Bank_Name.toUpperCase() === pendingBankNameRef.current.toUpperCase()
+        );
+        if (match) {
+            setForm((prev) => ({ ...prev, BankName: match.Bank_Name, Bankid: parseInt(match.Bank_Id, 10) || 0 }));
+            pendingBankNameRef.current = null;
+        }
+    }, [employeeBanks]);
 
     const handleSubmit = () => {
         if (!selectedLabour) { toast.error('Please select a labour.'); return; }
@@ -223,7 +500,7 @@ const LabourBankChange = () => {
 
         const payload = {
             LabourId:           selectedLabour.LabourId,
-            Bankid:             0,
+            Bankid:             form.Bankid || 0,
             BankName:           form.BankName.trim(),
             BankAccountNo:      form.BankAccountNo.trim(),
             IFSCcode:           form.IFSCcode.trim().toUpperCase(),
@@ -235,6 +512,13 @@ const LabourBankChange = () => {
         };
 
         dispatch(submitLabourBankChange(payload));
+    };
+
+    // Called when the modal successfully adds a bank
+    const handleBankAdded = (addedBankName) => {
+        pendingBankNameRef.current = addedBankName;
+        setShowAddBankModal(false);
+        dispatch(fetchEmployeeBanks());
     };
 
     // ── Render: Labour Type cards ─────────────────────────────────────────────
@@ -470,16 +754,31 @@ const LabourBankChange = () => {
         return (
             <SectionCard title="New Bank Details" icon={Banknote}>
                 <div className="p-6 space-y-5">
-                    {/* Bank Name */}
+
+                    {/* Bank Name — searchable dropdown from master list */}
                     <div>
-                        <Label required>Bank Name</Label>
-                        <input
-                            type="text"
+                        <div className="flex items-center justify-between mb-1.5">
+                            <Label required>Bank Name</Label>
+                            <button
+                                type="button"
+                                onClick={() => setShowAddBankModal(true)}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+                            >
+                                <Plus className="h-3 w-3" />
+                                Add New Bank
+                            </button>
+                        </div>
+                        <BankSelector
                             value={form.BankName}
-                            onChange={(e) => handleFormChange('BankName', e.target.value)}
-                            placeholder="e.g. State Bank of India"
-                            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            bankId={form.Bankid}
+                            onChange={handleBankSelect}
+                            banks={employeeBanks}
+                            loading={loading.employeeBanks}
+                            onAddNew={() => setShowAddBankModal(true)}
                         />
+                        {errors.employeeBanks && (
+                            <p className="mt-1 text-xs text-rose-500">{errors.employeeBanks}</p>
+                        )}
                     </div>
 
                     {/* Account Number */}
@@ -621,6 +920,15 @@ const LabourBankChange = () => {
 
                 {renderActions()}
             </div>
+
+            {/* Add Bank Modal */}
+            {showAddBankModal && (
+                <AddBankModal
+                    onClose={() => setShowAddBankModal(false)}
+                    onSuccess={handleBankAdded}
+                    userName={userName}
+                />
+            )}
         </div>
     );
 };

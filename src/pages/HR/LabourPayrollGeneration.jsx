@@ -1005,8 +1005,8 @@ const LabourPayrollGeneration = () => {
 
         const pfEmprTotal = (parseFloat(form.pfEPS_Pct) || 0) + (parseFloat(form.pfEPF_Pct) || 0)
             + (parseFloat(form.pfEDLI_Pct) || 0) + (parseFloat(form.pfAdminCharge_Pct) || 0);
-        const pfEmp  = pfApply  ? Math.ceil(basicWage    * (parseFloat(form.pfEmpPct) || 0) / 100) : 0;
-        const pfEmpr = pfApply  ? Math.ceil(pfCeilingBase * pfEmprTotal               / 100) : 0;
+        const pfEmp  = pfApply  ? Math.round(basicWage    * (parseFloat(form.pfEmpPct) || 0) / 100) : 0;
+        const pfEmpr = pfApply  ? Math.round(pfCeilingBase * pfEmprTotal               / 100) : 0;
         const esiEmp  = esiApply ? Math.ceil(basicWage     * (parseFloat(form.esiEmpPct)  || 0) / 100) : 0;
         const esiEmpr = esiApply ? Math.ceil(basicWage     * (parseFloat(form.esiEmprPct) || 0) / 100) : 0;
 

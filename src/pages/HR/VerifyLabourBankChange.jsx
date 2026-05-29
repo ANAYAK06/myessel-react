@@ -116,7 +116,7 @@ const VerifyLabourBankChange = ({ notificationData, onNavigate }) => {
         dispatch(fetchStatusList({ MOID: moid, ROID: roleId, ChkAmt: 0 }));
         dispatch(setSelectedMOID(moid));
         dispatch(fetchRemarks({
-            trno: changeDetail.TransactionRefNo || changeDetail.TransactionRefno || '',
+            trno: changeDetail.Id || changeDetail.TransactionRefno || '',
             moid,
         }));
     }, [selectedItem, roleId, changeDetail, dispatch]);
@@ -137,6 +137,8 @@ const VerifyLabourBankChange = ({ notificationData, onNavigate }) => {
     };
 
     const buildPayload = (actionValue) => {
+        console.log('changeDetail fields:', changeDetail ? Object.keys(changeDetail) : 'null');
+        console.log('changeDetail values:', changeDetail);
         const roleName = getCurrentRoleName();
         const existingRemarks = changeDetail?.Remarks || '';
         const formatted = `${roleName} : ${userName} : ${verificationComment.trim()}`;
@@ -145,13 +147,21 @@ const VerifyLabourBankChange = ({ notificationData, onNavigate }) => {
             : formatted;
 
         return {
-            LabourId:         changeDetail?.LabourId || selectedItem?.LabourId || '',
             Id:               changeDetail?.Id || selectedItem?.Id || selectedItem?.BankChangeId || 0,
-            TransactionRefNo: changeDetail?.TransactionRefNo || changeDetail?.TransactionRefno || '',
-            Roleid:           roleId,
-            CreatedBy:        userName,
+            LabourId:         changeDetail?.LabourId || selectedItem?.LabourId || '',
+            TransactionRefNo: changeDetail?.TransactionRefNo || changeDetail?.TransactionRefno ||
+                              selectedItem?.TransactionRefNo || selectedItem?.TransactionRefno || '',
+            NewBankId:        changeDetail?.NewBankId || changeDetail?.NewBankid || changeDetail?.Bankid || changeDetail?.BankId || 0,
+            NewBank:          changeDetail?.NewBank || changeDetail?.NewBankName || changeDetail?.BankName || '',
+            NewAccountNo:     changeDetail?.NewAccountNo || changeDetail?.NewBankAccountNo || changeDetail?.BankAccountNo || '',
+            NewIFSC:          changeDetail?.NewIFSC || changeDetail?.NewIFSCcode || changeDetail?.IFSCcode || '',
+            NewAddress:       changeDetail?.NewAddress || changeDetail?.NewBankAddress || changeDetail?.BankAddress || '',
+            OldBankid:        changeDetail?.OldBankId || changeDetail?.OldBankid || 0,
+            BankApplicableFrom: changeDetail?.BankApplicableFrom || changeDetail?.NewApplicableFrom || changeDetail?.ApplicableFrom || '',
+            RoleId:           roleId,
+            Createdby:        userName,
             Action:           actionValue,
-            Note:             verificationComment.trim(),
+            ApprovalNote:     verificationComment.trim(),
             Remarks:          updatedRemarks,
         };
     };
@@ -174,7 +184,9 @@ const VerifyLabourBankChange = ({ notificationData, onNavigate }) => {
         }
 
         try {
-            const result = await dispatch(approveLBBankChange(buildPayload(actionValue))).unwrap();
+            const payload = buildPayload(actionValue);
+            console.log('Approval payload:', payload);
+            const result = await dispatch(approveLBBankChange(payload)).unwrap();
             const msg = typeof result === 'string' ? result : JSON.stringify(result);
             toast.success(`${action.text || actionValue} completed successfully!`);
             if (msg.includes('$')) {

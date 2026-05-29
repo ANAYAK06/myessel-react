@@ -16,7 +16,7 @@ export const queryChat = async (userId, roleId, message, sessionId, chatMode, pe
         message,
         sessionId,
         chatMode:      chatMode      || 'Report',
-        pendingModule: pendingModule || null,
+        pendingModule: pendingModule || '',
     });
     return response.data;
 };

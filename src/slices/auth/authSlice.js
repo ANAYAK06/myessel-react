@@ -111,6 +111,7 @@ export const validateUser = createAsyncThunk(
                         isFirstTimeLogin: response.Data.IsFirstTimeLogin,
                         isExist: response.Data.IsExist,
                         UID: response.Data.UID,
+                        groupId: response.Data.GroupId || response.Data.groupId || response.Data.UserGroupId || 0,
                     };
 
                     // IMPROVED: Batch localStorage updates

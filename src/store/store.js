@@ -130,9 +130,10 @@ import itemCodeVerificationReducer from "../slices/purchaseSlice/itemCodeVerific
 import labourTypeChangeReducer from "../slices/HRSlice/labourTypeChangeSlice";
 import labourAttendanceReportReducer from "../slices/HrReportSlice/labourAttendanceReportSlice";
 import labourExitReducer from "../slices/HRSlice/labourExitSlice";
+import pendingTrackingReducer from "../slices/dashboardSlice/pendingTrackingSlice";
 
 const store = configureStore({
-  
+
   reducer: {
     auth: authReducer,
     businessInfo: businesInfoReducer,
@@ -264,6 +265,7 @@ const store = configureStore({
     labourTypeChange:      labourTypeChangeReducer,
     labourattendancereport: labourAttendanceReportReducer,
     labourExit:            labourExitReducer,
+    pendingTracking:       pendingTrackingReducer,
 
   }
 

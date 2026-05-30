@@ -4,7 +4,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import CustomDatePicker from '../../components/CustomDatePicker';
-import { fileToBase64, getFileType } from '../../api/HRAPI/staffRegistrationAPI';
+import { fileToBase64, getFileType, getStaffDataForRejoin } from '../../api/HRAPI/staffRegistrationAPI';
 
 import {
     fetchAllEmpGroups,
@@ -16,11 +16,15 @@ import {
     fetchEmpDocuments,
     fetchReportToRole,
     fetchAllCostCenters,
+    fetchOldEmpForRejoin,
     saveStaffRegistration,
+    updateRejoinStaffRegistration,
     saveDesignation,
     saveDepartment,
     saveEmployeeBank,
     clearSaveResult,
+    clearUpdateRejoinResult,
+    clearOldEmpForRejoin,
     clearDesignationResult,
     clearDepartmentResult,
     clearEmployeeBankResult,
@@ -33,17 +37,22 @@ import {
     selectEmpDocumentsArray,
     selectReportToRoleArray,
     selectCostCentersArray,
+    selectOldEmpForRejoinArray,
     selectEmpGroupsLoading,
     selectEmpCategoriesLoading,
     selectDesignationsLoading,
     selectDepartmentsLoading,
     selectEmployeeBanksLoading,
+    selectOldEmpForRejoinLoading,
     selectSaveLoading,
+    selectUpdateRejoinLoading,
     selectSaveDesignationLoading,
     selectSaveDepartmentLoading,
     selectSaveEmployeeBankLoading,
     selectSaveStatus,
     selectSaveError,
+    selectUpdateRejoinStatus,
+    selectUpdateRejoinError,
     selectSaveDesignationStatus,
     selectSaveDepartmentStatus,
     selectSaveEmployeeBankStatus,
@@ -118,6 +127,19 @@ const serializeDate = (val) => {
         return `${yyyy}-${mm}-${dd}`;
     }
     return String(val);
+};
+
+/**
+ * Converts backend "dd-MMM-yyyy" (e.g. "06-May-1981") to "YYYY-MM-DD" for Formik / CustomDatePicker.
+ */
+const MONTH_MAP = { Jan:1, Feb:2, Mar:3, Apr:4, May:5, Jun:6, Jul:7, Aug:8, Sep:9, Oct:10, Nov:11, Dec:12 };
+const parseLegacyDate = (dateStr) => {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return '';
+    const month = MONTH_MAP[parts[1]];
+    if (!month) return '';
+    return `${parts[2]}-${String(month).padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
 };
 
 // ─── Step Config ───────────────────────────────────────────────────────────────
@@ -569,20 +591,25 @@ const StaffJoinRegistration = () => {
     const empDocuments = useSelector(selectEmpDocumentsArray);
     const reportToList = useSelector(selectReportToRoleArray);
     const costCenters = useSelector(selectCostCentersArray);
+    const oldEmpList = useSelector(selectOldEmpForRejoinArray);
 
     const groupsLoading = useSelector(selectEmpGroupsLoading);
     const catLoading = useSelector(selectEmpCategoriesLoading);
     const designationsLoading = useSelector(selectDesignationsLoading);
     const departmentsLoading = useSelector(selectDepartmentsLoading);
     const banksLoading = useSelector(selectEmployeeBanksLoading);
+    const oldEmpSearchLoading = useSelector(selectOldEmpForRejoinLoading);
 
     const saveLoading = useSelector(selectSaveLoading);
+    const updateRejoinLoading = useSelector(selectUpdateRejoinLoading);
     const saveDesignationLoading = useSelector(selectSaveDesignationLoading);
     const saveDepartmentLoading = useSelector(selectSaveDepartmentLoading);
     const saveEmployeeBankLoading = useSelector(selectSaveEmployeeBankLoading);
 
     const saveStatus = useSelector(selectSaveStatus);
     const saveError = useSelector(selectSaveError);
+    const updateRejoinStatus = useSelector(selectUpdateRejoinStatus);
+    const updateRejoinError = useSelector(selectUpdateRejoinError);
     const saveDesignationStatus = useSelector(selectSaveDesignationStatus);
     const saveDepartmentStatus = useSelector(selectSaveDepartmentStatus);
     const saveEmployeeBankStatus = useSelector(selectSaveEmployeeBankStatus);
@@ -599,6 +626,12 @@ const StaffJoinRegistration = () => {
     // Document uploads: { [docName]: File }
     const [uploadedDocs, setUploadedDocs] = useState({});
     const [previewFile, setPreviewFile] = useState(null);
+
+    // Rejoin search state
+    const [rejoinPrefix, setRejoinPrefix] = useState('');
+    const [rejoinSelectedEmp, setRejoinSelectedEmp] = useState(null);
+    const [rejoinEmpRefNo, setRejoinEmpRefNo] = useState('');
+    const [rejoinDataLoading, setRejoinDataLoading] = useState(false);
 
     // Experience type toggle: 'fresher' | 'experienced'
     const [experienceType, setExperienceType] = useState('');
@@ -640,6 +673,27 @@ const StaffJoinRegistration = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [saveStatus, saveError]);
+
+    // ── Watch rejoin update status ─────────────────────────────────────────
+    useEffect(() => {
+        if (updateRejoinStatus === 'success') {
+            toast.success('Rejoin registration updated successfully!');
+            formik.resetForm();
+            setCurrentStep(1);
+            setCompletedSteps([]);
+            setUploadedDocs({});
+            setExperienceType('');
+            setExpRows([]);
+            setRejoinSelectedEmp(null);
+            setRejoinEmpRefNo('');
+            setRejoinPrefix('');
+            dispatch(clearUpdateRejoinResult());
+            dispatch(clearOldEmpForRejoin());
+        } else if (updateRejoinStatus === 'failed' && updateRejoinError) {
+            toast.error(typeof updateRejoinError === 'string' ? updateRejoinError : 'Rejoin update failed. Please try again.');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [updateRejoinStatus, updateRejoinError]);
 
     useEffect(() => {
         if (saveDesignationStatus === 'success') {
@@ -837,10 +891,23 @@ const StaffJoinRegistration = () => {
             );
 
             try {
-                await dispatch(saveStaffRegistration({
-                    ...payload,
-                    documents: preparedDocs,
-                })).unwrap();
+                if (values.joiningType === 'Rejoin') {
+                    if (!rejoinEmpRefNo) {
+                        toast.error('Please search and select the old employee before submitting.');
+                        setCurrentStep(1);
+                        return;
+                    }
+                    await dispatch(updateRejoinStaffRegistration({
+                        ...payload,
+                        empRefNo: rejoinEmpRefNo,
+                        documents: preparedDocs,
+                    })).unwrap();
+                } else {
+                    await dispatch(saveStaffRegistration({
+                        ...payload,
+                        documents: preparedDocs,
+                    })).unwrap();
+                }
             } catch {
                 toast.error('Submission failed. Please check all fields.');
             }
@@ -884,6 +951,17 @@ const StaffJoinRegistration = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formik.values.category]);
+
+    // Clear rejoin search results when joining type changes away from Rejoin
+    useEffect(() => {
+        if (formik.values.joiningType !== 'Rejoin') {
+            setRejoinSelectedEmp(null);
+            setRejoinEmpRefNo('');
+            setRejoinPrefix('');
+            dispatch(clearOldEmpForRejoin());
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formik.values.joiningType]);
 
     // ── Navigation ─────────────────────────────────────────────────────────
     const markStepDone = (step) => { if (!completedSteps.includes(step)) setCompletedSteps(prev => [...prev, step]); };
@@ -984,6 +1062,91 @@ const StaffJoinRegistration = () => {
         dispatch(saveEmployeeBank({ action: 'Insert', bankName: vals.bankName, bankId: 0, createdBy: userName }));
     };
 
+    // ── Rejoin Handlers ────────────────────────────────────────────────────
+    const handleRejoinSearch = () => {
+        if (!rejoinPrefix.trim()) { toast.error('Enter a prefix to search'); return; }
+        const categoryName = empCategories.find(
+            c => String(c.CategoryId || c.Id) === String(formik.values.category)
+        )?.CategoryName || '';
+        dispatch(fetchOldEmpForRejoin({
+            category: categoryName,
+            prefix: rejoinPrefix.trim(),
+            groupId: formik.values.groupId,
+        }));
+    };
+
+    const handleSelectRejoinEmp = async (emp) => {
+        setRejoinSelectedEmp(emp);
+        setRejoinEmpRefNo(emp.EmpRefNo || '');
+        setRejoinDataLoading(true);
+        const categoryName = empCategories.find(
+            c => String(c.CategoryId || c.Id) === String(formik.values.category)
+        )?.CategoryName || '';
+        try {
+            const result = await getStaffDataForRejoin({
+                empRefNo: emp.EmpRefNo,
+                roleId: roleId,
+                groupId: formik.values.groupId,
+                category: categoryName,
+            });
+            const data = result?.Data;
+            if (data) {
+                formik.setValues({
+                    ...formik.values,
+                    appointmentType: data.Appointmenttype || 'Normal',
+                    firstName: data.FirstName || '',
+                    middleName: data.MiddleName || '',
+                    lastName: data.LastName || '',
+                    dob: parseLegacyDate(data.DateofBirth),
+                    empAge: data.EmpAge ? String(data.EmpAge) : '',
+                    gender: data.Gender || '',
+                    martialStatus: data.MartialStatus || '',
+                    dateofMarriage: parseLegacyDate(data.DateofMarriage),
+                    placeofBirth: data.PlaceofBirth || '',
+                    contactMobile: data.ContactMobile || '',
+                    contactWorkPhone: data.ContactWorkPhone || '',
+                    workEmail: data.WorkEmail || '',
+                    permanentAddress: data.PermanentAddress || '',
+                    presentAddress: data.PresentAddress || '',
+                    nomineeName: data.NomineeName || '',
+                    nomineeRelation: data.NomineeRelation || '',
+                    nomineeDob: parseLegacyDate(data.NomineeDateofBirth),
+                    nomineeAge: data.NomineeAge ? String(data.NomineeAge) : '',
+                    designationId: data.DesignationId ? String(data.DesignationId) : '',
+                    departmentId: data.DepartmentId ? String(data.DepartmentId) : '',
+                    joiningDate: parseLegacyDate(data.JoiningDate),
+                    jobType: data.JobType || '',
+                    joiningCostCenter: data.JoiningCostCenter || '',
+                    transitDay: data.TransitDay ? String(data.TransitDay) : '0',
+                    reportTo: data.ReportTo || '',
+                    reportToRoleId: data.ReportToRoleId ? String(data.ReportToRoleId) : '',
+                    bankName: data.BankName || '',
+                    bankAccountNo: data.BankAccountNo || '',
+                    ifscCode: data.IFSCcode || '',
+                    bankAddress: data.BankAddress || '',
+                    pfExist: data.PFExist || '',
+                    esiExist: data.ESIExist || '',
+                    uanExist: data.UANExist === true,
+                    uanNumber: data.UANNumber || '',
+                    esiNumber: data.ESINumber || '',
+                    adharNo: data.AdharNo || '',
+                    panNo: data.PanNo || '',
+                    probationdays: data.Probationdays ? String(data.Probationdays) : '0',
+                    contractStartDate: parseLegacyDate(data.ContractStartDate),
+                    contractEndDate: parseLegacyDate(data.ContractEndDate),
+                });
+                if (data.Experience) {
+                    setExperienceType(data.Experience.toLowerCase().includes('experience') ? 'experienced' : 'fresher');
+                }
+                toast.success(`Employee ${emp.EmpRefNo} data loaded — review and update before submitting.`);
+            }
+        } catch {
+            toast.error('Failed to load employee data. Please try again.');
+        } finally {
+            setRejoinDataLoading(false);
+        }
+    };
+
     const degreeOptions = empDegrees.map(d => ({ value: d.DegreeName, label: d.DegreeName }));
 
     // ── Step Content Renderer ──────────────────────────────────────────────
@@ -1017,28 +1180,124 @@ const StaffJoinRegistration = () => {
                     )}
 
                     {values.joiningType && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <FormField label="Employee Group" required error={errors.groupId} touched={touched.groupId}>
-                                <div className="relative">
-                                    <select name="groupId" value={values.groupId} onChange={e => { formik.setFieldValue('groupId', e.target.value); }} onBlur={handleBlur}
-                                        className={selectCls(errors.groupId, touched.groupId)}>
-                                        <option value="">Select Group</option>
-                                        {empGroups.map(g => <option key={g.GroupId || g.Id} value={g.GroupId || g.Id}>{g.GroupName || g.Name}</option>)}
-                                    </select>
-                                    {groupsLoading && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-blue-500" />}
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <FormField label="Employee Group" required error={errors.groupId} touched={touched.groupId}>
+                                    <div className="relative">
+                                        <select name="groupId" value={values.groupId} onChange={e => { formik.setFieldValue('groupId', e.target.value); }} onBlur={handleBlur}
+                                            className={selectCls(errors.groupId, touched.groupId)}>
+                                            <option value="">Select Group</option>
+                                            {empGroups.map(g => <option key={g.GroupId || g.Id} value={g.GroupId || g.Id}>{g.GroupName || g.Name}</option>)}
+                                        </select>
+                                        {groupsLoading && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-blue-500" />}
+                                    </div>
+                                </FormField>
+                                <FormField label="Staff Category" required error={errors.category} touched={touched.category}>
+                                    <div className="relative">
+                                        <select name="category" value={values.category} onChange={handleChange} onBlur={handleBlur}
+                                            disabled={!values.groupId}
+                                            className={selectCls(errors.category, touched.category) + (!values.groupId ? ' opacity-50 cursor-not-allowed' : '')}>
+                                            <option value="">{!values.groupId ? 'Select group first' : 'Select Category'}</option>
+                                            {empCategories.map(c => <option key={c.CategoryId || c.Id} value={c.CategoryId || c.Id}>{c.CategoryName || c.Name}</option>)}
+                                        </select>
+                                        {catLoading && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-blue-500" />}
+                                    </div>
+                                </FormField>
+                            </div>
+
+                            {/* ── Rejoin Employee Search Panel ───────────── */}
+                            {values.joiningType === 'Rejoin' && values.groupId && values.category && (
+                                <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-900/10 p-5 space-y-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <RotateCcw className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                        <p className="text-sm font-bold text-purple-700 dark:text-purple-300">Search Old Employee</p>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        Enter a prefix (e.g. <span className="font-semibold">MS</span>) to find the employee by their old ID.
+                                    </p>
+
+                                    {/* Search input */}
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                            <input
+                                                value={rejoinPrefix}
+                                                onChange={e => setRejoinPrefix(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && handleRejoinSearch()}
+                                                placeholder="Enter prefix (e.g. MS, SS, WS)"
+                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleRejoinSearch}
+                                            disabled={oldEmpSearchLoading}
+                                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md disabled:opacity-60 transition-all">
+                                            {oldEmpSearchLoading
+                                                ? <><Loader2 className="h-4 w-4 animate-spin" /> Searching…</>
+                                                : <><Search className="h-4 w-4" /> Search</>}
+                                        </button>
+                                    </div>
+
+                                    {/* Selected employee badge */}
+                                    {rejoinSelectedEmp && (
+                                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700">
+                                            {rejoinDataLoading
+                                                ? <Loader2 className="h-4 w-4 animate-spin text-green-500" />
+                                                : <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />}
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-bold text-green-700 dark:text-green-300">
+                                                    {rejoinDataLoading ? 'Loading employee data…' : 'Employee Selected'}
+                                                </p>
+                                                <p className="text-xs text-green-600 dark:text-green-400 truncate">
+                                                    {rejoinSelectedEmp.FirstName || rejoinSelectedEmp.EmpRefNo}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setRejoinSelectedEmp(null); setRejoinEmpRefNo(''); dispatch(clearOldEmpForRejoin()); setRejoinPrefix(''); }}
+                                                className="ml-auto w-7 h-7 rounded-lg bg-green-100 dark:bg-green-800 flex items-center justify-center text-green-600 hover:bg-green-200 dark:hover:bg-green-700 transition-colors">
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Search results */}
+                                    {!rejoinSelectedEmp && oldEmpList.length > 0 && (
+                                        <div className="border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                                            <div className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                {oldEmpList.length} result{oldEmpList.length !== 1 ? 's' : ''} found — click to select
+                                            </div>
+                                            {oldEmpList.map((emp, idx) => (
+                                                <button
+                                                    key={emp.EmpRefNo || idx}
+                                                    type="button"
+                                                    onClick={() => handleSelectRejoinEmp(emp)}
+                                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors
+                                                        ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60 dark:bg-gray-800/60'}
+                                                        hover:bg-purple-50 dark:hover:bg-purple-900/20`}>
+                                                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+                                                        <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{emp.EmpRefNo}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{emp.FirstName || ''}</p>
+                                                    </div>
+                                                    <ChevronRight className="h-4 w-4 text-gray-300 ml-auto flex-shrink-0" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* No results state */}
+                                    {!oldEmpSearchLoading && !rejoinSelectedEmp && oldEmpList.length === 0 && rejoinPrefix && (
+                                        <div className="flex flex-col items-center py-6 text-gray-400 dark:text-gray-500">
+                                            <Search className="h-8 w-8 mb-2 opacity-30" />
+                                            <p className="text-xs">No employees found. Try a different prefix.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            </FormField>
-                            <FormField label="Staff Category" required error={errors.category} touched={touched.category}>
-                                <div className="relative">
-                                    <select name="category" value={values.category} onChange={handleChange} onBlur={handleBlur}
-                                        disabled={!values.groupId}
-                                        className={selectCls(errors.category, touched.category) + (!values.groupId ? ' opacity-50 cursor-not-allowed' : '')}>
-                                        <option value="">{!values.groupId ? 'Select group first' : 'Select Category'}</option>
-                                        {empCategories.map(c => <option key={c.CategoryId || c.Id} value={c.CategoryId || c.Id}>{c.CategoryName || c.Name}</option>)}
-                                    </select>
-                                    {catLoading && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-blue-500" />}
-                                </div>
-                            </FormField>
+                            )}
                         </div>
                     )}
                 </div>
@@ -1807,11 +2066,13 @@ const StaffJoinRegistration = () => {
                                 </div>
 
                                 {isLastStep ? (
-                                    <button type="submit" disabled={saveLoading}
+                                    <button type="submit" disabled={saveLoading || updateRejoinLoading}
                                         className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
-                                        {saveLoading
+                                        {(saveLoading || updateRejoinLoading)
                                             ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
-                                            : <><Save className="h-4 w-4" /> Submit Registration</>}
+                                            : formik.values.joiningType === 'Rejoin'
+                                                ? <><RotateCcw className="h-4 w-4" /> Update & Rejoin</>
+                                                : <><Save className="h-4 w-4" /> Submit Registration</>}
                                     </button>
                                 ) : (
                                     <button type="button" onClick={goNext}

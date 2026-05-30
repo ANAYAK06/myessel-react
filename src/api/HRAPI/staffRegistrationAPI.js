@@ -194,6 +194,7 @@ export const updateRejoinStaffRegistration = async (params) => {
 
         // ── Build payload matching UpdateRejoinStaffRegistration SP ───────────
         const payload = {
+            EmpRefNo: params.empRefNo?.toString() || '',
             JoiningType: params.joiningType?.toString() || '',
             Category: params.category?.toString() || '',
             Appointmenttype: params.appointmentType?.toString() || '',
@@ -467,7 +468,30 @@ export const getOldEmpForRejoin = async ({ category, prefix, groupId }) => {
     }
 };
 
-// 7. Get Employee Degrees (GET)
+// 7. Get Staff Data For Rejoin (GET)
+export const getStaffDataForRejoin = async ({ empRefNo, roleId, groupId, category }) => {
+    try {
+        console.log('📋 Getting Staff Data For Rejoin');
+        console.log('🔗 API URL:', `${API_BASE_URL}/HR/GETStaffDataForRejoin`);
+        console.log('📦 Params:', { EmpRefNo: empRefNo, RoleId: roleId, GroupId: groupId, Category: category });
+
+        const response = await axios.get(
+            `${API_BASE_URL}/HR/GETStaffDataForRejoin`,
+            {
+                params: { EmpRefNo: empRefNo, RoleId: roleId, GroupId: groupId, Category: category },
+                headers: { 'Content-Type': 'application/json' },
+            }
+        );
+        console.log('✅ Get Staff Data For Rejoin Response:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Get Staff Data For Rejoin API Error:', error.response || error);
+        if (error.response?.data) throw error.response.data;
+        throw error.message || 'Failed to get staff data for rejoin';
+    }
+};
+
+// 8. Get Employee Degrees (GET)
 export const getEmpDegrees = async () => {
     try {
         console.log('🎓 Getting Employee Degrees');

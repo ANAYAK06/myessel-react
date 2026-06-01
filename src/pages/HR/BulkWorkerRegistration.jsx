@@ -220,7 +220,7 @@ const inputCls =
 
 const SectionHeader = ({ icon: Icon, title, subtitle, gradient = 'from-indigo-600 to-purple-600' }) => (
     <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
+        <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
             <Icon className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -255,7 +255,7 @@ const ErrorTable = ({ parsed, colorClass = 'rose' }) => (
                         </td>
                         <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">
                             <div className="flex items-start gap-1.5">
-                                <AlertTriangle className={`h-3 w-3 text-${colorClass}-400 mt-0.5 flex-shrink-0`} />
+                                <AlertTriangle className={`h-3 w-3 text-${colorClass}-400 mt-0.5 shrink-0`} />
                                 {err.message}
                             </div>
                         </td>
@@ -282,7 +282,7 @@ const ValidationPanel = ({ validationResult }) => {
     if (isValid && parsed.length === 0) {
         return (
             <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
-                <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
                 <div>
                     <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Validation Passed</p>
                     <p className="text-xs text-emerald-600/80 dark:text-emerald-500 mt-0.5">
@@ -298,7 +298,7 @@ const ValidationPanel = ({ validationResult }) => {
         const msg = validationResult.ErrorMsg || 'An unexpected error occurred during validation.';
         return (
             <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Validation Error</p>
                     <p className="text-xs text-amber-600/80 dark:text-amber-500 mt-0.5">{msg}</p>
@@ -318,7 +318,7 @@ const ValidationPanel = ({ validationResult }) => {
                 className="w-full flex items-center justify-between px-5 py-4 bg-rose-50 dark:bg-rose-900/20 text-left"
             >
                 <div className="flex items-center gap-3">
-                    <XCircle className="h-5 w-5 text-rose-500 flex-shrink-0" />
+                    <XCircle className="h-5 w-5 text-rose-500 shrink-0" />
                     <div>
                         <p className="text-sm font-bold text-rose-700 dark:text-rose-400">
                             Validation Failed — {parsed.length} issue{parsed.length !== 1 ? 's' : ''} found
@@ -327,8 +327,8 @@ const ValidationPanel = ({ validationResult }) => {
                     </div>
                 </div>
                 {expanded
-                    ? <ChevronUp className="h-4 w-4 text-rose-400 flex-shrink-0" />
-                    : <ChevronDown className="h-4 w-4 text-rose-400 flex-shrink-0" />
+                    ? <ChevronUp className="h-4 w-4 text-rose-400 shrink-0" />
+                    : <ChevronDown className="h-4 w-4 text-rose-400 shrink-0" />
                 }
             </button>
             {expanded && <ErrorTable parsed={parsed} colorClass="rose" />}
@@ -352,7 +352,7 @@ const SaveErrorPanel = ({ saveResult }) => {
                 className="w-full flex items-center justify-between px-5 py-4 bg-amber-50 dark:bg-amber-900/20 text-left"
             >
                 <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                    <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
                     <div>
                         <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
                             Registration Failed — {parsed.length > 1 ? `${parsed.length} issues` : 'see details below'}
@@ -363,8 +363,8 @@ const SaveErrorPanel = ({ saveResult }) => {
                     </div>
                 </div>
                 {expanded
-                    ? <ChevronUp className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                    : <ChevronDown className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                    ? <ChevronUp className="h-4 w-4 text-amber-400 shrink-0" />
+                    : <ChevronDown className="h-4 w-4 text-amber-400 shrink-0" />
                 }
             </button>
             {expanded && (
@@ -465,6 +465,18 @@ const BulkWorkerRegistration = () => {
             const validGroups = ['sk', 'ssk', 'usk', 'hsk'];
             if (w.group && !validGroups.includes(w.group.toLowerCase()))
                 errors.push(`Row ${row}: Group must be SK, SSK, USK, or HSK`);
+
+            // Joining date must not be a future date
+            if (w.joiningDate?.trim()) {
+                const MONTH_MAP = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+                const parts = w.joiningDate.trim().split('-');
+                if (parts.length === 3) {
+                    const jd = new Date(parseInt(parts[2]), MONTH_MAP[parts[1]], parseInt(parts[0]));
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    if (!isNaN(jd.getTime()) && jd > today)
+                        errors.push(`Row ${row}: Joining Date (${w.joiningDate}) must not be a future date`);
+                }
+            }
         });
 
         return errors;
@@ -531,11 +543,11 @@ const BulkWorkerRegistration = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
 
             {/* ── Page Header Banner ───────────────────────────────────────────── */}
             <div className="max-w-7xl mx-auto mb-6">
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-700 shadow-xl shadow-indigo-500/20 p-7 text-white">
+                <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-indigo-600 via-purple-600 to-violet-700 shadow-xl shadow-indigo-500/20 p-7 text-white">
                     <div className="absolute inset-0 opacity-10"
                         style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                     <div className="absolute top-0 right-0 w-72 h-72 bg-violet-500 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
@@ -571,7 +583,7 @@ const BulkWorkerRegistration = () => {
                     <div className="grid grid-cols-3 gap-4">
                         {/* Workers count */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-md">
                                 <Users className="h-5 w-5 text-white" />
                             </div>
                             <div>
@@ -588,12 +600,12 @@ const BulkWorkerRegistration = () => {
                                     ? 'border-rose-300 dark:border-rose-700'
                                     : 'border-gray-200 dark:border-gray-700'
                         }`}>
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md ${
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
                                 summary.isValidated
-                                    ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
+                                    ? 'bg-linear-to-br from-emerald-500 to-teal-500'
                                     : validationResult
-                                        ? 'bg-gradient-to-br from-rose-500 to-rose-600'
-                                        : 'bg-gradient-to-br from-amber-400 to-orange-500'
+                                        ? 'bg-linear-to-br from-rose-500 to-rose-600'
+                                        : 'bg-linear-to-br from-amber-400 to-orange-500'
                             }`}>
                                 {summary.isValidated
                                     ? <CheckCircle className="h-5 w-5 text-white" />
@@ -618,7 +630,7 @@ const BulkWorkerRegistration = () => {
 
                         {/* File name */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md">
                                 <FileSpreadsheet className="h-5 w-5 text-white" />
                             </div>
                             <div className="min-w-0">
@@ -684,7 +696,7 @@ const BulkWorkerRegistration = () => {
                                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileChange} className="hidden" />
                                     <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
                                         isDragging
-                                            ? 'bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/30'
+                                            ? 'bg-linear-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/30'
                                             : 'bg-gray-100 dark:bg-gray-700'
                                     }`}>
                                         <Upload className={`h-7 w-7 ${isDragging ? 'text-white' : 'text-gray-400'}`} />
@@ -699,14 +711,14 @@ const BulkWorkerRegistration = () => {
 
                                 {/* Column hint + Download template */}
                                 <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
-                                    <Info className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
+                                    <Info className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-3 mb-1">
                                             <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Expected Column Order</p>
                                             <button
                                                 type="button"
                                                 onClick={(e) => { e.stopPropagation(); downloadTemplate(); }}
-                                                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm transition-all"
+                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm transition-all"
                                             >
                                                 <Download className="h-3.5 w-3.5" /> Download Template
                                             </button>
@@ -788,7 +800,7 @@ const BulkWorkerRegistration = () => {
                                     ? <ValidationPanel validationResult={validationResult} />
                                     : (
                                         <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-                                            <AlertCircle className="h-4 w-4 text-rose-500 flex-shrink-0" />
+                                            <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
                                             <p className="text-sm text-rose-600 dark:text-rose-400">{validateError}</p>
                                         </div>
                                     )
@@ -812,7 +824,7 @@ const BulkWorkerRegistration = () => {
                         {/* ── Save Network / Exception Error (thunk rejected) ────────── */}
                         {saveError && !saveResult && (
                             <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-                                <AlertCircle className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                                <AlertCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
                                 <div>
                                     <p className="text-sm font-bold text-rose-700 dark:text-rose-400">Registration Request Failed</p>
                                     <p className="text-xs text-rose-600/80 dark:text-rose-500 mt-0.5">{saveError}</p>
@@ -870,7 +882,7 @@ const BulkWorkerRegistration = () => {
                                     type="button"
                                     onClick={handleValidate}
                                     disabled={validateLoading}
-                                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {validateLoading
                                         ? <><Loader2 className="h-4 w-4 animate-spin" /> Validating…</>
@@ -883,7 +895,7 @@ const BulkWorkerRegistration = () => {
                                     type="button"
                                     onClick={handleRegister}
                                     disabled={saveLoading || !summary.isValidated}
-                                    className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {saveLoading
                                         ? <><Loader2 className="h-4 w-4 animate-spin" /> Registering…</>

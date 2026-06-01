@@ -20,8 +20,7 @@ export const saveNewBank = createAsyncThunk(
     async (payload, { rejectWithValue }) => {
         try {
             const res = await api.saveEmployeeBank(payload);
-            // API returns "Submited" | "Exist" | error string
-            return res?.Data ?? res;
+            return res;
         } catch (err) {
             return rejectWithValue(err.message || 'Failed to save bank');
         }

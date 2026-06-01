@@ -328,7 +328,7 @@ const initialState = {
 // ==============================================
 
 // Resolve save/update status from API response
-// SP returns "Submited" (with single t) on success
+// SP returns "Submited" (with single t) on success; designation/department SPs return "Inserted"
 const resolveRegistrationStatus = (payload) => {
     const responseStr = typeof payload === 'string'
         ? payload
@@ -338,7 +338,9 @@ const resolveRegistrationStatus = (payload) => {
         (typeof responseStr === 'string' && (
             responseStr.toLowerCase().includes('submit') ||
             responseStr.toLowerCase().includes('success') ||
-            responseStr.toLowerCase().includes('saved')
+            responseStr.toLowerCase().includes('saved') ||
+            responseStr.toLowerCase().includes('insert') ||
+            responseStr.toLowerCase().includes('done')
         )) ||
         payload?.IsSuccessful === true ||
         payload?.ResponseCode === 200;

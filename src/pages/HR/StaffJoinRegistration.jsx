@@ -56,6 +56,8 @@ import {
     selectSaveDesignationStatus,
     selectSaveDepartmentStatus,
     selectSaveEmployeeBankStatus,
+    selectSaveDesignationError,
+    selectSaveDepartmentError,
     resetAll,
 } from '../../slices/HRSlice/staffJoinSlice';
 
@@ -186,7 +188,7 @@ const AddNewPopup = ({ title, icon: Icon, fields, onSave, onClose, saving }) => 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div ref={ref} className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                <div className="flex items-center justify-between px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
                             <Icon className="h-4 w-4" />
@@ -219,7 +221,7 @@ const AddNewPopup = ({ title, icon: Icon, fields, onSave, onClose, saving }) => 
                         Cancel
                     </button>
                     <button onClick={handleSubmit} disabled={saving}
-                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md">
+                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md">
                         {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : <><Save className="h-4 w-4" /> Save</>}
                     </button>
                 </div>
@@ -294,7 +296,7 @@ const DocumentRow = ({ docName, mandatory, file, onUpload, onRemove, onPreview }
                     ? 'border-rose-200 dark:border-rose-800 bg-rose-50/30 dark:bg-rose-900/10'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
             }`}>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0
                 ${file ? 'bg-green-100 dark:bg-green-900/40' : mandatory ? 'bg-rose-100 dark:bg-rose-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 {file
                     ? <FileCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -305,7 +307,7 @@ const DocumentRow = ({ docName, mandatory, file, onUpload, onRemove, onPreview }
                 <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">{docName}</p>
                     {mandatory && (
-                        <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wider bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded-md">Required</span>
+                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded-md">Required</span>
                     )}
                 </div>
                 {file
@@ -313,7 +315,7 @@ const DocumentRow = ({ docName, mandatory, file, onUpload, onRemove, onPreview }
                     : <p className="text-[10px] text-gray-400 mt-0.5">No file uploaded</p>
                 }
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
                 {file && (isImage || isPdf) && (
                     <button type="button" onClick={() => onPreview(file)}
                         className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 transition-colors">
@@ -330,7 +332,7 @@ const DocumentRow = ({ docName, mandatory, file, onUpload, onRemove, onPreview }
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
                         ${file
                             ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-sm'
+                            : 'bg-linear-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-sm'
                         }`}>
                     <Upload className="h-3 w-3" />
                     {file ? 'Replace' : 'Upload'}
@@ -369,7 +371,7 @@ const PreviewModal = ({ file, onClose }) => {
 
 // ─── Sub-Components ────────────────────────────────────────────────────────────
 const StepIndicator = ({ steps, currentStep, completedSteps, onStepClick }) => (
-    <div className="hidden lg:flex flex-col gap-1 w-56 flex-shrink-0">
+    <div className="hidden lg:flex flex-col gap-1 w-56 shrink-0">
         {steps.map((step) => {
             const done = completedSteps.includes(step.id);
             const active = currentStep === step.id;
@@ -384,14 +386,14 @@ const StepIndicator = ({ steps, currentStep, completedSteps, onStepClick }) => (
                     title={!unlocked ? 'Complete previous steps first' : ''}
                     className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200
                         ${active
-                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]'
+                            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]'
                             : done
                                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer'
                                 : unlocked
                                     ? 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700 cursor-pointer'
                                     : 'bg-gray-50 dark:bg-gray-900 text-gray-300 dark:text-gray-600 border border-gray-100 dark:border-gray-800 cursor-not-allowed opacity-50'
                         }`}>
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all
                         ${active ? 'bg-white/20' : done ? 'bg-blue-100 dark:bg-blue-800' : 'bg-gray-100 dark:bg-gray-700'}`}>
                         {done && !active
                             ? <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -405,7 +407,7 @@ const StepIndicator = ({ steps, currentStep, completedSteps, onStepClick }) => (
                             {step.desc}
                         </p>
                     </div>
-                    {done && !active && <CheckCircle className="h-3.5 w-3.5 text-blue-500 ml-auto flex-shrink-0" />}
+                    {done && !active && <CheckCircle className="h-3.5 w-3.5 text-blue-500 ml-auto shrink-0" />}
                 </button>
             );
         })}
@@ -445,7 +447,7 @@ const selectCls = (error, touched) =>
 
 const SectionHeader = ({ icon: Icon, title, subtitle, gradient = 'from-blue-600 to-purple-600' }) => (
     <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
+        <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
             <Icon className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -467,14 +469,14 @@ const OptionCard = ({ label, desc, icon: Icon, selected, onClick, color = 'blue'
         <button type="button" onClick={onClick}
             className={`group relative flex items-center gap-4 p-4 rounded-2xl border-2 w-full text-left transition-all duration-200
                         ${selected ? `${c.ring} ${c.bg} ring-2 shadow-md` : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'}`}>
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${selected ? c.icon : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 group-hover:bg-gray-200 dark:group-hover:bg-gray-600'}`}>
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all ${selected ? c.icon : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 group-hover:bg-gray-200 dark:group-hover:bg-gray-600'}`}>
                 <Icon className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
                 <p className={`text-sm font-bold ${selected ? c.text : 'text-gray-700 dark:text-gray-300'}`}>{label}</p>
                 {desc && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-tight">{desc}</p>}
             </div>
-            {selected && <CheckCircle className={`h-5 w-5 flex-shrink-0 ${c.text}`} />}
+            {selected && <CheckCircle className={`h-5 w-5 shrink-0 ${c.text}`} />}
         </button>
     );
 };
@@ -515,7 +517,7 @@ const DynamicTable = ({ label, icon: Icon, columns, rows, onAdd, onRemove, onCha
             </div>
         ) : (
             <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                <div className="grid text-xs font-bold text-white px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600"
+                <div className="grid text-xs font-bold text-white px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600"
                     style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr) 40px` }}>
                     {columns.map(c => <div key={c.key}>{c.label}</div>)}
                     <div></div>
@@ -613,6 +615,8 @@ const StaffJoinRegistration = () => {
     const saveDesignationStatus = useSelector(selectSaveDesignationStatus);
     const saveDepartmentStatus = useSelector(selectSaveDepartmentStatus);
     const saveEmployeeBankStatus = useSelector(selectSaveEmployeeBankStatus);
+    const saveDesignationError = useSelector(selectSaveDesignationError);
+    const saveDepartmentError = useSelector(selectSaveDepartmentError);
 
     // ── Local UI State ─────────────────────────────────────────────────────
     const [currentStep, setCurrentStep] = useState(1);
@@ -702,9 +706,15 @@ const StaffJoinRegistration = () => {
             dispatch(clearDesignationResult());
             setShowAddDesignation(false);
         } else if (saveDesignationStatus === 'failed') {
-            toast.error('Failed to add designation');
+            const errMsg = typeof saveDesignationError === 'string' ? saveDesignationError : '';
+            if (errMsg.toLowerCase() === 'exist') {
+                toast.warning('Designation already exists!');
+            } else {
+                toast.error(errMsg || 'Failed to add designation');
+            }
+            dispatch(clearDesignationResult());
         }
-    }, [saveDesignationStatus, dispatch]);
+    }, [saveDesignationStatus, saveDesignationError, dispatch]);
 
     useEffect(() => {
         if (saveDepartmentStatus === 'success') {
@@ -713,9 +723,15 @@ const StaffJoinRegistration = () => {
             dispatch(clearDepartmentResult());
             setShowAddDepartment(false);
         } else if (saveDepartmentStatus === 'failed') {
-            toast.error('Failed to add department');
+            const errMsg = typeof saveDepartmentError === 'string' ? saveDepartmentError : '';
+            if (errMsg.toLowerCase() === 'exist') {
+                toast.warning('Department already exists!');
+            } else {
+                toast.error(errMsg || 'Failed to add department');
+            }
+            dispatch(clearDepartmentResult());
         }
-    }, [saveDepartmentStatus, dispatch]);
+    }, [saveDepartmentStatus, saveDepartmentError, dispatch]);
 
     useEffect(() => {
         if (saveEmployeeBankStatus === 'success') {
@@ -1053,13 +1069,13 @@ const StaffJoinRegistration = () => {
 
     // ── Add-new handlers ───────────────────────────────────────────────────
     const handleAddDesignation = (vals) => {
-        dispatch(saveDesignation({ action: 'Insert', designationName: vals.designationName, designationId: 0, createdBy: userName }));
+        dispatch(saveDesignation({ action: 'New', designationName: vals.designationName, designationId: 0, createdBy: userName }));
     };
     const handleAddDepartment = (vals) => {
         dispatch(saveDepartment({ departmentName: vals.departmentName, createdBy: userName }));
     };
     const handleAddBank = (vals) => {
-        dispatch(saveEmployeeBank({ action: 'Insert', bankName: vals.bankName, bankId: 0, createdBy: userName }));
+        dispatch(saveEmployeeBank({ action: 'New', bankName: vals.bankName, bankId: 0, createdBy: userName }));
     };
 
     // ── Rejoin Handlers ────────────────────────────────────────────────────
@@ -1232,7 +1248,7 @@ const StaffJoinRegistration = () => {
                                             type="button"
                                             onClick={handleRejoinSearch}
                                             disabled={oldEmpSearchLoading}
-                                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md disabled:opacity-60 transition-all">
+                                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md disabled:opacity-60 transition-all">
                                             {oldEmpSearchLoading
                                                 ? <><Loader2 className="h-4 w-4 animate-spin" /> Searching…</>
                                                 : <><Search className="h-4 w-4" /> Search</>}
@@ -1244,7 +1260,7 @@ const StaffJoinRegistration = () => {
                                         <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700">
                                             {rejoinDataLoading
                                                 ? <Loader2 className="h-4 w-4 animate-spin text-green-500" />
-                                                : <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />}
+                                                : <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />}
                                             <div className="min-w-0">
                                                 <p className="text-xs font-bold text-green-700 dark:text-green-300">
                                                     {rejoinDataLoading ? 'Loading employee data…' : 'Employee Selected'}
@@ -1276,14 +1292,14 @@ const StaffJoinRegistration = () => {
                                                     className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors
                                                         ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60 dark:bg-gray-800/60'}
                                                         hover:bg-purple-50 dark:hover:bg-purple-900/20`}>
-                                                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+                                                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">
                                                         <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                                     </div>
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{emp.EmpRefNo}</p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{emp.FirstName || ''}</p>
                                                     </div>
-                                                    <ChevronRight className="h-4 w-4 text-gray-300 ml-auto flex-shrink-0" />
+                                                    <ChevronRight className="h-4 w-4 text-gray-300 ml-auto shrink-0" />
                                                 </button>
                                             ))}
                                         </div>
@@ -1700,7 +1716,7 @@ const StaffJoinRegistration = () => {
 
                     {experienceType === 'fresher' && (
                         <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700">
-                            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
                             <p className="text-xs text-green-700 dark:text-green-300 font-medium">
                                 No work experience required for freshers. You can still add references below.
                             </p>
@@ -1711,7 +1727,7 @@ const StaffJoinRegistration = () => {
                         <div>
                             {expRows.length === 0 && (
                                 <div className="flex items-start gap-3 p-3 mb-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
-                                    <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                                     <p className="text-xs text-amber-700 dark:text-amber-300">
                                         Please add at least one work experience entry to proceed.
                                     </p>
@@ -1814,7 +1830,7 @@ const StaffJoinRegistration = () => {
                                     <button key={o} type="button" onClick={() => formik.setFieldValue('pfExist', o)}
                                         className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all
                                             ${values.pfExist === o
-                                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-md'
+                                                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-md'
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}>{o}</button>
                                 ))}
                             </div>
@@ -1826,7 +1842,7 @@ const StaffJoinRegistration = () => {
                                     <button key={o} type="button" onClick={() => formik.setFieldValue('esiExist', o)}
                                         className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all
                                             ${values.esiExist === o
-                                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-md'
+                                                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-md'
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}>{o}</button>
                                 ))}
                             </div>
@@ -1852,7 +1868,7 @@ const StaffJoinRegistration = () => {
                     </div>
 
                     {/* Summary preview */}
-                    <div className="mt-6 p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-100 dark:border-blue-800">
+                    <div className="mt-6 p-5 rounded-2xl bg-linear-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-100 dark:border-blue-800">
                         <div className="flex items-center gap-2 mb-4">
                             <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">Registration Summary</h4>
@@ -1909,7 +1925,7 @@ const StaffJoinRegistration = () => {
                         </div>
                         {mandatoryCount < MANDATORY_DOCS.length && (
                             <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
-                                <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                                 <p className="text-xs text-amber-700 dark:text-amber-300">
                                     <span className="font-bold">Required documents missing: </span>
                                     {MANDATORY_DOCS.filter(d => !uploadedDocs[d]).join(', ')}. These must be uploaded before final submission.
@@ -1944,7 +1960,7 @@ const StaffJoinRegistration = () => {
     const progressPct = Math.round((completedSteps.length / STEPS.length) * 100);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
 
             {/* Add-New Popups */}
             {showAddDesignation && (
@@ -1967,7 +1983,7 @@ const StaffJoinRegistration = () => {
 
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-6">
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 shadow-xl shadow-blue-500/20 p-7 text-white">
+                <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-blue-600 via-blue-700 to-purple-700 shadow-xl shadow-blue-500/20 p-7 text-white">
                     <div className="absolute inset-0 opacity-10"
                         style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                     <div className="absolute top-0 right-0 w-72 h-72 bg-purple-500 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
@@ -1989,7 +2005,7 @@ const StaffJoinRegistration = () => {
                                 <p className="text-xs text-blue-200">Progress</p>
                                 <p className="text-2xl font-black">{progressPct}<span className="text-base font-normal text-blue-200">%</span></p>
                             </div>
-                            <div className="w-16 h-16 relative flex-shrink-0">
+                            <div className="w-16 h-16 relative shrink-0">
                                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
                                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="white" strokeWidth="3" strokeDasharray={`${progressPct}, 100`} strokeLinecap="round" />
@@ -2017,9 +2033,9 @@ const StaffJoinRegistration = () => {
                                 <button key={s.id}
                                     onClick={() => unlocked && handleStepClick(s.id)}
                                     disabled={!unlocked}
-                                    className={`flex-shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all
+                                    className={`shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all
                                         ${s.id === currentStep
-                                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                                            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
                                             : completedSteps.includes(s.id)
                                                 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 cursor-pointer'
                                                 : unlocked
@@ -2067,7 +2083,7 @@ const StaffJoinRegistration = () => {
 
                                 {isLastStep ? (
                                     <button type="submit" disabled={saveLoading || updateRejoinLoading}
-                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                         {(saveLoading || updateRejoinLoading)
                                             ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
                                             : formik.values.joiningType === 'Rejoin'
@@ -2076,7 +2092,7 @@ const StaffJoinRegistration = () => {
                                     </button>
                                 ) : (
                                     <button type="button" onClick={goNext}
-                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all">
+                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all">
                                         Next <ChevronRight className="h-4 w-4" />
                                     </button>
                                 )}

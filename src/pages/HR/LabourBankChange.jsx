@@ -56,10 +56,10 @@ const Btn = ({ children, onClick, loading, disabled, variant = 'primary', size =
     const base = 'inline-flex items-center gap-2 font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
     const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-5 py-2.5 text-sm', lg: 'px-7 py-3 text-base' };
     const variants = {
-        primary: 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white focus:ring-indigo-500 shadow-sm',
+        primary: 'bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white focus:ring-indigo-500 shadow-sm',
         secondary: 'border-2 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-gray-400',
-        danger: 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white focus:ring-rose-500 shadow-sm',
-        success: 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white focus:ring-emerald-500 shadow-sm',
+        danger: 'bg-linear-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white focus:ring-rose-500 shadow-sm',
+        success: 'bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white focus:ring-emerald-500 shadow-sm',
     };
     return (
         <button type={type} onClick={onClick} disabled={loading || disabled} className={cn(base, sizes[size], variants[variant])}>
@@ -84,30 +84,46 @@ const AddBankModal = ({ onClose, onSuccess, userName }) => {
     const dispatch = useDispatch();
     const loading = useSelector(selectLoading);
     const saveResult = useSelector(selectSaveNewBankResult);
+    const saveError = useSelector((s) => s.labourBankChange.errors.saveNewBank);
     const [bankName, setBankName] = useState('');
 
-    // Handle save result
+    // Handle save result or error
     useEffect(() => {
-        if (!saveResult) return;
-        const result = typeof saveResult === 'string' ? saveResult : JSON.stringify(saveResult);
-        if (result.toLowerCase().includes('submited') || result.toLowerCase().includes('submit')) {
+        if (!saveResult && !saveError) return;
+
+        if (saveError) {
+            toast.error(typeof saveError === 'string' ? saveError : 'Failed to save bank.');
+            dispatch(clearSaveNewBankResult());
+            return;
+        }
+
+        const dataStr = typeof saveResult === 'string'
+            ? saveResult
+            : (saveResult?.Data ?? '');
+        const isSuccess = saveResult?.IsSuccessful === true
+            || saveResult?.ResponseCode === 200
+            || dataStr.toLowerCase().includes('submit')
+            || dataStr.toLowerCase().includes('insert');
+        const isExist = dataStr.toLowerCase().includes('exist');
+
+        if (isSuccess) {
             toast.success('Bank added successfully!');
             dispatch(clearSaveNewBankResult());
             onSuccess(bankName.trim().toUpperCase());
-        } else if (result.toLowerCase().includes('exist')) {
+        } else if (isExist) {
             toast.warning('This bank already exists in the list.');
             dispatch(clearSaveNewBankResult());
         } else {
-            toast.error(result || 'Failed to save bank.');
+            toast.error(dataStr || 'Failed to save bank.');
             dispatch(clearSaveNewBankResult());
         }
-    }, [saveResult, dispatch, bankName, onSuccess]);
+    }, [saveResult, saveError, dispatch, bankName, onSuccess]);
 
     const handleSave = () => {
         const trimmed = bankName.trim();
         if (!trimmed) { toast.error('Please enter a bank name.'); return; }
         dispatch(saveNewBank({
-            Action: 'INSERT',
+            Action: 'New',
             BankName: trimmed.toUpperCase(),
             Bankid: 0,
             CreatedBy: userName,
@@ -118,7 +134,7 @@ const AddBankModal = ({ onClose, onSuccess, userName }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-violet-600">
+                <div className="flex items-center justify-between px-6 py-4 bg-linear-to-r from-indigo-600 to-violet-600">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
                             <Plus className="h-4 w-4 text-white" />
@@ -535,7 +551,7 @@ const LabourBankChange = () => {
                             className={cn(
                                 'relative flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200 cursor-pointer group',
                                 isSelected
-                                    ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-900/30 dark:to-violet-900/30 shadow-md'
+                                    ? 'border-indigo-500 bg-linear-to-br from-indigo-50 to-violet-50 dark:from-indigo-900/30 dark:to-violet-900/30 shadow-md'
                                     : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-300 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10'
                             )}
                         >
@@ -545,7 +561,7 @@ const LabourBankChange = () => {
                             <div className={cn(
                                 'w-14 h-14 rounded-2xl flex items-center justify-center transition-all',
                                 isSelected
-                                    ? 'bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg'
+                                    ? 'bg-linear-to-br from-indigo-500 to-violet-600 shadow-lg'
                                     : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30'
                             )}>
                                 {type === 'Own Labour'
@@ -867,11 +883,11 @@ const LabourBankChange = () => {
     // ── Main render ───────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
 
             {/* ── Page Header ── */}
             <div className="max-w-7xl mx-auto mb-6">
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-700 shadow-xl shadow-indigo-500/20 p-7 text-white">
+                <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-indigo-600 via-purple-600 to-violet-700 shadow-xl shadow-indigo-500/20 p-7 text-white">
                     <div className="absolute inset-0 opacity-10"
                         style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                     <div className="absolute top-0 right-0 w-72 h-72 bg-violet-500 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />

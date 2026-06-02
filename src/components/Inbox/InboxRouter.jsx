@@ -52,6 +52,7 @@ import VerifyBulkWorker from '../../pages/HR/VerifyBulkWorker';
 import VerifyWorkerStaffReg from '../../pages/HR/VerifyWorkerStaffReg';
 import VerifyLabourBankChange from '../../pages/HR/VerifyLabourBankChange';
 import VerifyLabourTypeChange from '../../pages/HR/VerifyLabourTypeChange';
+import VerifyHRAdvancePayment from '../../pages/HR/VerifyHRAdvancePayment';
 import VerifyItemCode from '../../pages/Purchase/VerifyItemCode';
 
 
@@ -1025,6 +1026,17 @@ const isLabourExitVerification = (path, category, title, displayName, workflowTy
     return isMatch;
 };
 
+const isHRAdvancePaymentVerification = (path) => {
+    const isMatch = path.includes('/hr/verifyhradvancepayment') ||
+                    path.includes('/hr/verifyhradpayment');
+    if (isMatch) {
+        console.log('✅ HR Advance Payment Verification detected by path:', path);
+    } else {
+        console.log('❌ HR Advance Payment not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isAppraisalObjectiveVerification = (path) => {
     const isMatch = path.includes('/hr/verifyappraisalobjectives') ||
         path.includes('/hr/verifyempobjectivesgoals') ||
@@ -1483,6 +1495,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         ) {
             console.log('✅ Routing to VerifyStaffFullFinal');
             return <VerifyStaffFullFinal
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // HR ADVANCE PAYMENT VERIFICATION  (specific path — must be before broad advance check)
+        // ====================================================================
+        if (isHRAdvancePaymentVerification(path)) {
+            console.log('✅ Routing to VerifyHRAdvancePayment');
+            return <VerifyHRAdvancePayment
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

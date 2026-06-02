@@ -128,6 +128,7 @@ import labourReportReducer from "../slices/HrReportSlice/labourReportSlice";
 import labourBankChangeReducer from "../slices/HRSlice/labourBankChangeSlice";
 import itemCodeVerificationReducer from "../slices/purchaseSlice/itemCodeVerificationSlice";
 import labourTypeChangeReducer from "../slices/HRSlice/labourTypeChangeSlice";
+import hrAdvancePayReducer from "../slices/HRSlice/hrAdvancePayVerifySlice";
 import labourAttendanceReportReducer from "../slices/HrReportSlice/labourAttendanceReportSlice";
 import labourExitReducer from "../slices/HRSlice/labourExitSlice";
 import pendingTrackingReducer from "../slices/dashboardSlice/pendingTrackingSlice";
@@ -263,6 +264,7 @@ const store = configureStore({
     labourBankChange:      labourBankChangeReducer,
     itemCodeVerification:  itemCodeVerificationReducer,
     labourTypeChange:      labourTypeChangeReducer,
+    hrAdvancePay:          hrAdvancePayReducer,
     labourattendancereport: labourAttendanceReportReducer,
     labourExit:            labourExitReducer,
     pendingTracking:       pendingTrackingReducer,

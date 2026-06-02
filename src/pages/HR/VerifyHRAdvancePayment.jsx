@@ -200,7 +200,9 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
                 AdvanceTransNo:     detail.AdvanceTransNo || selectedItem.TransactionRefNo,
             })).unwrap();
 
-            const verb = mappedAction === 'Reject' ? 'Rejected' : 'Approved';
+            const verb = actionValue.toLowerCase().includes('reject') ? 'Rejected'
+                       : actionValue.toLowerCase().includes('verif')  ? 'Verified'
+                       : 'Approved';
             toast.success(`Advance payment ${verb} successfully!`);
 
             setTimeout(() => {

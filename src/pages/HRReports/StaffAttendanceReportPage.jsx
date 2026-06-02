@@ -86,7 +86,7 @@ const AttendanceStatusBadge = ({ status }) => {
     return (
         <Tooltip content={config.fullLabel}>
             <div className={clsx(
-                "flex items-center justify-center w-10 h-10 rounded-lg font-bold text-xs",
+                "flex items-center justify-center w-7 h-7 rounded font-bold text-[10px]",
                 config.color
             )}>
                 {config.label}
@@ -173,20 +173,20 @@ const SummaryCards = ({ attendanceData }) => {
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             {cards.map((card, index) => (
-                <div key={index} className={`bg-gradient-to-r ${card.bgColor} rounded-xl p-6 border border-gray-200 dark:border-gray-700`}>
+                <div key={index} className={`bg-gradient-to-r ${card.bgColor} rounded-lg p-3 border border-gray-200 dark:border-gray-700`}>
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
                                 {card.title}
                             </p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">
                                 {card.value}
                             </p>
                         </div>
-                        <div className={`bg-gradient-to-r ${card.color} p-3 rounded-lg`}>
-                            <card.icon className="h-6 w-6 text-white" />
+                        <div className={`bg-gradient-to-r ${card.color} p-2 rounded-lg`}>
+                            <card.icon className="h-4 w-4 text-white" />
                         </div>
                     </div>
                 </div>
@@ -611,6 +611,19 @@ const StaffAttendanceReportPage = () => {
 
     const dayColumns = getDayColumns();
 
+    const grandTotals = attendanceData?.Data && dayColumns.length > 0
+        ? attendanceData.Data.reduce((acc, emp) => {
+            dayColumns.forEach(col => {
+                const s = emp[col.key];
+                if (s === 'P') acc.present++;
+                else if (s === 'A') acc.absent++;
+                else if (s === 'L' || s === 'PL' || s === 'HD') acc.leave++;
+            });
+            acc.totalDays += parseFloat(emp.TotalMonthDays || 0);
+            return acc;
+        }, { present: 0, absent: 0, leave: 0, totalDays: 0 })
+        : null;
+
     return (
         <div className="space-y-6 p-6">
             {/* Page Header */}
@@ -859,85 +872,97 @@ const StaffAttendanceReportPage = () => {
             {/* Attendance Sheet Table */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
                 {attendanceData?.Data && Array.isArray(attendanceData.Data) && attendanceData.Data.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <div className="inline-block min-w-full align-middle">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead className="bg-gradient-to-r from-indigo-600 to-purple-700 sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-4 py-4 text-left text-xs font-bold text-white uppercase tracking-wider sticky left-0 bg-indigo-600 z-20">
-                                            Employee
-                                        </th>
-                                        {dayColumns.map((dayCol, index) => (
-                                            <th key={index} className="px-3 py-4 text-center text-xs font-bold text-white uppercase tracking-wider min-w-[50px]">
-                                                <div>{dayCol.date}</div>
-                                                <div className="text-[10px] opacity-80">{dayCol.day}</div>
-                                            </th>
+                <>
+                <div className="overflow-auto max-h-[60vh]">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
+                        <thead>
+                            <tr>
+                                {/* Corner: sticky in both axes */}
+                                <th className="px-2 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wider sticky top-0 left-0 z-20 bg-indigo-700 dark:bg-indigo-800 min-w-[190px] border-b border-indigo-500">
+                                    Employee
+                                </th>
+                                {dayColumns.map((dayCol, index) => (
+                                    <th key={index} className="py-2 text-center text-[10px] font-bold text-white sticky top-0 z-10 bg-indigo-700 dark:bg-indigo-800 border-b border-indigo-500" style={{ width: '32px', minWidth: '32px' }}>
+                                        <div>{dayCol.date}</div>
+                                        <div className="opacity-75">{dayCol.day}</div>
+                                    </th>
+                                ))}
+                                {/* Summary columns — sticky right, listed from innermost (P) to outermost (Days) */}
+                                <th className="py-2 text-center text-[10px] font-bold text-white sticky top-0 z-20 bg-green-700 dark:bg-green-800 border-b border-l border-green-500" style={{ width: '40px', right: '120px' }}>P</th>
+                                <th className="py-2 text-center text-[10px] font-bold text-white sticky top-0 z-20 bg-pink-700 dark:bg-pink-800 border-b border-l border-pink-500" style={{ width: '40px', right: '80px' }}>L</th>
+                                <th className="py-2 text-center text-[10px] font-bold text-white sticky top-0 z-20 bg-red-700 dark:bg-red-800 border-b border-l border-red-500" style={{ width: '40px', right: '40px' }}>A</th>
+                                <th className="py-2 text-center text-[10px] font-bold text-white sticky top-0 z-20 bg-purple-800 dark:bg-purple-900 border-b border-l border-purple-500" style={{ width: '40px', right: '0px' }}>Days</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {attendanceData.Data.map((employee, index) => {
+                                let pCount = 0, lCount = 0, aCount = 0;
+                                dayColumns.forEach(col => {
+                                    const s = employee[col.key];
+                                    if (s === 'P') pCount++;
+                                    else if (s === 'A') aCount++;
+                                    else if (s === 'L' || s === 'PL' || s === 'HD') lCount++;
+                                });
+                                const isEven = index % 2 === 0;
+                                const rowBase = isEven ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/30';
+                                return (
+                                    <tr key={index} className={`${rowBase} hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors`}>
+                                        <td className={`px-2 py-1.5 sticky left-0 z-10 border-r border-gray-200 dark:border-gray-700 ${rowBase}`}>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[9px] font-bold">
+                                                    {index + 1}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="font-bold text-gray-900 dark:text-white truncate">{employee.RefNo}</div>
+                                                    <div className="text-[10px] text-gray-600 dark:text-gray-400 truncate max-w-[155px]">{employee.EmpName}</div>
+                                                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 truncate">{employee.CCCode}{employee.WorkingLocation ? ` · ${employee.WorkingLocation}` : ''}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        {dayColumns.map((dayCol, dayIndex) => (
+                                            <td key={dayIndex} className="px-0 py-1 text-center" style={{ width: '32px' }}>
+                                                <AttendanceStatusBadge status={employee[dayCol.key]} />
+                                            </td>
                                         ))}
-                                        <th className="px-4 py-4 text-center text-xs font-bold text-white uppercase tracking-wider sticky right-0 bg-purple-700 z-20">
-                                            Total<br/>Days
-                                        </th>
-                                        <th className="px-4 py-4 text-center text-xs font-bold text-white uppercase tracking-wider sticky right-0 bg-purple-700 z-20" style={{ right: '80px' }}>
-                                            Present<br/>Days
-                                        </th>
+                                        {/* Summary — sticky right */}
+                                        <td className={`py-1.5 text-center font-bold text-green-700 dark:text-green-400 sticky border-l border-gray-200 dark:border-gray-700 z-10 ${isEven ? 'bg-green-50 dark:bg-green-900/10' : 'bg-green-100/60 dark:bg-green-900/20'}`} style={{ width: '40px', right: '120px' }}>{pCount}</td>
+                                        <td className={`py-1.5 text-center font-bold text-pink-700 dark:text-pink-400 sticky border-l border-gray-200 dark:border-gray-700 z-10 ${isEven ? 'bg-pink-50 dark:bg-pink-900/10' : 'bg-pink-100/60 dark:bg-pink-900/20'}`} style={{ width: '40px', right: '80px' }}>{lCount}</td>
+                                        <td className={`py-1.5 text-center font-bold text-red-700 dark:text-red-400 sticky border-l border-gray-200 dark:border-gray-700 z-10 ${isEven ? 'bg-red-50 dark:bg-red-900/10' : 'bg-red-100/60 dark:bg-red-900/20'}`} style={{ width: '40px', right: '40px' }}>{aCount}</td>
+                                        <td className={`py-1.5 text-center font-bold text-purple-700 dark:text-purple-400 sticky border-l border-gray-200 dark:border-gray-700 z-10 ${isEven ? 'bg-purple-50 dark:bg-purple-900/10' : 'bg-purple-100/60 dark:bg-purple-900/20'}`} style={{ width: '40px', right: '0px' }}>{employee.TotalMonthDays || '-'}</td>
                                     </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    {attendanceData.Data.map((employee, index) => (
-                                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                            <td className="px-4 py-4 sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-200 dark:border-gray-700">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                                                        {index + 1}
-                                                    </div>
-                                                    <div className="min-w-[200px]">
-                                                        <div className="text-sm font-bold text-gray-900 dark:text-white">
-                                                            {employee.RefNo}
-                                                        </div>
-                                                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                                                            {employee.EmpName}
-                                                        </div>
-                                                        <div className="text-xs text-gray-500 dark:text-gray-500">
-                                                            {employee.Department} • {employee.Designation}
-                                                        </div>
-                                                        <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                                                            {employee.CCCode} - {employee.WorkingLocation}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            {dayColumns.map((dayCol, dayIndex) => (
-                                                <td key={dayIndex} className="px-2 py-2 text-center">
-                                                    <AttendanceStatusBadge status={employee[dayCol.key]} />
-                                                </td>
-                                            ))}
-                                            <td className="px-4 py-4 text-center sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 z-10" style={{ right: '80px' }}>
-                                                <div className="text-sm font-bold text-gray-900 dark:text-white">
-                                                    {employee.TotalMonthDays || '-'}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4 text-center sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 z-10">
-                                                <div className="text-sm font-bold text-green-600 dark:text-green-400">
-                                                    {employee.TotalPresentDays || '-'}
-                                                </div>
-                                            </td>
-                                        </tr>
+                                );
+                            })}
+                        </tbody>
+                        {grandTotals && (
+                            <tfoot>
+                                <tr className="bg-gray-800 dark:bg-gray-900">
+                                    <td className="px-2 py-2 text-[10px] font-bold text-white sticky left-0 bg-gray-800 dark:bg-gray-900 z-20 border-t border-gray-600">
+                                        Grand Total · {attendanceData.Data.length} employees
+                                    </td>
+                                    {dayColumns.map((_, i) => (
+                                        <td key={i} className="py-2 text-center text-gray-600 dark:text-gray-500 border-t border-gray-700" style={{ width: '32px' }}>·</td>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    <td className="py-2 text-center text-[11px] font-bold text-green-300 sticky bg-green-900 border-l border-t border-green-800 z-20" style={{ width: '40px', right: '120px' }}>{grandTotals.present}</td>
+                                    <td className="py-2 text-center text-[11px] font-bold text-pink-300 sticky bg-pink-900 border-l border-t border-pink-800 z-20" style={{ width: '40px', right: '80px' }}>{grandTotals.leave}</td>
+                                    <td className="py-2 text-center text-[11px] font-bold text-red-300 sticky bg-red-900 border-l border-t border-red-800 z-20" style={{ width: '40px', right: '40px' }}>{grandTotals.absent}</td>
+                                    <td className="py-2 text-center text-[11px] font-bold text-purple-300 sticky bg-purple-900 border-l border-t border-purple-800 z-20" style={{ width: '40px', right: '0px' }}>{grandTotals.totalDays}</td>
+                                </tr>
+                            </tfoot>
+                        )}
+                    </table>
+                </div>
 
-                        {/* Footer with employee count */}
-                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-700 dark:text-gray-300 font-medium">
-                                    Showing {attendanceData.Data.length} of {attendanceData.Data.length} employees
-                                </span>
-                                <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
-                                    {reportType === 'employee' ? 'Employee ID Wise Report' : 'Cost Centre Wise Report'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                {/* Footer */}
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">
+                        {attendanceData.Data.length} employee{attendanceData.Data.length !== 1 ? 's' : ''}
+                    </span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                        {reportType === 'employee' ? 'Employee ID Wise' : 'Cost Centre Wise'}
+                        {' · '}P = Present · L = Leave (PL/HD/L) · A = Absent
+                    </span>
+                </div>
+                </>
                 ) : (
                     <>
                         {/* Empty State */}

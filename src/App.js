@@ -9,7 +9,8 @@ import LoginOptions from './pages/Login/LoginOptions';
 import EmployeeDashboard from './pages/Dashboard/EmployeeDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedApplication from './pages/Dashboard/RoleBasedApplication';
-import SessionProvider from './components/SessionProvider'; 
+import SessionProvider from './components/SessionProvider';
+import SessionExpiredPage from './pages/SessionExpiredPage';
 
 // Import ThemeProvider
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -53,12 +54,15 @@ function App() {
                 } 
               />
               
+              {/* Session expired — public, no auth required */}
+              <Route path="/session-expired" element={<SessionExpiredPage />} />
+
               {/* Legacy route redirect */}
-              <Route 
-                path="/dashboard" 
-                element={<Navigate to="/employee-dashboard" replace />} 
+              <Route
+                path="/dashboard"
+                element={<Navigate to="/employee-dashboard" replace />}
               />
-              
+
               {/* Catch all route - redirect to login */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

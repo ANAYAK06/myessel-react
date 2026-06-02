@@ -103,16 +103,16 @@ const ProtectedRoute = ({ children, requiredLoginType = null }) => {
 
     // IMPROVED: Simplified authentication check for dashboard routes
     if (!isAuthenticated) {
-        console.log('❌ Access denied - not authenticated, redirecting to login');
-        return <Navigate to="/" replace />;
+        console.log('❌ Access denied - session gone, redirecting to session-expired');
+        return <Navigate to="/session-expired" replace />;
     }
 
     // IMPROVED: Session validation for non-passive routes
     if (!isPassiveRoute) {
         const sessionValid = sessionManager.isAuthenticated();
         if (!sessionValid) {
-            console.log('❌ Session validation failed - redirecting to login');
-            return <Navigate to="/" replace />;
+            console.log('❌ Session validation failed - redirecting to session-expired');
+            return <Navigate to="/session-expired" replace />;
         }
     }
 

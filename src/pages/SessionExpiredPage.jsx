@@ -28,22 +28,36 @@ const SessionExpiredPage = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4">
-            {/* Card */}
-            <div className="w-full max-w-md bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+        <div className="min-h-screen bg-[#0d1b5e] flex items-center justify-center p-4 relative overflow-hidden">
 
-                {/* Top accent bar */}
-                <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+            {/* Ambient blobs — matching login page */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div
+                    className="absolute top-1/4 left-1/6 w-72 h-72 rounded-full opacity-20 blur-3xl animate-pulse"
+                    style={{ background: 'radial-gradient(circle, #1a2f8f, transparent)' }}
+                />
+                <div
+                    className="absolute bottom-1/4 right-1/6 w-80 h-80 rounded-full opacity-15 blur-3xl animate-pulse"
+                    style={{ background: 'radial-gradient(circle, #f97316, transparent)', animationDelay: '2s' }}
+                />
+            </div>
+
+            {/* Card */}
+            <div className="relative w-full max-w-md bg-[#0a1240] border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+
+                {/* Top accent bar — orange to match login branding */}
+                <div className="h-1.5 bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300" />
 
                 <div className="p-8">
+
                     {/* Icon */}
                     <div className="flex justify-center mb-6">
                         <div className="relative">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-400/30 flex items-center justify-center">
-                                <ShieldAlert className="w-10 h-10 text-indigo-300" />
+                            <div className="w-20 h-20 rounded-full border-2 border-orange-400/40 bg-orange-500/10 flex items-center justify-center">
+                                <ShieldAlert className="w-10 h-10 text-orange-400" />
                             </div>
-                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-slate-900 flex items-center justify-center">
-                                <span className="text-slate-900 text-[10px] font-black">!</span>
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-400 border-2 border-[#0a1240] flex items-center justify-center">
+                                <span className="text-[#0a1240] text-[10px] font-black">!</span>
                             </span>
                         </div>
                     </div>
@@ -53,7 +67,7 @@ const SessionExpiredPage = () => {
                         <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
                             Session Ended
                         </h1>
-                        <p className="text-slate-400 text-sm leading-relaxed">
+                        <p className="text-orange-200 text-sm leading-relaxed">
                             For your security, your session has been terminated.
                             This may have occurred for one of the following reasons:
                         </p>
@@ -64,10 +78,10 @@ const SessionExpiredPage = () => {
                         {REASONS.map(({ icon: Icon, text }, i) => (
                             <li
                                 key={i}
-                                className="flex items-start gap-3 bg-white/5 border border-white/8 rounded-xl px-4 py-3"
+                                className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3"
                             >
-                                <Icon className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
-                                <span className="text-slate-300 text-xs leading-relaxed">{text}</span>
+                                <Icon className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
+                                <span className="text-orange-100 text-xs leading-relaxed">{text}</span>
                             </li>
                         ))}
                     </ul>
@@ -75,7 +89,7 @@ const SessionExpiredPage = () => {
                     {/* Login button */}
                     <button
                         onClick={() => navigate('/', { replace: true })}
-                        className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-900/40 transition-all duration-200 active:scale-[0.98]"
+                        className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white font-semibold rounded-xl shadow-lg shadow-orange-900/30 transition-all duration-200 active:scale-[0.98]"
                     >
                         <LogIn className="w-4 h-4" />
                         Return to Login
@@ -85,7 +99,7 @@ const SessionExpiredPage = () => {
 
                 {/* Footer */}
                 <div className="px-8 pb-6 text-center">
-                    <p className="text-slate-600 text-[11px]">
+                    <p className="text-white/30 text-[11px]">
                         Essel Projects — RAPP-SLAPP ERP
                     </p>
                 </div>

@@ -1122,8 +1122,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                             <th className={`w-32 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Quoted Price</th>
                                             <th className={`w-36 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>New Price (Editable)</th>
                                             <th className={`w-32 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Basic Value</th>
-                                            <th className={`w-32 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Tax Amount</th>
-                                            <th className={`w-32 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Total Amount</th>
+                                            <th className={`w-48 p-3 text-xs font-semibold text-left ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Item Remark</th>
                                         </tr>
                                     </thead>
                                     <tbody className="max-h-80 overflow-y-auto">
@@ -1288,42 +1287,13 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                             <p className="text-xs text-green-600 dark:text-green-400">Saved: ₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * quantity)}</p>
                                                         )}
                                                     </td>
-                                                    <td className="p-3 text-center">
-                                                        <p className="font-bold text-orange-700 dark:text-orange-300">₹{formatIndianCurrency(totalTaxAmount)}</p>
-                                                        {!isPopup && (
-                                                            <div className="space-y-2">
-                                                                <p className="text-xs text-gray-500 dark:text-gray-400">Total GST</p>
-                                                                <div className="space-y-1 text-xs">
-                                                                    {parseFloat(item.CGSTPercent || 0) > 0 && (
-                                                                        <div className="flex justify-between">
-                                                                            <span className="text-gray-500">CGST {item.CGSTPercent}%:</span>
-                                                                            <span className="text-orange-600">₹{formatIndianCurrency(cgstAmount)}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {parseFloat(item.SGSTPercent || 0) > 0 && (
-                                                                        <div className="flex justify-between">
-                                                                            <span className="text-gray-500">SGST {item.SGSTPercent}%:</span>
-                                                                            <span className="text-orange-600">₹{formatIndianCurrency(sgstAmount)}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {parseFloat(item.IGSTPercent || 0) > 0 && (
-                                                                        <div className="flex justify-between">
-                                                                            <span className="text-gray-500">IGST {item.IGSTPercent}%:</span>
-                                                                            <span className="text-orange-600">₹{formatIndianCurrency(igstAmount)}</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-3 text-center">
-                                                        <p className="font-bold text-green-700 dark:text-green-300 text-xl">₹{formatIndianCurrency(totalAmount)}</p>
-                                                        {!isPopup && (
-                                                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                                                <p className="text-gray-500 dark:text-gray-400">Final Amount</p>
-                                                                <div>Basic: ₹{formatIndianCurrency(basicValue)}</div>
-                                                                <div>Tax: ₹{formatIndianCurrency(totalTaxAmount)}</div>
-                                                            </div>
+                                                    <td className="p-3 text-left">
+                                                        {item.ItemRemark ? (
+                                                            <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700 rounded-lg leading-snug">
+                                                                {item.ItemRemark}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400 dark:text-gray-500 italic">—</span>
                                                         )}
                                                     </td>
                                                 </tr>

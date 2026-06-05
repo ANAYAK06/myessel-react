@@ -1064,65 +1064,116 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                                                 )}
                                             </div>
 
-                                            {/* Budget Comparison */}
+                                            {/* Budget Comparison Table */}
                                             <div className="bg-gradient-to-br from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-indigo-200 dark:border-indigo-700">
                                                 <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
                                                     <Calculator className="w-5 h-5 mr-2" />
                                                     Budget Comparison
                                                 </h4>
-
-                                                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-6">
-                                                    {/* Old Budget */}
-                                                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                                        <div>
-                                                            <span className="text-sm text-gray-600 dark:text-gray-400 block">Current Budget</span>
-                                                            <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                                                                ₹{formatIndianCurrency(selectedAmendmentData.OldBudget)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <span className="text-sm text-gray-600 dark:text-gray-400 block">Balance</span>
-                                                            <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                                                                ₹{formatIndianCurrency(selectedAmendmentData.OldBudgetBalance)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Amendment Arrow */}
-                                                    <div className="flex items-center justify-center">
-                                                        <div className={`px-6 py-3 rounded-full ${selectedAmendmentData.AmendmentType === 'Add' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'}`}>
-                                                            <div className="flex items-center space-x-2">
-                                                                {selectedAmendmentData.AmendmentType === 'Add' ? (
-                                                                    <TrendingUp className="w-5 h-5" />
-                                                                ) : (
-                                                                    <TrendingDown className="w-5 h-5" />
-                                                                )}
-                                                                <span className="font-bold">
-                                                                    {selectedAmendmentData.AmendmentType} ₹{formatIndianCurrency(selectedAmendmentData.AmendedValue)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* New Budget */}
-                                                    <div className="flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border-2 border-indigo-200 dark:border-indigo-600">
-                                                        <div>
-                                                            <span className="text-sm text-indigo-600 dark:text-indigo-400 block">Revised Budget</span>
-                                                            <span className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
-                                                                ₹{formatIndianCurrency(
-                                                                    selectedAmendmentData.AmendmentType === 'Add'
-                                                                        ? parseFloat(selectedAmendmentData.OldBudget) + parseFloat(selectedAmendmentData.AmendedValue)
-                                                                        : parseFloat(selectedAmendmentData.OldBudget) - parseFloat(selectedAmendmentData.AmendedValue)
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <span className="text-sm text-indigo-600 dark:text-indigo-400 block">New Balance</span>
-                                                            <span className="text-lg font-semibold text-indigo-700 dark:text-indigo-300">
-                                                                ₹{formatIndianCurrency(selectedAmendmentData.NewBudgetBalance)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                <div className="overflow-hidden rounded-xl border border-indigo-200 dark:border-indigo-700">
+                                                    <table className="w-full text-sm">
+                                                        <thead>
+                                                            <tr className="bg-indigo-600 text-white">
+                                                                <th className="px-4 py-3 text-left font-semibold w-8">#</th>
+                                                                <th className="px-4 py-3 text-left font-semibold">Description</th>
+                                                                <th className="px-4 py-3 text-right font-semibold">Amount (₹)</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-indigo-100 dark:divide-indigo-800">
+                                                            {/* Row 1 */}
+                                                            <tr className="bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                                                                <td className="px-4 py-4">
+                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                                                                        <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">Existing Total Basic Budget</span>
+                                                                </td>
+                                                                <td className="px-4 py-4 text-right">
+                                                                    <span className="font-bold text-gray-900 dark:text-white text-base">
+                                                                        ₹{formatIndianCurrency(selectedAmendmentData.OldBudget)}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                            {/* Row 2 */}
+                                                            <tr className={`hover:bg-opacity-80 transition-colors ${selectedAmendmentData.AmendmentType === 'Add' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-red-50 dark:bg-red-900/10'}`}>
+                                                                <td className="px-4 py-4">
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedAmendmentData.AmendmentType === 'Add' ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                                                                        {selectedAmendmentData.AmendmentType === 'Add'
+                                                                            ? <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                                                            : <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                                                        }
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <span className="font-medium text-gray-800 dark:text-gray-200">Amendment Requested Value</span>
+                                                                        <span className={`px-2 py-0.5 text-xs rounded-full border font-medium ${getAmendTypeColor(selectedAmendmentData.AmendmentType)}`}>
+                                                                            {selectedAmendmentData.AmendmentType}
+                                                                        </span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-4 text-right">
+                                                                    <span className={`font-bold text-base ${selectedAmendmentData.AmendmentType === 'Add' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                                                                        {selectedAmendmentData.AmendmentType === 'Add' ? '+' : '-'}₹{formatIndianCurrency(selectedAmendmentData.AmendedValue)}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                            {/* Row 3 */}
+                                                            <tr className="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                                                                <td className="px-4 py-4">
+                                                                    <div className="w-8 h-8 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center">
+                                                                        <Calculator className="w-4 h-4 text-indigo-700 dark:text-indigo-300" />
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className="font-semibold text-indigo-800 dark:text-indigo-200">Revised Total Basic Budget</span>
+                                                                </td>
+                                                                <td className="px-4 py-4 text-right">
+                                                                    <span className="font-bold text-indigo-700 dark:text-indigo-300 text-base">
+                                                                        ₹{formatIndianCurrency(
+                                                                            selectedAmendmentData.AmendmentType === 'Add'
+                                                                                ? parseFloat(selectedAmendmentData.OldBudget || 0) + parseFloat(selectedAmendmentData.AmendedValue || 0)
+                                                                                : parseFloat(selectedAmendmentData.OldBudget || 0) - parseFloat(selectedAmendmentData.AmendedValue || 0)
+                                                                        )}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                            {/* Row 4 */}
+                                                            <tr className="bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                                                                <td className="px-4 py-4">
+                                                                    <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                                                                        <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">Balance Budget before Amendment</span>
+                                                                </td>
+                                                                <td className="px-4 py-4 text-right">
+                                                                    <span className="font-bold text-amber-700 dark:text-amber-400 text-base">
+                                                                        ₹{formatIndianCurrency(selectedAmendmentData.OldBudgetBalance)}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                            {/* Row 5 */}
+                                                            <tr className="bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors">
+                                                                <td className="px-4 py-4">
+                                                                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                                                                        <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className="font-semibold text-emerald-800 dark:text-emerald-200">Balance Budget After Amendment</span>
+                                                                </td>
+                                                                <td className="px-4 py-4 text-right">
+                                                                    <span className="font-bold text-emerald-700 dark:text-emerald-400 text-base">
+                                                                        ₹{formatIndianCurrency(selectedAmendmentData.NewBudgetBalance)}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             </div>
 

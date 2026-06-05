@@ -327,23 +327,42 @@ const initialState = {
 // HELPERS
 // ==============================================
 
-// Resolve save/update status from API response
-// SP returns "Submited" (with single t) on success; designation/department SPs return "Inserted"
+// Resolve save/update status from API response.
+// The backend always returns HTTP 200 and uses { IsSuccessful: bool, Data: string }
+// to communicate real success/failure. ResponseCode in the body is always 200 and
+// must NOT be used as a success signal.
 const resolveRegistrationStatus = (payload) => {
     const responseStr = typeof payload === 'string'
         ? payload
         : (payload?.Data || payload?.Message || '');
 
+    const lower = typeof responseStr === 'string' ? responseStr.toLowerCase() : '';
+
+    // IsSuccessful explicitly false → always a failure, no keyword check needed.
+    if (payload?.IsSuccessful === false) {
+        return { isSuccess: false, responseStr };
+    }
+
+    // IsSuccessful explicitly true → always a success.
+    if (payload?.IsSuccessful === true) {
+        return { isSuccess: true, responseStr };
+    }
+
+    // IsSuccessful absent — fall back to text heuristics.
+    // Conflict patterns are checked first so "Already Inserted" can't match 'insert'.
+    const isConflict =
+        lower.includes('exist') ||
+        lower.includes('already') ||
+        lower.includes('duplicate');
+
     const isSuccess =
-        (typeof responseStr === 'string' && (
-            responseStr.toLowerCase().includes('submit') ||
-            responseStr.toLowerCase().includes('success') ||
-            responseStr.toLowerCase().includes('saved') ||
-            responseStr.toLowerCase().includes('insert') ||
-            responseStr.toLowerCase().includes('done')
-        )) ||
-        payload?.IsSuccessful === true ||
-        payload?.ResponseCode === 200;
+        !isConflict && (
+            lower.includes('submit') ||
+            lower.includes('success') ||
+            lower.includes('saved') ||
+            lower.includes('insert') ||
+            lower.includes('done')
+        );
 
     return { isSuccess, responseStr };
 };

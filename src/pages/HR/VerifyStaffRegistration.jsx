@@ -5,7 +5,8 @@ import {
     User, FileText,
     CheckCircle, Clock, AlertCircle, Download, Eye,
     Building2, IdCard, Users, Award, Briefcase, GraduationCap,
-    Globe, Zap, Target, CreditCard, FileCheck
+    Globe, Zap, Target, CreditCard, FileCheck,
+    Phone, Shield, ClipboardCheck, XCircle
 } from 'lucide-react';
 
 // ✅ REUSABLE COMPONENT IMPORTS
@@ -394,6 +395,12 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
         uanExist:  d.UANExist === true || d.UANExist === 'true' || d.UANExist === 'True',
         uanNumber: ensureStr(d.UANNumber),
         esiNumber: ensureStr(d.ESINumber),
+
+        // ── Compliance ────────────────────────────────────────────────
+        policeVerification:          ensureStr(d.PoliceVerification),
+        undertakingNoPoliceCaseAck:  ensureStr(d.UndertakingNoPoliceCaseAck),
+        undertakingAuthenticDocsAck: ensureStr(d.UndertakingAuthenticDocsAck),
+        undertakingMedicallyFitAck:  ensureStr(d.UndertakingMedicallyFitAck),
 
         // ── Documents ─────────────────────────────────────────────────
         documents: safeDocuments,
@@ -1052,21 +1059,25 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                         {/* References */}
                         {selectedStaffData.EmpReferenceData?.length > 0 && (
                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
-                                <h4 className="font-semibold text-gray-800 dark:text-gray-300 mb-4 flex items-center">
-                                    <Users className="w-5 h-5 mr-2" /> References ({selectedStaffData.EmpReferenceData.length})
+                                <h4 className="font-semibold text-gray-800 dark:text-gray-300 mb-4 flex items-center justify-between">
+                                    <span className="flex items-center"><Users className="w-5 h-5 mr-2" /> References ({selectedStaffData.EmpReferenceData.length})</span>
+                                    {selectedStaffData.EmpReferenceData.length >= 5
+                                        ? <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-green-100 text-green-700 border border-green-200">✓ 5 References Present</span>
+                                        : <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-rose-100 text-rose-600 border border-rose-200">⚠ Only {selectedStaffData.EmpReferenceData.length} / 5</span>
+                                    }
                                 </h4>
                                 <div className="space-y-3">
                                     {selectedStaffData.EmpReferenceData.map((ref, index) => (
                                         <div key={index} className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                                                 <div><span className="text-gray-600 dark:text-gray-400 block text-xs">Reference Name</span><span className="font-medium text-gray-900 dark:text-white">{ref.RefName}</span></div>
-                                                <div><span className="text-gray-600 dark:text-gray-400 block text-xs">Relation</span><span className="font-medium text-gray-800 dark:text-gray-200">{ref.RefRelation}</span></div>
-                                                <div><span className="text-gray-600 dark:text-gray-400 block text-xs">Mobile</span><span className="font-medium text-gray-800 dark:text-gray-200">{ref.RefMobileNo}</span></div>
+                                                <div><span className="text-gray-600 dark:text-gray-400 block text-xs">Relation</span><span className="font-medium text-gray-800 dark:text-gray-200">{ref.RefRelation || ref.Relation}</span></div>
+                                                <div><span className="text-gray-600 dark:text-gray-400 block text-xs">Mobile</span><span className="font-medium text-gray-800 dark:text-gray-200 font-mono">{ref.RefMobileNo}</span></div>
                                             </div>
-                                            {ref.RefRemarks && (
+                                            {(ref.RefRemarks || ref.FresherRefRemark) && (
                                                 <div className="mt-2">
                                                     <span className="text-gray-600 dark:text-gray-400 block text-xs">Remarks</span>
-                                                    <p className="text-gray-800 dark:text-gray-200 text-sm">{ref.RefRemarks}</p>
+                                                    <p className="text-gray-800 dark:text-gray-200 text-sm">{ref.RefRemarks || ref.FresherRefRemark}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -1074,6 +1085,52 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                 </div>
                             </div>
                         )}
+
+                        {/* ── ALL CONTACT NUMBERS SUMMARY ─────────────────────────────────── */}
+                        {(() => {
+                            const contacts = [];
+                            if (selectedStaffData.ContactMobile) {
+                                const empName = [selectedStaffData.FirstName, selectedStaffData.MiddleName, selectedStaffData.LastName].filter(Boolean).join(' ');
+                                contacts.push({ type: 'Employee', name: empName, phone: selectedStaffData.ContactMobile, relation: 'Self', typeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' });
+                            }
+                            if (selectedStaffData.ContactWorkPhone) {
+                                contacts.push({ type: 'Work Phone', name: selectedStaffData.FirstName, phone: selectedStaffData.ContactWorkPhone, relation: 'Office', typeColor: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' });
+                            }
+                            (selectedStaffData.FamilyMemberData || []).forEach(fm => {
+                                if (fm.FMMobileNo) contacts.push({ type: 'Family', name: fm.FMName || '—', phone: fm.FMMobileNo, relation: fm.FMRelation || '—', typeColor: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' });
+                            });
+                            (selectedStaffData.ExperienceData || []).forEach(exp => {
+                                if (exp.HistoryReferenceNo || exp.Mobilenos) contacts.push({ type: 'Prev. Employer', name: exp.HistoryContactName || exp.OrganisationName || '—', phone: exp.HistoryReferenceNo || exp.Mobilenos || '—', relation: exp.OrganisationName || '—', typeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' });
+                            });
+                            (selectedStaffData.EmpReferenceData || []).forEach(ref => {
+                                if (ref.RefMobileNo) contacts.push({ type: 'Reference', name: ref.RefName || '—', phone: ref.RefMobileNo, relation: ref.RefRelation || ref.Relation || '—', typeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' });
+                            });
+                            if (contacts.length === 0) return null;
+                            return (
+                                <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900/30 dark:to-blue-900/20 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-4 flex items-center justify-between">
+                                        <span className="flex items-center"><Phone className="w-5 h-5 mr-2" /> All Contact Numbers ({contacts.length})</span>
+                                        <span className="text-xs text-blue-500 dark:text-blue-400 font-normal">Consolidated view for verification</span>
+                                    </h4>
+                                    <div className="rounded-xl overflow-hidden border border-blue-200 dark:border-blue-700">
+                                        <div className="grid text-xs font-bold text-white px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600"
+                                            style={{ gridTemplateColumns: '120px 1fr 150px 1fr' }}>
+                                            <div>Type</div><div>Name</div><div>Phone Number</div><div>Relation / Org</div>
+                                        </div>
+                                        {contacts.map((c, i) => (
+                                            <div key={i}
+                                                className={`grid items-center px-4 py-3 gap-2 border-b border-blue-100 dark:border-blue-800 last:border-0 ${i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-blue-50/40 dark:bg-blue-900/10'}`}
+                                                style={{ gridTemplateColumns: '120px 1fr 150px 1fr' }}>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md w-fit ${c.typeColor}`}>{c.type}</span>
+                                                <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{c.name}</span>
+                                                <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">{c.phone}</span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{c.relation}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Additional Information */}
                         <div className="bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-indigo-900/20 dark:to-purple-800/20 p-5 rounded-xl border border-indigo-200 dark:border-indigo-700">
@@ -1106,6 +1163,93 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                 </div>
                             )}
                         </div>
+
+                        {/* ── COMPLIANCE & VERIFICATION STATUS ──────────────────────────────── */}
+                        {(() => {
+                            const d = selectedStaffData;
+                            const policeVer = d.PoliceVerification;
+                            const noPoliceCaseAck  = d.UndertakingNoPoliceCaseAck;
+                            const authDocsAck      = d.UndertakingAuthenticDocsAck;
+                            const medFitAck        = d.UndertakingMedicallyFitAck;
+                            const hasBGVDoc        = (employeeDocuments || []).some(doc => doc.DocName === 'BackgroundVerification');
+                            const hasUndertakingDoc = (employeeDocuments || []).some(doc => doc.DocName === 'PersonalUndertaking');
+                            const allAcksYes = noPoliceCaseAck === 'Yes' && authDocsAck === 'Yes' && medFitAck === 'Yes';
+                            if (!policeVer && !noPoliceCaseAck && !authDocsAck && !medFitAck && !hasBGVDoc && !hasUndertakingDoc) return null;
+                            const AckRow = ({ label, value }) => (
+                                <div className="flex items-center justify-between py-2 border-b border-rose-100 dark:border-rose-900/30 last:border-0">
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+                                    {value === 'Yes'
+                                        ? <span className="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/40 dark:text-green-300 px-2.5 py-0.5 rounded-lg border border-green-200 dark:border-green-700"><CheckCircle className="w-3 h-3" /> Confirmed</span>
+                                        : <span className="flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300 px-2.5 py-0.5 rounded-lg border border-rose-200 dark:border-rose-700"><XCircle className="w-3 h-3" /> Not Confirmed</span>
+                                    }
+                                </div>
+                            );
+                            const DocStatusRow = ({ label, exists }) => (
+                                <div className="flex items-center justify-between py-2 border-b border-rose-100 dark:border-rose-900/30 last:border-0">
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+                                    {exists
+                                        ? <span className="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/40 dark:text-green-300 px-2.5 py-0.5 rounded-lg border border-green-200"><CheckCircle className="w-3 h-3" /> Uploaded</span>
+                                        : <span className="flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300 px-2.5 py-0.5 rounded-lg border border-rose-200"><XCircle className="w-3 h-3" /> Missing</span>
+                                    }
+                                </div>
+                            );
+                            return (
+                                <div className="bg-gradient-to-br from-rose-50 to-orange-50 dark:from-rose-900/20 dark:to-orange-900/10 p-5 rounded-xl border-2 border-rose-200 dark:border-rose-800">
+                                    <h4 className="font-semibold text-rose-800 dark:text-rose-300 mb-5 flex items-center justify-between">
+                                        <span className="flex items-center"><ClipboardCheck className="w-5 h-5 mr-2" /> Compliance & Verification Status</span>
+                                        {allAcksYes && policeVer && hasBGVDoc && hasUndertakingDoc
+                                            ? <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-green-100 text-green-700 border border-green-200">✓ All Compliant</span>
+                                            : <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-700 border border-amber-200">⚠ Pending Items</span>
+                                        }
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {/* Police Verification */}
+                                        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-rose-200 dark:border-rose-700">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Shield className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                                                <p className="text-xs font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">Police Verification</p>
+                                            </div>
+                                            {policeVer
+                                                ? <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold border-2
+                                                    ${policeVer === 'Yes'
+                                                        ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700'
+                                                        : 'bg-rose-100 text-rose-600 border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700'}`}>
+                                                    {policeVer === 'Yes' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                                    {policeVer === 'Yes' ? 'Verified' : 'Not Yet Verified'}
+                                                </span>
+                                                : <span className="text-xs text-gray-400 italic">Not provided</span>
+                                            }
+                                        </div>
+
+                                        {/* Personal Undertaking Acks */}
+                                        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-rose-200 dark:border-rose-700">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <FileCheck className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                                                <p className="text-xs font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">Personal Undertaking Declarations</p>
+                                            </div>
+                                            <div>
+                                                <AckRow label="No Police Case" value={noPoliceCaseAck} />
+                                                <AckRow label="All Documents Authentic" value={authDocsAck} />
+                                                <AckRow label="Medically Fit" value={medFitAck} />
+                                            </div>
+                                        </div>
+
+                                        {/* Compliance Document Status */}
+                                        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-rose-200 dark:border-rose-700 md:col-span-2">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <FileText className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                                                <p className="text-xs font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">Compliance Documents</p>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                                                <DocStatusRow label="Background Verification Document" exists={hasBGVDoc} />
+                                                <DocStatusRow label="Signed Personal Undertaking Document" exists={hasUndertakingDoc} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Documents */}
                         <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -1174,8 +1318,8 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                             comment={verificationComment}
                             onCommentChange={(e) => setVerificationComment(e.target.value)}
                             config={{
-                                checkboxLabel: '✓ I have verified all staff registration details and documents',
-                                checkboxDescription: 'Including personal information, employment details, qualifications, and all uploaded documents',
+                                checkboxLabel: '✓ I have verified all staff registration details, contact numbers, compliance fields and documents',
+                                checkboxDescription: 'Including personal information, employment details, qualifications, all contact numbers, police verification, personal undertaking declarations, and all uploaded documents',
                                 commentLabel: 'Verification Comments',
                                 commentPlaceholder: 'Please provide detailed comments about the staff registration verification...',
                                 commentRequired: true,

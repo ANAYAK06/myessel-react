@@ -69,7 +69,7 @@ import {
     Shield, BookOpen, List, PhoneCall,
     ArrowRight, Layout, Star, Plus, Upload,
     Paperclip, Trash2, Eye, ImageIcon, FileCheck,
-    Building2, CreditCard, Search,
+    Building2, CreditCard, Search, ClipboardCheck,
 } from 'lucide-react';
 
 const Layers = Layout;
@@ -153,10 +153,11 @@ const STEPS = [
     { id: 5, label: 'Job', icon: Briefcase, desc: 'Job & department' },
     { id: 6, label: 'Bank', icon: Landmark, desc: 'Banking details' },
     { id: 7, label: 'Education', icon: GraduationCap, desc: 'Academic & skills' },
-    { id: 8, label: 'Experience', icon: ClipboardList, desc: 'Work history' },
+    { id: 8, label: 'Experience', icon: ClipboardList, desc: 'Work history & references' },
     { id: 9, label: 'Family', icon: Users, desc: 'Family & children' },
     { id: 10, label: 'PF & ESI', icon: Shield, desc: 'Statutory info' },
     { id: 11, label: 'Documents', icon: FileText, desc: 'Upload documents' },
+    { id: 12, label: 'Compliance', icon: ClipboardCheck, desc: 'Police verification & undertaking' },
 ];
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Other'];
@@ -166,7 +167,7 @@ const JOB_TYPES = ['Permanent', 'Full Time', 'Part Time', 'Contract', 'Internshi
 const PF_OPTIONS = ['Yes', 'No'];
 
 // Mandatory docs that must be uploaded
-const MANDATORY_DOCS = ['Photo', 'Aadhar Card', 'BankDetails'];
+const MANDATORY_DOCS = ['Photo', 'Aadhar Card', 'BankDetails', 'BackgroundVerification'];
 
 // ─── Add-New Popup Component ───────────────────────────────────────────────────
 const AddNewPopup = ({ title, icon: Icon, fields, onSave, onClose, saving }) => {
@@ -188,7 +189,7 @@ const AddNewPopup = ({ title, icon: Icon, fields, onSave, onClose, saving }) => 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div ref={ref} className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white">
+                <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-900 to-orange-500 text-white">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
                             <Icon className="h-4 w-4" />
@@ -221,7 +222,7 @@ const AddNewPopup = ({ title, icon: Icon, fields, onSave, onClose, saving }) => 
                         Cancel
                     </button>
                     <button onClick={handleSubmit} disabled={saving}
-                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md">
+                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-900 to-orange-500 text-white hover:from-blue-950 hover:to-orange-600 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md">
                         {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : <><Save className="h-4 w-4" /> Save</>}
                     </button>
                 </div>
@@ -250,7 +251,7 @@ const DropdownWithAdd = ({
                 </label>
                 {onAddNew && (
                     <button type="button" onClick={onAddNew}
-                        className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-700 transition-colors">
+                        className="flex items-center gap-1 text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-700 transition-colors">
                         <Plus className="h-2.5 w-2.5" /> {addLabel || 'Add New'}
                     </button>
                 )}
@@ -332,7 +333,7 @@ const DocumentRow = ({ docName, mandatory, file, onUpload, onRemove, onPreview }
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
                         ${file
                             ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            : 'bg-linear-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-sm'
+                            : 'bg-gradient-to-r from-blue-900 to-orange-500 text-white hover:from-blue-950 hover:to-orange-600 shadow-sm'
                         }`}>
                     <Upload className="h-3 w-3" />
                     {file ? 'Replace' : 'Upload'}
@@ -386,7 +387,7 @@ const StepIndicator = ({ steps, currentStep, completedSteps, onStepClick }) => (
                     title={!unlocked ? 'Complete previous steps first' : ''}
                     className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200
                         ${active
-                            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]'
+                            ? 'bg-gradient-to-r from-blue-900 to-orange-500 text-white shadow-lg shadow-orange-500/20 scale-[1.02]'
                             : done
                                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer'
                                 : unlocked
@@ -445,9 +446,9 @@ const selectCls = (error, touched) =>
         : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 hover:border-gray-300 dark:hover:border-gray-600'
     }`;
 
-const SectionHeader = ({ icon: Icon, title, subtitle, gradient = 'from-blue-600 to-purple-600' }) => (
+const SectionHeader = ({ icon: Icon, title, subtitle, gradient = 'from-blue-900 to-orange-500' }) => (
     <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-        <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
             <Icon className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -459,8 +460,8 @@ const SectionHeader = ({ icon: Icon, title, subtitle, gradient = 'from-blue-600 
 
 const OptionCard = ({ label, desc, icon: Icon, selected, onClick, color = 'blue' }) => {
     const colors = {
-        blue: { ring: 'ring-blue-500 border-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30', icon: 'bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300', text: 'text-blue-700 dark:text-blue-300' },
-        purple: { ring: 'ring-purple-500 border-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30', icon: 'bg-purple-100 dark:bg-purple-800 text-purple-600 dark:text-purple-300', text: 'text-purple-700 dark:text-purple-300' },
+        blue: { ring: 'ring-blue-800 border-blue-700', bg: 'bg-blue-50 dark:bg-blue-900/30', icon: 'bg-blue-900 dark:bg-blue-900 text-white dark:text-blue-100', text: 'text-blue-900 dark:text-blue-300' },
+        orange: { ring: 'ring-orange-500 border-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/30', icon: 'bg-orange-100 dark:bg-orange-800 text-orange-600 dark:text-orange-300', text: 'text-orange-700 dark:text-orange-300' },
         green: { ring: 'ring-green-500 border-green-400', bg: 'bg-green-50 dark:bg-green-900/30', icon: 'bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300', text: 'text-green-700 dark:text-green-300' },
         amber: { ring: 'ring-amber-500 border-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30', icon: 'bg-amber-100 dark:bg-amber-800 text-amber-600 dark:text-amber-300', text: 'text-amber-700 dark:text-amber-300' },
     };
@@ -486,9 +487,9 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true })
     return (
         <div className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden mb-4">
             <button type="button" onClick={() => setOpen(v => !v)}
-                className="w-full flex items-center justify-between px-5 py-4 bg-gray-50 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors">
+                className="w-full flex items-center justify-between px-5 py-4 bg-blue-50/60 dark:bg-blue-900/10 hover:bg-blue-100/60 dark:hover:bg-blue-900/20 border-l-4 border-orange-400 transition-colors">
                 <div className="flex items-center gap-3">
-                    <Icon className="h-4 w-4 text-blue-500" />
+                    <Icon className="h-4 w-4 text-orange-500" />
                     <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{title}</span>
                 </div>
                 {open ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
@@ -502,11 +503,11 @@ const DynamicTable = ({ label, icon: Icon, columns, rows, onAdd, onRemove, onCha
     <div>
         <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-blue-500" />
+                <Icon className="h-4 w-4 text-orange-500" />
                 <span className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">{label}</span>
             </div>
             <button type="button" onClick={onAdd}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors border border-blue-200 dark:border-blue-700">
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 rounded-lg transition-colors border border-orange-200 dark:border-orange-700">
                 <UserPlus className="h-3.5 w-3.5" /> {addLabel}
             </button>
         </div>
@@ -517,7 +518,7 @@ const DynamicTable = ({ label, icon: Icon, columns, rows, onAdd, onRemove, onCha
             </div>
         ) : (
             <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                <div className="grid text-xs font-bold text-white px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600"
+                <div className="grid text-xs font-bold text-white px-4 py-2.5 bg-gradient-to-r from-blue-900 to-orange-500"
                     style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr) 40px` }}>
                     {columns.map(c => <div key={c.key}>{c.label}</div>)}
                     <div></div>
@@ -631,6 +632,12 @@ const StaffJoinRegistration = () => {
     const [uploadedDocs, setUploadedDocs] = useState({});
     const [previewFile, setPreviewFile] = useState(null);
 
+    // Compliance step state
+    const [policeVerification, setPoliceVerification] = useState('');
+    const [undertakingNoPoliceCaseAck, setUndertakingNoPoliceCaseAck] = useState(false);
+    const [undertakingAuthenticDocsAck, setUndertakingAuthenticDocsAck] = useState(false);
+    const [undertakingMedicallyFitAck, setUndertakingMedicallyFitAck] = useState(false);
+
     // Rejoin search state
     const [rejoinPrefix, setRejoinPrefix] = useState('');
     const [rejoinSelectedEmp, setRejoinSelectedEmp] = useState(null);
@@ -671,9 +678,28 @@ const StaffJoinRegistration = () => {
             setUploadedDocs({});
             setExperienceType('');
             setExpRows([]);
+            setRefRows([]);
+            setFamilyRows([]);
+            setChildRows([]);
+            setAcademicRows([]);
+            setTechRows([]);
+            setPoliceVerification('');
+            setUndertakingNoPoliceCaseAck(false);
+            setUndertakingAuthenticDocsAck(false);
+            setUndertakingMedicallyFitAck(false);
             dispatch(clearSaveResult());
         } else if (saveStatus === 'failed' && saveError) {
-            toast.error(typeof saveError === 'string' ? saveError : 'Registration failed. Please try again.');
+            const errMsg = typeof saveError === 'string' ? saveError : '';
+            const lower = errMsg.toLowerCase();
+            if (lower.includes('adhar') || lower.includes('aadhar') || lower.includes('aadhaar')) {
+                toast.error('Aadhaar number is already registered for another employee.');
+            } else if (lower.includes('pan')) {
+                toast.error('PAN number is already registered for another employee.');
+            } else if (lower.includes('exist') || lower.includes('already') || lower.includes('duplicate')) {
+                toast.warning(errMsg || 'A duplicate record was detected — registration was not saved.');
+            } else {
+                toast.error(errMsg || 'Registration failed. Please try again.');
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [saveStatus, saveError]);
@@ -688,13 +714,32 @@ const StaffJoinRegistration = () => {
             setUploadedDocs({});
             setExperienceType('');
             setExpRows([]);
+            setRefRows([]);
+            setFamilyRows([]);
+            setChildRows([]);
+            setAcademicRows([]);
+            setTechRows([]);
+            setPoliceVerification('');
+            setUndertakingNoPoliceCaseAck(false);
+            setUndertakingAuthenticDocsAck(false);
+            setUndertakingMedicallyFitAck(false);
             setRejoinSelectedEmp(null);
             setRejoinEmpRefNo('');
             setRejoinPrefix('');
             dispatch(clearUpdateRejoinResult());
             dispatch(clearOldEmpForRejoin());
         } else if (updateRejoinStatus === 'failed' && updateRejoinError) {
-            toast.error(typeof updateRejoinError === 'string' ? updateRejoinError : 'Rejoin update failed. Please try again.');
+            const errMsg = typeof updateRejoinError === 'string' ? updateRejoinError : '';
+            const lower = errMsg.toLowerCase();
+            if (lower.includes('adhar') || lower.includes('aadhar') || lower.includes('aadhaar')) {
+                toast.error('Aadhaar number is already registered for another employee.');
+            } else if (lower.includes('pan')) {
+                toast.error('PAN number is already registered for another employee.');
+            } else if (lower.includes('exist') || lower.includes('already') || lower.includes('duplicate')) {
+                toast.warning(errMsg || 'A duplicate record was detected — rejoin was not saved.');
+            } else {
+                toast.error(errMsg || 'Rejoin update failed. Please try again.');
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [updateRejoinStatus, updateRejoinError]);
@@ -816,6 +861,23 @@ const StaffJoinRegistration = () => {
                 return;
             }
 
+            // Compliance step validation
+            if (!policeVerification) {
+                toast.error('Please select Police Verification status (Yes / No).');
+                setCurrentStep(12);
+                return;
+            }
+            if (!undertakingNoPoliceCaseAck || !undertakingAuthenticDocsAck || !undertakingMedicallyFitAck) {
+                toast.error('Please confirm all three Personal Undertaking declarations.');
+                setCurrentStep(12);
+                return;
+            }
+            if (!uploadedDocs['PersonalUndertaking']) {
+                toast.error('Please upload the signed Personal Undertaking document.');
+                setCurrentStep(12);
+                return;
+            }
+
             // Comma-separated join (legacy MVC format: "val1,val2,")
             const joinComma = (arr, key) =>
                 arr.map(r => String(r[key] ?? '')).join(',') + (arr.length ? ',' : '');
@@ -894,6 +956,11 @@ const StaffJoinRegistration = () => {
                 refRelation: joinComma(refRows, 'relation'),
                 refMobileNo: joinComma(refRows, 'mobile'),
                 refRemarks: joinComma(refRows, 'remarks'),
+                // ── Compliance fields ─────────────────────────────────────
+                policeVerification: policeVerification,
+                undertakingNoPoliceCaseAck: undertakingNoPoliceCaseAck ? 'Yes' : 'No',
+                undertakingAuthenticDocsAck: undertakingAuthenticDocsAck ? 'Yes' : 'No',
+                undertakingMedicallyFitAck: undertakingMedicallyFitAck ? 'Yes' : 'No',
                 createdBy: userName,
                 roleId: roleId,
             };
@@ -1034,6 +1101,37 @@ const StaffJoinRegistration = () => {
 
     const goNext = () => {
         const errors = validateStep(currentStep);
+
+        // Step 8: experience type + 5 mandatory references
+        if (currentStep === 8) {
+            if (!experienceType) {
+                toast.error('Please select Fresher or Experienced.');
+                return;
+            }
+            if (experienceType === 'experienced' && expRows.length === 0) {
+                toast.error('Please add at least one work experience entry.');
+                return;
+            }
+            if (refRows.length < 5) {
+                toast.error('Minimum 5 references are required (name, mobile, relation each).');
+                return;
+            }
+            const incompleteRef = refRows.find(r => !r.name?.trim() || !r.mobile?.trim() || !r.relation?.trim());
+            if (incompleteRef) {
+                toast.error('Each reference must have a Name, Mobile Number, and Relation.');
+                return;
+            }
+        }
+
+        // Step 9: family mobile numbers are mandatory
+        if (currentStep === 9) {
+            const missingMobile = familyRows.find(r => !r.mobile?.trim());
+            if (missingMobile) {
+                toast.error('Mobile number is mandatory for all family members.');
+                return;
+            }
+        }
+
         if (Object.keys(errors).length > 0) {
             // Show first error as toast
             toast.error(Object.values(errors)[0]);
@@ -1179,7 +1277,7 @@ const StaffJoinRegistration = () => {
                         <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Appointment Type</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <OptionCard label="Normal" desc="Standard employment process" icon={UserPlus} selected={values.appointmentType === 'Normal'} color="blue" onClick={() => setFieldValue('appointmentType', 'Normal')} />
-                            <OptionCard label="Direct" desc="Direct placement or referral" icon={ArrowRight} selected={values.appointmentType === 'Direct'} color="purple" onClick={() => setFieldValue('appointmentType', 'Direct')} />
+                            <OptionCard label="Direct" desc="Direct placement or referral" icon={ArrowRight} selected={values.appointmentType === 'Direct'} color="orange" onClick={() => setFieldValue('appointmentType', 'Direct')} />
                         </div>
                         {touched.appointmentType && errors.appointmentType && <p className="text-xs text-rose-500 mt-2 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.appointmentType}</p>}
                     </div>
@@ -1189,7 +1287,7 @@ const StaffJoinRegistration = () => {
                             <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Joining Type</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <OptionCard label="New Join" desc="First-time employee joining" icon={Star} selected={values.joiningType === 'New Join'} color="blue" onClick={() => setFieldValue('joiningType', 'New Join')} />
-                                <OptionCard label="Rejoin" desc="Previously employed returning" icon={RotateCcw} selected={values.joiningType === 'Rejoin'} color="purple" onClick={() => setFieldValue('joiningType', 'Rejoin')} />
+                                <OptionCard label="Rejoin" desc="Previously employed returning" icon={RotateCcw} selected={values.joiningType === 'Rejoin'} color="orange" onClick={() => setFieldValue('joiningType', 'Rejoin')} />
                             </div>
                             {touched.joiningType && errors.joiningType && <p className="text-xs text-rose-500 mt-2 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.joiningType}</p>}
                         </div>
@@ -1223,10 +1321,10 @@ const StaffJoinRegistration = () => {
 
                             {/* ── Rejoin Employee Search Panel ───────────── */}
                             {values.joiningType === 'Rejoin' && values.groupId && values.category && (
-                                <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-900/10 p-5 space-y-4">
+                                <div className="rounded-2xl border-2 border-orange-200 dark:border-orange-800 bg-orange-50/40 dark:bg-orange-900/10 p-5 space-y-4">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <RotateCcw className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                        <p className="text-sm font-bold text-purple-700 dark:text-purple-300">Search Old Employee</p>
+                                        <RotateCcw className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                        <p className="text-sm font-bold text-orange-700 dark:text-orange-300">Search Old Employee</p>
                                     </div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
                                         Enter a prefix (e.g. <span className="font-semibold">MS</span>) to find the employee by their old ID.
@@ -1241,14 +1339,14 @@ const StaffJoinRegistration = () => {
                                                 onChange={e => setRejoinPrefix(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && handleRejoinSearch()}
                                                 placeholder="Enter prefix (e.g. MS, SS, WS)"
-                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all"
+                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all"
                                             />
                                         </div>
                                         <button
                                             type="button"
                                             onClick={handleRejoinSearch}
                                             disabled={oldEmpSearchLoading}
-                                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md disabled:opacity-60 transition-all">
+                                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white shadow-md disabled:opacity-60 transition-all">
                                             {oldEmpSearchLoading
                                                 ? <><Loader2 className="h-4 w-4 animate-spin" /> Searching…</>
                                                 : <><Search className="h-4 w-4" /> Search</>}
@@ -1291,9 +1389,9 @@ const StaffJoinRegistration = () => {
                                                     onClick={() => handleSelectRejoinEmp(emp)}
                                                     className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors
                                                         ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60 dark:bg-gray-800/60'}
-                                                        hover:bg-purple-50 dark:hover:bg-purple-900/20`}>
-                                                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">
-                                                        <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                                        hover:bg-orange-50 dark:hover:bg-orange-900/20`}>
+                                                    <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0">
+                                                        <User className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                                                     </div>
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{emp.EmpRefNo}</p>
@@ -1753,27 +1851,37 @@ const StaffJoinRegistration = () => {
                         </div>
                     )}
 
-                    {experienceType && (
-                        <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <Contact className="h-4 w-4 text-blue-500" /> References
+                    <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                <Contact className="h-4 w-4 text-orange-500" /> Mandatory References
                             </p>
-                            <DynamicTable
-                                label="Professional References" icon={Contact}
-                                columns={[
-                                    { key: 'name', label: 'Name', placeholder: 'Reference name' },
-                                    { key: 'relation', label: 'Relation', placeholder: 'Professional / Personal' },
-                                    { key: 'mobile', label: 'Mobile', placeholder: '10-digit mobile' },
-                                    { key: 'remarks', label: 'Remarks', placeholder: 'How do they know you?' },
-                                ]}
-                                rows={refRows}
-                                onAdd={makeRowAdder(setRefRows, { name: '', relation: '', mobile: '', remarks: '' })}
-                                onRemove={makeRowRemover(setRefRows)}
-                                onChange={makeRowUpdater(setRefRows)}
-                                addLabel="Add Reference"
-                            />
+                            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-lg border ${refRows.length >= 5 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
+                                {refRows.length} / 5 required
+                            </span>
                         </div>
-                    )}
+                        <div className="flex items-start gap-3 p-3 mb-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700">
+                            <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                                <span className="font-bold">5 references are mandatory for all employees</span> — regardless of experience type.
+                                Each reference must have a <span className="font-semibold">Name</span>, <span className="font-semibold">Phone Number</span>, and <span className="font-semibold">Relation</span>.
+                            </p>
+                        </div>
+                        <DynamicTable
+                            label="References (Minimum 5 Required)" icon={Contact}
+                            columns={[
+                                { key: 'name', label: 'Name *', placeholder: 'Full name' },
+                                { key: 'relation', label: 'Relation *', placeholder: 'e.g. Friend, Colleague' },
+                                { key: 'mobile', label: 'Phone *', placeholder: '10-digit mobile' },
+                                { key: 'remarks', label: 'Remarks', placeholder: 'How do they know you?' },
+                            ]}
+                            rows={refRows}
+                            onAdd={makeRowAdder(setRefRows, { name: '', relation: '', mobile: '', remarks: '' })}
+                            onRemove={makeRowRemover(setRefRows)}
+                            onChange={makeRowUpdater(setRefRows)}
+                            addLabel="Add Reference"
+                        />
+                    </div>
                 </div>
             );
 
@@ -1782,6 +1890,12 @@ const StaffJoinRegistration = () => {
                 <div className="space-y-6">
                     <SectionHeader icon={Users} title="Family Details" subtitle="Family members and dependent children" />
                     <CollapsibleSection title="Family Members" icon={Users}>
+                        <div className="flex items-start gap-2 p-3 mb-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+                            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                                <span className="font-bold">Mobile number is mandatory</span> for every family member added.
+                            </p>
+                        </div>
                         <DynamicTable
                             label="Parents / Siblings / Spouse" icon={Users}
                             columns={[
@@ -1790,7 +1904,7 @@ const StaffJoinRegistration = () => {
                                 { key: 'age', label: 'Age', type: 'number', placeholder: 'Age' },
                                 { key: 'gender', label: 'Gender', type: 'select', options: GENDER_OPTIONS },
                                 { key: 'relation', label: 'Relation', placeholder: 'e.g. Mother' },
-                                { key: 'mobile', label: 'Mobile', placeholder: 'Contact number' },
+                                { key: 'mobile', label: 'Mobile *', placeholder: 'Required' },
                             ]}
                             rows={familyRows}
                             onAdd={makeRowAdder(setFamilyRows, { name: '', dob: '', age: '', gender: '', relation: '', mobile: '' })}
@@ -1830,7 +1944,7 @@ const StaffJoinRegistration = () => {
                                     <button key={o} type="button" onClick={() => formik.setFieldValue('pfExist', o)}
                                         className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all
                                             ${values.pfExist === o
-                                                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-md'
+                                                ? 'bg-gradient-to-r from-blue-900 to-orange-500 text-white border-transparent shadow-md'
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}>{o}</button>
                                 ))}
                             </div>
@@ -1842,7 +1956,7 @@ const StaffJoinRegistration = () => {
                                     <button key={o} type="button" onClick={() => formik.setFieldValue('esiExist', o)}
                                         className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all
                                             ${values.esiExist === o
-                                                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-md'
+                                                ? 'bg-gradient-to-r from-blue-900 to-orange-500 text-white border-transparent shadow-md'
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}>{o}</button>
                                 ))}
                             </div>
@@ -1868,7 +1982,7 @@ const StaffJoinRegistration = () => {
                     </div>
 
                     {/* Summary preview */}
-                    <div className="mt-6 p-5 rounded-2xl bg-linear-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-100 dark:border-blue-800">
+                    <div className="mt-6 p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-orange-50/50 dark:from-blue-900/20 dark:to-orange-900/10 border border-blue-100 dark:border-blue-800">
                         <div className="flex items-center gap-2 mb-4">
                             <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">Registration Summary</h4>
@@ -1952,6 +2066,164 @@ const StaffJoinRegistration = () => {
                 );
             }
 
+            // ─── STEP 12: Compliance ─────────────────────────────────────
+            case 12: {
+                // Build all-contacts summary from form data
+                const allContacts = [];
+                if (formik.values.contactMobile) {
+                    const empName = [formik.values.firstName, formik.values.middleName, formik.values.lastName].filter(Boolean).join(' ');
+                    allContacts.push({ type: 'Employee', name: empName || '—', phone: formik.values.contactMobile, relation: 'Self' });
+                }
+                familyRows.forEach(fm => {
+                    if (fm.name || fm.mobile) allContacts.push({ type: 'Family', name: fm.name || '—', phone: fm.mobile || '—', relation: fm.relation || '—' });
+                });
+                expRows.forEach(exp => {
+                    if (exp.contactName || exp.mobile) allContacts.push({ type: 'Prev. Employer', name: exp.contactName || exp.organisation || '—', phone: exp.mobile || '—', relation: exp.organisation || '—' });
+                });
+                refRows.forEach(ref => {
+                    if (ref.name || ref.mobile) allContacts.push({ type: 'Reference', name: ref.name || '—', phone: ref.mobile || '—', relation: ref.relation || '—' });
+                });
+
+                const typeColors = {
+                    'Employee': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                    'Family': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                    'Prev. Employer': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                    'Reference': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                };
+
+                const allAcksChecked = undertakingNoPoliceCaseAck && undertakingAuthenticDocsAck && undertakingMedicallyFitAck;
+                const undertakingDocFile = uploadedDocs['PersonalUndertaking'] || null;
+
+                return (
+                    <div className="space-y-6">
+                        <SectionHeader icon={ClipboardCheck} title="Compliance & Verification"
+                            subtitle="Police verification, personal undertaking and contact number summary"
+                            gradient="from-rose-600 to-orange-600" />
+
+                        {/* ── All Contact Numbers Summary ────────────────── */}
+                        <CollapsibleSection title={`All Contact Numbers (${allContacts.length})`} icon={Phone} defaultOpen={true}>
+                            {allContacts.length === 0 ? (
+                                <div className="text-center py-6 text-gray-400 text-xs">
+                                    No contact numbers found. Please complete family, experience and reference steps.
+                                </div>
+                            ) : (
+                                <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                                    <div className="grid text-xs font-bold text-white px-4 py-2.5 bg-gradient-to-r from-blue-900 to-orange-500"
+                                        style={{ gridTemplateColumns: '120px 1fr 140px 120px' }}>
+                                        <div>Type</div><div>Name</div><div>Phone</div><div>Relation</div>
+                                    </div>
+                                    {allContacts.map((c, i) => (
+                                        <div key={i}
+                                            className={`grid items-center px-4 py-2.5 gap-2 border-b border-gray-100 dark:border-gray-700 last:border-0 ${i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60 dark:bg-gray-800/60'}`}
+                                            style={{ gridTemplateColumns: '120px 1fr 140px 120px' }}>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md w-fit ${typeColors[c.type] || ''}`}>{c.type}</span>
+                                            <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{c.name}</span>
+                                            <span className="text-sm text-gray-800 dark:text-gray-200 font-mono">{c.phone}</span>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{c.relation}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CollapsibleSection>
+
+                        {/* ── Police Verification ────────────────────────── */}
+                        <div className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 flex items-center justify-center shadow-sm">
+                                    <Shield className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100">Police Verification <span className="text-rose-500">*</span></p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">Has the employee completed police verification?</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                {['Yes', 'No'].map(opt => (
+                                    <button key={opt} type="button" onClick={() => setPoliceVerification(opt)}
+                                        className={`flex-1 py-3 rounded-xl text-sm font-bold border-2 transition-all
+                                            ${policeVerification === opt
+                                                ? opt === 'Yes'
+                                                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent shadow-md'
+                                                    : 'bg-gradient-to-r from-rose-500 to-red-600 text-white border-transparent shadow-md'
+                                                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}>
+                                        {opt === 'Yes' ? '✓ Yes — Verified' : '✗ No — Not Yet'}
+                                    </button>
+                                ))}
+                            </div>
+                            {!policeVerification && (
+                                <p className="text-xs text-rose-500 mt-2 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> Police verification status is required.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* ── Personal Undertaking ───────────────────────── */}
+                        <div className="rounded-2xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-900/10 p-5 space-y-4">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-sm">
+                                    <FileCheck className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100">Personal Undertaking <span className="text-rose-500">*</span></p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">Employee declarations — all three must be confirmed</p>
+                                </div>
+                                {allAcksChecked && <CheckCircle className="h-5 w-5 text-green-500 ml-auto shrink-0" />}
+                            </div>
+
+                            <p className="text-xs text-gray-600 dark:text-gray-300 italic border-l-4 border-amber-400 pl-3">
+                                I hereby solemnly declare and undertake that:
+                            </p>
+
+                            <div className="space-y-3">
+                                {[
+                                    { key: 'noPoliceCaseAck', label: 'No Police Case', desc: 'I have no pending police case, FIR, or criminal record against me.', state: undertakingNoPoliceCaseAck, setter: setUndertakingNoPoliceCaseAck },
+                                    { key: 'authenticDocsAck', label: 'All Documents Authentic', desc: 'All documents submitted by me are genuine, authentic and belong to me.', state: undertakingAuthenticDocsAck, setter: setUndertakingAuthenticDocsAck },
+                                    { key: 'medicallyFitAck', label: 'Medically Fit', desc: 'I am medically fit and capable of performing the duties of this position.', state: undertakingMedicallyFitAck, setter: setUndertakingMedicallyFitAck },
+                                ].map(item => (
+                                    <label key={item.key}
+                                        className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all
+                                            ${item.state
+                                                ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
+                                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-amber-300 dark:hover:border-amber-700'}`}>
+                                        <input type="checkbox" checked={item.state} onChange={e => item.setter(e.target.checked)}
+                                            className="w-4 h-4 mt-0.5 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                                        <div className="min-w-0">
+                                            <p className={`text-sm font-bold ${item.state ? 'text-green-700 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                {item.label}
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">{item.desc}</p>
+                                        </div>
+                                        {item.state && <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5 ml-auto" />}
+                                    </label>
+                                ))}
+                            </div>
+
+                            {!allAcksChecked && (
+                                <p className="text-xs text-rose-500 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> All three declarations must be confirmed before submission.
+                                </p>
+                            )}
+
+                            {/* Undertaking document upload */}
+                            <div className="border-t border-amber-200 dark:border-amber-800 pt-4">
+                                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">
+                                    Upload Signed Undertaking Document <span className="text-rose-500">*</span>
+                                </p>
+                                <DocumentRow
+                                    docName="PersonalUndertaking"
+                                    mandatory={true}
+                                    file={undertakingDocFile}
+                                    onUpload={handleDocUpload}
+                                    onRemove={handleDocRemove}
+                                    onPreview={setPreviewFile}
+                                />
+                                <p className="text-[10px] text-gray-400 mt-2">Upload the physically signed undertaking form (PDF or image).</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
             default: return null;
         }
     };
@@ -1960,7 +2232,7 @@ const StaffJoinRegistration = () => {
     const progressPct = Math.round((completedSteps.length / STEPS.length) * 100);
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-orange-50/20 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
 
             {/* Add-New Popups */}
             {showAddDesignation && (
@@ -1983,10 +2255,10 @@ const StaffJoinRegistration = () => {
 
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-6">
-                <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-blue-600 via-blue-700 to-purple-700 shadow-xl shadow-blue-500/20 p-7 text-white">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-xl shadow-blue-900/20 p-7 text-white">
                     <div className="absolute inset-0 opacity-10"
                         style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-                    <div className="absolute top-0 right-0 w-72 h-72 bg-purple-500 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
                     <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
@@ -1994,7 +2266,7 @@ const StaffJoinRegistration = () => {
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs font-bold text-blue-200 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">HR Module</span>
+                                    <span className="text-xs font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-2 py-0.5 rounded-full border border-orange-400/30">HR Module</span>
                                 </div>
                                 <h1 className="text-2xl md:text-3xl font-black tracking-tight">Staff Registration</h1>
                                 <p className="text-blue-200 text-sm mt-0.5">New employee onboarding — Normal joining</p>
@@ -2015,7 +2287,7 @@ const StaffJoinRegistration = () => {
                         </div>
                     </div>
                     <div className="relative mt-5 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                        <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                        <div className="h-full bg-orange-400 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
                     </div>
                 </div>
             </div>
@@ -2035,7 +2307,7 @@ const StaffJoinRegistration = () => {
                                     disabled={!unlocked}
                                     className={`shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all
                                         ${s.id === currentStep
-                                            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                                            ? 'bg-gradient-to-r from-blue-900 to-orange-500 text-white shadow-md'
                                             : completedSteps.includes(s.id)
                                                 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 cursor-pointer'
                                                 : unlocked
@@ -2050,9 +2322,9 @@ const StaffJoinRegistration = () => {
                     <form onSubmit={formik.handleSubmit} noValidate>
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                             {/* Step title bar */}
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
+                            <div className="px-6 py-4 border-b border-blue-100 dark:border-gray-700 flex items-center justify-between bg-blue-50/40 dark:bg-blue-900/10">
                                 <div className="flex items-center gap-3">
-                                    {(() => { const Icon = STEPS[currentStep - 1].icon; return <Icon className="h-4 w-4 text-blue-500" />; })()}
+                                    {(() => { const Icon = STEPS[currentStep - 1].icon; return <Icon className="h-4 w-4 text-orange-500" />; })()}
                                     <div>
                                         <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100">
                                             Step {currentStep} — {STEPS[currentStep - 1].label}
@@ -2076,14 +2348,14 @@ const StaffJoinRegistration = () => {
                                 <div className="flex items-center gap-2">
                                     {[...Array(STEPS.length)].map((_, i) => (
                                         <div key={i} className={`rounded-full transition-all duration-300
-                                            ${i + 1 === currentStep ? 'w-6 h-2 bg-blue-600' :
-                                                completedSteps.includes(i + 1) ? 'w-2 h-2 bg-blue-400' : 'w-2 h-2 bg-gray-200 dark:bg-gray-700'}`} />
+                                            ${i + 1 === currentStep ? 'w-6 h-2 bg-orange-500' :
+                                                completedSteps.includes(i + 1) ? 'w-2 h-2 bg-blue-700' : 'w-2 h-2 bg-gray-200 dark:bg-gray-700'}`} />
                                     ))}
                                 </div>
 
                                 {isLastStep ? (
                                     <button type="submit" disabled={saveLoading || updateRejoinLoading}
-                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                         {(saveLoading || updateRejoinLoading)
                                             ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
                                             : formik.values.joiningType === 'Rejoin'
@@ -2092,7 +2364,7 @@ const StaffJoinRegistration = () => {
                                     </button>
                                 ) : (
                                     <button type="button" onClick={goNext}
-                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all">
+                                        className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all">
                                         Next <ChevronRight className="h-4 w-4" />
                                     </button>
                                 )}

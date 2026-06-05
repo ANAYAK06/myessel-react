@@ -94,6 +94,10 @@ import {
 // ✅ REUSABLE INBOX COMPONENTS
 import LeftPanel from '../../components/Inbox/LeftPanel';
 import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
+import AttachmentModal from '../../components/Inbox/AttachmentModal';
+
+// ✅ S3 CONFIG
+import { buildSupplierPOUrl, isImageFile, isPdfFile, getFileName } from '../../config/s3Config';
 
 const VerifySupplierPO = ({ notificationData, onNavigate }) => {
     const dispatch = useDispatch();
@@ -154,6 +158,10 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [checkedItems, setCheckedItems] = useState({});
     const [isLeftPanelHovered, setIsLeftPanelHovered] = useState(false);
+
+    // ✅ QCS ATTACHMENT MODAL STATE
+    const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+    const [attachmentUrl, setAttachmentUrl] = useState('');
 
     // ✅ NEW: Price Update Management States
     const [priceUpdateModal, setPriceUpdateModal] = useState({
@@ -606,6 +614,21 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         return Object.values(checkedItems).filter(Boolean).length;
     };
 
+    // ✅ QCS ATTACHMENT HANDLER
+    const handleViewQCS = (filePath) => {
+        if (!filePath) {
+            toast.error('No QCS document available');
+            return;
+        }
+        const fullUrl = buildSupplierPOUrl(filePath);
+        if (!fullUrl) {
+            toast.error('Invalid file path');
+            return;
+        }
+        setAttachmentUrl(fullUrl);
+        setShowAttachmentModal(true);
+    };
+
     // ✅ EVENT HANDLERS
     const handleBackToInbox = () => {
         if (onNavigate) {
@@ -637,6 +660,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         setUpdatedStandardPrices({});
         setRecentPriceChanges({});
         setPriceUpdateModal({ show: false, itemCode: null, itemName: '', basicPrice: 0, newBasicPrice: 0, onConfirm: null, onCancel: null });
+        setShowAttachmentModal(false);
+        setAttachmentUrl('');
     };
 
     const buildPOApprovalPayload = (actionValue, selectedPO, selectedPOData, verificationComment) => {
@@ -1017,6 +1042,40 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                                 <span className="text-xs text-green-600 dark:text-green-400 block">Vendor GST</span>
                                 <span className="font-medium text-gray-800 dark:text-gray-200 font-mono">{selectedPOData.VendorGST}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* QCS Document — shown only when FilePath exists and PO total exceeds ₹50,000 */}
+                {selectedPOData.FilePath && calculatePOTotalAmount(selectedPOData) > 50000 && (
+                    <div className={`p-5 rounded-xl border ${isPopup ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700'}`}>
+                        <h4 className={`font-semibold mb-4 flex items-center ${isPopup ? 'text-gray-800 dark:text-gray-200' : 'text-purple-800 dark:text-purple-200'}`}>
+                            <FileCheck className="w-5 h-5 mr-2" />
+                            QCS Document
+                        </h4>
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                                        <Download className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                            Quotation Comparison Sheet
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">
+                                            {getFileName(selectedPOData.FilePath)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleViewQCS(selectedPOData.FilePath)}
+                                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors shadow-md"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    <span>View QCS</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -2036,6 +2095,19 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
             {/* ✅ Previous Purchase Details Popup */}
             {showPreviousDetails && renderPreviousDetailsPopup()}
+
+            {/* ✅ QCS Attachment Modal */}
+            <AttachmentModal
+                isOpen={showAttachmentModal}
+                onClose={() => { setShowAttachmentModal(false); setAttachmentUrl(''); }}
+                fileUrl={attachmentUrl}
+                fileName={selectedPOData?.FilePath ? getFileName(selectedPOData.FilePath) : 'QCS Document'}
+                title="QCS Document"
+                subtitle={`PO: ${selectedPOData?.PONo || ''} — Quotation Comparison Sheet`}
+                isImageFile={isImageFile}
+                isPdfFile={isPdfFile}
+                theme="purple"
+            />
         </div>
 
     );

@@ -430,7 +430,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             case 1: return 'bg-indigo-100 text-indigo-800 border-indigo-200';
             case 2: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
             case 3: return 'bg-orange-100 text-orange-800 border-orange-200';
-            case 4: return 'bg-purple-100 text-purple-800 border-purple-200';
+            case 4: return 'bg-blue-100 text-blue-900 border-blue-200';
             case 5: return 'bg-indigo-100 text-indigo-800 border-indigo-200';
             case 6: return 'bg-green-100 text-green-800 border-green-200';
             default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -859,8 +859,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
     // Collapsed item icon for the left panel
     const renderCollapsedItem = () => (
-        <div className="w-full h-full rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-800/50 dark:to-indigo-800/50 flex items-center justify-center">
-            <ShoppingCart className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+        <div className="w-full h-full rounded-lg border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-blue-100 dark:from-blue-800/50 dark:to-blue-800/50 flex items-center justify-center">
+            <ShoppingCart className="w-4 h-4 text-blue-800 dark:text-blue-400" />
         </div>
     );
 
@@ -873,8 +873,8 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             <div className="p-4">
                 <div className="flex items-center space-x-3 mb-3">
                     <div className="relative">
-                        <div className="w-12 h-12 rounded-full border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-800/50 dark:to-indigo-800/50 flex items-center justify-center">
-                            <ShoppingCart className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <div className="w-12 h-12 rounded-full border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-blue-100 dark:from-blue-800/50 dark:to-blue-800/50 flex items-center justify-center">
+                            <ShoppingCart className="w-5 h-5 text-blue-800 dark:text-blue-400" />
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
                     </div>
@@ -893,7 +893,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                         <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{po.CCType}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-purple-600 dark:text-purple-400 font-medium">₹{amountDisplay.formatted}</span>
+                        <span className="text-blue-800 dark:text-blue-400 font-medium">₹{amountDisplay.formatted}</span>
                         <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{po.CCCode}</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -913,7 +913,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         if (poDataLoading) {
             return (
                 <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900 mx-auto mb-4"></div>
                     <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
                 </div>
             );
@@ -921,7 +921,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         if (!selectedPOData) {
             return (
                 <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900 mx-auto mb-4"></div>
                     <p className="text-gray-500 dark:text-gray-400">Loading PO details...</p>
                 </div>
             );
@@ -929,7 +929,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         return (
             <div className="space-y-6">
                 {/* PO Header with Addresses */}
-                <div className={`p-6 rounded-xl border-2 ${isPopup ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gradient-to-r from-indigo-50 via-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-indigo-200 dark:border-indigo-700'}`}>
+                <div className={`p-6 rounded-xl border-2 ${isPopup ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gradient-to-r from-blue-50 via-blue-50 to-orange-50 dark:from-blue-900/20 dark:via-blue-900/20 dark:to-orange-900/20 border-blue-200 dark:border-blue-700'}`}>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-4">
                             <div className="relative">
@@ -944,21 +944,21 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                 <h3 className="font-bold text-xl text-gray-900 dark:text-white">
                                     {selectedPOData.VendorName}
                                 </h3>
-                                <p className="font-semibold text-lg text-indigo-600 dark:text-indigo-400">
+                                <p className="font-semibold text-lg text-blue-800 dark:text-blue-400">
                                     PO: {selectedPOData.PONo}
                                 </p>
                                 <div className="flex items-center space-x-2 mt-1">
                                     <span className="px-3 py-1 text-sm rounded-full border bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-opacity-20 dark:border-opacity-50">
                                         {selectedPOData.CCType || 'PO'}
                                     </span>
-                                    <span className="px-3 py-1 text-sm rounded-full border bg-purple-100 text-purple-800 border-purple-200 dark:bg-opacity-20 dark:border-opacity-50">
+                                    <span className="px-3 py-1 text-sm rounded-full border bg-blue-100 text-blue-900 border-blue-200 dark:bg-opacity-20 dark:border-opacity-50">
                                         {selectedPOData.PaymentType || 'Direct'}
                                     </span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                            <p className="text-3xl font-bold text-blue-900 dark:text-blue-300">
                                 ₹{formatIndianCurrency(calculatePOTotalAmount(selectedPOData))}
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
@@ -981,19 +981,19 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                         <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Indent No</span>
+                            <span className="text-xs text-blue-800 dark:text-blue-400 block">Indent No</span>
                             <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPOData.IndentNo}</span>
                         </div>
                         <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">PO Date</span>
+                            <span className="text-xs text-blue-800 dark:text-blue-400 block">PO Date</span>
                             <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPOData.PODate || 'N/A'}</span>
                         </div>
                         <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Ref No</span>
+                            <span className="text-xs text-blue-800 dark:text-blue-400 block">Ref No</span>
                             <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPOData.RefNo}</span>
                         </div>
                         <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Cost Center</span>
+                            <span className="text-xs text-blue-800 dark:text-blue-400 block">Cost Center</span>
                             <span className="font-medium text-gray-800 dark:text-gray-200">{selectedPOData.CCCode}</span>
                         </div>
                     </div>
@@ -1001,7 +1001,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                     {/* Delivery and Invoice Addresses */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                            <h5 className="font-semibold text-blue-900 dark:text-blue-300 mb-3 flex items-center">
                                 <Receipt className="w-4 h-4 mr-2" />
                                 Invoice Address
                             </h5>
@@ -1013,7 +1013,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                             </div>
                         </div>
                         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                            <h5 className="font-semibold text-blue-900 dark:text-blue-300 mb-3 flex items-center">
                                 <Truck className="w-4 h-4 mr-2" />
                                 Delivery Address
                             </h5>
@@ -1049,16 +1049,16 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                 {/* QCS Document — shown only when FilePath exists and PO total exceeds ₹50,000 */}
                 {selectedPOData.FilePath && calculatePOTotalAmount(selectedPOData) > 50000 && (
-                    <div className={`p-5 rounded-xl border ${isPopup ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700'}`}>
-                        <h4 className={`font-semibold mb-4 flex items-center ${isPopup ? 'text-gray-800 dark:text-gray-200' : 'text-purple-800 dark:text-purple-200'}`}>
+                    <div className={`p-5 rounded-xl border ${isPopup ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gradient-to-br from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20 border-blue-200 dark:border-blue-700'}`}>
+                        <h4 className={`font-semibold mb-4 flex items-center ${isPopup ? 'text-gray-800 dark:text-gray-200' : 'text-blue-900 dark:text-blue-200'}`}>
                             <FileCheck className="w-5 h-5 mr-2" />
                             QCS Document
                         </h4>
                         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
-                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-                                        <Download className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                                        <Download className="w-5 h-5 text-blue-800 dark:text-blue-400" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -1071,7 +1071,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                 </div>
                                 <button
                                     onClick={() => handleViewQCS(selectedPOData.FilePath)}
-                                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors shadow-md"
+                                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white text-sm rounded-lg transition-colors shadow-md"
                                 >
                                     <Eye className="w-4 h-4" />
                                     <span>View QCS</span>
@@ -1083,9 +1083,9 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                 {/* Item Details with Checkboxes, Price Editing, and Price Update Indicators */}
                 {selectedPOData.PODataList && selectedPOData.PODataList.length > 0 && (
-                    <div className={`p-6 rounded-xl border ${isPopup ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700'}`}>
+                    <div className={`p-6 rounded-xl border ${isPopup ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gradient-to-br from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20 border-blue-200 dark:border-blue-700'}`}>
                         <div className="flex items-center justify-between mb-4">
-                            <h4 className={`font-semibold flex items-center ${isPopup ? 'text-gray-800 dark:text-gray-200' : 'text-purple-800 dark:text-purple-200'}`}>
+                            <h4 className={`font-semibold flex items-center ${isPopup ? 'text-gray-800 dark:text-gray-200' : 'text-blue-900 dark:text-blue-200'}`}>
                                 <FileSpreadsheet className="w-5 h-5 mr-2" />
                                 Item Details ({selectedPOData.PODataList.length} Items) - Verification Required
                             </h4>
@@ -1095,9 +1095,9 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                         type="checkbox"
                                         checked={areAllItemsChecked()}
                                         onChange={(e) => handleSelectAllItems(e.target.checked)}
-                                        className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                        className="w-4 h-4 text-blue-800 border-gray-300 rounded focus:ring-blue-500"
                                     />
-                                    <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                                    <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
                                         Select All ({getCheckedItemsCount()}/{selectedPOData.PODataList.length})
                                     </span>
                                 </label>
@@ -1113,16 +1113,16 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead className={`border-b border-gray-200 dark:border-gray-600 ${isPopup ? 'bg-gray-100 dark:bg-gray-700' : 'bg-purple-100 dark:bg-purple-900/30'}`}>
+                                    <thead className={`border-b border-gray-200 dark:border-gray-600 ${isPopup ? 'bg-gray-100 dark:bg-gray-700' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
                                         <tr>
-                                            <th className={`w-16 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Verify</th>
-                                            <th className={`w-80 p-3 text-xs font-semibold text-left ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Item Details</th>
-                                            <th className={`w-20 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Qty</th>
-                                            <th className={`w-32 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Standard Price</th>
-                                            <th className={`w-32 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Quoted Price</th>
-                                            <th className={`w-36 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>New Price (Editable)</th>
-                                            <th className={`w-32 p-3 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Basic Value</th>
-                                            <th className={`w-48 p-3 text-xs font-semibold text-left ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-purple-800 dark:text-purple-200'}`}>Item Remark</th>
+                                            <th className={`w-12 p-2 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>Verify</th>
+                                            <th className={`w-72 p-2 text-xs font-semibold text-left ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>Item Details</th>
+                                            <th className={`w-16 p-2 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>Qty</th>
+                                            <th className={`w-28 p-2 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>Std. Price</th>
+                                            <th className={`w-28 p-2 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>Quoted Price</th>
+                                            <th className={`w-32 p-2 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>New Price</th>
+                                            <th className={`w-28 p-2 text-xs font-semibold text-center ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>Basic Value</th>
+                                            <th className={`w-44 p-2 text-xs font-semibold text-left ${isPopup ? 'text-gray-700 dark:text-gray-300' : 'text-blue-900 dark:text-blue-200'}`}>Item Remark</th>
                                         </tr>
                                     </thead>
                                     <tbody className="max-h-80 overflow-y-auto">
@@ -1145,40 +1145,40 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                     hasPriceDifference ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-600' :
                                                         hasRecentChange ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-600' : ''
                                                     }`}>
-                                                    <td className="p-3 text-center">
-                                                        <div className="flex flex-col items-center space-y-2">
+                                                    <td className="p-2 text-center">
+                                                        <div className="flex flex-col items-center space-y-1">
                                                             <label className="flex items-center justify-center cursor-pointer">
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={isChecked}
                                                                     onChange={(e) => handleItemCheck(item.itemcode, e.target.checked)}
-                                                                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                                                    className="w-3.5 h-3.5 text-green-600 border-gray-300 rounded focus:ring-green-500"
                                                                 />
                                                             </label>
-                                                            {isChecked && <CheckCircle className="w-4 h-4 text-green-600" />}
+                                                            {isChecked && <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
                                                             {hasPriceDifference && !isChecked && (
-                                                                <AlertTriangle className="w-4 h-4 text-orange-600" title="Price difference detected" />
+                                                                <AlertTriangle className="w-3.5 h-3.5 text-orange-600" title="Price difference detected" />
                                                             )}
                                                             {hasRecentChange && (
-                                                                <TrendingDown className="w-4 h-4 text-indigo-600" title="Recent price change detected" />
+                                                                <TrendingDown className="w-3.5 h-3.5 text-indigo-600" title="Recent price change detected" />
                                                             )}
                                                             {isStandardPriceUpdated && (
-                                                                <RefreshCcw className="w-4 h-4 text-purple-600" title="Standard price updated" />
+                                                                <RefreshCcw className="w-3.5 h-3.5 text-purple-600" title="Standard price updated" />
                                                             )}
                                                         </div>
                                                     </td>
-                                                    <td className="p-3">
-                                                        <div className="flex items-start space-x-3">
+                                                    <td className="p-2">
+                                                        <div className="flex items-start space-x-2">
                                                             <button
                                                                 onClick={() => handleItemCodeClick(item.itemcode)}
-                                                                className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-purple-200 dark:hover:bg-purple-800/50 transition-colors group mt-1"
+                                                                className="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0 hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors group mt-0.5"
                                                                 title="View previous purchase history"
                                                             >
-                                                                <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+                                                                <BarChart3 className="w-3 h-3 text-blue-800 dark:text-blue-400 group-hover:scale-110 transition-transform" />
                                                             </button>
                                                             <div className="min-w-0 flex-1">
                                                                 <div className="relative group">
-                                                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-tight mb-1">
+                                                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-xs leading-tight mb-0.5">
                                                                         {item.itemname}
                                                                         {!isPopup && hasPriceDifference && (
                                                                             <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300">
@@ -1213,50 +1213,48 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                 </div>
                                                                 <button
                                                                     onClick={() => handleItemCodeClick(item.itemcode)}
-                                                                    className="text-xs text-purple-600 dark:text-purple-400 font-mono hover:underline cursor-pointer block mb-1"
+                                                                    className="text-xs text-blue-800 dark:text-blue-400 font-mono hover:underline cursor-pointer block"
                                                                 >
                                                                     {item.itemcode}
                                                                 </button>
-                                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">HSN: {item.HSNCode}</p>
-                                                                <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">{item.specification}</p>
+                                                                <p className="text-xs text-gray-500 dark:text-gray-400">HSN: {item.HSNCode}</p>
+                                                                <p className="text-xs text-gray-500 dark:text-gray-500 leading-tight">{item.specification}</p>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="p-3 text-center">
-                                                        <p className="font-bold text-purple-700 dark:text-purple-300 text-lg">{item.quantity}</p>
+                                                    <td className="p-2 text-center">
+                                                        <p className="font-bold text-blue-900 dark:text-blue-300 text-sm">{item.quantity}</p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400">{item.units}</p>
                                                     </td>
-                                                    <td className="p-3 text-center">
-                                                        <p className={`font-medium ${isStandardPriceUpdated ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                                    <td className="p-2 text-center">
+                                                        <p className={`text-xs font-medium ${isStandardPriceUpdated ? 'text-purple-600 dark:text-purple-400' : 'text-gray-700 dark:text-gray-300'}`}>
                                                             ₹{formatIndianCurrency(isStandardPriceUpdated ? updatedStandardPrices[item.itemcode].newBasicPrice : item.basicprice)}
                                                         </p>
-                                                        {!isPopup && <p className="text-xs text-gray-500 dark:text-gray-400">{isStandardPriceUpdated ? 'Updated' : 'Standard'}</p>}
                                                         {!isPopup && isStandardPriceUpdated && (
-                                                            <p className="text-xs text-purple-600 dark:text-purple-400">Was: ₹{formatIndianCurrency(updatedStandardPrices[item.itemcode].oldBasicPrice)}</p>
+                                                            <p className="text-xs text-purple-500 dark:text-purple-400">Was: ₹{formatIndianCurrency(updatedStandardPrices[item.itemcode].oldBasicPrice)}</p>
                                                         )}
                                                         {!isPopup && hasRecentChange && (
-                                                            <p className="text-xs text-indigo-600 dark:text-indigo-400">Latest: ₹{formatIndianCurrency(recentPriceChanges[item.itemcode]?.itemNewPrice)}</p>
+                                                            <p className="text-xs text-indigo-500 dark:text-indigo-400">↓₹{formatIndianCurrency(recentPriceChanges[item.itemcode]?.itemNewPrice)}</p>
                                                         )}
                                                     </td>
-                                                    <td className="p-3 text-center">
-                                                        <p className="font-medium text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(item.QuotedPrice)}</p>
-                                                        {!isPopup && <p className="text-xs text-gray-500 dark:text-gray-400">Quoted</p>}
+                                                    <td className="p-2 text-center">
+                                                        <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(item.QuotedPrice)}</p>
                                                         {!isPopup && hasPriceDifference && (
-                                                            <p className="text-xs text-orange-600 dark:text-orange-400">
-                                                                Diff: ₹{formatIndianCurrency(Math.abs(parseFloat(item.QuotedPrice) - parseFloat(item.basicprice)))}
+                                                            <p className="text-xs text-orange-500 dark:text-orange-400">
+                                                                Δ₹{formatIndianCurrency(Math.abs(parseFloat(item.QuotedPrice) - parseFloat(item.basicprice)))}
                                                             </p>
                                                         )}
                                                     </td>
-                                                    <td className="p-3 text-center">
-                                                        <div className={isPopup ? '' : 'space-y-2'}>
+                                                    <td className="p-2 text-center">
+                                                        <div className={isPopup ? '' : 'space-y-1'}>
                                                             <div className="flex items-center justify-center space-x-1">
-                                                                <span className="text-xs">₹</span>
+                                                                <span className="text-xs text-gray-500">₹</span>
                                                                 <input
                                                                     type="number"
                                                                     value={currentEditablePrice}
                                                                     onChange={(e) => handlePriceEdit(item.itemcode, e.target.value, item.QuotedPrice)}
                                                                     disabled={isChecked}
-                                                                    className={`w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center transition-all ${isChecked ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60' : getPriceColorClass(currentEditablePrice, item.basicprice)}`}
+                                                                    className={`w-18 px-1.5 py-0.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center transition-all ${isChecked ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60' : getPriceColorClass(currentEditablePrice, item.basicprice)}`}
                                                                     step="0.01"
                                                                     min="0"
                                                                     max={item.QuotedPrice}
@@ -1264,32 +1262,28 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                                 />
                                                                 {isChecked ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Edit3 className="w-3 h-3 text-gray-400" />}
                                                             </div>
-                                                            {!isPopup && <p className="text-xs text-gray-500 dark:text-gray-400">{isChecked ? 'Verified' : 'Editable'}</p>}
-                                                            {!isPopup && parseFloat(currentEditablePrice) < parseFloat(item.QuotedPrice) && (
-                                                                <p className="text-xs text-green-600">Saved: ₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * item.quantity)}</p>
-                                                            )}
                                                             {!isPopup && (
                                                                 <div className="text-xs">
-                                                                    {parseFloat(currentEditablePrice) > parseFloat(item.basicprice) && <span className="text-red-600 dark:text-red-400">Above Standard</span>}
-                                                                    {parseFloat(currentEditablePrice) < parseFloat(item.basicprice) && <span className="text-green-600 dark:text-green-400">Below Standard</span>}
-                                                                    {parseFloat(currentEditablePrice) === parseFloat(item.basicprice) && <span className="text-gray-600 dark:text-gray-400">Standard Price</span>}
+                                                                    {parseFloat(currentEditablePrice) > parseFloat(item.basicprice) && <span className="text-red-500 dark:text-red-400">Above Std</span>}
+                                                                    {parseFloat(currentEditablePrice) < parseFloat(item.basicprice) && <span className="text-green-500 dark:text-green-400">Below Std</span>}
+                                                                    {parseFloat(currentEditablePrice) === parseFloat(item.basicprice) && <span className="text-gray-500 dark:text-gray-400">At Std</span>}
                                                                 </div>
                                                             )}
                                                             {!isPopup && hasPriceDifference && !isChecked && (
-                                                                <div className="text-xs text-orange-600 dark:text-orange-400">⚠️ Price update required</div>
+                                                                <div className="text-xs text-orange-500 dark:text-orange-400">⚠ Update req.</div>
                                                             )}
                                                         </div>
                                                     </td>
-                                                    <td className="p-3 text-center">
-                                                        <p className="font-bold text-indigo-700 dark:text-indigo-300 text-lg">₹{formatIndianCurrency(basicValue)}</p>
-                                                        {!isPopup && <p className="text-xs text-gray-500 dark:text-gray-400">{quantity} × ₹{formatIndianCurrency(currentEditablePrice)}</p>}
+                                                    <td className="p-2 text-center">
+                                                        <p className="font-bold text-indigo-700 dark:text-indigo-300 text-sm">₹{formatIndianCurrency(basicValue)}</p>
+                                                        {!isPopup && <p className="text-xs text-gray-500 dark:text-gray-400">{quantity}×₹{formatIndianCurrency(currentEditablePrice)}</p>}
                                                         {!isPopup && parseFloat(currentEditablePrice) < parseFloat(item.QuotedPrice) && (
-                                                            <p className="text-xs text-green-600 dark:text-green-400">Saved: ₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * quantity)}</p>
+                                                            <p className="text-xs text-green-500 dark:text-green-400">↓₹{formatIndianCurrency((item.QuotedPrice - currentEditablePrice) * quantity)}</p>
                                                         )}
                                                     </td>
-                                                    <td className="p-3 text-left">
+                                                    <td className="p-2 text-left">
                                                         {item.ItemRemark ? (
-                                                            <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700 rounded-lg leading-snug">
+                                                            <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-lg leading-snug">
                                                                 {item.ItemRemark}
                                                             </span>
                                                         ) : (
@@ -1304,10 +1298,10 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                             </div>
 
                             {/* Summary Footer */}
-                            <div className={`p-4 border-t border-gray-200 dark:border-gray-600 ${isPopup ? 'bg-gray-50 dark:bg-gray-700/50' : 'bg-purple-100 dark:bg-purple-900/30'}`}>
+                            <div className={`p-4 border-t border-gray-200 dark:border-gray-600 ${isPopup ? 'bg-gray-50 dark:bg-gray-700/50' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <span className={`font-semibold ${isPopup ? 'text-gray-800 dark:text-gray-200' : 'text-purple-800 dark:text-purple-200'}`}>
+                                        <span className={`font-semibold ${isPopup ? 'text-gray-800 dark:text-gray-200' : 'text-blue-900 dark:text-blue-200'}`}>
                                             Total Items ({selectedPOData.PODataList.length} items):
                                         </span>
                                         <div className="flex items-center space-x-4 flex-wrap">
@@ -1327,7 +1321,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                                 </p>
                                             )}
                                             {Object.keys(updatedStandardPrices).length > 0 && (
-                                                <p className="text-sm text-purple-600 dark:text-purple-400">
+                                                <p className="text-sm text-blue-700 dark:text-blue-400">
                                                     Price Updates: {Object.keys(updatedStandardPrices).length}
                                                 </p>
                                             )}
@@ -1372,7 +1366,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                             <div className="border-t border-gray-200 dark:border-gray-600 mt-3 pt-3">
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-gray-600 dark:text-gray-400">PO Total: Basic + Tax = Grand Total</span>
-                                                    <span className="font-semibold text-purple-700 dark:text-purple-300">{selectedPOData.PODataList.length} Items Verified</span>
+                                                    <span className="font-semibold text-blue-900 dark:text-blue-300">{selectedPOData.PODataList.length} Items Verified</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1546,7 +1540,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[300]">
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
                         <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900 mx-auto mb-4"></div>
                             <p className="text-gray-700 dark:text-gray-300">Loading previous purchase details...</p>
                         </div>
                     </div>
@@ -1562,7 +1556,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                            <History className="w-5 h-5 mr-2 text-purple-600" />
+                            <History className="w-5 h-5 mr-2 text-blue-800" />
                             Previous Purchase History - {showPreviousDetails}
                         </h3>
                         <button
@@ -1575,7 +1569,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                     {/* Current Item Info */}
                     {currentItem && (
-                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 rounded-lg mb-6">
+                        <div className="bg-gradient-to-r from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20 p-4 rounded-lg mb-6">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Current Purchase</h4>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -1685,7 +1679,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
                 {remarksLoading ? (
                     <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mx-auto mb-2"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-900 mx-auto mb-2"></div>
                         <p className="text-gray-500">Loading remarks...</p>
                     </div>
                 ) : remarks.length === 0 ? (
@@ -1726,7 +1720,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         if (statusLoading) {
             return (
                 <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mx-auto mb-2"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-900 mx-auto mb-2"></div>
                     <p className="text-gray-500 text-sm">Loading available actions...</p>
                 </div>
             );
@@ -1751,7 +1745,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                 }));
                             }
                         }}
-                        className="mt-2 px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
+                        className="mt-2 px-3 py-1 bg-blue-900 text-white text-sm rounded hover:bg-blue-950"
                     >
                         Retry
                     </button>
@@ -1851,51 +1845,55 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-xl shadow-blue-900/20 p-7 text-white">
+                {/* dot pattern overlay */}
+                <div className="absolute inset-0 opacity-10"
+                    style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                {/* orange glow blob */}
+                <div className="absolute top-0 right-0 w-72 h-72 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
+
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={handleBackToInbox}
-                            className="p-2 text-purple-100 hover:text-white hover:bg-purple-500 rounded-lg transition-colors"
+                            className="p-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
                             title="Back to Dashboard"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-purple-500 rounded-xl shadow-inner">
-                                <ShoppingCart className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold">
-                                    {InboxTitle || 'Supplier PO Verification'}
-                                </h1>
-                                <p className="text-purple-100 mt-1">
-                                    {ModuleDisplayName} â€¢ {verificationPOs.length} POs pending
-                                </p>
-                            </div>
+                        <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
+                            <ShoppingCart className="h-7 w-7 text-white" />
                         </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <div className="px-4 py-2 bg-purple-500 text-purple-100 text-sm rounded-full border border-purple-400">
-                            PO Verification
-                        </div>
-                        <div className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm rounded-full shadow-md">
-                            {verificationPOs.length} Pending
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-2 py-0.5 rounded-full border border-orange-400/30">
+                                    Purchase Module
+                                </span>
+                                <span className="px-2 py-0.5 text-xs bg-red-500/80 text-white rounded-full font-semibold">
+                                    {verificationPOs.length} Pending
+                                </span>
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                                {InboxTitle || 'Supplier PO Verification'}
+                            </h1>
+                            <p className="text-blue-200 text-sm mt-0.5">
+                                {ModuleDisplayName} &bull; {verificationPOs.length} POs pending verification
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Search and Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="relative mt-5 grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div className="md:col-span-2">
                         <div className="relative">
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-purple-200" />
+                            <Search className="absolute left-3 top-3 w-4 h-4 text-blue-300" />
                             <input
                                 type="text"
                                 placeholder="Search by vendor, PO, indent, CC code..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-purple-500/50 text-white placeholder-purple-200 border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 focus:border-purple-300 backdrop-blur-sm"
+                                className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-blue-300 border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm"
                             />
                         </div>
                     </div>
@@ -1903,11 +1901,11 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                         <select
                             value={filterVendor}
                             onChange={(e) => setFilterVendor(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-purple-500/50 text-white border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 backdrop-blur-sm"
+                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
                         >
-                            <option value="All">All Vendors</option>
+                            <option value="All" className="text-gray-900">All Vendors</option>
                             {vendors.map(vendor => (
-                                <option key={vendor} value={vendor}>{vendor}</option>
+                                <option key={vendor} value={vendor} className="text-gray-900">{vendor}</option>
                             ))}
                         </select>
                     </div>
@@ -1915,11 +1913,11 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                         <select
                             value={filterCCType}
                             onChange={(e) => setFilterCCType(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-purple-500/50 text-white border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 backdrop-blur-sm"
+                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
                         >
-                            <option value="All">All CC Types</option>
+                            <option value="All" className="text-gray-900">All CC Types</option>
                             {ccTypes.map(ccType => (
-                                <option key={ccType} value={ccType}>{ccType}</option>
+                                <option key={ccType} value={ccType} className="text-gray-900">{ccType}</option>
                             ))}
                         </select>
                     </div>
@@ -1928,20 +1926,20 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-6 border border-purple-200 dark:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10"></div>
+                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10"></div>
                     <div className="relative">
                         <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
+                            <div className="p-3 bg-blue-900 rounded-xl shadow-lg">
                                 <ShoppingCart className="w-6 h-6 text-white" />
                             </div>
                             <div className="text-right">
-                                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{verificationPOs.length}</p>
-                                <p className="text-sm text-purple-600 dark:text-purple-400">Total POs</p>
+                                <p className="text-2xl font-bold text-blue-900 dark:text-blue-300">{verificationPOs.length}</p>
+                                <p className="text-sm text-blue-700 dark:text-blue-400">Total POs</p>
                             </div>
                         </div>
-                        <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-2 mt-3">
-                            <div className="bg-purple-500 h-2 rounded-full" style={{ width: '100%' }}></div>
+                        <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 mt-3">
+                            <div className="bg-blue-900 h-2 rounded-full" style={{ width: '100%' }}></div>
                         </div>
                     </div>
                 </div>
@@ -1984,22 +1982,22 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                     </div>
                 </div>
 
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-6 border border-purple-200 dark:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10"></div>
+                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10"></div>
                     <div className="relative">
                         <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
+                            <div className="p-3 bg-blue-900 rounded-xl shadow-lg">
                                 <TrendingUp className="w-6 h-6 text-white" />
                             </div>
                             <div className="text-right">
-                                <p className="text-lg font-bold text-purple-700 dark:text-purple-300">
+                                <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
                                     ₹{formatIndianCurrency(verificationPOs.reduce((sum, po) => sum + (calculatePOTotalAmount(po) || 0), 0))}
                                 </p>
-                                <p className="text-sm text-purple-600 dark:text-purple-400">Total Amount</p>
+                                <p className="text-sm text-blue-700 dark:text-blue-400">Total Amount</p>
                             </div>
                         </div>
-                        <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-2 mt-3">
-                            <div className="bg-purple-500 h-2 rounded-full" style={{ width: '85%' }}></div>
+                        <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 mt-3">
+                            <div className="bg-blue-900 h-2 rounded-full" style={{ width: '85%' }}></div>
                         </div>
                     </div>
                 </div>
@@ -2030,13 +2028,13 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                             enableRefresh: true,
                             enableHover: true,
                             maxHeight: 'calc(100vh - 300px)',
-                            headerGradient: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20',
+                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
                         }}
                         renderPopupContent={(_item) => renderDetailContent(true)}
                         popupConfig={{
                             title: 'PO Verification',
                             icon: ShoppingCart,
-                            headerGradient: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20',
+                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
                         }}
                     />
                 </div>
@@ -2051,7 +2049,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                             selectedTitle: 'PO Verification',
                             emptyTitle: 'No PO Selected',
                             emptyMessage: 'Select a supplier PO from the list to view details and take action.',
-                            headerGradient: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20',
+                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
                             maxHeight: 'calc(100vh - 200px)',
                             sticky: true,
                             stickyTop: '1.5rem',
@@ -2076,7 +2074,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                 subtitle={`PO: ${selectedPOData?.PONo || ''} — Quotation Comparison Sheet`}
                 isImageFile={isImageFile}
                 isPdfFile={isPdfFile}
-                theme="purple"
+                theme="blue"
             />
         </div>
 

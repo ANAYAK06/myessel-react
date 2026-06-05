@@ -24,6 +24,7 @@ export const S3_FOLDERS = {
     LEAVE_ATTACHMENTS: 'LeaveAttachments',
     SPPO_AMENDMENTS: 'SPPOAmendPROD',
     VENDOR_INVOICES: 'VendorTEST',
+    SUPPLIER_PO_QCS: 'SupplierPOPROD'
     // Add more folders as needed
 };
 

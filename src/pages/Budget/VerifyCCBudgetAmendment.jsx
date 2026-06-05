@@ -1092,7 +1092,11 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                                                                 </td>
                                                                 <td className="px-4 py-4 text-right">
                                                                     <span className="font-bold text-gray-900 dark:text-white text-base">
-                                                                        ₹{formatIndianCurrency(selectedAmendmentData.OldBudget)}
+                                                                        ₹{formatIndianCurrency(
+                                                                            selectedAmendmentData.AmendmentType === 'Add'
+                                                                                ? parseFloat(selectedAmendmentData.OldBudget || 0) - parseFloat(selectedAmendmentData.AmendedValue || 0)
+                                                                                : parseFloat(selectedAmendmentData.OldBudget || 0) + parseFloat(selectedAmendmentData.AmendedValue || 0)
+                                                                        )}
                                                                     </span>
                                                                 </td>
                                                             </tr>
@@ -1132,11 +1136,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                                                                 </td>
                                                                 <td className="px-4 py-4 text-right">
                                                                     <span className="font-bold text-indigo-700 dark:text-indigo-300 text-base">
-                                                                        ₹{formatIndianCurrency(
-                                                                            selectedAmendmentData.AmendmentType === 'Add'
-                                                                                ? parseFloat(selectedAmendmentData.OldBudget || 0) + parseFloat(selectedAmendmentData.AmendedValue || 0)
-                                                                                : parseFloat(selectedAmendmentData.OldBudget || 0) - parseFloat(selectedAmendmentData.AmendedValue || 0)
-                                                                        )}
+                                                                        ₹{formatIndianCurrency(selectedAmendmentData.OldBudget)}
                                                                     </span>
                                                                 </td>
                                                             </tr>

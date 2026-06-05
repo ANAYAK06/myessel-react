@@ -19,12 +19,12 @@ export const UPLOAD_DOCS_FORM_PATH = 'Upload docs';
 export const S3_FOLDERS = {
     CC_BUDGET_AMENDMENT: 'AmendCCBudgetPROD',
     PURCHASE_ORDER: 'PurchaseOrders',
-    SUPPLIER_PO: 'SupplierPO',
+    SUPPLIER_PO: 'SupplierPOPROD',
     STAFF_DOCUMENTS: 'StaffDocuments',
     LEAVE_ATTACHMENTS: 'LeaveAttachments',
     SPPO_AMENDMENTS: 'SPPOAmendPROD',
     VENDOR_INVOICES: 'VendorTEST',
-    SUPPLIER_PO_QCS: 'SupplierPOPROD'
+   
     // Add more folders as needed
 };
 

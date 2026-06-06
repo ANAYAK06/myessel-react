@@ -72,6 +72,8 @@ export const saveSingleEmpSalaryDeduction = createAsyncThunk(
         try {
             console.log('🔄 Thunk: Saving Single Employee Salary Deduction:', params);
             const response = await staffSalaryDeductionArrearAPI.saveSingleEmpSalaryDeduction(params);
+            const { isSuccess, responseStr } = resolveDeductionStatus(response);
+            if (!isSuccess) return rejectWithValue(responseStr || 'Save Deduction failed');
             return response;
         } catch (error) {
             console.error('❌ Thunk Error:', error);
@@ -87,6 +89,8 @@ export const updateSingleSalaryDeduction = createAsyncThunk(
         try {
             console.log('🔄 Thunk: Updating Single Employee Salary Deduction:', params);
             const response = await staffSalaryDeductionArrearAPI.updateSingleSalaryDeduction(params);
+            const { isSuccess, responseStr } = resolveDeductionStatus(response);
+            if (!isSuccess) return rejectWithValue(responseStr || 'Update Deduction failed');
             return response;
         } catch (error) {
             console.error('❌ Thunk Error:', error);
@@ -102,6 +106,8 @@ export const saveSalaryDeductions = createAsyncThunk(
         try {
             console.log('🔄 Thunk: Saving Salary Deductions (Bulk):', params);
             const response = await staffSalaryDeductionArrearAPI.saveSalaryDeductions(params);
+            const { isSuccess, isDuplicate, responseStr } = resolveBulkDeductionStatus(response);
+            if (!isSuccess) return rejectWithValue(responseStr || (isDuplicate ? 'Salary already exists for selected employees' : 'Save Salary Deductions failed'));
             return response;
         } catch (error) {
             console.error('❌ Thunk Error:', error);
@@ -177,6 +183,8 @@ export const saveArear = createAsyncThunk(
         try {
             console.log('🔄 Thunk: Saving Arrear:', params);
             const response = await staffSalaryDeductionArrearAPI.saveArear(params);
+            const { isSuccess, responseStr } = resolveDeductionStatus(response);
+            if (!isSuccess) return rejectWithValue(responseStr || 'Save Arrear failed');
             return response;
         } catch (error) {
             console.error('❌ Thunk Error:', error);
@@ -208,6 +216,8 @@ export const updateArear = createAsyncThunk(
         try {
             console.log('🔄 Thunk: Updating Arrear:', params);
             const response = await staffSalaryDeductionArrearAPI.updateArear(params);
+            const { isSuccess, responseStr } = resolveDeductionStatus(response);
+            if (!isSuccess) return rejectWithValue(responseStr || 'Update Arrear failed');
             return response;
         } catch (error) {
             console.error('❌ Thunk Error:', error);
@@ -223,6 +233,8 @@ export const saveSalaryArears = createAsyncThunk(
         try {
             console.log('🔄 Thunk: Saving Salary Arrears (Bulk):', params);
             const response = await staffSalaryDeductionArrearAPI.saveSalaryArears(params);
+            const { isSuccess, isDuplicate, responseStr } = resolveBulkDeductionStatus(response);
+            if (!isSuccess) return rejectWithValue(responseStr || (isDuplicate ? 'Arrear already exists for selected employees' : 'Save Salary Arrears failed'));
             return response;
         } catch (error) {
             console.error('❌ Thunk Error:', error);
@@ -317,18 +329,20 @@ const initialState = {
 
 // Resolve save status from API response (handles "Submited" / "Submited" spelling)
 const resolveDeductionStatus = (payload) => {
-    const responseStr = typeof payload === 'string'
-        ? payload
-        : (payload?.Data || payload?.Message || '');
+    const data = payload?.Data;
+    const responseStr = typeof data === 'string' ? data : (payload?.Message || '');
 
-    const isSuccess =
-        (typeof responseStr === 'string' && (
+    // Success only when Data is a non-string (actual saved record object)
+    // OR when Data/Message explicitly contains a success keyword.
+    // IsSuccessful/ResponseCode alone are NOT sufficient — the backend returns
+    // IsSuccessful:true even for business-logic failures like "Already Exist".
+    const isSuccess = typeof data !== 'string'
+        ? (data !== null && data !== undefined)
+        : (
             responseStr.toLowerCase().includes('submit') ||
             responseStr.toLowerCase().includes('success') ||
             responseStr.toLowerCase().includes('saved')
-        )) ||
-        payload?.IsSuccessful === true ||
-        payload?.ResponseCode === 200;
+        );
 
     return { isSuccess, responseStr };
 };

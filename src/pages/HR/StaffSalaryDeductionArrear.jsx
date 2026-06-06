@@ -44,10 +44,8 @@ import {
     selectSelectedYear,
     selectSelectedMonth,
     selectSelectedArearHead,
-    selectDeductionSaveStatus,
     selectDeductionUpdateStatus,
     selectDeductionBulkSaveStatus,
-    selectArearSaveStatus,
     fetchPendingSalaryDeductions,
     selectPendingSalaryDeductionsArray,
     selectPendingSalaryDeductionsLoading,
@@ -319,10 +317,8 @@ const StaffSalaryDeductionArrear = () => {
     const arearsCostCenters       = useSelector(selectArearsCostCentersArray);
     const pendingSalaryDeductions = useSelector(selectPendingSalaryDeductionsArray);
     const pendingDedLoading       = useSelector(selectPendingSalaryDeductionsLoading);
-    const deductionSaveStatus     = useSelector(selectDeductionSaveStatus);
     const deductionUpdateStatus   = useSelector(selectDeductionUpdateStatus);
     const deductionBulkSaveStatus = useSelector(selectDeductionBulkSaveStatus);
-    const arearSaveStatus         = useSelector(selectArearSaveStatus);
     const arearUpdateStatus       = useSelector(selectArearUpdateStatus);
     const arearBulkSaveStatus     = useSelector(selectArearBulkSaveStatus);
     const pendingSalaryArears     = useSelector(selectPendingSalaryArearsArray);
@@ -495,9 +491,6 @@ const StaffSalaryDeductionArrear = () => {
 
     // ── Refs that always hold the latest volatile state ────────────────────────
     const dedFormRef = useRef({});
-    const deductionSaveResultRef = useRef(null);
-    const deductionSaveResult    = useSelector(s => s.salaryDeductionArrear.deductionSaveResult);
-    useEffect(() => { deductionSaveResultRef.current = deductionSaveResult; }, [deductionSaveResult]);
 
     useEffect(() => {
         dedFormRef.current = {
@@ -552,57 +545,6 @@ const StaffSalaryDeductionArrear = () => {
         dispatch(clearSalaryDeductionsByTransNo());
     }, [dispatch]);
 
-    // ── Watch save status → add to queue ──────────────────────────────────────
-    useEffect(() => {
-        if (deductionSaveStatus !== 'success') return;
-
-        const {
-            selectedDedEmp: emp,
-            selectedYear:   year,
-            selectedMonth:  month,
-            empDeductionsForMonth: dedData,
-            dedAmounts:     amounts,
-            localIdCounter: counter,
-            queuedEmployees: queued,
-        } = dedFormRef.current;
-
-        if (!emp || !year || !month) return;
-
-        const key = `${emp.EmpRefNo}_${month}_${year}`;
-        const alreadyQueued = queued.find(q => `${q.empRefNo}_${q.month}_${q.year}` === key);
-
-        if (!alreadyQueued) {
-            // Heads come from the API-fetched list only — no custom heads
-            const existingList = dedData?.lstDeduction || [];
-            const allNames     = existingList.map(d => d.HeadName);
-            const allAmounts   = allNames.map(n => String(Math.round(Number(amounts[n] ?? 0))));
-            const ccCode       = dedData?.CCCode || '';
-
-            setQueuedEmployees(prev => [...prev, {
-                localId:          counter,
-                empRefNo:         emp.EmpRefNo,
-                empName:          parseEmpName(emp),
-                month,
-                year,
-                ccCode,
-                deductionHeads:   allNames.join(',') + (allNames.length ? ',' : ''),
-                deductionAmounts: allAmounts.join(',') + (allAmounts.length ? ',' : ''),
-                savedTransRefNo:  deductionSaveResultRef.current?.Data?.EmpTransactionRefNo
-                                  || deductionSaveResultRef.current?.EmpTransactionRefNo
-                                  || deductionSaveResultRef.current?.Data?.Id
-                                  || null,
-                id:               deductionSaveResultRef.current?.Data?.Id
-                                  || deductionSaveResultRef.current?.Id
-                                  || null,
-                loadingHeads:     false,
-            }]);
-            setLocalIdCounter(prev => prev + 1);
-            setShowQueue(true);
-        }
-
-        handleClearDedForm();
-        dispatch(clearDeductionSaveResult());
-    }, [deductionSaveStatus, dispatch, handleClearDedForm]);
 
     // ── Watch update status → patch queue item ────────────────────────────────
     useEffect(() => {
@@ -652,9 +594,6 @@ const StaffSalaryDeductionArrear = () => {
 
     // ── Arrear form ref ───────────────────────────────────────────────────────
     const arearFormRef = useRef({});
-    const arearSaveResultRef = useRef(null);
-    const arearSaveResult    = useSelector(s => s.salaryDeductionArrear.arearSaveResult);
-    useEffect(() => { arearSaveResultRef.current = arearSaveResult; }, [arearSaveResult]);
 
     useEffect(() => {
         arearFormRef.current = {
@@ -670,56 +609,6 @@ const StaffSalaryDeductionArrear = () => {
         };
     });
 
-    // ── Watch arrear save status → add to arrear queue ────────────────────────
-    useEffect(() => {
-        if (arearSaveStatus !== 'success') return;
-
-        const {
-            selectedArearEmp: emp,
-            arearMonth:  month,
-            arearYear:   year,
-            selectedArearHead: head,
-            arearTotal:  total,
-            ccRows:      rows,
-            arearLocalIdCounter: counter,
-            arearQueue:  queued,
-        } = arearFormRef.current;
-
-        if (!emp || !month || !year) return;
-
-        const key = `${emp.EmpRefNo}_${month}_${year}`;
-        const alreadyQueued = queued.find(q => `${q.empRefNo}_${q.month}_${q.year}` === key);
-
-        if (!alreadyQueued) {
-            const ccJson = JSON.stringify(rows.filter(r => Number(r.Amount) > 0).map(r => ({ CCCode: r.CCCode, Amount: String(r.Amount) })));
-            const ccCode = rows.find(r => Number(r.Amount) > 0)?.CCCode || rows[0]?.CCCode || '';
-
-            setArearQueue(prev => [...prev, {
-                localId:         counter,
-                empRefNo:        emp.EmpRefNo,
-                empName:         emp.EmpName || emp.FirstName || emp.EmpRefNo,
-                month,
-                year,
-                ccCode,
-                salaryHead:      head || '',
-                arearAmount:     String(total || 0),
-                ccJsonString:    ccJson,
-                parsedCC:        rows.filter(r => Number(r.Amount) > 0).map(r => ({ CCCode: r.CCCode, Amount: String(r.Amount) })),
-                savedTransRefNo: arearSaveResultRef.current?.Data?.EmpTransactionRefNo
-                                 || arearSaveResultRef.current?.EmpTransactionRefNo
-                                 || arearSaveResultRef.current?.Data?.Id
-                                 || null,
-                id:              arearSaveResultRef.current?.Data?.Id
-                                 || arearSaveResultRef.current?.Id
-                                 || null,
-            }]);
-            setArearLocalIdCounter(prev => prev + 1);
-            setShowArearQueue(true);
-        }
-
-        handleClearArearForm();
-        dispatch(clearArearSaveResult());
-    }, [arearSaveStatus, dispatch, handleClearArearForm]);
 
     // ── Watch arrear update status → patch queue item ─────────────────────────
     useEffect(() => {
@@ -816,6 +705,9 @@ const StaffSalaryDeductionArrear = () => {
                 roleId: String(roleId), createdBy: String(userName),
             })).unwrap();
             toast.success('Employee deduction saved and added to queue!');
+            handleClearDedForm();
+            dispatch(clearDeductionSaveResult());
+            dispatch(fetchPendingSalaryDeductions());
         } catch (err) {
             toast.error(typeof err === 'string' ? err : err?.message || 'Failed to save');
         }
@@ -987,6 +879,9 @@ const StaffSalaryDeductionArrear = () => {
                 ccCode, roleId: String(roleId), createdBy: String(userName), ccJsonString,
             })).unwrap();
             toast.success('Arrear saved and added to queue!');
+            handleClearArearForm();
+            dispatch(clearArearSaveResult());
+            dispatch(fetchPendingSalaryArear());
         } catch (err) {
             toast.error(typeof err === 'string' ? err : err?.message || 'Failed to save');
         }
@@ -1209,7 +1104,7 @@ const StaffSalaryDeductionArrear = () => {
                         >
                             <div className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                         <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                         Search Employee <span className="text-red-500">*</span>
                                     </label>
@@ -1238,7 +1133,7 @@ const StaffSalaryDeductionArrear = () => {
                                 {selectedDedEmp && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-gray-700">
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                                 <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                                 Pending Year <span className="text-red-500">*</span>
                                             </label>
@@ -1261,7 +1156,7 @@ const StaffSalaryDeductionArrear = () => {
                                             )}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                                 <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                                 Month <span className="text-red-500">*</span>
                                             </label>
@@ -1471,7 +1366,7 @@ const StaffSalaryDeductionArrear = () => {
                             <div className="space-y-6">
                                 {/* Employee Search */}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                         <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                         Search Employee <span className="text-red-500">*</span>
                                     </label>
@@ -1499,7 +1394,7 @@ const StaffSalaryDeductionArrear = () => {
                                 {/* Month / Year / Head */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-100 dark:border-gray-700">
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                             <Calendar className="h-4 w-4 text-indigo-600" /> Month <span className="text-red-500">*</span>
                                         </label>
                                         {arearEditingItem !== null ? (
@@ -1515,7 +1410,7 @@ const StaffSalaryDeductionArrear = () => {
                                         )}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                             <Calendar className="h-4 w-4 text-indigo-600" /> Year <span className="text-red-500">*</span>
                                         </label>
                                         {arearEditingItem !== null ? (
@@ -1531,7 +1426,7 @@ const StaffSalaryDeductionArrear = () => {
                                         )}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                             <FileText className="h-4 w-4 text-indigo-600" /> Salary Head <span className="text-red-500">*</span>
                                         </label>
                                         {arearEditingItem !== null ? (
@@ -1555,7 +1450,7 @@ const StaffSalaryDeductionArrear = () => {
                                 {/* CC Distribution */}
                                 {selectedArearEmp && (
                                     <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                                             <Building className="h-4 w-4 text-indigo-600" />
                                             Cost Center Distribution
                                             {arearCCLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 ml-1" />}

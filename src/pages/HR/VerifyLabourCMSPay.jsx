@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import * as XLSX from 'xlsx';
 import {
     HardHat, Clock, Users,
     Calendar, IndianRupee, Download,
@@ -53,6 +54,58 @@ import * as labourCMSAPI from '../../api/HRAPI/labourCMSPaymentAPI';
 
 const formatCurrency = (v) =>
     parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const BANK_HEADERS = [
+    'Transaction Type', 'Beneficiary Code', 'Beneficiary Account Number',
+    'Instrument Amount', 'Beneficiary Name', 'Drawee Location', 'Print Location',
+    'Bene Address 1', 'Bene Address 2', 'Bene Address 3', 'Bene Address 4', 'Bene Address 5',
+    'Instruction Reference Number', 'Customer Reference Number',
+    'Payment details 1', 'Payment details 2', 'Payment details 3', 'Payment details 4',
+    'Payment details 5', 'Payment details 6', 'Payment details 7',
+    'Cheque Number', 'Chq / Trn Date', 'MICR Number', 'IFSC Code',
+    'Bene Bank Name', 'Bene Bank Branch Name', 'Beneficiary email id',
+];
+
+const FIXED_EMAIL = 'epplhdfclp@gmail.com';
+
+const generateBankExcel = (workers, transNo, ccCode) => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dateStr = `${dd}/${mm}/${today.getFullYear()}`;
+
+    const rows = workers.map((w) => {
+        const basic     = parseFloat(w.BasicAmount     || w.BasicPayNow     || w.BasicBalance     || 0);
+        const allowance = parseFloat(w.AllowanceAmount || w.AllowancePayNow || w.AllowanceBalance || 0);
+        const net       = parseFloat(w.NetAmount       || w.Amount          || 0) || basic + allowance;
+        return [
+            'N',                                              // Transaction Type
+            '',                                              // Beneficiary Code
+            w.BankAccountNo || w.AccountNo || '',            // Beneficiary Account Number
+            net,                                             // Instrument Amount
+            w.LabourName || w.WorkerName || w.Name || '',    // Beneficiary Name
+            '',                                              // Drawee Location
+            '',                                              // Print Location
+            ccCode || '',                                    // Bene Address 1
+            ccCode || '',                                    // Bene Address 2
+            '', '', '',                                      // Bene Address 3-5
+            '', '',                                          // Instruction Ref, Customer Ref
+            '', '', '', '', '', '', '',                      // Payment details 1-7
+            '',                                              // Cheque Number
+            dateStr,                                         // Chq / Trn Date
+            '',                                              // MICR Number
+            w.IFSCCode || w.IFSC || '',                      // IFSC Code
+            w.BankName || '',                                // Bene Bank Name
+            w.BranchName || w.BankBranchName || '',          // Bene Bank Branch Name
+            FIXED_EMAIL,                                     // Beneficiary email id
+        ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([BANK_HEADERS, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bank Transfer');
+    XLSX.writeFile(wb, `LabourCMS_BankTransfer_${transNo}.xlsx`);
+};
 
 const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
     const dispatch = useDispatch();
@@ -191,6 +244,11 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
             const result = await dispatch(approveLabourCMSPayment(buildApprovalPayload(actionValue))).unwrap();
             const msg = typeof result === 'string' ? result : (result?.Data?.Message || result?.Message || '');
             toast.success((msg || '').split('$')[0] || `${actionValue} completed successfully!`);
+
+            if (actionValue.toLowerCase() === 'approve' && workerGrid.length > 0) {
+                const transNo = detail?.CMSTransactionNo || selectedItem?.CMSTransactionNo || '';
+                generateBankExcel(workerGrid, transNo, detail?.CCCode || selectedItem?.CCCode || '');
+            }
 
             setTimeout(() => {
                 dispatch(fetchLabourCMSInbox(roleId));

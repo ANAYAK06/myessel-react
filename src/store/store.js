@@ -132,6 +132,7 @@ import hrAdvancePayReducer from "../slices/HRSlice/hrAdvancePayVerifySlice";
 import labourAttendanceReportReducer from "../slices/HrReportSlice/labourAttendanceReportSlice";
 import labourExitReducer from "../slices/HRSlice/labourExitSlice";
 import pendingTrackingReducer from "../slices/dashboardSlice/pendingTrackingSlice";
+import ltaReportReducer from "../slices/HrReportSlice/ltaReportSlice";
 
 const store = configureStore({
 
@@ -268,6 +269,7 @@ const store = configureStore({
     labourattendancereport: labourAttendanceReportReducer,
     labourExit:            labourExitReducer,
     pendingTracking:       pendingTrackingReducer,
+    ltaReport:             ltaReportReducer,
 
   }
 

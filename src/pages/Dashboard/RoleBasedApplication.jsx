@@ -50,6 +50,7 @@ import StaffReportPage from '../HRReports/StaffReportPage';
 import StaffCTCReportPage from '../HRReports/StaffCTCReportPage';
 import LabourReportPage from '../HRReports/LabourReportPage';
 import LabourAttendanceReportPage from '../HRReports/LabourAttendanceReportPage';
+import LTAReportPage from '../HRReports/LTAReportPage';
 
 
 //============================================================================
@@ -1076,6 +1077,15 @@ const RoleBasedApplication = () => {
             menuData.reactRoute?.toLowerCase().includes('labourattendancereport');
     };
 
+    const isLTAReportPage = (menuData) => {
+        if (!menuData) return false;
+        return menuData.path?.toLowerCase().includes('ltareport') ||
+            menuData.path?.toLowerCase().includes('ltarequestror') ||
+            menuData.name?.toLowerCase().includes('lta report') ||
+            menuData.name?.toLowerCase().includes('ltareport') ||
+            menuData.reactRoute?.toLowerCase().includes('ltareport');
+    };
+
     const isStaffCTCReportPage = (menuData) => {
         if (!menuData) return false;
         const pathMatches = menuData.path === '/HR/PayRollStructureReport' ||
@@ -1488,6 +1498,11 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isLabourAttendanceReportPage(currentMenuData)) {
             console.log('✅ Rendering LabourAttendanceReportPage for:', currentMenuData.name);
             return <LabourAttendanceReportPage menuData={currentMenuData} />;
+        }
+        // check if the menu item should show LTA report page
+        if (currentMenuData && isLTAReportPage(currentMenuData)) {
+            console.log('✅ Rendering LTAReportPage for:', currentMenuData.name);
+            return <LTAReportPage menuData={currentMenuData} />;
         }
         // check if the menu item should show staff CTC report page
         if (currentMenuData && isStaffCTCReportPage(currentMenuData)) {

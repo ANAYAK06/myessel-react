@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
     ArrowLeft, IndianRupee, Building, Calendar, FileText,
-    CheckCircle, XCircle, Clock, AlertCircle, Search, RefreshCw,
-    ShoppingCart, User, MapPin, Hash, Target, TrendingUp,
+    CheckCircle, XCircle, Clock, Search, RefreshCw,
+    ShoppingCart, User, MapPin, Hash, Target,
     Truck, Package, BadgeCheck, X, Eye, FileCheck,
     Timer, UserCheck, CircleIndianRupee, FileBarChart,
     FileX, ArrowUpCircle, Percent, Calculator,
@@ -1920,85 +1920,6 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                 <option key={ccType} value={ccType} className="text-gray-900">{ccType}</option>
                             ))}
                         </select>
-                    </div>
-                </div>
-            </div>
-
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-blue-900 rounded-xl shadow-lg">
-                                <ShoppingCart className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-blue-900 dark:text-blue-300">{verificationPOs.length}</p>
-                                <p className="text-sm text-blue-700 dark:text-blue-400">Total POs</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 mt-3">
-                            <div className="bg-blue-900 h-2 rounded-full" style={{ width: '100%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-6 border border-red-200 dark:border-red-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-red-500 rounded-xl shadow-lg">
-                                <AlertCircle className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-red-700 dark:text-red-300">
-                                    {verificationPOs.filter(po => getPriority(po) === 'High').length}
-                                </p>
-                                <p className="text-sm text-red-600 dark:text-red-400">High Priority</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-red-200 dark:bg-red-800 rounded-full h-2 mt-3">
-                            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${verificationPOs.length > 0 ? (verificationPOs.filter(po => getPriority(po) === 'High').length / verificationPOs.length) * 100 : 0}%` }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-6 border border-indigo-200 dark:border-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-indigo-500 rounded-xl shadow-lg">
-                                <Building className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{vendors.length}</p>
-                                <p className="text-sm text-indigo-600 dark:text-indigo-400">Suppliers</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-indigo-200 dark:bg-indigo-800 rounded-full h-2 mt-3">
-                            <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-blue-900 rounded-xl shadow-lg">
-                                <TrendingUp className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
-                                    ₹{formatIndianCurrency(verificationPOs.reduce((sum, po) => sum + (calculatePOTotalAmount(po) || 0), 0))}
-                                </p>
-                                <p className="text-sm text-blue-700 dark:text-blue-400">Total Amount</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 mt-3">
-                            <div className="bg-blue-900 h-2 rounded-full" style={{ width: '85%' }}></div>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -227,7 +227,7 @@ export const approveStaffRegistration = async (params) => {
             DocumentData: Array.isArray(params.documents)
                 ? params.documents.map(doc => ({
                     DocName:     doc.DocName     || doc.docName    || '',
-                    PDFBaseData: doc.PDFBaseData || doc.base64     || '',
+                    PDFBaseData: doc.PDFBaseData || doc.DocBinaryData || doc.base64 || '',
                     FileType:    doc.FileType    || doc.fileType   || '',
                     Path:        doc.Path        || doc.path       || '',
                 }))

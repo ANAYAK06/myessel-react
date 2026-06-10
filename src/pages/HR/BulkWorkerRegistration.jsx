@@ -28,29 +28,39 @@ import {
 } from '../../slices/HRSlice/bulkWorkerRegistrationSlice';
 
 // ─── Excel date helper ─────────────────────────────────────────────────────────
-// Handles JS Date objects (cellDates:true), Excel serial numbers, and string dates
-const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// Always outputs DD/MM/YYYY. Handles Date objects (cellDates:true), Excel serial
+// numbers, DD/MM/YYYY strings, and legacy DD-Mon-YYYY strings.
+const MONTH_ABBR_MAP = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
 const excelDateToString = (val) => {
     if (!val && val !== 0) return '';
     if (val instanceof Date) {
-        // xlsx serial→Date conversion has a known floating-point drift that produces
-        // 23:59:50 instead of 00:00:00 midnight. Nudge +30 seconds to cross midnight
-        // safely — this never affects a real date boundary since dates are date-only.
+        // xlsx serial→Date has a known floating-point drift (23:59:50 instead of
+        // midnight). Nudge +30 s to cross midnight safely — never changes the date.
         const d    = new Date(val.getTime() + 30 * 1000);
         const dd   = String(d.getDate()).padStart(2, '0');
-        const mon  = MONTH_ABBR[d.getMonth()];
+        const mm   = String(d.getMonth() + 1).padStart(2, '0');
         const yyyy = d.getFullYear();
-        return `${dd}-${mon}-${yyyy}`;
+        return `${dd}/${mm}/${yyyy}`;
     }
     if (typeof val === 'number' && val > 25569) {
-        // Excel serial → UTC epoch ms (25569 = 1970-01-01 in Excel)
         const d    = new Date(Math.round((val - 25569) * 86400 * 1000));
         const dd   = String(d.getUTCDate()).padStart(2, '0');
-        const mon  = MONTH_ABBR[d.getUTCMonth()];
+        const mm   = String(d.getUTCMonth() + 1).padStart(2, '0');
         const yyyy = d.getUTCFullYear();
-        return `${dd}-${mon}-${yyyy}`;
+        return `${dd}/${mm}/${yyyy}`;
     }
-    return val?.toString().trim() || '';
+    const str = val?.toString().trim() || '';
+    if (!str) return '';
+    // Already DD/MM/YYYY
+    const slash = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) return `${slash[1].padStart(2,'0')}/${slash[2].padStart(2,'0')}/${slash[3]}`;
+    // Legacy DD-Mon-YYYY (old template format)
+    const legacy = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+    if (legacy) {
+        const mm = MONTH_ABBR_MAP[legacy[2]] || legacy[2];
+        return `${legacy[1].padStart(2,'0')}/${mm}/${legacy[3]}`;
+    }
+    return str;
 };
 
 // ─── Excel parser ──────────────────────────────────────────────────────────────
@@ -115,7 +125,7 @@ const PREVIEW_COLUMNS = [
 // ─── Excel template download ───────────────────────────────────────────────────
 const TEMPLATE_HEADERS = [
     'S.No', 'First Name', 'Last Name', 'Cost Center', 'Labour Type',
-    'Contractor Code', 'Group', 'Father Name', 'DOB', 'Joining Date',
+    'Contractor Code', 'Group', 'Father Name', 'DOB (DD/MM/YYYY)', 'Joining Date (DD/MM/YYYY)',
     'Bank Name', 'IFSC Code', 'Bank Address', 'Bank Account No', 'Gender',
     'Mobile No', 'Job Type', 'Department', 'Aadhar No', 'Probation Days',
     'Is PF Exist', 'Is ESI Exist', 'UAN Number', 'Report To Role',
@@ -128,24 +138,25 @@ const TEMPLATE_HEADERS = [
 // Job Type:       Permanent | Contract | Casual
 // Is PF / ESI:    Yes | No
 // ContractorCode: fill only if Labour Type = Contractor, leave blank for Own Labour
+// Date columns (DOB & Joining Date): enter as DD/MM/YYYY — cells are pre-formatted
 const TEMPLATE_SAMPLE_ROWS = [
     [
         1, 'Ramesh', 'Kumar', 'CC-01', 'Own Labour', '',
-        'SK', 'Suresh Kumar', '01-Jan-1990', '01-Jun-2024',
+        'SK', 'Suresh Kumar', new Date(1990, 0, 1), new Date(2024, 5, 1),
         'State Bank of India', 'SBIN0001234', 'SBI Main Branch, Chennai', '1234567890123456', 'Male',
         '9876543210', 'Permanent', 'Civil', '123456789012', 90,
         'Yes', 'Yes', 'UAN123456789', 'Site Manager', 'ESI123456', 'Mason',
     ],
     [
         2, 'Priya', 'Sharma', 'CC-02', 'Contractor', 'CONT-002',
-        'SSK', 'Ravi Sharma', '15-Mar-1995', '15-Jun-2024',
+        'SSK', 'Ravi Sharma', new Date(1995, 2, 15), new Date(2024, 5, 15),
         'HDFC Bank', 'HDFC0002345', 'HDFC Branch, Hyderabad', '9876543210987654', 'Female',
         '8765432109', 'Contract', 'Electrical', '234567890123', 60,
         'No', 'Yes', '', 'Project Manager', 'ESI234567', 'Electrician',
     ],
     [
         3, 'Arun', 'Nair', 'CC-03', 'Own Labour', '',
-        'USK', 'Vijayan Nair', '10-Jul-1988', '01-Jul-2024',
+        'USK', 'Vijayan Nair', new Date(1988, 6, 10), new Date(2024, 6, 1),
         'Canara Bank', 'CNRB0003456', 'Canara Branch, Kochi', '3456789012345678', 'Male',
         '7654321098', 'Casual', 'Mechanical', '345678901234', 0,
         'No', 'No', '', 'Foreman', '', 'Helper',
@@ -155,7 +166,17 @@ const TEMPLATE_SAMPLE_ROWS = [
 const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
     const wsData = [TEMPLATE_HEADERS, ...TEMPLATE_SAMPLE_ROWS];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const ws = XLSX.utils.aoa_to_sheet(wsData, { cellDates: true });
+
+    // Apply DD/MM/YYYY format to DOB (col I = index 8) and Joining Date (col J = index 9)
+    // for each sample data row (rows 2-4, 0-indexed rows 1-3)
+    const dateFormat = 'DD/MM/YYYY';
+    for (let r = 1; r <= TEMPLATE_SAMPLE_ROWS.length; r++) {
+        const dobCell = XLSX.utils.encode_cell({ r, c: 8 });
+        const joinCell = XLSX.utils.encode_cell({ r, c: 9 });
+        if (ws[dobCell])  ws[dobCell].z  = dateFormat;
+        if (ws[joinCell]) ws[joinCell].z = dateFormat;
+    }
 
     // Column widths
     ws['!cols'] = [
@@ -215,12 +236,12 @@ const parseSPErrorMsg = (errorMsg = '') =>
 const inputCls =
     'w-full px-3.5 py-2.5 rounded-xl border-2 text-sm bg-white dark:bg-gray-800 ' +
     'text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700 ' +
-    'focus:outline-none focus:ring-2 focus:border-indigo-500 focus:ring-indigo-100 ' +
-    'dark:focus:ring-indigo-900/30 hover:border-gray-300 dark:hover:border-gray-600 transition-all';
+    'focus:outline-none focus:ring-2 focus:border-blue-700 focus:ring-blue-100 ' +
+    'dark:focus:ring-blue-900/30 hover:border-gray-300 dark:hover:border-gray-600 transition-all';
 
-const SectionHeader = ({ icon: Icon, title, subtitle, gradient = 'from-indigo-600 to-purple-600' }) => (
+const SectionHeader = ({ icon: Icon, title, subtitle, gradient = 'from-blue-900 to-orange-500' }) => (
     <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-        <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
             <Icon className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -543,14 +564,14 @@ const BulkWorkerRegistration = () => {
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-orange-50/20 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">
 
             {/* ── Page Header Banner ───────────────────────────────────────────── */}
             <div className="max-w-7xl mx-auto mb-6">
-                <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-indigo-600 via-purple-600 to-violet-700 shadow-xl shadow-indigo-500/20 p-7 text-white">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-xl shadow-blue-900/20 p-7 text-white">
                     <div className="absolute inset-0 opacity-10"
                         style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-                    <div className="absolute top-0 right-0 w-72 h-72 bg-violet-500 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
                     <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
@@ -558,13 +579,13 @@ const BulkWorkerRegistration = () => {
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">HR Module</span>
+                                    <span className="text-xs font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-2 py-0.5 rounded-full border border-orange-400/30">HR Module</span>
                                 </div>
                                 <h1 className="text-2xl md:text-3xl font-black tracking-tight">Bulk Worker Registration</h1>
-                                <p className="text-indigo-200 text-sm mt-0.5">Upload an Excel file to register multiple workers at once</p>
+                                <p className="text-blue-200 text-sm mt-0.5">Upload an Excel file to register multiple workers at once</p>
                             </div>
                         </div>
-                        <div className="hidden sm:flex items-center gap-3 text-indigo-200">
+                        <div className="hidden sm:flex items-center gap-3 text-blue-200">
                             <div className="text-right">
                                 <p className="text-xs uppercase tracking-wider">Module</p>
                                 <p className="text-sm font-bold text-white">HR / Registration</p>
@@ -583,7 +604,7 @@ const BulkWorkerRegistration = () => {
                     <div className="grid grid-cols-3 gap-4">
                         {/* Workers count */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-md">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 flex items-center justify-center shrink-0 shadow-md">
                                 <Users className="h-5 w-5 text-white" />
                             </div>
                             <div>
@@ -602,10 +623,10 @@ const BulkWorkerRegistration = () => {
                         }`}>
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
                                 summary.isValidated
-                                    ? 'bg-linear-to-br from-emerald-500 to-teal-500'
+                                    ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
                                     : validationResult
-                                        ? 'bg-linear-to-br from-rose-500 to-rose-600'
-                                        : 'bg-linear-to-br from-amber-400 to-orange-500'
+                                        ? 'bg-gradient-to-br from-rose-500 to-rose-600'
+                                        : 'bg-gradient-to-br from-amber-400 to-orange-500'
                             }`}>
                                 {summary.isValidated
                                     ? <CheckCircle className="h-5 w-5 text-white" />
@@ -630,7 +651,7 @@ const BulkWorkerRegistration = () => {
 
                         {/* File name */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-900 to-orange-500 flex items-center justify-center shrink-0 shadow-md">
                                 <FileSpreadsheet className="h-5 w-5 text-white" />
                             </div>
                             <div className="min-w-0">
@@ -649,7 +670,7 @@ const BulkWorkerRegistration = () => {
                     {/* Card title bar */}
                     <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
                         <div className="flex items-center gap-3">
-                            <FileSpreadsheet className="h-4 w-4 text-indigo-500" />
+                            <FileSpreadsheet className="h-4 w-4 text-blue-700" />
                             <div>
                                 <h2 className="text-sm font-bold text-gray-800 dark:text-gray-100">
                                     {workerList.length > 0 ? 'Worker Data Preview' : 'Upload Worker Excel'}
@@ -679,14 +700,14 @@ const BulkWorkerRegistration = () => {
                                     icon={Upload}
                                     title="Upload Excel File"
                                     subtitle="Drag and drop or click to browse — supports .xlsx and .xls"
-                                    gradient="from-indigo-600 to-purple-600"
+                                    gradient="from-blue-900 to-orange-500"
                                 />
 
                                 <div
                                     className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-150 ${
                                         isDragging
-                                            ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
-                                            : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-gray-50/60 dark:hover:bg-gray-900/20'
+                                            ? 'border-blue-700 bg-blue-50 dark:bg-blue-900/20'
+                                            : 'border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-gray-50/60 dark:hover:bg-gray-900/20'
                                     }`}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
@@ -696,7 +717,7 @@ const BulkWorkerRegistration = () => {
                                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileChange} className="hidden" />
                                     <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
                                         isDragging
-                                            ? 'bg-linear-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/30'
+                                            ? 'bg-gradient-to-br from-blue-900 to-orange-500 shadow-lg shadow-blue-900/30'
                                             : 'bg-gray-100 dark:bg-gray-700'
                                     }`}>
                                         <Upload className={`h-7 w-7 ${isDragging ? 'text-white' : 'text-gray-400'}`} />
@@ -710,20 +731,20 @@ const BulkWorkerRegistration = () => {
                                 </div>
 
                                 {/* Column hint + Download template */}
-                                <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
-                                    <Info className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
+                                <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                                    <Info className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-3 mb-1">
-                                            <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Expected Column Order</p>
+                                            <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Expected Column Order</p>
                                             <button
                                                 type="button"
                                                 onClick={(e) => { e.stopPropagation(); downloadTemplate(); }}
-                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm transition-all"
+                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white shadow-sm transition-all"
                                             >
                                                 <Download className="h-3.5 w-3.5" /> Download Template
                                             </button>
                                         </div>
-                                        <p className="text-xs text-indigo-600/80 dark:text-indigo-400/80 leading-relaxed">
+                                        <p className="text-xs text-blue-600/80 dark:text-blue-400/80 leading-relaxed">
                                             S.No &bull; First Name &bull; Last Name &bull; Cost Center &bull; Labour Type &bull; Contractor Code &bull; Group &bull; Father Name &bull; DOB &bull; Joining Date &bull; Bank Name &bull; IFSC Code &bull; Bank Address &bull; Bank Account No &bull; Gender &bull; Mobile No &bull; Job Type &bull; Department &bull; Aadhar No &bull; Probation Days &bull; Is PF Exist &bull; Is ESI Exist &bull; UAN Number &bull; Report To Role &bull; ESI Number &bull; Designation
                                         </p>
                                     </div>
@@ -736,7 +757,7 @@ const BulkWorkerRegistration = () => {
                                     icon={FileSpreadsheet}
                                     title="Worker Data Preview"
                                     subtitle="Review the records before validating"
-                                    gradient="from-violet-600 to-purple-600"
+                                    gradient="from-blue-900 to-orange-500"
                                 />
 
                                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -744,7 +765,7 @@ const BulkWorkerRegistration = () => {
                                         <div className="flex items-center gap-2">
                                             <FileText className="h-3.5 w-3.5 text-gray-400" />
                                             <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{uploadedFile?.name}</span>
-                                            <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                            <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
                                                 {workerList.length} workers
                                             </span>
                                         </div>
@@ -794,7 +815,7 @@ const BulkWorkerRegistration = () => {
                                     icon={CheckCircle}
                                     title="Validation Result"
                                     subtitle="Review any issues found in the uploaded data"
-                                    gradient="from-purple-600 to-violet-600"
+                                    gradient="from-blue-900 to-orange-500"
                                 />
                                 {validationResult
                                     ? <ValidationPanel validationResult={validationResult} />
@@ -839,7 +860,7 @@ const BulkWorkerRegistration = () => {
                                     icon={FileText}
                                     title="Remarks"
                                     subtitle="Optional notes or reason for this bulk registration"
-                                    gradient="from-indigo-500 to-violet-600"
+                                    gradient="from-blue-900 to-orange-500"
                                 />
                                 <div className="relative">
                                     <FileText className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -882,7 +903,7 @@ const BulkWorkerRegistration = () => {
                                     type="button"
                                     onClick={handleValidate}
                                     disabled={validateLoading}
-                                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {validateLoading
                                         ? <><Loader2 className="h-4 w-4 animate-spin" /> Validating…</>
@@ -895,7 +916,7 @@ const BulkWorkerRegistration = () => {
                                     type="button"
                                     onClick={handleRegister}
                                     disabled={saveLoading || !summary.isValidated}
-                                    className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-900 to-orange-500 hover:from-blue-950 hover:to-orange-600 text-white shadow-lg shadow-blue-900/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {saveLoading
                                         ? <><Loader2 className="h-4 w-4 animate-spin" /> Registering…</>

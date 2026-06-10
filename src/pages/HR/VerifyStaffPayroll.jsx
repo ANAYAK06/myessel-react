@@ -2,17 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    FileText, Clock, Users, Calendar, Hash,
-    DollarSign, CheckSquare, Square, Eye,
+    Clock, Users, Calendar, Hash,
+    CheckSquare, Square, Eye,
     XCircle, ChevronRight, Banknote, TrendingDown,
     TrendingUp, Building2, UserCheck, X, AlertCircle
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
 import LeftPanel from '../../components/Inbox/LeftPanel';
+import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -60,7 +60,7 @@ const SalaryDetailModal = ({ employee, salaryDetails, onClose }) => {
     const deductions = salaryDetails.filter(d => d.EmployeeId === employee.EmpRefNo && d.HeadType === 'Deduction');
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-indigo-200 dark:border-indigo-700">
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -167,7 +167,7 @@ const RejectConfirmModal = ({ employee, onConfirm, onCancel, loading }) => {
     const [rejectNote, setRejectNote] = useState('');
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-red-200 dark:border-red-700">
                 <div className="bg-gradient-to-r from-red-500 to-rose-600 p-5 rounded-t-2xl flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
@@ -504,20 +504,6 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
         .filter(e => selectedEmployeeIds.includes(e.SalaryId))
         .reduce((sum, e) => sum + (e.NetValue || 0), 0);
 
-    const statsCards = [
-        { icon: FileText, value: payrollInbox.length, label: 'Pending Records', color: 'blue' },
-        { icon: Users, value: mainGridData.length, label: 'Total Employees', color: 'purple' },
-        { icon: CheckSquare, value: selectedEmployeeIds.length, label: 'Selected', color: 'indigo' },
-        {
-            icon: DollarSign,
-            value: totalNetSelected > 0
-                ? `₹${totalNetSelected.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                : '-',
-            label: 'Selected Net Pay',
-            color: 'violet'
-        }
-    ];
-
     const renderItemCard = (item) => (
         <div className="p-4">
             <div className="flex items-center space-x-3 mb-3">
@@ -560,7 +546,7 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
         </div>
     );
 
-    const renderDetailContent = () => {
+    const renderDetailContent = (isPopup = false) => {
         if (!selectedItem) return null;
 
         // ✅ Show empty state if all employees have been rejected
@@ -640,17 +626,18 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
                                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                                     <tr>
-                                        <th className="w-10 px-4 py-3"></th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Employee</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Designation</th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Gross</th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Deductions</th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Net Pay</th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Days</th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                                        <th className="w-8 px-2 py-2"></th>
+                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Emp ID</th>
+                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Designation</th>
+                                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Gross</th>
+                                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Deductions</th>
+                                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Net Pay</th>
+                                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Days</th>
+                                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -664,55 +651,55 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                                                     : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'
                                                     }`}
                                             >
-                                                <td className="px-4 py-3">
+                                                <td className="px-2 py-1.5">
                                                     <button onClick={() => handleToggleEmployee(emp.SalaryId)} className="flex items-center justify-center">
                                                         {isSelected ? (
-                                                            <CheckSquare className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                                            <CheckSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                                                         ) : (
-                                                            <Square className="w-5 h-5 text-gray-400 hover:text-indigo-500 transition-colors" />
+                                                            <Square className="w-4 h-4 text-gray-400 hover:text-indigo-500 transition-colors" />
                                                         )}
                                                     </button>
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{emp.Name}</p>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{emp.EmpRefNo}</p>
-                                                    </div>
+                                                <td className="px-3 py-1.5 font-mono text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                                                    {emp.EmpRefNo}
                                                 </td>
-                                                <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 max-w-[140px] truncate">
+                                                <td className="px-3 py-1.5 min-w-[160px]">
+                                                    <p className="font-semibold text-gray-900 dark:text-white leading-snug break-words">{emp.Name}</p>
+                                                </td>
+                                                <td className="px-3 py-1.5 text-gray-600 dark:text-gray-400">
                                                     {emp.DesignationName}
                                                 </td>
-                                                <td className="px-4 py-3 text-right text-sm font-medium text-green-600 dark:text-green-400">
+                                                <td className="px-3 py-1.5 text-right font-medium text-green-600 dark:text-green-400 whitespace-nowrap">
                                                     ₹{emp.GrossValue?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </td>
-                                                <td className="px-4 py-3 text-right text-sm font-medium text-red-500">
+                                                <td className="px-3 py-1.5 text-right font-medium text-red-500 whitespace-nowrap">
                                                     ₹{emp.Deductions?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                                                <td className="px-3 py-1.5 text-right whitespace-nowrap">
+                                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">
                                                         ₹{emp.NetValue?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
+                                                <td className="px-3 py-1.5 text-center whitespace-nowrap">
+                                                    <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium">
                                                         {emp.TotalSalaryDays}/{emp.WorkingDays}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center justify-center space-x-2">
+                                                <td className="px-3 py-1.5">
+                                                    <div className="flex items-center justify-center space-x-1">
                                                         <button
                                                             onClick={() => setModalEmployee(emp)}
                                                             title="View Salary Details"
-                                                            className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                                            className="p-1 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                                                         >
-                                                            <Eye className="w-4 h-4" />
+                                                            <Eye className="w-3.5 h-3.5" />
                                                         </button>
                                                         <button
                                                             onClick={() => setRejectEmployee(emp)}
                                                             title="Reject this employee"
-                                                            className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                                                            className="p-1 rounded bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                                                         >
-                                                            <XCircle className="w-4 h-4" />
+                                                            <XCircle className="w-3.5 h-3.5" />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -723,32 +710,32 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
 
                                 <tfoot className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
                                     <tr>
-                                        <td colSpan="3" className="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">
+                                        <td colSpan="4" className="px-3 py-2 text-right text-xs font-bold text-gray-900 dark:text-white">
                                             Total ({mainGridData.length} employees):
                                         </td>
-                                        <td className="px-4 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">
+                                        <td className="px-3 py-2 text-right text-xs font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
                                             ₹{mainGridData.reduce((s, e) => s + (e.GrossValue || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-sm font-bold text-red-500">
+                                        <td className="px-3 py-2 text-right text-xs font-bold text-red-500 whitespace-nowrap">
                                             ₹{mainGridData.reduce((s, e) => s + (e.Deductions || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                                        <td className="px-3 py-2 text-right text-xs font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                                             ₹{mainGridData.reduce((s, e) => s + (e.NetValue || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </td>
                                         <td colSpan="2"></td>
                                     </tr>
                                     {selectedEmployeeIds.length > 0 && selectedEmployeeIds.length < mainGridData.length && (
                                         <tr className="border-t border-indigo-200 dark:border-indigo-700">
-                                            <td colSpan="3" className="px-4 py-2 text-right text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                            <td colSpan="4" className="px-3 py-1.5 text-right text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                                                 Selected ({selectedEmployeeIds.length}):
                                             </td>
-                                            <td className="px-4 py-2 text-right text-xs font-semibold text-green-600 dark:text-green-400">
+                                            <td className="px-3 py-1.5 text-right text-xs font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
                                                 ₹{mainGridData.filter(e => selectedEmployeeIds.includes(e.SalaryId)).reduce((s, e) => s + (e.GrossValue || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-4 py-2 text-right text-xs font-semibold text-red-500">
+                                            <td className="px-3 py-1.5 text-right text-xs font-semibold text-red-500 whitespace-nowrap">
                                                 ₹{mainGridData.filter(e => selectedEmployeeIds.includes(e.SalaryId)).reduce((s, e) => s + (e.Deductions || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-4 py-2 text-right text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                                            <td className="px-3 py-1.5 text-right text-xs font-semibold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
                                                 ₹{totalNetSelected.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </td>
                                             <td colSpan="2"></td>
@@ -861,15 +848,6 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                 className="bg-gradient-to-r from-indigo-600 via-purple-500 to-violet-600"
             />
 
-            <div className="px-6 mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
             <div className="container mx-auto px-6">
                 <div
                     className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
@@ -905,48 +883,32 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                                 maxHeight: '100%',
                                 headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
                             }}
+                            renderPopupContent={(_item) => renderDetailContent(true)}
+                            popupConfig={{
+                                title: 'Payroll Verification',
+                                icon: Banknote,
+                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                            }}
                         />
                     </div>
 
                     <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center space-x-2">
-                                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                    <Banknote className="w-4 h-4 text-white" />
-                                </div>
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {selectedItem ? 'Payroll Verification' : 'Payroll Details'}
-                                </h2>
-                                {selectedItem && selectedEmployeeIds.length > 0 && (
-                                    <span className="ml-auto flex items-center space-x-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-xs font-medium">
-                                        <CheckSquare className="w-3 h-3" />
-                                        <span>{selectedEmployeeIds.length} selected</span>
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-16">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Banknote className="w-12 h-12 text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Payroll Record Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">
-                                            Select a payroll record from the list to view employee details and process verification.
-                                        </p>
-                                        <div className="flex items-center justify-center space-x-2 mt-4 text-indigo-500 text-xs">
-                                            <ChevronRight className="w-4 h-4" />
-                                            <span>Select from the left panel</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <RightDetailPanel
+                            selectedItem={selectedItem}
+                            loading={detailsLoading}
+                            renderContent={renderDetailContent}
+                            config={{
+                                title: 'Payroll Verification',
+                                icon: Banknote,
+                                selectedTitle: 'Payroll Verification',
+                                emptyTitle: 'No Payroll Record Selected',
+                                emptyMessage: 'Select a payroll record from the list to view employee details and process verification.',
+                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                                maxHeight: 'calc(100vh - 200px)',
+                                sticky: true,
+                                stickyTop: '1.5rem',
+                            }}
+                        />
                     </div>
                 </div>
             </div>

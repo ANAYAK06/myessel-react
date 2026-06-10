@@ -143,6 +143,10 @@ export const saveStaffRegistration = async (params) => {
             RefRemarks: params.refRemarks?.toString() || '',
             ExpRemarks: params.expRemarks?.toString() || '',
             ExpContactNames: params.expContactNames?.toString() || '',
+            PoliceVerification: params.policeVerification?.toString() || '',
+            UndertakingNoPoliceCaseAck: params.undertakingNoPoliceCaseAck?.toString() || '',
+            UndertakingAuthenticDocsAck: params.undertakingAuthenticDocsAck?.toString() || '',
+            UndertakingMedicallyFitAck: params.undertakingMedicallyFitAck?.toString() || '',
             DocumentData: Array.isArray(params.documents)
                 ? params.documents.map(doc => ({
                     DocName: doc.docName || '',
@@ -274,6 +278,10 @@ export const updateRejoinStaffRegistration = async (params) => {
             RefRemarks: params.refRemarks?.toString() || '',
             ExpRemarks: params.expRemarks?.toString() || '',
             ExpContactNames: params.expContactNames?.toString() || '',
+            PoliceVerification: params.policeVerification?.toString() || '',
+            UndertakingNoPoliceCaseAck: params.undertakingNoPoliceCaseAck?.toString() || '',
+            UndertakingAuthenticDocsAck: params.undertakingAuthenticDocsAck?.toString() || '',
+            UndertakingMedicallyFitAck: params.undertakingMedicallyFitAck?.toString() || '',
             DocumentData: Array.isArray(params.documents)
                 ? params.documents.map(doc => ({
                     DocName: doc.docName || '',
@@ -404,6 +412,10 @@ export const updateStaffRegistration = async (params) => {
             RefRemarks: params.refRemarks?.toString() || '',
             ExpRemarks: params.expRemarks?.toString() || '',
             ExpContactNames: params.expContactNames?.toString() || '',
+            PoliceVerification: params.policeVerification?.toString() || '',
+            UndertakingNoPoliceCaseAck: params.undertakingNoPoliceCaseAck?.toString() || '',
+            UndertakingAuthenticDocsAck: params.undertakingAuthenticDocsAck?.toString() || '',
+            UndertakingMedicallyFitAck: params.undertakingMedicallyFitAck?.toString() || '',
             DocumentData: Array.isArray(params.documents)
                 ? params.documents.map(doc => ({
                     DocName: doc.docName || '',

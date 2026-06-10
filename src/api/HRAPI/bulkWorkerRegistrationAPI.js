@@ -5,6 +5,16 @@ import { API_BASE_URL } from '../../config/apiConfig';
 // BULK WORKER REGISTRATION APIs
 // ==============================================
 
+// Convert DD/MM/YYYY → YYYY-MM-DD so SQL Server parses dates unambiguously (ISO 8601).
+// Without this, SQL Server's default MM/DD/YYYY interpretation causes day>12 → NULL and
+// day≤12 → month/day swap (e.g. 06/05/1999 becomes June 5 instead of May 6).
+const ddmmyyyyToISO = (val) => {
+    if (!val) return '';
+    const m = val.toString().trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    return val.toString();
+};
+
 // Shared mapper — camelCase frontend → PascalCase for SP JSON
 const mapWorker = (w) => ({
     SerialNo:       parseInt(w.serialNo) || 0,
@@ -15,8 +25,8 @@ const mapWorker = (w) => ({
     ContractorCode: w.contractorCode?.toString() || '',
     Group:          w.group?.toString() || '',
     FatherName:     w.fatherName?.toString() || '',
-    DOB:            w.dob?.toString() || '',
-    JoiningDate:    w.joiningDate?.toString() || '',
+    DOB:            ddmmyyyyToISO(w.dob),
+    JoiningDate:    ddmmyyyyToISO(w.joiningDate),
     BankName:       w.bankName?.toString() || '',
     IFSCCode:       w.ifscCode?.toString() || '',
     BankAddress:    w.bankAddress?.toString() || '',

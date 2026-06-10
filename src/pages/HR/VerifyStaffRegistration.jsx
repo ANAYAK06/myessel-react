@@ -2,18 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    User, FileText,
-    CheckCircle, Clock, AlertCircle, Download, Eye,
-    Building2, IdCard, Users, Award, Briefcase, GraduationCap,
+    User, FileText, ArrowLeft, Search,
+    CheckCircle, Clock, Download, Eye,
+    Building2, IdCard, Users, Briefcase, GraduationCap,
     Globe, Zap, Target, CreditCard, FileCheck,
     Phone, Shield, ClipboardCheck, XCircle
 } from 'lucide-react';
 
 // ✅ REUSABLE COMPONENT IMPORTS
-import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import LeftPanel from '../../components/Inbox/LeftPanel';
+import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 import AttachmentModal from '../../components/Inbox/AttachmentModal';
 
@@ -204,7 +203,12 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
     }
 
     // ── Documents ─────────────────────────────────────────────────────
-    const safeDocuments = (employeeDocuments || []).filter(doc =>
+    // Server-fetched docs from GetEmployeeDocuments arrive with DocBinaryData (not PDFBaseData).
+    // Normalize before filtering so they are included in the approval payload.
+    const safeDocuments = (employeeDocuments || []).map(doc => ({
+        ...doc,
+        PDFBaseData: doc.PDFBaseData || doc.DocBinaryData || '',
+    })).filter(doc =>
         (doc.PDFBaseData && doc.PDFBaseData.trim() !== '') ||
         (doc.Path        && doc.Path.trim()        !== '')
     );
@@ -501,14 +505,6 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
     const departments = [...new Set(verificationStaff.map(s => s.Department).filter(Boolean))];
     const categories  = [...new Set(verificationStaff.map(s => s.Category).filter(Boolean))];
 
-    // ✅ STATS CARDS
-    const statsCards = [
-        { icon: FileText,    value: verificationStaff.length,                                           label: 'Total Applications', color: 'blue'   },
-        { icon: AlertCircle, value: verificationStaff.filter(s => getPriority(s) === 'High').length,    label: 'High Priority',      color: 'red'    },
-        { icon: Building2,   value: departments.length,                                                 label: 'Departments',        color: 'green'  },
-        { icon: Award,       value: categories.length,                                                  label: 'Categories',         color: 'purple' }
-    ];
-
     // ✅ RENDER LEFT PANEL ITEM
     const renderItemCard = (staff, isSelected) => {
         const priority = getPriority(staff);
@@ -651,7 +647,7 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
     };
 
     // ✅ RENDER DETAIL CONTENT
-    const renderDetailContent = () => {
+    const renderDetailContent = (isPopup = false) => {
         if (!selectedStaff) return null;
 
         return (
@@ -1025,9 +1021,9 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                         <div key={index} className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-orange-200 dark:border-orange-600">
                                             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
                                                 <div><span className="text-orange-600 dark:text-orange-400 block text-xs">Skill</span><span className="font-medium text-gray-900 dark:text-white">{tech.TechnicalSkill}</span></div>
-                                                <div><span className="text-orange-600 dark:text-orange-400 block text-xs">Institution</span><span className="font-medium text-gray-800 dark:text-gray-200">{tech.TechInstitutionName}</span></div>
-                                                <div><span className="text-orange-600 dark:text-orange-400 block text-xs">Duration</span><span className="font-medium text-gray-800 dark:text-gray-200">{tech.TechFromYear} - {tech.TechToYear}</span></div>
-                                                <div><span className="text-orange-600 dark:text-orange-400 block text-xs">Score</span><span className="font-medium text-green-600 dark:text-green-400">{tech.TechPercentage}</span></div>
+                                                <div><span className="text-orange-600 dark:text-orange-400 block text-xs">Institution</span><span className="font-medium text-gray-800 dark:text-gray-200">{tech.TechInstitutionName || tech.InstitutionName}</span></div>
+                                                <div><span className="text-orange-600 dark:text-orange-400 block text-xs">Duration</span><span className="font-medium text-gray-800 dark:text-gray-200">{tech.TechFromYear || tech.FromYear} - {tech.TechToYear || tech.ToYear}</span></div>
+                                                <div><span className="text-orange-600 dark:text-orange-400 block text-xs">Score</span><span className="font-medium text-green-600 dark:text-green-400">{tech.TechPercentage || tech.Percentage}</span></div>
                                             </div>
                                         </div>
                                     ))}
@@ -1047,7 +1043,7 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
                                                 <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Organization</span><span className="font-medium text-gray-900 dark:text-white">{exp.OrganisationName}</span></div>
                                                 <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Role</span><span className="font-medium text-gray-800 dark:text-gray-200">{exp.Role}</span></div>
-                                                <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Duration</span><span className="font-medium text-gray-800 dark:text-gray-200">{exp.ExpFromYear} - {exp.ExpToYear}</span></div>
+                                                <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Duration</span><span className="font-medium text-gray-800 dark:text-gray-200">{exp.ExpFromYear || exp.FromYear} - {exp.ExpToYear || exp.ToYear}</span></div>
                                                 <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Experience</span><span className="font-medium text-green-600 dark:text-green-400">{exp.ExperienceYears} years</span></div>
                                             </div>
                                         </div>
@@ -1351,58 +1347,97 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
 
     // ✅ MAIN RENDER
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <InboxHeader
-                title={`${InboxTitle || 'Staff Registration Verification'} (${verificationStaff.length})`}
-                subtitle={ModuleDisplayName}
-                itemCount={verificationStaff.length}
-                onBackClick={handleBackToInbox}
-                HeaderIcon={Users}
-                badgeText="HR Verification"
-                badgeCount={verificationStaff.length}
-                searchConfig={{
-                    enabled: true,
-                    placeholder: 'Search by name, employee code, department, designation...',
-                    value: searchQuery,
-                    onChange: (e) => setSearchQuery(e.target.value)
-                }}
-                filters={[
-                    {
-                        value: filterDepartment,
-                        onChange: (e) => setFilterDepartment(e.target.value),
-                        defaultLabel: 'All Departments',
-                        options: departments
-                    },
-                    {
-                        value: filterCategory,
-                        onChange: (e) => setFilterCategory(e.target.value),
-                        defaultLabel: 'All Categories',
-                        options: categories
-                    }
-                ]}
-                className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700"
-            />
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-xl shadow-blue-900/20 p-7 text-white">
+                {/* Dot pattern overlay */}
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                {/* Orange glow blob */}
+                <div className="absolute top-0 right-0 w-72 h-72 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={handleBackToInbox}
+                            className="p-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+                            title="Back to Dashboard"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
+                            <Users className="h-7 w-7 text-white" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-2 py-0.5 rounded-full border border-orange-400/30">
+                                    HR Module
+                                </span>
+                                <span className="px-2 py-0.5 text-xs bg-red-500/80 text-white rounded-full font-semibold">
+                                    {verificationStaff.length} Pending
+                                </span>
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                                {InboxTitle || 'Staff Registration Verification'}
+                            </h1>
+                            <p className="text-blue-200 text-sm mt-0.5">
+                                {ModuleDisplayName} &bull; {verificationStaff.length} registrations pending verification
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Search and Filters */}
+                <div className="relative mt-5 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="md:col-span-2">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 w-4 h-4 text-blue-300" />
+                            <input
+                                type="text"
+                                placeholder="Search by name, employee code, department, designation..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-blue-300 border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <select
+                            value={filterDepartment}
+                            onChange={(e) => setFilterDepartment(e.target.value)}
+                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
+                        >
+                            <option value="All" className="text-gray-900">All Departments</option>
+                            {departments.map(dept => (
+                                <option key={dept} value={dept} className="text-gray-900">{dept}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <select
+                            value={filterCategory}
+                            onChange={(e) => setFilterCategory(e.target.value)}
+                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
+                        >
+                            <option value="All" className="text-gray-900">All Categories</option>
+                            {categories.map(cat => (
+                                <option key={cat} value={cat} className="text-gray-900">{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div className="container mx-auto px-6">
-                <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedStaff && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
+            {/* Main Content */}
+            <div
+                className={`grid transition-all duration-300 ${
+                    isLeftPanelCollapsed && !isLeftPanelHovered
+                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
+                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
+                }`}
+                onMouseLeave={() => {
+                    if (selectedStaff && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+                }}
+            >
                     <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
                         <LeftPanel
                             items={filteredStaff}
@@ -1428,35 +1463,34 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                 maxHeight: '100%',
                                 headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
                             }}
+                            renderPopupContent={(_item) => renderDetailContent(true)}
+                            popupConfig={{
+                                title: 'Staff Registration',
+                                icon: User,
+                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                            }}
                         />
                     </div>
 
                     <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                        <FileText className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>{selectedStaff ? 'Staff Registration Details' : 'Select an Application'}</span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedStaff ? renderDetailContent() : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <User className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Application Selected</h3>
-                                        <p className="text-gray-500 dark:text-gray-400">Select a staff registration from the list to view details and verify.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <RightDetailPanel
+                            selectedItem={selectedStaff}
+                            loading={staffDataLoading}
+                            renderContent={renderDetailContent}
+                            config={{
+                                title: 'Staff Registration',
+                                icon: User,
+                                selectedTitle: 'Staff Registration Details',
+                                emptyTitle: 'No Application Selected',
+                                emptyMessage: 'Select a staff registration from the list to view details and verify.',
+                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                                maxHeight: 'calc(100vh - 200px)',
+                                sticky: true,
+                                stickyTop: '1.5rem',
+                            }}
+                        />
                     </div>
                 </div>
-            </div>
 
             {showDocumentModal && selectedDocument && (
                 <AttachmentModal

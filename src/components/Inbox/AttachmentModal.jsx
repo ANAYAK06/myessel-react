@@ -104,7 +104,7 @@ const AttachmentModal = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="fixed inset-0 z-[500] overflow-hidden">
             {/* Backdrop with blur effect */}
             <div
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"

@@ -8,10 +8,10 @@ import {
 } from 'lucide-react';
 
 import InboxHeader      from '../../components/Inbox/InboxHeader';
-import StatsCards       from '../../components/Inbox/StatsCards';
 import ActionButtons    from '../../components/Inbox/ActionButtons';
 import RemarksHistory   from '../../components/Inbox/RemarksHistory';
 import LeftPanel        from '../../components/Inbox/LeftPanel';
+import RightDetailPanel  from '../../components/Inbox/RightDetailPanel';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -289,7 +289,7 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
         </button>
     );
 
-    const renderDetailContent = () => {
+    const renderDetailContent = (isPopup = false) => {
         if (!selectedItem) return null;
 
         return (
@@ -571,14 +571,6 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
         );
     };
 
-    // ── Stats cards ───────────────────────────────────────────────────────────
-
-    const statsCards = [
-        { icon: Package,  value: inbox.length,              label: 'Total Pending',   color: 'indigo' },
-        { icon: Clock,    value: inbox.length,              label: 'Awaiting Action', color: 'purple' },
-        { icon: Tag,      value: detail?.ItemCode || '—',   label: 'Selected Code',   color: 'blue'   },
-        { icon: Hash,     value: detail?.Rowid    || '—',   label: 'Row ID',          color: 'violet' },
-    ];
 
     // ── Main render ───────────────────────────────────────────────────────────
 
@@ -600,15 +592,6 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                 }}
                 className="bg-gradient-to-r from-indigo-600 via-violet-500 to-purple-600"
             />
-
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
 
             <div className="container mx-auto px-6">
                 <div
@@ -647,37 +630,33 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                 maxHeight: '100%',
                                 headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
                             }}
+                            renderPopupContent={(_item) => renderDetailContent(true)}
+                            popupConfig={{
+                                title: 'Item Code Verification',
+                                icon: Package,
+                                headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                            }}
                         />
                     </div>
 
                     {/* Right panel */}
                     <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center gap-2">
-                                <div className="p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg">
-                                    <Package className="w-4 h-4 text-white" />
-                                </div>
-                                <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                                    {selectedItem ? 'Item Code Verification' : 'Item Code Details'}
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? renderDetailContent() : (
-                                    <div className="text-center py-16">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/20 dark:to-violet-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Package className="w-12 h-12 text-indigo-400 dark:text-indigo-500" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Item Code Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                            Select an item code from the list to review and verify.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <RightDetailPanel
+                            selectedItem={selectedItem}
+                            loading={loading.detail}
+                            renderContent={renderDetailContent}
+                            config={{
+                                title: 'Item Code Verification',
+                                icon: Package,
+                                selectedTitle: 'Item Code Verification',
+                                emptyTitle: 'No Item Code Selected',
+                                emptyMessage: 'Select an item code from the list to review and verify.',
+                                headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                                maxHeight: 'calc(100vh - 200px)',
+                                sticky: true,
+                                stickyTop: '1.5rem',
+                            }}
+                        />
                     </div>
                 </div>
             </div>

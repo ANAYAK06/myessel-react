@@ -237,20 +237,7 @@ export const saveSalaryDeductions = async (params) => {
         if (!params.roleId)     throw new Error('Role ID is required');
         if (!params.createdBy)  throw new Error('Created By is required');
 
-        // ── Build payload matching spInsertEmpSalaryDeduction SP ──────────────
-        // SP Parameters:
-        //   @Ids           → Ids           (string - comma-delimited with trailing comma)
-        //   @EmpRefnos     → EmpRefnos     (string - comma-delimited with trailing comma)
-        //   @EmpTransNos   → EmpTransNos   (string - comma-delimited with trailing comma)
-        //   @Months        → Months        (string - comma-delimited with trailing comma)
-        //   @Years         → Years         (string - comma-delimited with trailing comma)
-        //   @PayRollDates  → PayDates      (string - comma-delimited, format "MM/DD/YYYY 12:00:00 AM,")
-        //   @CostCenters   → CCCodes       (string - comma-delimited with trailing comma)
-        //   @Roleid        → RoleId        (int)
-        //   @Createdby     → CreatedBy     (string)
-        //   @AddStatus  (output)
-        //   @ErrorStatus (output)
-        // NOTE: old app uses comma-separated values (not pipe), matching Image 1 payload format
+    
         const payload = {
             Ids: params.ids.toString(),
             EmpRefnos: params.empRefNos.toString(),
@@ -471,19 +458,7 @@ export const saveSalaryArears = async (params) => {
         if (!params.roleId)      throw new Error('Role ID is required');
         if (!params.createdBy)   throw new Error('Created By is required');
 
-        // ── Build payload matching spInsertEmpSalaryArear SP ─────────────────
-        // SP Parameters (identical structure to spInsertEmpSalaryDeduction):
-        //   @Ids           → Ids           (string - comma-delimited with trailing comma)
-        //   @EmpRefnos     → EmpRefnos     (string - comma-delimited with trailing comma)
-        //   @EmpTransNos   → EmpTransNos   (string - comma-delimited with trailing comma)
-        //   @Months        → Months        (string - comma-delimited with trailing comma)
-        //   @Years         → Years         (string - comma-delimited with trailing comma)
-        //   @PayRollDates  → PayDates      (string - comma-delimited, format "MM/DD/YYYY 12:00:00 AM,")
-        //   @CostCenters   → CCCodes       (string - comma-delimited with trailing comma)
-        //   @Roleid        → RoleId        (int)
-        //   @Createdby     → CreatedBy     (string)
-        //   @AddStatus  (output)
-        //   @ErrorStatus (output)
+       
         const payload = {
             Ids:        params.ids.toString(),
             EmpRefnos:  params.empRefNos.toString(),

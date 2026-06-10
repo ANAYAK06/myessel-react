@@ -57,7 +57,7 @@ const generateEMIMonths = () => {
     const result = [];
     const now = new Date();
     let year  = now.getFullYear();
-    let month = now.getMonth() + 1; // start from next month
+    let month = now.getMonth(); // start from current month
     for (let i = 0; i < 12; i++) {
         if (month > 11) { month = 0; year += 1; }
         result.push({

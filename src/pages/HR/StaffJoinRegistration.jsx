@@ -162,6 +162,8 @@ const STEPS = [
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Other'];
 const MARITAL_OPTIONS = ['Single', 'Married', 'Divorced', 'Widowed'];
+const REF_RELATION_OPTIONS = ['Colleague', 'Manager', 'Friend', 'Mentor', 'Relative', 'Other'];
+const makeEmptyRefRows = () => Array.from({ length: 5 }, () => ({ name: '', relation: REF_RELATION_OPTIONS[0], mobile: '', remarks: '' }));
 const RELATION_OPTIONS = ['Spouse', 'Parent', 'Sibling', 'Child', 'Other'];
 const JOB_TYPES = ['Permanent', 'Full Time', 'Part Time', 'Contract', 'Internship'];
 const PF_OPTIONS = ['Yes', 'No'];
@@ -637,6 +639,8 @@ const StaffJoinRegistration = () => {
     const [undertakingNoPoliceCaseAck, setUndertakingNoPoliceCaseAck] = useState(false);
     const [undertakingAuthenticDocsAck, setUndertakingAuthenticDocsAck] = useState(false);
     const [undertakingMedicallyFitAck, setUndertakingMedicallyFitAck] = useState(false);
+    // Only show compliance inline errors after a submit attempt — not on first arrival
+    const [complianceAttempted, setComplianceAttempted] = useState(false);
 
     // Rejoin search state
     const [rejoinPrefix, setRejoinPrefix] = useState('');
@@ -654,7 +658,14 @@ const StaffJoinRegistration = () => {
     const [academicRows, setAcademicRows] = useState([]);
     const [techRows, setTechRows] = useState([]);
     const [expRows, setExpRows] = useState([]);
-    const [refRows, setRefRows] = useState([]);
+    const [refRows, setRefRows] = useState(makeEmptyRefRows);
+    const completeRefCount = refRows.filter(r => r.name?.trim() && r.mobile?.trim()).length;
+
+    // Reset compliance validation state on every step change so errors
+    // never appear on fresh arrival at step 12 before clicking Submit.
+    useEffect(() => {
+        setComplianceAttempted(false);
+    }, [currentStep]);
 
     // ── Data Fetching ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -678,7 +689,7 @@ const StaffJoinRegistration = () => {
             setUploadedDocs({});
             setExperienceType('');
             setExpRows([]);
-            setRefRows([]);
+            setRefRows(makeEmptyRefRows());
             setFamilyRows([]);
             setChildRows([]);
             setAcademicRows([]);
@@ -714,7 +725,7 @@ const StaffJoinRegistration = () => {
             setUploadedDocs({});
             setExperienceType('');
             setExpRows([]);
-            setRefRows([]);
+            setRefRows(makeEmptyRefRows());
             setFamilyRows([]);
             setChildRows([]);
             setAcademicRows([]);
@@ -843,6 +854,79 @@ const StaffJoinRegistration = () => {
         validateOnBlur: true,
         onSubmit: async (values) => {
             console.log('✅ onSubmit called — payload:', values);
+
+            // ── Pre-flight: collect ALL missing mandatory fields across every step ──
+            const allErrors = {};
+            for (let s = 1; s <= 12; s++) Object.assign(allErrors, validateStep(s, values));
+
+            // Step 8 — out-of-Formik state
+            if (!experienceType)
+                allErrors._exp = 'Step 8: Select Fresher or Experienced';
+            else if (experienceType === 'experienced' && expRows.length === 0)
+                allErrors._expRows = 'Step 8: Add at least one work experience entry';
+            if (completeRefCount < 5)
+                allErrors._refs = `Step 8: Complete all 5 references (${completeRefCount}/5 done)`;
+
+            // Step 11 — mandatory documents
+            const _missingDocs = MANDATORY_DOCS.filter(d => !uploadedDocs[d]);
+            if (_missingDocs.length > 0)
+                allErrors._docs = `Step 11: Upload required — ${_missingDocs.join(', ')}`;
+
+            // Step 12 — compliance
+            if (!policeVerification)
+                allErrors._police = 'Step 12: Select Police Verification (Yes/No)';
+            if (!undertakingNoPoliceCaseAck)
+                allErrors._ack1 = 'Step 12: Confirm — No pending police case';
+            if (!undertakingAuthenticDocsAck)
+                allErrors._ack2 = 'Step 12: Confirm — All documents are authentic';
+            if (!undertakingMedicallyFitAck)
+                allErrors._ack3 = 'Step 12: Confirm — Medically fit declaration';
+            if (!uploadedDocs['PersonalUndertaking'])
+                allErrors._puDoc = 'Step 12: Upload signed Personal Undertaking document';
+
+            if (Object.keys(allErrors).length > 0) {
+                const formikFieldErrors = Object.keys(allErrors).filter(k => !k.startsWith('_'));
+                const allMsgs = Object.values(allErrors);
+                const count = allMsgs.length;
+
+                // Navigate to first failing step
+                const stepFieldMap = {
+                    1: ['appointmentType', 'joiningType', 'groupId', 'category'],
+                    2: ['firstName', 'lastName', 'dob', 'gender', 'martialStatus', 'placeofBirth', 'adharNo', 'panNo'],
+                    3: ['contactMobile', 'workEmail', 'permanentAddress', 'presentAddress'],
+                    4: ['nomineeName', 'nomineeRelation', 'nomineeDob'],
+                    5: ['designationId', 'departmentId', 'joiningDate', 'jobType', 'joiningCostCenter', 'reportTo'],
+                    6: ['bankName', 'bankAccountNo', 'ifscCode'],
+                    10: ['pfExist', 'esiExist'],
+                };
+                let firstFailStep = 12;
+                for (const [step, fields] of Object.entries(stepFieldMap)) {
+                    if (fields.some(f => allErrors[f])) { firstFailStep = parseInt(step); break; }
+                }
+                if (allErrors._exp || allErrors._expRows || allErrors._refs) firstFailStep = Math.min(firstFailStep, 8);
+                if (allErrors._docs) firstFailStep = Math.min(firstFailStep, 11);
+                if (allErrors._police || allErrors._ack1 || allErrors._ack2 || allErrors._ack3 || allErrors._puDoc) {
+                    firstFailStep = Math.min(firstFailStep, 12);
+                    setComplianceAttempted(true); // now show inline errors on compliance step
+                }
+
+                toast.error(
+                    count === 1
+                        ? `Required: ${allMsgs[0]}`
+                        : `${count} required field${count > 1 ? 's' : ''} incomplete:\n• ${allMsgs.join('\n• ')}`,
+                    { duration: 8000 }
+                );
+                setCurrentStep(firstFailStep);
+                if (formikFieldErrors.length > 0) {
+                    formik.setTouched({
+                        ...formik.touched,
+                        ...Object.fromEntries(formikFieldErrors.map(k => [k, true])),
+                    });
+                }
+                return;
+            }
+            // ── End pre-flight ──────────────────────────────────────────────────
+
             if (!experienceType) {
                 toast.error('Please select Fresher or Experienced in the Experience step.');
                 setCurrentStep(8);
@@ -1112,13 +1196,9 @@ const StaffJoinRegistration = () => {
                 toast.error('Please add at least one work experience entry.');
                 return;
             }
-            if (refRows.length < 5) {
-                toast.error('Minimum 5 references are required (name, mobile, relation each).');
-                return;
-            }
-            const incompleteRef = refRows.find(r => !r.name?.trim() || !r.mobile?.trim() || !r.relation?.trim());
-            if (incompleteRef) {
-                toast.error('Each reference must have a Name, Mobile Number, and Relation.');
+            if (completeRefCount < 5) {
+                const needed = 5 - completeRefCount;
+                toast.error(`Please complete all 5 references — each must have a Name and Phone Number. (${completeRefCount}/5 done)`);
                 return;
             }
         }
@@ -1133,9 +1213,12 @@ const StaffJoinRegistration = () => {
         }
 
         if (Object.keys(errors).length > 0) {
-            // Show first error as toast
-            toast.error(Object.values(errors)[0]);
-            // Mark all failing fields touched so red inline errors appear
+            const msgs = Object.values(errors);
+            toast.error(
+                msgs.length === 1
+                    ? msgs[0]
+                    : `${msgs.length} required fields:\n• ${msgs.join('\n• ')}`
+            );
             formik.setTouched({
                 ...formik.touched,
                 ...Object.fromEntries(Object.keys(errors).map(k => [k, true]))
@@ -1856,22 +1939,22 @@ const StaffJoinRegistration = () => {
                             <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                                 <Contact className="h-4 w-4 text-orange-500" /> Mandatory References
                             </p>
-                            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-lg border ${refRows.length >= 5 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
-                                {refRows.length} / 5 required
+                            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-lg border ${completeRefCount >= 5 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
+                                {completeRefCount} / 5 complete
                             </span>
                         </div>
                         <div className="flex items-start gap-3 p-3 mb-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700">
                             <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                             <p className="text-xs text-blue-700 dark:text-blue-300">
                                 <span className="font-bold">5 references are mandatory for all employees</span> — regardless of experience type.
-                                Each reference must have a <span className="font-semibold">Name</span>, <span className="font-semibold">Phone Number</span>, and <span className="font-semibold">Relation</span>.
+                                Each reference must have a <span className="font-semibold">Name</span> and <span className="font-semibold">Phone Number</span>.
                             </p>
                         </div>
                         <DynamicTable
                             label="References (Minimum 5 Required)" icon={Contact}
                             columns={[
                                 { key: 'name', label: 'Name *', placeholder: 'Full name' },
-                                { key: 'relation', label: 'Relation *', placeholder: 'e.g. Friend, Colleague' },
+                                { key: 'relation', label: 'Relation', type: 'select', options: REF_RELATION_OPTIONS },
                                 { key: 'mobile', label: 'Phone *', placeholder: '10-digit mobile' },
                                 { key: 'remarks', label: 'Remarks', placeholder: 'How do they know you?' },
                             ]}
@@ -2150,7 +2233,7 @@ const StaffJoinRegistration = () => {
                                     </button>
                                 ))}
                             </div>
-                            {!policeVerification && (
+                            {complianceAttempted && !policeVerification && (
                                 <p className="text-xs text-rose-500 mt-2 flex items-center gap-1">
                                     <AlertCircle className="h-3 w-3" /> Police verification status is required.
                                 </p>
@@ -2198,7 +2281,7 @@ const StaffJoinRegistration = () => {
                                 ))}
                             </div>
 
-                            {!allAcksChecked && (
+                            {complianceAttempted && !allAcksChecked && (
                                 <p className="text-xs text-rose-500 flex items-center gap-1">
                                     <AlertCircle className="h-3 w-3" /> All three declarations must be confirmed before submission.
                                 </p>

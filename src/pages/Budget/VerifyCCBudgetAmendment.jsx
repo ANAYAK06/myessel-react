@@ -13,6 +13,9 @@ import {
     Briefcase, FileDown, Eye, X
 } from 'lucide-react';
 
+import LeftPanel from '../../components/Inbox/LeftPanel';
+import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
+
 // ✅ CC BUDGET AMENDMENT SLICE
 import {
     fetchApprovalCCAmendBudgetDetails,
@@ -443,7 +446,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
         const isPdf = isPdfFile(attachmentUrl);
 
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
+            <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black bg-opacity-75 p-4">
                 <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
                     {/* Modal Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20">
@@ -564,7 +567,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
         }
 
         const filteredActions = enabledActions.filter(action => action.type.toLowerCase() !== 'send back');
-        console.log('🔍 Actions Debug:', {
+        console.log('ðŸ” Actions Debug:', {
             originalCount: enabledActions.length,
             original: enabledActions,
             filteredCount: filteredActions.length,
@@ -641,57 +644,414 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // ✅ RENDER LEFT PANEL ITEM
+    const renderItemCard = (amendment, isSelected) => {
+        const priority = getPriority(amendment);
+        const totalAmount = parseFloat(amendment.AmendedValue || 0);
+        const amountDisplay = getAmountDisplay(totalAmount);
+
+        return (
+            <div className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-full border-2 border-indigo-200 bg-gradient-to-br from-indigo-100 to-indigo-100 flex items-center justify-center">
+                            <Briefcase className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                            {amendment.CCName || amendment.CCCode}
+                        </h3>
+                        <p className="text-xs text-gray-500 truncate">{amendment.CCCode}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
+                        {priority}
+                    </span>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <div className="flex items-center justify-between">
+                        <span className="flex items-center space-x-1">
+                            <Hash className="w-3 h-3" />
+                            <span className="truncate">{amendment.CCBudgetAmendmentid}</span>
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs border ${getAmendTypeColor(amendment.AmendmentType)}`}>
+                            {amendment.AmendmentType}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-medium">₹{amountDisplay.formatted}</span>
+                        <span className="text-gray-500 text-xs">
+                            {amendment.AmendmentDate ? new Date(amendment.AmendmentDate).toLocaleDateString() : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderCollapsedItem = (amendment) => (
+        <div className="w-full h-full rounded-lg border-2 border-indigo-200 bg-gradient-to-br from-indigo-100 to-indigo-100 flex items-center justify-center">
+            <Briefcase className="w-4 h-4 text-indigo-600" />
+        </div>
+    );
+
+    // ✅ RENDER DETAIL CONTENT
+    const renderDetailContent = (isPopup = false) => {
+        if (amendmentDataLoading) {
+            return (
+                <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
+                </div>
+            );
+        }
+
+        if (!selectedAmendmentData) {
+            return (
+                <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500 dark:text-gray-400">Loading amendment details...</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-6">
+                {/* Amendment Header */}
+                <div className="p-6 rounded-xl border-2 bg-gradient-to-r from-indigo-50 via-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-indigo-900/20 border-indigo-200 dark:border-indigo-700">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                            <div className="relative">
+                                <div className="w-16 h-16 rounded-full border-4 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-indigo-100 dark:from-indigo-800/50 dark:to-indigo-800/50 flex items-center justify-center shadow-lg">
+                                    <Briefcase className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
+                                    <CheckCircle className="w-3 h-3 text-white" />
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-xl text-gray-900 dark:text-white">
+                                    {selectedAmendmentData.CCName || selectedAmendmentData.CCCode}
+                                </h3>
+                                <p className="font-semibold text-lg text-indigo-600 dark:text-indigo-400">
+                                    Amendment ID: {selectedAmendmentData.CCBudgetAmendmentid}
+                                </p>
+                                <div className="flex items-center space-x-2 mt-1">
+                                    <span className={`px-3 py-1 text-sm rounded-full border ${getAmendTypeColor(selectedAmendmentData.AmendmentType)}`}>
+                                        {selectedAmendmentData.AmendmentType}
+                                    </span>
+                                    <span className="px-3 py-1 text-sm rounded-full border bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-opacity-20 dark:border-opacity-50">
+                                        {selectedAmendmentData.CCCode}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                                ₹{formatIndianCurrency(selectedAmendmentData.AmendedValue)}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Amendment Amount</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Amendment Date</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">
+                                {selectedAmendmentData.AmendmentDate ? new Date(selectedAmendmentData.AmendmentDate).toLocaleDateString() : 'N/A'}
+                            </span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">CC Type</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">{selectedAmendmentData.CCType || 'N/A'}</span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Ref No</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">{selectedAmendmentData.Refno || 'N/A'}</span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                            <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Priority</span>
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full border ${getPriorityColor(getPriority(selectedAmendment))}`}>
+                                {getPriority(selectedAmendment)}
+                            </span>
+                        </div>
+                    </div>
+
+                    {selectedAmendmentData.FilePath && (
+                        <div className="mt-4 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    <FileDown className="w-5 h-5 text-green-600" />
+                                    <div>
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                                            Supporting Document Available
+                                        </span>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                            {selectedAmendmentData.FilePath.split('/').pop()}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleViewAttachment(selectedAmendmentData.FilePath)}
+                                    className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    <span>View</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Budget Comparison Table */}
+                <div className="bg-gradient-to-br from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-indigo-200 dark:border-indigo-700">
+                    <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
+                        <Calculator className="w-5 h-5 mr-2" />
+                        Budget Comparison
+                    </h4>
+                    <div className="overflow-hidden rounded-xl border border-indigo-200 dark:border-indigo-700">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-indigo-600 text-white">
+                                    <th className="px-4 py-3 text-left font-semibold w-8">#</th>
+                                    <th className="px-4 py-3 text-left font-semibold">Description</th>
+                                    <th className="px-4 py-3 text-right font-semibold">Amount (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-indigo-100 dark:divide-indigo-800">
+                                <tr className="bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                                    <td className="px-4 py-4">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                                            <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="font-medium text-gray-800 dark:text-gray-200">Existing Total Basic Budget</span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <span className="font-bold text-gray-900 dark:text-white text-base">
+                                            ₹{formatIndianCurrency(
+                                                selectedAmendmentData.AmendmentType === 'Add'
+                                                    ? parseFloat(selectedAmendmentData.OldBudget || 0) - parseFloat(selectedAmendmentData.AmendedValue || 0)
+                                                    : parseFloat(selectedAmendmentData.OldBudget || 0) + parseFloat(selectedAmendmentData.AmendedValue || 0)
+                                            )}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr className={`hover:bg-opacity-80 transition-colors ${selectedAmendmentData.AmendmentType === 'Add' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-red-50 dark:bg-red-900/10'}`}>
+                                    <td className="px-4 py-4">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedAmendmentData.AmendmentType === 'Add' ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                                            {selectedAmendmentData.AmendmentType === 'Add'
+                                                ? <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                                : <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                            }
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <div className="flex items-center space-x-2">
+                                            <span className="font-medium text-gray-800 dark:text-gray-200">Amendment Requested Value</span>
+                                            <span className={`px-2 py-0.5 text-xs rounded-full border font-medium ${getAmendTypeColor(selectedAmendmentData.AmendmentType)}`}>
+                                                {selectedAmendmentData.AmendmentType}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <span className={`font-bold text-base ${selectedAmendmentData.AmendmentType === 'Add' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                                            {selectedAmendmentData.AmendmentType === 'Add' ? '+' : '-'}₹{formatIndianCurrency(selectedAmendmentData.AmendedValue)}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr className="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                                    <td className="px-4 py-4">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center">
+                                            <Calculator className="w-4 h-4 text-indigo-700 dark:text-indigo-300" />
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="font-semibold text-indigo-800 dark:text-indigo-200">Revised Total Basic Budget</span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <span className="font-bold text-indigo-700 dark:text-indigo-300 text-base">
+                                            ₹{formatIndianCurrency(selectedAmendmentData.OldBudget)}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr className="bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                                    <td className="px-4 py-4">
+                                        <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                                            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="font-medium text-gray-800 dark:text-gray-200">Balance Budget before Amendment</span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <span className="font-bold text-amber-700 dark:text-amber-400 text-base">
+                                            ₹{formatIndianCurrency(selectedAmendmentData.OldBudgetBalance)}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr className="bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors">
+                                    <td className="px-4 py-4">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                                            <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="font-semibold text-emerald-800 dark:text-emerald-200">Balance Budget After Amendment</span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <span className="font-bold text-emerald-700 dark:text-emerald-400 text-base">
+                                            ₹{formatIndianCurrency(selectedAmendmentData.NewBudgetBalance)}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {selectedAmendmentData.Remarks && (
+                    <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 p-6 rounded-xl border border-orange-200 dark:border-orange-700">
+                        <h4 className="font-semibold text-orange-800 dark:text-orange-200 mb-4 flex items-center">
+                            <Clipboard className="w-5 h-5 mr-2" />
+                            Amendment Justification
+                        </h4>
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {selectedAmendmentData.Remarks}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <button
+                        onClick={() => setShowRemarksHistory(!showRemarksHistory)}
+                        className="flex items-center justify-between w-full text-left"
+                    >
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                            <UserCheck className="w-5 h-5 mr-2" />
+                            View Approval History ({remarks.length})
+                        </h4>
+                        {showRemarksHistory ? (
+                            <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                    </button>
+                </div>
+
+                {renderRemarksHistory()}
+
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border-2 border-green-200 dark:border-green-700">
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={isVerified}
+                            onChange={(e) => setIsVerified(e.target.checked)}
+                            className="w-5 h-5 mt-1 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <div>
+                            <span className="font-semibold text-green-800 dark:text-green-200 block">
+                                ✓ I have verified all amendment details
+                            </span>
+                            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                                Including budget amounts, CC code, amendment type, justification, and supporting documents
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
+                    <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
+                        <FileText className="w-4 h-4 mr-2" />
+                        <span className="text-red-600 dark:text-red-400">*</span> Verification Comments (Mandatory)
+                    </label>
+                    <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                        Please verify budget amendment amounts, justification, supporting documents, and ensure proper authorization.
+                    </p>
+                    <textarea
+                        value={verificationComment}
+                        onChange={(e) => setVerificationComment(e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${verificationComment.trim() === ''
+                            ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                            : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                            }`}
+                        rows="4"
+                        placeholder="Please verify budget amendment amounts, justification, supporting documents, and approval requirements..."
+                        required
+                    />
+                    {verificationComment.trim() === '' && (
+                        <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
+                            <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                            Verification comment is required before proceeding
+                        </p>
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    {renderActionButtons()}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6">
             {/* Attachment Modal */}
             {renderAttachmentModal()}
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-xl shadow-blue-900/20 p-7 text-white">
+                {/* Dot pattern overlay */}
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                {/* Orange glow blob */}
+                <div className="absolute top-0 right-0 w-72 h-72 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
+
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={handleBackToInbox}
-                            className="p-2 text-indigo-100 hover:text-white hover:bg-indigo-500 rounded-lg transition-colors"
+                            className="p-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
                             title="Back to Dashboard"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-indigo-500 rounded-xl shadow-inner">
-                                <Briefcase className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold">
-                                    {InboxTitle || 'CC Budget Amendment Verification'}
-                                </h1>
-                                <p className="text-indigo-100 mt-1">
-                                    {ModuleDisplayName} • {amendmentsList.length} Amendments pending
-                                </p>
-                            </div>
+                        <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
+                            <Briefcase className="h-7 w-7 text-white" />
                         </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <div className="px-4 py-2 bg-indigo-500 text-indigo-100 text-sm rounded-full border border-indigo-400">
-                            Budget Amendment
-                        </div>
-                        <div className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm rounded-full shadow-md">
-                            {amendmentsList.length} Pending
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-2 py-0.5 rounded-full border border-orange-400/30">
+                                    Budget Module
+                                </span>
+                                <span className="px-2 py-0.5 text-xs bg-red-500/80 text-white rounded-full font-semibold">
+                                    {amendmentsList.length} Pending
+                                </span>
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                                {InboxTitle || 'CC Budget Amendment Verification'}
+                            </h1>
+                            <p className="text-blue-200 text-sm mt-0.5">
+                                {ModuleDisplayName} &bull; {amendmentsList.length} amendments pending verification
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Search and Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="relative mt-5 grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div className="md:col-span-2">
                         <div className="relative">
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-indigo-200" />
+                            <Search className="absolute left-3 top-3 w-4 h-4 text-blue-300" />
                             <input
                                 type="text"
                                 placeholder="Search by CC code, amendment ID, CC name..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-indigo-500/50 text-white placeholder-indigo-200 border border-indigo-400 rounded-xl focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 backdrop-blur-sm"
+                                className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-blue-300 border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm"
                             />
                         </div>
                     </div>
@@ -699,11 +1059,11 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                         <select
                             value={filterCCCode}
                             onChange={(e) => setFilterCCCode(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-indigo-500/50 text-white border border-indigo-400 rounded-xl focus:ring-2 focus:ring-indigo-300 backdrop-blur-sm"
+                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
                         >
-                            <option value="All">All Cost Centers</option>
+                            <option value="All" className="text-gray-900">All Cost Centers</option>
                             {ccCodes.map(ccCode => (
-                                <option key={ccCode} value={ccCode}>{ccCode}</option>
+                                <option key={ccCode} value={ccCode} className="text-gray-900">{ccCode}</option>
                             ))}
                         </select>
                     </div>
@@ -711,581 +1071,79 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                         <select
                             value={filterAmendType}
                             onChange={(e) => setFilterAmendType(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-indigo-500/50 text-white border border-indigo-400 rounded-xl focus:ring-2 focus:ring-indigo-300 backdrop-blur-sm"
+                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
                         >
-                            <option value="All">All Types</option>
+                            <option value="All" className="text-gray-900">All Types</option>
                             {amendTypes.map(amendType => (
-                                <option key={amendType} value={amendType}>{amendType}</option>
+                                <option key={amendType} value={amendType} className="text-gray-900">{amendType}</option>
                             ))}
                         </select>
                     </div>
                 </div>
             </div>
 
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-6 border border-indigo-200 dark:border-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-indigo-500 rounded-xl shadow-lg">
-                                <Briefcase className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{amendmentsList.length}</p>
-                                <p className="text-sm text-indigo-600 dark:text-indigo-400">Total Amendments</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-indigo-200 dark:bg-indigo-800 rounded-full h-2 mt-3">
-                            <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-6 border border-red-200 dark:border-red-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-red-500 rounded-xl shadow-lg">
-                                <AlertCircle className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-red-700 dark:text-red-300">
-                                    {amendmentsList.filter(a => getPriority(a) === 'High').length}
-                                </p>
-                                <p className="text-sm text-red-600 dark:text-red-400">High Priority</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-red-200 dark:bg-red-800 rounded-full h-2 mt-3">
-                            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${amendmentsList.length > 0 ? (amendmentsList.filter(a => getPriority(a) === 'High').length / amendmentsList.length) * 100 : 0}%` }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-6 border border-indigo-200 dark:border-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-indigo-500 rounded-xl shadow-lg">
-                                <Building className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{ccCodes.length}</p>
-                                <p className="text-sm text-indigo-600 dark:text-indigo-400">Cost Centers</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-indigo-200 dark:bg-indigo-800 rounded-full h-2 mt-3">
-                            <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 border border-green-200 dark:border-green-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-green-500 rounded-xl shadow-lg">
-                                <TrendingUp className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-lg font-bold text-green-700 dark:text-green-300">
-                                    ₹{formatIndianCurrency(amendmentsList.reduce((sum, a) => sum + parseFloat(a.AmendedValue || 0), 0))}
-                                </p>
-                                <p className="text-sm text-green-600 dark:text-green-400">Total Amount</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2 mt-3">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Main Content */}
-            <div className={`grid gap-6 transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1 lg:grid-cols-3'}`}>
-                {/* Left Panel - Amendments List */}
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}`}>
-                    <div
-                        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'}`}
-                        onMouseEnter={() => setIsLeftPanelHovered(true)}
-                        onMouseLeave={() => setIsLeftPanelHovered(false)}
-                    >
-                        <div className="bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
-                                    <div className="flex flex-col items-center space-y-2">
-                                        <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-500 rounded-lg">
-                                            <Clock className="w-4 h-4 text-white" />
-                                        </div>
-                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 font-bold transform -rotate-90 whitespace-nowrap">
-                                            {filteredAmendments.length}
-                                        </span>
-                                        <button
-                                            onClick={() => setIsLeftPanelCollapsed(false)}
-                                            className="p-1 text-indigo-600 hover:text-indigo-800 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition-colors"
-                                            title="Expand Panel"
-                                        >
-                                            <ChevronRight className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                            <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-500 rounded-lg">
-                                                <Clock className="w-4 h-4 text-white" />
-                                            </div>
-                                            <span>Pending ({filteredAmendments.length})</span>
-                                        </h2>
-                                        <div className="flex items-center space-x-2">
-                                            {selectedAmendment && (
-                                                <button
-                                                    onClick={() => setIsLeftPanelCollapsed(true)}
-                                                    className="p-2 text-indigo-600 hover:text-indigo-800 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition-colors"
-                                                    title="Collapse Panel"
-                                                >
-                                                    <ChevronLeft className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => dispatch(fetchApprovalCCAmendBudgetDetails({ roleId, uid }))}
-                                                className="p-2 text-indigo-600 hover:text-indigo-800 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition-colors"
-                                                title="Refresh"
-                                                disabled={amendmentsLoading}
-                                            >
-                                                <RefreshCw className={`w-4 h-4 ${amendmentsLoading ? 'animate-spin' : ''}`} />
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Amendment List */}
-                        <div className={`p-4 max-h-[calc(100vh-300px)] overflow-y-auto transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'}`}>
-                            {amendmentsLoading ? (
-                                <div className="text-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">Loading...</p>}
-                                </div>
-                            ) : amendmentsError ? (
-                                <div className="text-center py-8">
-                                    <XCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && (
-                                        <>
-                                            <p className="text-red-500 mb-2">Error loading data</p>
-                                            <button
-                                                onClick={() => dispatch(fetchApprovalCCAmendBudgetDetails({ roleId, uid }))}
-                                                className="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                            >
-                                                Retry
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            ) : filteredAmendments.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">No amendments found!</p>}
-                                </div>
-                            ) : (
-                                <div className={`space-y-3 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'flex flex-col items-center' : ''}`}>
-                                    {filteredAmendments.map((amendment) => {
-                                        const priority = getPriority(amendment);
-                                        const totalAmount = parseFloat(amendment.AmendedValue || 0);
-                                        const amountDisplay = getAmountDisplay(totalAmount);
-
-                                        return (
-                                            <div
-                                                key={amendment.CCBudgetAmendmentid}
-                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedAmendment?.CCBudgetAmendmentid === amendment.CCBudgetAmendmentid
-                                                    ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 shadow-lg'
-                                                    : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300 bg-white dark:bg-gray-800'
-                                                    } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
-                                                onClick={() => handleAmendmentSelect(amendment)}
-                                                title={isLeftPanelCollapsed && !isLeftPanelHovered ? `${amendment.CCName} - ${amendment.CCBudgetAmendmentid}` : ''}
-                                            >
-                                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
-                                                    <div className="w-full h-full rounded-lg border-2 border-indigo-200 bg-gradient-to-br from-indigo-100 to-indigo-100 flex items-center justify-center">
-                                                        <Briefcase className="w-4 h-4 text-indigo-600" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-4">
-                                                        <div className="flex items-center space-x-3 mb-3">
-                                                            <div className="relative">
-                                                                <div className="w-12 h-12 rounded-full border-2 border-indigo-200 bg-gradient-to-br from-indigo-100 to-indigo-100 flex items-center justify-center">
-                                                                    <Briefcase className="w-5 h-5 text-indigo-600" />
-                                                                </div>
-                                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                                                    {amendment.CCName || amendment.CCCode}
-                                                                </h3>
-                                                                <p className="text-xs text-gray-500 truncate">{amendment.CCCode}</p>
-                                                            </div>
-                                                            <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
-                                                                {priority}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="flex items-center space-x-1">
-                                                                    <Hash className="w-3 h-3" />
-                                                                    <span className="truncate">{amendment.CCBudgetAmendmentid}</span>
-                                                                </span>
-                                                                <span className={`px-2 py-0.5 rounded-full text-xs border ${getAmendTypeColor(amendment.AmendmentType)}`}>
-                                                                    {amendment.AmendmentType}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-indigo-600 dark:text-indigo-400 font-medium">₹{amountDisplay.formatted}</span>
-                                                                <span className="text-gray-500 text-xs">
-                                                                    {amendment.AmendmentDate ? new Date(amendment.AmendmentDate).toLocaleDateString() : 'N/A'}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+            <div
+                className={`grid transition-all duration-300 ${
+                    isLeftPanelCollapsed && !isLeftPanelHovered
+                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
+                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
+                }`}
+                onMouseLeave={() => {
+                    if (selectedAmendment && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+                }}
+            >
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
+                    <LeftPanel
+                        items={filteredAmendments}
+                        selectedItem={selectedAmendment}
+                        onItemSelect={handleAmendmentSelect}
+                        renderItem={renderItemCard}
+                        renderCollapsedItem={renderCollapsedItem}
+                        isCollapsed={isLeftPanelCollapsed}
+                        onCollapseToggle={setIsLeftPanelCollapsed}
+                        isHovered={isLeftPanelHovered}
+                        onHoverChange={setIsLeftPanelHovered}
+                        loading={amendmentsLoading}
+                        error={amendmentsError}
+                        onRefresh={() => dispatch(fetchApprovalCCAmendBudgetDetails({ roleId, uid }))}
+                        config={{
+                            title: 'Pending Verification',
+                            icon: Clock,
+                            emptyMessage: 'No amendments found!',
+                            itemKey: 'CCBudgetAmendmentid',
+                            enableCollapse: true,
+                            enableRefresh: true,
+                            enableHover: true,
+                            maxHeight: '100%',
+                            headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20'
+                        }}
+                        renderPopupContent={(_item) => renderDetailContent(true)}
+                        popupConfig={{
+                            title: 'CC Budget Amendment',
+                            icon: Briefcase,
+                            headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20',
+                        }}
+                    />
                 </div>
 
-                {/* Right Panel - Details */}
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}`}>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors sticky top-6">
-                        <div className="bg-gradient-to-r from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-500 rounded-lg">
-                                    <FileCheck className="w-4 h-4 text-white" />
-                                </div>
-                                <span>{selectedAmendment ? 'Amendment Verification' : 'Select an Amendment'}</span>
-                            </h2>
-                        </div>
-
-                        <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-                            {selectedAmendment ? (
-                                <div className="space-y-6">
-                                    {amendmentDataLoading ? (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
-                                        </div>
-                                    ) : selectedAmendmentData ? (
-                                        <>
-                                            {/* Amendment Header */}
-                                            <div className="p-6 rounded-xl border-2 bg-gradient-to-r from-indigo-50 via-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-indigo-900/20 border-indigo-200 dark:border-indigo-700">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center space-x-4">
-                                                        <div className="relative">
-                                                            <div className="w-16 h-16 rounded-full border-4 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-indigo-100 dark:from-indigo-800/50 dark:to-indigo-800/50 flex items-center justify-center shadow-lg">
-                                                                <Briefcase className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                                                            </div>
-                                                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
-                                                                <CheckCircle className="w-3 h-3 text-white" />
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-bold text-xl text-gray-900 dark:text-white">
-                                                                {selectedAmendmentData.CCName || selectedAmendmentData.CCCode}
-                                                            </h3>
-                                                            <p className="font-semibold text-lg text-indigo-600 dark:text-indigo-400">
-                                                                Amendment ID: {selectedAmendmentData.CCBudgetAmendmentid}
-                                                            </p>
-                                                            <div className="flex items-center space-x-2 mt-1">
-                                                                <span className={`px-3 py-1 text-sm rounded-full border ${getAmendTypeColor(selectedAmendmentData.AmendmentType)}`}>
-                                                                    {selectedAmendmentData.AmendmentType}
-                                                                </span>
-                                                                <span className="px-3 py-1 text-sm rounded-full border bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-opacity-20 dark:border-opacity-50">
-                                                                    {selectedAmendmentData.CCCode}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
-                                                            ₹{formatIndianCurrency(selectedAmendmentData.AmendedValue)}
-                                                        </p>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Amendment Amount</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Amendment Date</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">
-                                                            {selectedAmendmentData.AmendmentDate ? new Date(selectedAmendmentData.AmendmentDate).toLocaleDateString() : 'N/A'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">CC Type</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedAmendmentData.CCType || 'N/A'}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Ref No</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedAmendmentData.Refno || 'N/A'}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Priority</span>
-                                                        <span className={`inline-block px-2 py-1 text-xs rounded-full border ${getPriorityColor(getPriority(selectedAmendment))}`}>
-                                                            {getPriority(selectedAmendment)}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Document Status with View Button */}
-                                                {selectedAmendmentData.FilePath && (
-                                                    <div className="mt-4 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center space-x-2">
-                                                                <FileDown className="w-5 h-5 text-green-600" />
-                                                                <div>
-                                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
-                                                                        Supporting Document Available
-                                                                    </span>
-                                                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                                        {selectedAmendmentData.FilePath.split('/').pop()}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => handleViewAttachment(selectedAmendmentData.FilePath)}
-                                                                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
-                                                            >
-                                                                <Eye className="w-4 h-4" />
-                                                                <span>View</span>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Budget Comparison Table */}
-                                            <div className="bg-gradient-to-br from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-indigo-200 dark:border-indigo-700">
-                                                <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
-                                                    <Calculator className="w-5 h-5 mr-2" />
-                                                    Budget Comparison
-                                                </h4>
-                                                <div className="overflow-hidden rounded-xl border border-indigo-200 dark:border-indigo-700">
-                                                    <table className="w-full text-sm">
-                                                        <thead>
-                                                            <tr className="bg-indigo-600 text-white">
-                                                                <th className="px-4 py-3 text-left font-semibold w-8">#</th>
-                                                                <th className="px-4 py-3 text-left font-semibold">Description</th>
-                                                                <th className="px-4 py-3 text-right font-semibold">Amount (₹)</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-indigo-100 dark:divide-indigo-800">
-                                                            {/* Row 1 */}
-                                                            <tr className="bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-                                                                <td className="px-4 py-4">
-                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                                                                        <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-4">
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">Existing Total Basic Budget</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 text-right">
-                                                                    <span className="font-bold text-gray-900 dark:text-white text-base">
-                                                                        ₹{formatIndianCurrency(
-                                                                            selectedAmendmentData.AmendmentType === 'Add'
-                                                                                ? parseFloat(selectedAmendmentData.OldBudget || 0) - parseFloat(selectedAmendmentData.AmendedValue || 0)
-                                                                                : parseFloat(selectedAmendmentData.OldBudget || 0) + parseFloat(selectedAmendmentData.AmendedValue || 0)
-                                                                        )}
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                            {/* Row 2 */}
-                                                            <tr className={`hover:bg-opacity-80 transition-colors ${selectedAmendmentData.AmendmentType === 'Add' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-red-50 dark:bg-red-900/10'}`}>
-                                                                <td className="px-4 py-4">
-                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedAmendmentData.AmendmentType === 'Add' ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
-                                                                        {selectedAmendmentData.AmendmentType === 'Add'
-                                                                            ? <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                                                            : <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                                                        }
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-4">
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <span className="font-medium text-gray-800 dark:text-gray-200">Amendment Requested Value</span>
-                                                                        <span className={`px-2 py-0.5 text-xs rounded-full border font-medium ${getAmendTypeColor(selectedAmendmentData.AmendmentType)}`}>
-                                                                            {selectedAmendmentData.AmendmentType}
-                                                                        </span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-4 text-right">
-                                                                    <span className={`font-bold text-base ${selectedAmendmentData.AmendmentType === 'Add' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-                                                                        {selectedAmendmentData.AmendmentType === 'Add' ? '+' : '-'}₹{formatIndianCurrency(selectedAmendmentData.AmendedValue)}
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                            {/* Row 3 */}
-                                                            <tr className="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
-                                                                <td className="px-4 py-4">
-                                                                    <div className="w-8 h-8 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center">
-                                                                        <Calculator className="w-4 h-4 text-indigo-700 dark:text-indigo-300" />
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-4">
-                                                                    <span className="font-semibold text-indigo-800 dark:text-indigo-200">Revised Total Basic Budget</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 text-right">
-                                                                    <span className="font-bold text-indigo-700 dark:text-indigo-300 text-base">
-                                                                        ₹{formatIndianCurrency(selectedAmendmentData.OldBudget)}
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                            {/* Row 4 */}
-                                                            <tr className="bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-                                                                <td className="px-4 py-4">
-                                                                    <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                                                                        <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-4">
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">Balance Budget before Amendment</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 text-right">
-                                                                    <span className="font-bold text-amber-700 dark:text-amber-400 text-base">
-                                                                        ₹{formatIndianCurrency(selectedAmendmentData.OldBudgetBalance)}
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                            {/* Row 5 */}
-                                                            <tr className="bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors">
-                                                                <td className="px-4 py-4">
-                                                                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                                                                        <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-4">
-                                                                    <span className="font-semibold text-emerald-800 dark:text-emerald-200">Balance Budget After Amendment</span>
-                                                                </td>
-                                                                <td className="px-4 py-4 text-right">
-                                                                    <span className="font-bold text-emerald-700 dark:text-emerald-400 text-base">
-                                                                        ₹{formatIndianCurrency(selectedAmendmentData.NewBudgetBalance)}
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-
-                                            {/* Amendment Reason/Justification */}
-                                            {selectedAmendmentData.Remarks && (
-                                                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 p-6 rounded-xl border border-orange-200 dark:border-orange-700">
-                                                    <h4 className="font-semibold text-orange-800 dark:text-orange-200 mb-4 flex items-center">
-                                                        <Clipboard className="w-5 h-5 mr-2" />
-                                                        Amendment Justification
-                                                    </h4>
-                                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                                            {selectedAmendmentData.Remarks}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Approval History Toggle */}
-                                            <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                                                <button
-                                                    onClick={() => setShowRemarksHistory(!showRemarksHistory)}
-                                                    className="flex items-center justify-between w-full text-left"
-                                                >
-                                                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                                                        <UserCheck className="w-5 h-5 mr-2" />
-                                                        View Approval History ({remarks.length})
-                                                    </h4>
-                                                    {showRemarksHistory ? (
-                                                        <ChevronUp className="w-4 h-4 text-gray-400" />
-                                                    ) : (
-                                                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                                                    )}
-                                                </button>
-                                            </div>
-
-                                            {/* Remarks History Section */}
-                                            {renderRemarksHistory()}
-
-                                            {/* Verification Checkbox */}
-                                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border-2 border-green-200 dark:border-green-700">
-                                                <label className="flex items-start space-x-3 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isVerified}
-                                                        onChange={(e) => setIsVerified(e.target.checked)}
-                                                        className="w-5 h-5 mt-1 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                                    />
-                                                    <div>
-                                                        <span className="font-semibold text-green-800 dark:text-green-200 block">
-                                                            ✓ I have verified all amendment details
-                                                        </span>
-                                                        <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                                                            Including budget amounts, CC code, amendment type, justification, and supporting documents
-                                                        </p>
-                                                    </div>
-                                                </label>
-                                            </div>
-
-                                            {/* Verification Comments */}
-                                            <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
-                                                <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
-                                                    <FileText className="w-4 h-4 mr-2" />
-                                                    <span className="text-red-600 dark:text-red-400">*</span> Verification Comments (Mandatory)
-                                                </label>
-                                                <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                                                    Please verify budget amendment amounts, justification, supporting documents, and ensure proper authorization.
-                                                </p>
-                                                <textarea
-                                                    value={verificationComment}
-                                                    onChange={(e) => setVerificationComment(e.target.value)}
-                                                    className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${verificationComment.trim() === ''
-                                                        ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                                                        : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-                                                        }`}
-                                                    rows="4"
-                                                    placeholder="Please verify budget amendment amounts, justification, supporting documents, and approval requirements..."
-                                                    required
-                                                />
-                                                {verificationComment.trim() === '' && (
-                                                    <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
-                                                        <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                                                        Verification comment is required before proceeding
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="space-y-4">
-                                                {renderActionButtons()}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading amendment details...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <AlertCircle className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Amendment Selected</h3>
-                                    <p className="text-gray-500 dark:text-gray-400">
-                                        Select a CC budget amendment from the list to view details and take action.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
+                    <RightDetailPanel
+                        selectedItem={selectedAmendment}
+                        loading={amendmentDataLoading}
+                        renderContent={renderDetailContent}
+                        config={{
+                            title: 'CC Budget Amendment',
+                            icon: Briefcase,
+                            selectedTitle: 'Amendment Verification',
+                            emptyTitle: 'No Amendment Selected',
+                            emptyMessage: 'Select a CC budget amendment from the list to view details and take action.',
+                            headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20',
+                            maxHeight: 'calc(100vh - 200px)',
+                            sticky: true,
+                            stickyTop: '1.5rem',
+                        }}
+                    />
                 </div>
             </div>
         </div>

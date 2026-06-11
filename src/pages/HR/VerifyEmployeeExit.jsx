@@ -628,7 +628,7 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
 
     // ── Root render ────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
 
             <InboxHeader
                 title={`${InboxTitle || 'Employee Exit Verification'} (${exitGrid.length})`}
@@ -652,7 +652,6 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
                         options: uniqueStatuses
                     }
                 ]}
-                className="bg-gradient-to-r from-blue-600 via-purple-500 to-purple-600"
             />
 
             <div className="px-6 -mt-auto mb-6">
@@ -664,8 +663,7 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${
                         isLeftPanelCollapsed && !isLeftPanelHovered
                             ? 'grid-cols-1 lg:grid-cols-12 gap-2'
@@ -734,7 +732,6 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

@@ -961,7 +961,7 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Staff Pay Revision Verification'} (${revisionInbox.length})`}
                 subtitle={ModuleDisplayName}
@@ -990,7 +990,6 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                         options: categories
                     }
                 ]}
-                className="bg-gradient-to-r from-blue-600 via-purple-500 to-purple-600"
             />
 
             <div className="px-6 -mt-auto mb-6">
@@ -1002,8 +1001,7 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
                         ? 'grid-cols-1 lg:grid-cols-12 gap-2'
                         : 'grid-cols-1 lg:grid-cols-3 gap-6'
@@ -1082,7 +1080,6 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

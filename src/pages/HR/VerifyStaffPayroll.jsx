@@ -810,7 +810,7 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             {modalEmployee && (
                 <SalaryDetailModal
                     employee={modalEmployee}
@@ -845,11 +845,9 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                     { value: filterMonth, onChange: (e) => setFilterMonth(e.target.value), defaultLabel: 'All Months', options: months },
                     { value: filterYear, onChange: (e) => setFilterYear(e.target.value), defaultLabel: 'All Years', options: years }
                 ]}
-                className="bg-gradient-to-r from-indigo-600 via-purple-500 to-violet-600"
             />
 
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
                         ? 'grid-cols-1 lg:grid-cols-12 gap-2'
                         : 'grid-cols-1 lg:grid-cols-3 gap-6'
@@ -911,7 +909,6 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                         />
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

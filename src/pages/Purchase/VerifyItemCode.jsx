@@ -7,7 +7,7 @@ import {
     Pencil
 } from 'lucide-react';
 
-import InboxHeader      from '../../components/Inbox/InboxHeader';
+import InboxHeader from '../../components/Inbox/InboxHeader';
 import ActionButtons    from '../../components/Inbox/ActionButtons';
 import RemarksHistory   from '../../components/Inbox/RemarksHistory';
 import LeftPanel        from '../../components/Inbox/LeftPanel';
@@ -226,8 +226,8 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
         <div className="p-4">
             <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
-                    <div className="w-11 h-11 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center">
-                        <Package className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <div className="w-11 h-11 rounded-full border-2 border-blue-200 dark:border-blue-600 bg-gradient-to-br from-blue-100 to-blue-100 dark:from-blue-800/40 dark:to-blue-800/40 flex items-center justify-center">
+                        <Package className="w-5 h-5 text-blue-800 dark:text-blue-400" />
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-amber-400 rounded-full border-2 border-white dark:border-gray-800" />
                 </div>
@@ -254,8 +254,8 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
     );
 
     const renderCollapsedItem = () => (
-        <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center">
-            <Package className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+        <div className="w-full h-full rounded-lg border-2 border-blue-200 dark:border-blue-600 bg-gradient-to-br from-blue-100 to-blue-100 dark:from-blue-800/40 dark:to-blue-800/40 flex items-center justify-center">
+            <Package className="w-4 h-4 text-blue-800 dark:text-blue-400" />
         </div>
     );
 
@@ -276,16 +276,16 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
     const SectionToggle = ({ title, count, isOpen, onToggle, icon: Icon }) => (
         <button
             onClick={onToggle}
-            className="flex items-center justify-between w-full px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+            className="flex items-center justify-between w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
         >
-            <span className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+            <span className="flex items-center gap-2 text-sm font-semibold text-blue-900 dark:text-blue-300">
                 <Icon className="w-4 h-4" />
                 {title}
                 {count > 0 && (
-                    <span className="px-2 py-0.5 bg-indigo-600 text-white rounded-full text-xs">{count}</span>
+                    <span className="px-2 py-0.5 bg-blue-900 text-white rounded-full text-xs">{count}</span>
                 )}
             </span>
-            {isOpen ? <ChevronUp className="w-4 h-4 text-indigo-500" /> : <ChevronDown className="w-4 h-4 text-indigo-500" />}
+            {isOpen ? <ChevronUp className="w-4 h-4 text-blue-700" /> : <ChevronDown className="w-4 h-4 text-blue-700" />}
         </button>
     );
 
@@ -295,34 +295,34 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
         return (
             <div className="space-y-6">
                 {loading.detail && (
-                    <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-700">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
-                        <span className="text-sm text-indigo-700 dark:text-indigo-400">Loading item code details...</span>
+                    <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-900" />
+                        <span className="text-sm text-blue-900 dark:text-blue-400">Loading item code details...</span>
                     </div>
                 )}
 
                 {/* Header card */}
-                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 rounded-2xl p-6 border-2 border-indigo-200 dark:border-indigo-700">
+                <div className="bg-gradient-to-r from-blue-50 via-blue-50 to-orange-50 dark:from-blue-900/20 dark:via-blue-900/20 dark:to-orange-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700">
                     <div className="flex items-start gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shrink-0">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center shadow-lg shrink-0">
                             <Package className="w-7 h-7 text-white" />
                         </div>
                         <div className="flex-1">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                                 {detail?.Itemname || selectedItem?.Itemname}
                             </h2>
-                            <p className="text-indigo-600 dark:text-indigo-400 font-semibold text-sm mt-0.5 font-mono">
+                            <p className="text-blue-800 dark:text-blue-400 font-semibold text-sm mt-0.5 font-mono">
                                 {detail?.ItemCode || selectedItem?.ItemCode}
                                 {detail?.TranNo && ` · Txn: ${detail.TranNo}`}
                             </p>
                             <div className="flex flex-wrap gap-2 mt-3">
                                 {detail?.TransactionType && (
-                                    <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium">
+                                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300 rounded-full text-xs font-medium">
                                         {detail.TransactionType}
                                     </span>
                                 )}
                                 {detail?.ItemCodeType && (
-                                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                                    <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-xs font-medium">
                                         {detail.ItemCodeType}
                                     </span>
                                 )}
@@ -345,7 +345,7 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                 {detail && (
                     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
                         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-4 flex items-center gap-2">
-                            <Tag className="w-4 h-4 text-indigo-500" /> Item Details
+                            <Tag className="w-4 h-4 text-blue-800" /> Item Details
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                             <Field label="HSN Code"       value={detail.HSNCode}         mono />
@@ -371,22 +371,11 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
 
                 {/* Editable fields (verifier can update) */}
                 {detail && (
-                    <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200 dark:border-amber-700 p-5">
-                        <h3 className="text-sm font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <div className="bg-orange-50 dark:bg-orange-900/10 rounded-xl border border-orange-200 dark:border-orange-700 p-5">
+                        <h3 className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide mb-4 flex items-center gap-2">
                             <Pencil className="w-4 h-4" /> Updatable Fields
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                    Basic Price
-                                </label>
-                                <input
-                                    type="text"
-                                    value={editBasicprice}
-                                    onChange={(e) => setEditBasicprice(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-amber-300 dark:border-amber-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                                />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_9rem] gap-4 items-start">
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                                     Item Name
@@ -395,10 +384,10 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                     type="text"
                                     value={editItemname}
                                     onChange={(e) => setEditItemname(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-amber-300 dark:border-amber-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                    className="w-full px-3 py-2 text-sm border border-orange-300 dark:border-orange-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
                                 />
                             </div>
-                            <div className="md:col-span-2">
+                            <div>
                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                                     Specification
                                 </label>
@@ -406,7 +395,18 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                     rows={3}
                                     value={editSpecification}
                                     onChange={(e) => setEditSpecification(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-amber-300 dark:border-amber-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                                    className="w-full px-3 py-2 text-sm border border-orange-300 dark:border-orange-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                    Basic Price
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editBasicprice}
+                                    onChange={(e) => setEditBasicprice(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-orange-300 dark:border-orange-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
                                 />
                             </div>
                         </div>
@@ -431,10 +431,10 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                     <div className="p-6 text-center text-sm text-gray-400">No trader data found.</div>
                                 ) : (
                                     <table className="w-full text-sm">
-                                        <thead className="bg-indigo-50 dark:bg-indigo-900/20">
+                                        <thead className="bg-blue-100 dark:bg-blue-900/30">
                                             <tr>
                                                 {['Supplier', 'Phone', 'Email', 'Rate', 'Amount', 'Basic'].map((h) => (
-                                                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-indigo-700 dark:text-indigo-300">{h}</th>
+                                                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-blue-900 dark:text-blue-200">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -446,7 +446,7 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                                     <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{t.Supemail}</td>
                                                     <td className="px-4 py-2 text-green-700 dark:text-green-400 font-medium">₹ {t.SupRate}</td>
                                                     <td className="px-4 py-2 text-green-700 dark:text-green-400">₹ {t.SupAmt}</td>
-                                                    <td className="px-4 py-2 text-indigo-700 dark:text-indigo-400">₹ {t.Basic}</td>
+                                                    <td className="px-4 py-2 text-blue-900 dark:text-blue-400">₹ {t.Basic}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -475,10 +475,10 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                     <div className="p-6 text-center text-sm text-gray-400">No link data found.</div>
                                 ) : (
                                     <table className="w-full text-sm">
-                                        <thead className="bg-indigo-50 dark:bg-indigo-900/20">
+                                        <thead className="bg-blue-100 dark:bg-blue-900/30">
                                             <tr>
                                                 {['Link', 'Short Link', 'Rate', 'Amount', 'Basic'].map((h) => (
-                                                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-indigo-700 dark:text-indigo-300">{h}</th>
+                                                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-blue-900 dark:text-blue-200">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -488,7 +488,7 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                                     <td className="px-4 py-2 max-w-xs truncate">
                                                         {lk.Link ? (
                                                             <a href={lk.Link} target="_blank" rel="noopener noreferrer"
-                                                               className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                                               className="text-blue-800 dark:text-blue-400 hover:underline flex items-center gap-1">
                                                                 <ExternalLink className="w-3 h-3" /> View
                                                             </a>
                                                         ) : '—'}
@@ -496,14 +496,14 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                                                     <td className="px-4 py-2 max-w-xs truncate">
                                                         {lk.Linkshort ? (
                                                             <a href={lk.Linkshort} target="_blank" rel="noopener noreferrer"
-                                                               className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                                               className="text-blue-800 dark:text-blue-400 hover:underline flex items-center gap-1">
                                                                 <ExternalLink className="w-3 h-3" /> View
                                                             </a>
                                                         ) : '—'}
                                                     </td>
                                                     <td className="px-4 py-2 text-green-700 dark:text-green-400 font-medium">₹ {lk.LinkRate}</td>
                                                     <td className="px-4 py-2 text-green-700 dark:text-green-400">₹ {lk.LinkAmt}</td>
-                                                    <td className="px-4 py-2 text-indigo-700 dark:text-indigo-400">₹ {lk.Basic}</td>
+                                                    <td className="px-4 py-2 text-blue-900 dark:text-blue-400">₹ {lk.Basic}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -538,14 +538,14 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                         showCharCount: true,
                         validationStyle: 'dynamic',
                         checkboxGradient: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
-                        commentGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
-                        commentBorder: 'border-indigo-200 dark:border-indigo-700',
+                        commentGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                        commentBorder: 'border-blue-200 dark:border-blue-700',
                     }}
                 />
 
                 {statusLoading ? (
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-3">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600" />
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-900" />
                         <span className="text-gray-600 dark:text-gray-400">Loading actions...</span>
                     </div>
                 ) : statusError ? (
@@ -575,14 +575,14 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
     // ── Main render ───────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
-                title={`${InboxTitle || 'Item Code Verification'} (${inbox.length})`}
+                title={InboxTitle || 'Item Code Verification'}
                 subtitle={ModuleDisplayName}
                 itemCount={inbox.length}
                 onBackClick={handleBackToInbox}
                 HeaderIcon={Package}
-                badgeText="Item Code"
+                badgeText="Purchase Module"
                 badgeCount={inbox.length}
                 searchConfig={{
                     enabled: true,
@@ -590,74 +590,72 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                     value: searchQuery,
                     onChange: (e) => setSearchQuery(e.target.value),
                 }}
-                className="bg-gradient-to-r from-indigo-600 via-violet-500 to-purple-600"
             />
 
-            <div className="container mx-auto px-6">
-                <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    {/* Left panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={setSelectedItem}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={loading.inbox}
-                            error={errors.inbox}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No item codes pending verification.',
-                                itemKey: 'Rowid',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
-                            }}
-                            renderPopupContent={(_item) => renderDetailContent(true)}
-                            popupConfig={{
-                                title: 'Item Code Verification',
-                                icon: Package,
-                                headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
-                            }}
-                        />
-                    </div>
+            {/* Main Content */}
+            <div
+                className={`grid transition-all duration-300 ${
+                    isLeftPanelCollapsed && !isLeftPanelHovered
+                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
+                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
+                }`}
+                onMouseLeave={() => {
+                    if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+                }}
+            >
+                {/* Left panel */}
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
+                    <LeftPanel
+                        items={filteredItems}
+                        selectedItem={selectedItem}
+                        onItemSelect={setSelectedItem}
+                        renderItem={renderItemCard}
+                        renderCollapsedItem={renderCollapsedItem}
+                        isCollapsed={isLeftPanelCollapsed}
+                        onCollapseToggle={setIsLeftPanelCollapsed}
+                        isHovered={isLeftPanelHovered}
+                        onHoverChange={setIsLeftPanelHovered}
+                        loading={loading.inbox}
+                        error={errors.inbox}
+                        onRefresh={handleRefresh}
+                        config={{
+                            title: 'Pending Verification',
+                            icon: Clock,
+                            emptyMessage: 'No item codes pending verification.',
+                            itemKey: 'Rowid',
+                            enableCollapse: true,
+                            enableRefresh: true,
+                            enableHover: true,
+                            maxHeight: '100%',
+                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                        }}
+                        renderPopupContent={(_item) => renderDetailContent(true)}
+                        popupConfig={{
+                            title: 'Item Code Verification',
+                            icon: Package,
+                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                        }}
+                    />
+                </div>
 
-                    {/* Right panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <RightDetailPanel
-                            selectedItem={selectedItem}
-                            loading={loading.detail}
-                            renderContent={renderDetailContent}
-                            config={{
-                                title: 'Item Code Verification',
-                                icon: Package,
-                                selectedTitle: 'Item Code Verification',
-                                emptyTitle: 'No Item Code Selected',
-                                emptyMessage: 'Select an item code from the list to review and verify.',
-                                headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
-                                maxHeight: 'calc(100vh - 200px)',
-                                sticky: true,
-                                stickyTop: '1.5rem',
-                            }}
-                        />
-                    </div>
+                {/* Right panel */}
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
+                    <RightDetailPanel
+                        selectedItem={selectedItem}
+                        loading={loading.detail}
+                        renderContent={renderDetailContent}
+                        config={{
+                            title: 'Item Code Verification',
+                            icon: Package,
+                            selectedTitle: 'Item Code Verification',
+                            emptyTitle: 'No Item Code Selected',
+                            emptyMessage: 'Select an item code from the list to review and verify.',
+                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                            maxHeight: 'calc(100vh - 200px)',
+                            sticky: true,
+                            stickyTop: '1.5rem',
+                        }}
+                    />
                 </div>
             </div>
         </div>

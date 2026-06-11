@@ -858,7 +858,7 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
     const inboxError = deductionListError || arearListError;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             {/* Reject Modal */}
             {rejectItem && (
                 <RejectConfirmModal
@@ -889,7 +889,6 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
                     { value: filterMonth, onChange: (e) => setFilterMonth(e.target.value), defaultLabel: 'All Months', options: months },
                     { value: filterYear, onChange: (e) => setFilterYear(e.target.value), defaultLabel: 'All Years', options: years }
                 ]}
-                className="bg-gradient-to-r from-indigo-600 via-purple-500 to-violet-600"
             />
 
             {/* Stats */}
@@ -903,8 +902,7 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
             </div>
 
             {/* Body */}
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${
                         isLeftPanelCollapsed && !isLeftPanelHovered
                             ? 'grid-cols-1 lg:grid-cols-12 gap-2'
@@ -1006,7 +1004,6 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

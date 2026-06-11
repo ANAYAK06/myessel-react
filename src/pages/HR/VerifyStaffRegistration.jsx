@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    User, FileText, ArrowLeft, Search,
+    User, FileText,
     CheckCircle, Clock, Download, Eye,
     Building2, IdCard, Users, Briefcase, GraduationCap,
     Globe, Zap, Target, CreditCard, FileCheck,
@@ -11,6 +11,7 @@ import {
 
 // ✅ REUSABLE COMPONENT IMPORTS
 import ActionButtons from '../../components/Inbox/ActionButtons';
+import InboxHeader from '../../components/Inbox/InboxHeader';
 import LeftPanel from '../../components/Inbox/LeftPanel';
 import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
 import VerificationInput from '../../components/Inbox/VerificationInput';
@@ -1348,84 +1349,35 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
     // ✅ MAIN RENDER
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-xl shadow-blue-900/20 p-7 text-white">
-                {/* Dot pattern overlay */}
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-                {/* Orange glow blob */}
-                <div className="absolute top-0 right-0 w-72 h-72 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
-
-                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={handleBackToInbox}
-                            className="p-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
-                            title="Back to Dashboard"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
-                            <Users className="h-7 w-7 text-white" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-2 py-0.5 rounded-full border border-orange-400/30">
-                                    HR Module
-                                </span>
-                                <span className="px-2 py-0.5 text-xs bg-red-500/80 text-white rounded-full font-semibold">
-                                    {verificationStaff.length} Pending
-                                </span>
-                            </div>
-                            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-                                {InboxTitle || 'Staff Registration Verification'}
-                            </h1>
-                            <p className="text-blue-200 text-sm mt-0.5">
-                                {ModuleDisplayName} &bull; {verificationStaff.length} registrations pending verification
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Search and Filters */}
-                <div className="relative mt-5 grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="md:col-span-2">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-blue-300" />
-                            <input
-                                type="text"
-                                placeholder="Search by name, employee code, department, designation..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-blue-300 border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <select
-                            value={filterDepartment}
-                            onChange={(e) => setFilterDepartment(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
-                        >
-                            <option value="All" className="text-gray-900">All Departments</option>
-                            {departments.map(dept => (
-                                <option key={dept} value={dept} className="text-gray-900">{dept}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <select
-                            value={filterCategory}
-                            onChange={(e) => setFilterCategory(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
-                        >
-                            <option value="All" className="text-gray-900">All Categories</option>
-                            {categories.map(cat => (
-                                <option key={cat} value={cat} className="text-gray-900">{cat}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </div>
+            <InboxHeader
+                title={`${InboxTitle || 'Staff Registration Verification'} (${verificationStaff.length})`}
+                subtitle={ModuleDisplayName}
+                itemCount={verificationStaff.length}
+                onBackClick={handleBackToInbox}
+                HeaderIcon={Users}
+                badgeText="HR Module"
+                badgeCount={verificationStaff.length}
+                searchConfig={{
+                    enabled: true,
+                    placeholder: 'Search by name, employee code, department, designation...',
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value)
+                }}
+                filters={[
+                    {
+                        value: filterDepartment,
+                        onChange: (e) => setFilterDepartment(e.target.value),
+                        defaultLabel: 'All Departments',
+                        options: departments
+                    },
+                    {
+                        value: filterCategory,
+                        onChange: (e) => setFilterCategory(e.target.value),
+                        defaultLabel: 'All Categories',
+                        options: categories
+                    }
+                ]}
+            />
 
             {/* Main Content */}
             <div

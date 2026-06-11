@@ -520,7 +520,7 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
 
     // ── Main render ──────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Worker & Staff Registration Verification'} (${verificationList.length})`}
                 subtitle={ModuleDisplayName}
@@ -543,7 +543,6 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
                         options: statuses,
                     },
                 ]}
-                className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700"
             />
 
             <div className="px-6 -mt-auto mb-6">
@@ -555,8 +554,7 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${
                         isLeftPanelCollapsed && !isLeftPanelHovered
                             ? 'grid-cols-1 lg:grid-cols-12 gap-2'
@@ -628,7 +626,6 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

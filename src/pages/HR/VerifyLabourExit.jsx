@@ -709,7 +709,7 @@ const VerifyLabourExit = ({ notificationData, onNavigate }) => {
 
     // ── Root render ────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
 
             <InboxHeader
                 title={`${InboxTitle || 'Labour Exit Verification'} (${exitGrid.length})`}
@@ -733,7 +733,6 @@ const VerifyLabourExit = ({ notificationData, onNavigate }) => {
                         options: uniqueStatuses
                     }
                 ]}
-                className="bg-gradient-to-r from-teal-600 via-emerald-500 to-emerald-600"
             />
 
             <div className="px-6 -mt-auto mb-6">
@@ -745,8 +744,7 @@ const VerifyLabourExit = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${
                         isLeftPanelCollapsed && !isLeftPanelHovered
                             ? 'grid-cols-1 lg:grid-cols-12 gap-2'
@@ -815,7 +813,6 @@ const VerifyLabourExit = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

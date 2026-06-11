@@ -1422,12 +1422,12 @@ const TopNavbarLayout = ({ children, currentPage, onNavigate }) => {
             )}
 
             {/* Main Content Area */}
-            <main className="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <main className="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 pb-14">
                 {children}
             </main>
 
             {/* Footer */}
-            <footer className="bg-[#0d1b5e] dark:bg-[#0a1240] text-white py-4 mt-auto transition-colors">
+            <footer className="fixed bottom-0 left-0 right-0 z-40 bg-[#0d1b5e] dark:bg-[#0a1240] text-white py-4 transition-colors">
                 <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center">
                         <p className="text-sm">Copyright © . All Rights Reserved</p>

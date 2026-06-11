@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
+import { Gem, X, Send } from 'lucide-react';
 import { initializeSession, queryChat } from '../../api/chatAPI';
 
 // ─── Markdown renderer ───────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ function MarkdownMessage({ text }) {
                 <div key={`tbl-${i}`} className="overflow-x-auto my-2">
                     <table className="text-xs w-full border-collapse">
                         <thead>
-                            <tr className="bg-indigo-50 dark:bg-indigo-900/40">
+                            <tr className="bg-blue-950/10 dark:bg-blue-900/40">
                                 {headerRow.map((cell, ci) => (
                                     <th key={ci} className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-left font-semibold text-gray-700 dark:text-gray-200">
                                         {renderInline(cell)}
@@ -102,14 +103,14 @@ function TypingDots() {
     return (
         <div className="flex items-center space-x-1 px-1 py-1">
             {[0, 1, 2].map(d => (
-                <span key={d} className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                <span key={d} className="w-2 h-2 bg-orange-400 rounded-full animate-bounce"
                     style={{ animationDelay: `${d * 0.15}s` }} />
             ))}
         </div>
     );
 }
 
-// ─── Mode selector buttons (rendered inside first assistant bubble) ───────────
+// ─── Mode selector buttons ────────────────────────────────────────────────────
 function ModeSelector({ onSelect }) {
     return (
         <div className="mt-3 flex flex-col gap-2">
@@ -117,22 +118,22 @@ function ModeSelector({ onSelect }) {
             <div className="flex gap-2">
                 <button
                     onClick={() => onSelect('Report')}
-                    className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 hover:border-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all group"
+                    className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-blue-900/30 dark:border-blue-700 bg-blue-950/5 dark:bg-blue-900/30 hover:border-blue-900 hover:bg-blue-950/10 dark:hover:bg-blue-900/50 transition-all"
                 >
                     <span className="text-lg">📊</span>
                     <div className="text-left">
-                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">Report Enquiry</p>
-                        <p className="text-[10px] text-blue-500 dark:text-blue-400">View data & reports</p>
+                        <p className="text-xs font-semibold text-blue-950 dark:text-blue-300">Report Enquiry</p>
+                        <p className="text-[10px] text-blue-700 dark:text-blue-400">View data & reports</p>
                     </div>
                 </button>
                 <button
                     onClick={() => onSelect('Track')}
-                    className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30 hover:border-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-all group"
+                    className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 hover:border-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-all"
                 >
                     <span className="text-lg">🔍</span>
                     <div className="text-left">
-                        <p className="text-xs font-semibold text-purple-700 dark:text-purple-300">Track Transaction</p>
-                        <p className="text-[10px] text-purple-500 dark:text-purple-400">Check approval status</p>
+                        <p className="text-xs font-semibold text-orange-700 dark:text-orange-300">Track Transaction</p>
+                        <p className="text-[10px] text-orange-500 dark:text-orange-400">Check approval status</p>
                     </div>
                 </button>
             </div>
@@ -140,45 +141,31 @@ function ModeSelector({ onSelect }) {
     );
 }
 
-// ─── Bot avatar ──────────────────────────────────────────────────────────────
-function BotAvatar({ size = 'md' }) {
-    const cls = size === 'sm'
-        ? 'w-7 h-7 flex-shrink-0 mr-2 mt-0.5'
-        : 'w-7 h-7 flex-shrink-0 mr-2 mt-0.5';
+// ─── Bot avatar ───────────────────────────────────────────────────────────────
+function BotAvatar() {
     return (
-        <div className={`${cls} rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center`}>
-            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
+        <div className="w-7 h-7 flex-shrink-0 mr-2 mt-0.5 rounded-full bg-gradient-to-br from-blue-950 to-orange-500 flex items-center justify-center">
+            <Gem className="w-3.5 h-3.5 text-white" />
         </div>
     );
 }
 
-// ─── Sparkle icon ────────────────────────────────────────────────────────────
-function SparkleIcon({ className }) {
-    return (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-        </svg>
-    );
-}
-
-// ─── Main ChatBot component ──────────────────────────────────────────────────
+// ─── Main ChatBot component ───────────────────────────────────────────────────
 const ChatBot = () => {
     const { userData, roleId: authRoleId, employeeId } = useSelector(s => s.auth);
     const userFirstName = userData?.FirstName || userData?.firstName || 'User';
 
-    const [isOpen, setIsOpen]           = useState(false);
-    const [messages, setMessages]       = useState([]);
-    const [input, setInput]             = useState('');
-    const [loading, setLoading]         = useState(false);
-    const [sessionId, setSessionId]     = useState(null);
+    const [isOpen, setIsOpen]             = useState(false);
+    const [isClosing, setIsClosing]       = useState(false);
+    const [messages, setMessages]         = useState([]);
+    const [input, setInput]               = useState('');
+    const [loading, setLoading]           = useState(false);
+    const [sessionId, setSessionId]       = useState(null);
     const [sessionError, setSessionError] = useState(null);
     const [initializing, setInitializing] = useState(false);
-    const [chatMode, setChatMode]       = useState(null);   // null | 'Report' | 'Track'
-    const [inputHint, setInputHint]     = useState('');     // contextual placeholder
-    const [pendingModule, setPendingModule] = useState(null); // module identified but awaiting search value
+    const [chatMode, setChatMode]         = useState(null);
+    const [inputHint, setInputHint]       = useState('');
+    const [pendingModule, setPendingModule] = useState(null);
 
     const bottomRef = useRef(null);
     const inputRef  = useRef(null);
@@ -206,7 +193,7 @@ const ChatBot = () => {
                 setSessionId(sid);
                 setMessages([{
                     role: 'assistant',
-                    text: `Hello${userFirstName ? ` ${userFirstName}` : ''}! I'm your ERP assistant.`,
+                    text: `Hello${userFirstName ? ` ${userFirstName}` : ''}! I'm Corex Assist, your ERP assistant.`,
                     showModeSelector: true,
                 }]);
                 return sid;
@@ -225,6 +212,14 @@ const ChatBot = () => {
     const handleOpen = async () => {
         setIsOpen(true);
         if (!sessionId) await ensureSession();
+    };
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsOpen(false);
+            setIsClosing(false);
+        }, 250);
     };
 
     // ── Mode selection ────────────────────────────────────────────────────────
@@ -250,11 +245,7 @@ const ChatBot = () => {
         setPendingModule(null);
         setMessages(prev => [
             ...prev,
-            {
-                role: 'assistant',
-                text: 'What would you like to do next?',
-                showModeSelector: true,
-            },
+            { role: 'assistant', text: 'What would you like to do next?', showModeSelector: true },
         ]);
     };
 
@@ -268,49 +259,31 @@ const ChatBot = () => {
 
         setInput('');
         setInputHint('');
-        // Hold pendingModule for this request, then decide whether to keep it after response
         const moduleForThisRequest = pendingModule;
         setPendingModule(null);
         setMessages(prev => [...prev, { role: 'user', text }]);
         setLoading(true);
 
         try {
-            const res = await queryChat(
-                Number(userId), Number(roleId), text, sid, chatMode, moduleForThisRequest);
+            const res = await queryChat(Number(userId), Number(roleId), text, sid, chatMode, moduleForThisRequest);
 
             if (res?.success) {
                 if (res.intent === 'TrackingClarification') {
-                    // AI identified the module but needs the search value —
-                    // store the module so the next message can skip module detection
                     const extracted = res.data?.ExtractedModule || res.data?.extractedModule;
                     if (extracted) setPendingModule(extracted);
                     if (res.answer) setInputHint(res.answer);
                 }
-                setMessages(prev => [...prev, {
-                    role: 'assistant',
-                    text:   res.answer,
-                    intent: res.intent,
-                }]);
+                setMessages(prev => [...prev, { role: 'assistant', text: res.answer, intent: res.intent }]);
             } else {
-                // Server returned a structured error — show its message, not a generic one
                 const msg = res?.message || res?.Message || 'Sorry, I could not process that request.';
-                setMessages(prev => [...prev, {
-                    role: 'assistant',
-                    text: msg,
-                    error: true,
-                }]);
+                setMessages(prev => [...prev, { role: 'assistant', text: msg, error: true }]);
             }
         } catch (err) {
-            // Extract the actual server error message from axios response if available
             const msg = err?.response?.data?.message
                      || err?.response?.data?.Message
                      || err?.message
                      || 'Network error — please try again.';
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                text: msg,
-                error: true,
-            }]);
+            setMessages(prev => [...prev, { role: 'assistant', text: msg, error: true }]);
         } finally {
             setLoading(false);
         }
@@ -331,54 +304,75 @@ const ChatBot = () => {
 
     // ── Mode badge config ─────────────────────────────────────────────────────
     const modeBadge = chatMode === 'Report'
-        ? { icon: '📊', label: 'Report Enquiry',    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' }
+        ? { icon: '📊', label: 'Report Enquiry',    color: 'bg-blue-950/10 text-blue-950 dark:bg-blue-900/40 dark:text-blue-300' }
         : chatMode === 'Track'
-        ? { icon: '🔍', label: 'Track Transaction', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' }
+        ? { icon: '🔍', label: 'Track Transaction', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' }
         : null;
 
     return (
         <>
+            <style>{`
+                @keyframes corexPanelIn {
+                    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+                    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+                }
+                @keyframes corexPanelOut {
+                    from { opacity: 1; transform: translateY(0)    scale(1);    }
+                    to   { opacity: 0; transform: translateY(20px) scale(0.95); }
+                }
+            `}</style>
+
             {/* ── Floating toggle button ─────────────────────────────────────── */}
             <button
-                onClick={isOpen ? () => setIsOpen(false) : handleOpen}
-                className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
-                title="ERP Assistant"
+                onClick={isOpen ? handleClose : handleOpen}
+                className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center bg-gradient-to-br from-blue-950 to-orange-500 hover:from-blue-900 hover:to-orange-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+                title="Corex Assist"
             >
-                {isOpen ? (
-                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                ) : (
-                    <SparkleIcon className="w-6 h-6 text-white" />
-                )}
+                {isOpen ? <X className="w-6 h-6 text-white" /> : <Gem className="w-6 h-6 text-white" />}
             </button>
 
             {/* ── Chat panel ────────────────────────────────────────────────── */}
             {isOpen && (
                 <div
-                    className="fixed bottom-24 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700"
-                    style={{ height: '560px' }}
+                    className="fixed bottom-24 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-blue-900/20 dark:border-gray-700"
+                    style={{
+                        height: '560px',
+                        transformOrigin: 'bottom right',
+                        animation: isClosing
+                            ? 'corexPanelOut 0.25s ease-in forwards'
+                            : 'corexPanelIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+                    }}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 flex-shrink-0">
-                        <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                                <SparkleIcon className="w-4 h-4 text-white" />
+                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 flex-shrink-0">
+                        {/* dot pattern */}
+                        <div className="absolute inset-x-0 top-0 h-14 opacity-10 pointer-events-none"
+                            style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                        {/* orange glow */}
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-2xl pointer-events-none" />
+
+                        <div className="relative flex items-center space-x-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur border border-white/20 flex items-center justify-center">
+                                <Gem className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <p className="text-white font-semibold text-sm leading-tight">ERP Assistant</p>
-                                <p className="text-indigo-200 text-xs">
-                                    {initializing ? 'Connecting...' : sessionId ? 'Online' : 'Ready'}
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                    <span className="text-[10px] font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-1.5 py-0.5 rounded-full border border-orange-400/30 leading-none">
+                                        AI Assistant
+                                    </span>
+                                </div>
+                                <p className="text-white font-bold text-sm leading-tight">Corex Assist</p>
+                                <p className="text-blue-300 text-[11px]">
+                                    {initializing ? 'Connecting…' : sessionId ? 'Online' : 'Ready'}
                                 </p>
                             </div>
                         </div>
+
                         <button
-                            onClick={() => setIsOpen(false)}
-                            className="text-white/70 hover:text-white transition-colors p-1 rounded"
+                            onClick={handleClose}
+                            className="relative text-white/70 hover:text-white hover:bg-white/10 transition-colors p-1.5 rounded-lg"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
 
@@ -387,7 +381,7 @@ const ChatBot = () => {
                         {initializing && (
                             <div className="flex justify-center">
                                 <div className="text-xs text-gray-400 dark:text-gray-500 flex items-center space-x-2">
-                                    <div className="animate-spin rounded-full h-3 w-3 border-b border-indigo-500" />
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b border-orange-500" />
                                     <span>Initializing session…</span>
                                 </div>
                             </div>
@@ -401,12 +395,13 @@ const ChatBot = () => {
 
                         {messages.length === 0 && !initializing && !sessionError && (
                             <div className="flex flex-col items-center justify-center h-full text-center space-y-3 py-8">
-                                <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                                    <SparkleIcon className="w-6 h-6 text-indigo-500" />
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-950 to-orange-500 flex items-center justify-center shadow-lg">
+                                    <Gem className="w-7 h-7 text-white" />
                                 </div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Ask me anything about your ERP data
-                                </p>
+                                <div>
+                                    <p className="text-sm font-semibold text-blue-950 dark:text-blue-300">Corex Assist</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Ask me anything about your ERP data</p>
+                                </div>
                             </div>
                         )}
 
@@ -417,8 +412,8 @@ const ChatBot = () => {
                                 <div className={`max-w-[85%] rounded-2xl px-3 py-2.5 ${
                                     msg.role === 'user'
                                         ? msg.isModeSelect
-                                            ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white rounded-br-sm opacity-80'
-                                            : 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-br-sm'
+                                            ? 'bg-gradient-to-br from-blue-950 to-blue-800 text-white rounded-br-sm opacity-80'
+                                            : 'bg-gradient-to-br from-blue-950 to-blue-800 text-white rounded-br-sm'
                                         : msg.error
                                             ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-bl-sm'
                                             : 'bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 rounded-bl-sm'
@@ -428,12 +423,11 @@ const ChatBot = () => {
                                     ) : (
                                         <>
                                             {msg.intent && msg.intent !== 'TrackingClarification' && (
-                                                <span className="inline-block text-[10px] px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 rounded-full mb-1.5">
+                                                <span className="inline-block text-[10px] px-2 py-0.5 bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 rounded-full mb-1.5">
                                                     {msg.intent}
                                                 </span>
                                             )}
                                             <MarkdownMessage text={msg.text} />
-                                            {/* Mode selector buttons — shown only until a mode is chosen */}
                                             {msg.showModeSelector && !chatMode && (
                                                 <ModeSelector onSelect={handleModeSelect} />
                                             )}
@@ -458,7 +452,6 @@ const ChatBot = () => {
                     {/* Input area */}
                     <div className="flex-shrink-0 px-3 pt-2 pb-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
 
-                        {/* Mode badge — shown when mode is active */}
                         {modeBadge && (
                             <div className="flex items-center mb-2">
                                 <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${modeBadge.color}`}>
@@ -485,17 +478,15 @@ const ChatBot = () => {
                                 onKeyDown={handleKeyDown}
                                 disabled={loading || initializing || !chatMode}
                                 placeholder={inputPlaceholder}
-                                className="flex-1 resize-none text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors max-h-28 overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 resize-none text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-colors max-h-28 overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{ minHeight: '40px' }}
                             />
                             <button
                                 onClick={handleSend}
                                 disabled={!input.trim() || loading || initializing || !chatMode}
-                                className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed hover:from-indigo-500 hover:to-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-950 to-orange-500 flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed hover:from-blue-900 hover:to-orange-400 transition-all focus:outline-none focus:ring-2 focus:ring-orange-400"
                             >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                                </svg>
+                                <Send className="w-4 h-4" />
                             </button>
                         </div>
 

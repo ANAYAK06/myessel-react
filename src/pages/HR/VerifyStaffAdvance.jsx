@@ -684,7 +684,7 @@ const VerifyStaffAdvance = ({ notificationData, onNavigate }) => {
 
     // ── Root render ────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
 
             <InboxHeader
                 title={`${InboxTitle || 'Staff Advance Verification'} (${verifyInbox.length})`}
@@ -708,7 +708,6 @@ const VerifyStaffAdvance = ({ notificationData, onNavigate }) => {
                         options: uniqueStatuses,
                     }
                 ]}
-                className="bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 shadow-indigo-500/20"
             />
 
             <div className="px-6 -mt-auto mb-6">
@@ -720,8 +719,7 @@ const VerifyStaffAdvance = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${
                         isLeftPanelCollapsed && !isLeftPanelHovered
                             ? 'grid-cols-1 lg:grid-cols-12 gap-2'
@@ -790,7 +788,6 @@ const VerifyStaffAdvance = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

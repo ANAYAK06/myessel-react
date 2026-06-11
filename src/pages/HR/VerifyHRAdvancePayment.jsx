@@ -463,7 +463,7 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
     // ── Main render ───────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'HR Advance Payment Verification'} (${inbox.length})`}
                 subtitle={ModuleDisplayName}
@@ -478,7 +478,6 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
                     value:       searchQuery,
                     onChange:    (e) => setSearchQuery(e.target.value),
                 }}
-                className="bg-gradient-to-r from-teal-600 via-cyan-500 to-blue-600"
             />
 
             <div className="px-6 -mt-auto mb-6">
@@ -490,8 +489,7 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div className="container mx-auto px-6">
-                <div
+            <div
                     className={`grid transition-all duration-300 ${
                         isLeftPanelCollapsed && !isLeftPanelHovered
                             ? 'grid-cols-1 lg:grid-cols-12 gap-2'
@@ -560,7 +558,6 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { useSelector, useDispatch } from 'react-redux';
 import {
     Users, Download, RotateCcw, Eye, Search,
@@ -19,29 +20,36 @@ import {
 
 const LABOUR_TYPES = ['Own Labour', 'Contractor'];
 
-const downloadAsCSV = (data, filename) => {
-    if (!data.length) { toast.warning('No data to download'); return; }
-    const headers = Object.keys(data[0]);
-    const rows = data.map(row =>
-        headers.map(h => {
-            const v = row[h] ?? '';
-            return typeof v === 'string' && v.includes(',') ? `"${v}"` : v;
-        }).join(',')
-    );
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('Downloaded successfully');
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    const s = String(dateStr).trim();
+    if (!s) return null;
+
+    // .NET ticks: /Date(1234567890000)/ or /Date(1234567890000+0530)/
+    let m = s.match(/\/Date\((-?\d+)([+-]\d+)?\)\//);
+    if (m) return new Date(+m[1]);
+
+    // YYYY-MM-DD (with optional time suffix)
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+
+    // DD/MM/YYYY or DD-MM-YYYY
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
 };
 
-const fmt = (dateStr) => dateStr ? dateStr.split(' ')[0] : '-';
+const fmt = (dateStr) => {
+    if (!dateStr) return '-';
+    const d = parseDate(dateStr);
+    if (d) return `${String(d.getDate()).padStart(2, '0')}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
+    // Safety fallback: show raw date portion
+    return String(dateStr).split('T')[0].split(' ')[0];
+};
 
 const StatCard = ({ label, value, icon: Icon, gradient, iconGradient, border, textColor, subTextColor }) => (
     <div className={`bg-gradient-to-br ${gradient} rounded-xl p-5 border ${border} shadow-sm`}>
@@ -146,35 +154,55 @@ const LabourReportPage = () => {
     const esiEnrolled = rawData.filter(l => l.ESINumber).length;
 
     const handleExcelDownload = () => {
-        const data = filteredData.map(item => ({
-            'Labour ID':      item.LabourId         || '-',
-            'Labour Name':    item.LabourName        || '-',
-            'Labour Type':    item.LabourType        || '-',
-            'Gender':         item.Gender            || '-',
-            'Age':            item.Age               || '-',
-            'DOB':            fmt(item.DOB),
-            'Father Name':    item.FatherName        || '-',
-            'Department':     item.Department        || '-',
-            'Designation':    item.DesignationName   || '-',
-            'Category':       item.Category          || '-',
-            'Cost Center':    item.CostCenter        || '-',
-            'Cost Center Name': item.CostCenterName  || '-',
-            'Contractor':     item.ContractorName    || '-',
-            'Mobile':         item.ContactMobile     || '-',
-            'Joining Date':   fmt(item.JoiningDate),
-            'Date of Exit':   fmt(item.DateofExit),
-            'UAN Number':     item.UANNumber         || '-',
-            'PF Number':      item.PFNumber          || '-',
-            'ESI Number':     item.ESINumber         || '-',
-            'Bank Name':      item.BankName          || '-',
-            'Account No':     item.BankAccountNo     || '-',
-            'IFSC Code':      item.IFSCCode          || '-',
-            'Bank Branch':    item.BankBranch        || '-',
+        if (!filteredData.length) { toast.warning('No data to download'); return; }
+
+        const DATE_COLS = ['DOB', 'Joining Date', 'Date of Exit'];
+        const DATE_FMT  = 'dd-mmm-yyyy';
+
+        const rows = filteredData.map(item => ({
+            'Labour ID':        item.LabourId         || '-',
+            'Labour Name':      item.LabourName        || '-',
+            'Labour Type':      item.LabourType        || '-',
+            'Gender':           item.Gender            || '-',
+            'Age':              item.Age               ?? '-',
+            'DOB':              parseDate(item.DOB),
+            'Father Name':      item.FatherName        || '-',
+            'Department':       item.Department        || '-',
+            'Designation':      item.DesignationName   || '-',
+            'Category':         item.Category          || '-',
+            'Cost Center':      item.CostCenter        || '-',
+            'Cost Center Name': item.CostCenterName    || '-',
+            'Contractor':       item.ContractorName    || '-',
+            'Mobile':           item.ContactMobile     || '-',
+            'Joining Date':     parseDate(item.JoiningDate),
+            'Date of Exit':     parseDate(item.DateofExit),
+            'UAN Number':       item.UANNumber         || '-',
+            'PF Number':        item.PFNumber          || '-',
+            'ESI Number':       item.ESINumber         || '-',
+            'Bank Name':        item.BankName          || '-',
+            'Account No':       item.BankAccountNo     || '-',
+            'IFSC Code':        item.IFSCCode          || '-',
+            'Bank Branch':      item.BankBranch        || '-',
         }));
-        downloadAsCSV(
-            data,
-            `Labour_Report_${labourType.replace(' ', '_')}_${new Date().toISOString().split('T')[0]}`
-        );
+
+        const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true });
+
+        // Apply dd-mmm-yyyy number format to all date cells
+        const headers = Object.keys(rows[0]);
+        const dateColIdxs = DATE_COLS.map(dc => headers.indexOf(dc)).filter(i => i >= 0);
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r + 1; R <= range.e.r; R++) {
+            dateColIdxs.forEach(C => {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = ws[addr];
+                if (cell && cell.t === 'd') cell.z = DATE_FMT;
+            });
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Labour Report');
+        XLSX.writeFile(wb, `Labour_Report_${labourType.replace(' ', '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        toast.success('Downloaded successfully');
     };
 
     return (
@@ -328,7 +356,7 @@ const LabourReportPage = () => {
                         className="px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
                     >
                         <Download className="h-5 w-5" />
-                        Export CSV
+                        Export Excel
                     </button>
                 </div>
             </div>

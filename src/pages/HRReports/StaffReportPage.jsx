@@ -652,7 +652,7 @@ const StaffDetailsExpanded = ({ staffData, loading, onDocumentView }) => {
             )}
 
             {/* Salary Information */}
-            {staffData.SalaryRuleData && (
+            {staffData.SalaryAccess === 'Exist' && staffData.SalaryRuleData && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-green-200 dark:border-green-700">
                     <h4 className="font-semibold text-green-800 dark:text-green-300 mb-4 flex items-center">
                         <Award className="w-5 h-5 mr-2" />
@@ -727,12 +727,6 @@ const StaffDetailsExpanded = ({ staffData, loading, onDocumentView }) => {
                             <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                                 <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Joining Category</span>
                                 <span className="font-medium text-gray-900 dark:text-white">{staffData.joiningcategory}</span>
-                            </div>
-                        )}
-                        {staffData.SalaryAccess && (
-                            <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                                <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Salary Access</span>
-                                <span className="font-medium text-gray-900 dark:text-white">{staffData.SalaryAccess}</span>
                             </div>
                         )}
                         {staffData.UsernameAccess && (
@@ -816,6 +810,7 @@ const StaffReportPage = () => {
 
     // Local state
     const [expandedRows, setExpandedRows] = useState(new Set());
+    const [loadingRow, setLoadingRow] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [showDocumentModal, setShowDocumentModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState(null);
@@ -856,33 +851,32 @@ const StaffReportPage = () => {
         dispatch(resetStaffData());
         setSearchQuery('');
         setExpandedRows(new Set());
+        setLoadingRow(null);
     };
 
     // Handle row expand/collapse
     const handleRowToggle = async (staff) => {
+        if (loadingRow) return;
+
         const newExpandedRows = new Set(expandedRows);
-        
+
         if (newExpandedRows.has(staff.EmpRefNo)) {
-            // Collapse
             newExpandedRows.delete(staff.EmpRefNo);
-        } else {
-            // Expand and fetch details
-            newExpandedRows.add(staff.EmpRefNo);
-            
-            try {
-                const params = {
-                    empRefNo: staff.EmpRefNo,
-                    roleId: roleId
-                };
-                await dispatch(fetchStaffDetailsByRefNo(params)).unwrap();
-            } catch (error) {
-                console.error('❌ Error fetching staff details:', error);
-                toast.error('Failed to load staff details');
-                newExpandedRows.delete(staff.EmpRefNo);
-            }
+            setExpandedRows(newExpandedRows);
+            return;
         }
-        
-        setExpandedRows(newExpandedRows);
+
+        setLoadingRow(staff.EmpRefNo);
+        try {
+            await dispatch(fetchStaffDetailsByRefNo({ empRefNo: staff.EmpRefNo, roleId })).unwrap();
+            newExpandedRows.add(staff.EmpRefNo);
+            setExpandedRows(newExpandedRows);
+        } catch (error) {
+            console.error('❌ Error fetching staff details:', error);
+            toast.error('Failed to load staff details');
+        } finally {
+            setLoadingRow(null);
+        }
     };
 
     // Document handling functions
@@ -1171,11 +1165,20 @@ const StaffReportPage = () => {
                                 {filteredStaffData.map((staff, index) => (
                                     <React.Fragment key={index}>
                                         <tr
-                                            className="hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors cursor-pointer"
+                                            className={clsx(
+                                                'transition-colors',
+                                                loadingRow === staff.EmpRefNo
+                                                    ? 'bg-purple-50 dark:bg-purple-900/20 cursor-wait'
+                                                    : loadingRow
+                                                        ? 'opacity-50 cursor-not-allowed'
+                                                        : 'hover:bg-purple-50 dark:hover:bg-purple-900/10 cursor-pointer'
+                                            )}
                                             onClick={() => handleRowToggle(staff)}
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {expandedRows.has(staff.EmpRefNo) ? (
+                                                {loadingRow === staff.EmpRefNo ? (
+                                                    <RotateCcw className="h-5 w-5 text-purple-500 animate-spin" />
+                                                ) : expandedRows.has(staff.EmpRefNo) ? (
                                                     <ChevronDown className="h-5 w-5 text-purple-600" />
                                                 ) : (
                                                     <ChevronRight className="h-5 w-5 text-gray-400" />

@@ -35,7 +35,11 @@ const parseDate = (dateStr) => {
     m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
 
-    // DD/MM/YYYY or DD-MM-YYYY
+    // M/D/YYYY h:mm:ss AM/PM — production .NET en-US format (month first)
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+\d{1,2}:\d{2}:\d{2}\s*[AP]M/i);
+    if (m) return new Date(+m[3], +m[1] - 1, +m[2]);
+
+    // DD-MM-YYYY or DD/MM/YYYY (local format, day first)
     m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
 

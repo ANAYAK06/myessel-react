@@ -372,12 +372,21 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         return `${existingRemarks.trim()}||${formattedNewComment}`;
     };
 
+    // Line amount for an item: recompute from the live-edited price if the verifier
+    // changed it, otherwise trust the already-correct "Amount" from the PO (POAmount
+    // from the retrieval API is always 0 — it's not a usable source for this).
+    const getItemBasicAmount = (item) => {
+        const editedPrice = editablePrices[item.itemcode];
+        return editedPrice != null
+            ? parseFloat(editedPrice || 0) * parseFloat(item.quantity || 0)
+            : parseFloat(item.Amount || 0);
+    };
+
     const calculatePOTotalAmount = (poData) => {
         if (!poData?.PODataList || !Array.isArray(poData.PODataList)) return 0;
 
         return poData.PODataList.reduce((total, item) => {
-            const unitPrice = parseFloat(editablePrices[item.itemcode] || item.NewBasicprice || item.Amount || 0);
-            const itemAmount = unitPrice * parseFloat(item.quantity || 0);
+            const itemAmount = getItemBasicAmount(item);
             const cgstAmount = itemAmount * (parseFloat(item.CGSTPercent || 0) / 100);
             const sgstAmount = itemAmount * (parseFloat(item.SGSTPercent || 0) / 100);
             const igstAmount = itemAmount * (parseFloat(item.IGSTPercent || 0) / 100);
@@ -680,7 +689,10 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         const updatedPODataList = selectedPOData?.PODataList?.map(item => {
             const baseItem = {
                 ...item,
-                NewBasicprice: editablePrices[item.itemcode] || item.NewBasicprice
+                NewBasicprice: editablePrices[item.itemcode] || item.NewBasicprice,
+                // POAmount comes back as 0 from the retrieval API — set it here so the
+                // database column isn't zeroed out when this payload is saved on verify.
+                POAmount: getItemBasicAmount(item)
             };
 
             // Apply standard price updates

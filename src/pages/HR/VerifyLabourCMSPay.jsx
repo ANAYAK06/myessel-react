@@ -50,8 +50,6 @@ import {
     setShowReturnButton,
 } from '../../slices/CommonSlice/getStatusSlice';
 
-import * as labourCMSAPI from '../../api/HRAPI/labourCMSPaymentAPI';
-
 const formatCurrency = (v) =>
     parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -139,7 +137,6 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
     const [filterYear, setFilterYear] = useState('All');
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [isLeftPanelHovered, setIsLeftPanelHovered] = useState(false);
-    const [excelLoading, setExcelLoading] = useState(false);
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -266,26 +263,14 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
         }
     };
 
-    const handleDownloadExcel = async () => {
+    const handleDownloadExcel = () => {
         const transNo = detail?.CMSTransactionNo || selectedItem?.CMSTransactionNo;
-        if (!transNo) return;
-        setExcelLoading(true);
-        try {
-            const response = await labourCMSAPI.getExcel(transNo);
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `LabourCMS_${transNo}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
-            toast.success('Excel downloaded');
-        } catch {
-            toast.error('Failed to download Excel');
-        } finally {
-            setExcelLoading(false);
+        if (!transNo || workerGrid.length === 0) {
+            toast.error('No worker data available to export');
+            return;
         }
+        generateBankExcel(workerGrid, transNo, detail?.CCCode || selectedItem?.CCCode || '');
+        toast.success('Excel downloaded');
     };
 
     const filteredItems = inbox.filter((item) => {
@@ -413,13 +398,9 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
                             )}
                             <button
                                 onClick={handleDownloadExcel}
-                                disabled={excelLoading}
                                 className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
                             >
-                                {excelLoading
-                                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                                    : <Download className="h-4 w-4" />
-                                }
+                                <Download className="h-4 w-4" />
                                 Export Excel
                             </button>
                         </div>

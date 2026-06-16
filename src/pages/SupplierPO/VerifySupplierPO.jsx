@@ -382,17 +382,13 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             : parseFloat(item.Amount || 0);
     };
 
+    // Basic value only — no tax. spApproveSupplierPO never takes tax as input; it
+    // computes and writes CGST/SGST/IGST itself during Approve based on vendor/CC
+    // state, so the PO amount saved here must stay pre-tax.
     const calculatePOTotalAmount = (poData) => {
         if (!poData?.PODataList || !Array.isArray(poData.PODataList)) return 0;
 
-        return poData.PODataList.reduce((total, item) => {
-            const itemAmount = getItemBasicAmount(item);
-            const cgstAmount = itemAmount * (parseFloat(item.CGSTPercent || 0) / 100);
-            const sgstAmount = itemAmount * (parseFloat(item.SGSTPercent || 0) / 100);
-            const igstAmount = itemAmount * (parseFloat(item.IGSTPercent || 0) / 100);
-
-            return total + itemAmount + cgstAmount + sgstAmount + igstAmount;
-        }, 0);
+        return poData.PODataList.reduce((total, item) => total + getItemBasicAmount(item), 0);
     };
 
     const getPriority = (po) => {
@@ -685,23 +681,35 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             verificationComment
         );
 
-        // ✅ ENHANCED: Include updated prices and standard price changes in payload
-        const updatedPODataList = selectedPOData?.PODataList?.map(item => {
-            const baseItem = {
-                ...item,
-                NewBasicprice: editablePrices[item.itemcode] || item.NewBasicprice,
-                // POAmount comes back as 0 from the retrieval API — set it here so the
-                // database column isn't zeroed out when this payload is saved on verify.
-                POAmount: getItemBasicAmount(item)
-            };
+        // spApproveSupplierPO does NOT read PODataList — it reads these as parallel
+        // comma-separated strings (one entry per item, same order, trailing comma,
+        // matching the SP's own list-building convention). This is what actually
+        // drives "Update PODetails set NewBasicprice=..., Amount=... " per item and
+        // "Update SupplierPO set Amount=@NewtotalAmount, POBalance=@NewtotalAmount".
+        const items = selectedPOData?.PODataList || [];
 
-            // Apply standard price updates
-            if (updatedStandardPrices[item.itemcode]) {
-                baseItem.basicprice = updatedStandardPrices[item.itemcode].newBasicPrice;
-                baseItem.ItemNewPrice = updatedStandardPrices[item.itemcode].newBasicPrice;
-            }
+        let itemcodes = '';
+        let newPurchasePrices = '';
+        let itemNewTotals = '';
+        let standardPrices = '';
+        let newTotalAmt = 0;
+        let oldStandardTotalAmt = 0;
+        let oldPurchaseTotalAmt = 0;
 
-            return baseItem;
+        items.forEach(item => {
+            const quantity = parseFloat(item.quantity || 0);
+            const newPurchasePrice = parseFloat(editablePrices[item.itemcode] ?? item.NewBasicprice ?? 0);
+            const itemAmount = getItemBasicAmount(item);
+            const stdUpdate = updatedStandardPrices[item.itemcode];
+
+            itemcodes        += `${item.itemcode},`;
+            newPurchasePrices += `${newPurchasePrice},`;
+            itemNewTotals     += `${itemAmount},`;
+            standardPrices    += `${stdUpdate ? stdUpdate.newBasicPrice : (item.basicprice || 0)},`;
+
+            newTotalAmt         += itemAmount;
+            oldStandardTotalAmt += parseFloat(item.basicprice || 0) * quantity;
+            oldPurchaseTotalAmt += parseFloat(item.Amount || 0);
         });
 
         const payload = {
@@ -711,23 +719,25 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
             Remarks: updatedRemarks,
             Action: actionValue,
             Roleid: roleId || selectedRoleId,
-            Userid: uid,
-            SupplierCode: selectedPOData?.VendorCode || selectedPO.VendorCode,
             Createdby: getCurrentUser(),
-            Amount: calculatePOTotalAmount(selectedPOData),
-            PODate: selectedPOData?.PODate || selectedPO.PODate,
-            ApprovalStatus: actionValue,
 
-            // Additional PO-specific fields
-            ...(selectedPOData?.MOID && { MOID: selectedPOData.MOID }),
-            ...(selectedPOData?.CCCode && { CCCode: selectedPOData.CCCode }),
-            ...(selectedPOData?.CCType && { CCType: selectedPOData.CCType }),
-            ...(updatedPODataList && { PODataList: updatedPODataList }),
+            Itemcodes: itemcodes,
+            NewPurchasePrices: newPurchasePrices,
+            ItemNewTotal: itemNewTotals,
+            Newtotalamt: newTotalAmt,
+            Oldtotalamt: oldStandardTotalAmt,
+            OldPurchasetotalamt: oldPurchaseTotalAmt,
 
-            // ✅ NEW: Include price update information
-            ...(Object.keys(updatedStandardPrices).length > 0 && {
-                UpdatedStandardPrices: updatedStandardPrices
-            })
+            // Echo back the server-computed authorization flag rather than deriving it
+            // here — it gates whether spApproveSupplierPO is allowed to overwrite the
+            // master ItemCodes.BasicPrice, which is a different decision than "did the
+            // verifier edit a price in this screen."
+            PriceChangeAccess: selectedPOData?.PriceChangeAccess || '',
+            Standardprices: standardPrices,
+
+            ItemTermHeadID: selectedPOData?.ItemTermHeadID || 0,
+            PreferredRemarks: selectedPOData?.PreferredRemarks || null,
+            PredefinedTermsExist: selectedPOData?.PredefinedTermsExist || 'No',
         };
 
         console.log('ðŸŽ¯ Built PO Approval Payload with Price Updates:', {
@@ -1342,45 +1352,14 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                                     </div>
                                     <div className="space-y-2">
                                         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                                            <div className="grid grid-cols-3 gap-4 text-center">
+                                            <div className="flex items-center justify-between">
                                                 <div className="space-y-1">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Basic Amount</p>
-                                                    <p className="font-bold text-indigo-700 dark:text-indigo-300 text-lg">
-                                                        ₹{formatIndianCurrency(
-                                                            selectedPOData.PODataList.reduce((total, item) => {
-                                                                const currentPrice = editablePrices[item.itemcode] || item.NewBasicprice;
-                                                                return total + (parseFloat(currentPrice) * parseFloat(item.quantity || 0));
-                                                            }, 0)
-                                                        )}
-                                                    </p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Tax Amount</p>
-                                                    <p className="font-bold text-orange-700 dark:text-orange-300 text-lg">
-                                                        ₹{formatIndianCurrency(
-                                                            selectedPOData.PODataList.reduce((total, item) => {
-                                                                const currentPrice = editablePrices[item.itemcode] || item.NewBasicprice;
-                                                                const bv = parseFloat(currentPrice) * parseFloat(item.quantity || 0);
-                                                                const cgst = bv * (parseFloat(item.CGSTPercent || 0) / 100);
-                                                                const sgst = bv * (parseFloat(item.SGSTPercent || 0) / 100);
-                                                                const igst = bv * (parseFloat(item.IGSTPercent || 0) / 100);
-                                                                return total + cgst + sgst + igst;
-                                                            }, 0)
-                                                        )}
-                                                    </p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Grand Total</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">PO Amount (Basic)</p>
                                                     <p className="font-bold text-green-700 dark:text-green-300 text-xl">
                                                         ₹{formatIndianCurrency(calculatePOTotalAmount(selectedPOData))}
                                                     </p>
                                                 </div>
-                                            </div>
-                                            <div className="border-t border-gray-200 dark:border-gray-600 mt-3 pt-3">
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-gray-600 dark:text-gray-400">PO Total: Basic + Tax = Grand Total</span>
-                                                    <span className="font-semibold text-blue-900 dark:text-blue-300">{selectedPOData.PODataList.length} Items Verified</span>
-                                                </div>
+                                                <span className="font-semibold text-blue-900 dark:text-blue-300 text-sm">{selectedPOData.PODataList.length} Items Verified</span>
                                             </div>
                                         </div>
                                     </div>

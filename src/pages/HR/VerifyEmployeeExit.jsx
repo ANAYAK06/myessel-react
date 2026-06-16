@@ -5,7 +5,7 @@ import {
     LogOut, Clock,
     Calendar, Hash,
     Building2, UserCheck, CalendarDays,
-    FileText,
+    FileText, Eye,
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
@@ -14,6 +14,7 @@ import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
 import LeftPanel from '../../components/Inbox/LeftPanel';
 import VerificationInput from '../../components/Inbox/VerificationInput';
+import AttachmentModal from '../../components/Inbox/AttachmentModal';
 
 import {
     fetchVerifyEmpExit,
@@ -88,6 +89,7 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
     const [filterStatus,         setFilterStatus]         = useState('All');
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [isLeftPanelHovered,   setIsLeftPanelHovered]   = useState(false);
+    const [showDocumentModal,    setShowDocumentModal]    = useState(false);
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -97,6 +99,25 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
     // ── Helpers ────────────────────────────────────────────────────────────────
     const getCurrentUser = () =>
         userData?.userName || userDetails?.userName || 'system';
+
+    // Build a Blob URL from the raw DocBaseString (base64, no data: prefix)
+    const getDocumentUrl = (docBaseString, docType) => {
+        if (!docBaseString) return null;
+        try {
+            const byteCharacters = atob(docBaseString);
+            const byteArray = new Uint8Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) byteArray[i] = byteCharacters.charCodeAt(i);
+            const ext = (docType || '').toLowerCase();
+            let mimeType = 'application/octet-stream';
+            if (ext === 'pdf') mimeType = 'application/pdf';
+            else if (['jpg', 'jpeg'].includes(ext)) mimeType = 'image/jpeg';
+            else if (ext === 'png') mimeType = 'image/png';
+            return URL.createObjectURL(new Blob([byteArray], { type: mimeType }));
+        } catch (error) {
+            console.error('Error creating document URL:', error);
+            return null;
+        }
+    };
 
     const getCurrentRoleName = () =>
         userDetails?.roleName        ||
@@ -441,9 +462,20 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
                             <FileText className="w-4 h-4 text-blue-400" />
                             <span>Document Type</span>
                         </span>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white uppercase">
-                            {d.DocType}
-                        </span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white uppercase">
+                                {d.DocType}
+                            </span>
+                            {d.DocBaseString && (
+                                <button
+                                    onClick={() => setShowDocumentModal(true)}
+                                    className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 dark:text-purple-400 px-2 py-1 rounded hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
+                                    title="View Document"
+                                >
+                                    <Eye className="w-3.5 h-3.5" /> View
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
                 {d.Remarks?.trim() && (
@@ -732,6 +764,21 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
                 </div>
+
+            {showDocumentModal && d.DocBaseString && (
+                <AttachmentModal
+                    isOpen={showDocumentModal}
+                    onClose={() => setShowDocumentModal(false)}
+                    fileUrl={getDocumentUrl(d.DocBaseString, d.DocType)}
+                    fileName={`ExitDocument_${d.Id || ''}.${(d.DocType || 'pdf').toLowerCase()}`}
+                    title="Exit Supporting Document"
+                    subtitle={`Employee: ${d.EmployeeName || d.EmpName || d.EmpRefNo || ''} | Type: ${d.DocType}`}
+                    theme="indigo"
+                    isImageFile={() => ['jpg', 'jpeg', 'png'].includes((d.DocType || '').toLowerCase())}
+                    isPdfFile={() => (d.DocType || '').toLowerCase() === 'pdf'}
+                    onError={() => toast.error('Failed to load document')}
+                />
+            )}
         </div>
     );
 };

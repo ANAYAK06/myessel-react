@@ -1016,7 +1016,7 @@ const LabourPayrollGeneration = () => {
         // PT calculation — match income against active slabs
         let ptEmp = 0;
         if (ptSlabs.length > 0) {
-            const incomeForPT = grossAmount;
+            const incomeForPT = basicWage;
             const matchSlab = [...ptSlabs]
                 .sort((a, b) => a.SlabFrom - b.SlabFrom)
                 .find(s => incomeForPT >= s.SlabFrom && (s.SlabTo == null || incomeForPT <= s.SlabTo));

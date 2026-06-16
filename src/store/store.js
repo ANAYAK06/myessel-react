@@ -133,6 +133,7 @@ import labourAttendanceReportReducer from "../slices/HrReportSlice/labourAttenda
 import labourExitReducer from "../slices/HRSlice/labourExitSlice";
 import pendingTrackingReducer from "../slices/dashboardSlice/pendingTrackingSlice";
 import ltaReportReducer from "../slices/HrReportSlice/ltaReportSlice";
+import indentVerificationReducer from "../slices/purchaseSlice/indentVerificationSlice";
 
 const store = configureStore({
 
@@ -270,6 +271,7 @@ const store = configureStore({
     labourExit:            labourExitReducer,
     pendingTracking:       pendingTrackingReducer,
     ltaReport:             ltaReportReducer,
+    indentVerification:    indentVerificationReducer,
 
   }
 

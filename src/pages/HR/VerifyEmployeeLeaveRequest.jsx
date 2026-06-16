@@ -154,7 +154,6 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
     useEffect(() => {
         if (selectedItem && roleId && leaveRequestDetails) {
             const moid = leaveRequestDetails?.MOID || 363;
-
             console.log('📊 Fetching Status List for MOID:', moid);
             dispatch(fetchStatusList({
                 MOID: moid,
@@ -168,7 +167,6 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
     useEffect(() => {
         if (selectedItem && leaveRequestDetails) {
             const moid = leaveRequestDetails?.MOID || 363;
-
             console.log('💬 Fetching Remarks for MOID:', moid);
             dispatch(setSelectedMOID(moid));
             dispatch(fetchRemarks({
@@ -274,7 +272,6 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
 
         try {
             const payload = buildApprovalPayload(actionValue);
-
             const result = await dispatch(approveHRLeaveRequest(payload)).unwrap();
 
             if (result && typeof result === 'string') {
@@ -798,85 +795,93 @@ const VerifyEmployeeLeaveRequest = ({ notificationData, onNavigate }) => {
             </div>
 
             <div
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
+                className={`grid transition-all duration-300 ${
+                    isLeftPanelCollapsed && !isLeftPanelHovered
                         ? 'grid-cols-1 lg:grid-cols-12 gap-2'
                         : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                        }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) {
-                            setIsLeftPanelHovered(false);
-                        }
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={inboxLoading}
-                            error={inboxError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No leave requests found!',
-                                itemKey: 'TransactionRefNo',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20'
-                            }}
-                        />
-                    </div>
+                }`}
+                onMouseLeave={() => {
+                    if (selectedItem && isLeftPanelCollapsed) {
+                        setIsLeftPanelHovered(false);
+                    }
+                }}
+            >
+                {/* LEFT PANEL */}
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
+                    <LeftPanel
+                        items={filteredItems}
+                        selectedItem={selectedItem}
+                        onItemSelect={handleItemSelect}
+                        renderItem={renderItemCard}
+                        renderCollapsedItem={renderCollapsedItem}
+                        isCollapsed={isLeftPanelCollapsed}
+                        onCollapseToggle={setIsLeftPanelCollapsed}
+                        isHovered={isLeftPanelHovered}
+                        onHoverChange={setIsLeftPanelHovered}
+                        loading={inboxLoading}
+                        error={inboxError}
+                        onRefresh={handleRefresh}
+                        config={{
+                            title: 'Pending Verification',
+                            icon: Clock,
+                            emptyMessage: 'No leave requests found!',
+                            itemKey: 'TransactionRefNo',
+                            enableCollapse: true,
+                            enableRefresh: true,
+                            enableHover: true,
+                            maxHeight: '100%',
+                            headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20'
+                        }}
+                    />
+                </div>
 
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div
-                            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
-                            onMouseEnter={() => {
-                                if (selectedItem && !isLeftPanelHovered) {
-                                    setIsLeftPanelHovered(false);
-                                }
-                            }}
-                        >
-                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                                        <Plane className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedItem ? 'Leave Request Verification' : 'Leave Request Details'}
-                                    </span>
-                                </h2>
-                            </div>
+                {/* RIGHT PANEL */}
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
+                    <div
+                        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
+                        onMouseEnter={() => {
+                            if (selectedItem && !isLeftPanelHovered) {
+                                setIsLeftPanelHovered(false);
+                            }
+                        }}
+                    >
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+                                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                                    <Plane className="w-4 h-4 text-white" />
+                                </div>
+                                <span>
+                                    {selectedItem ? 'Leave Request Verification' : 'Leave Request Details'}
+                                </span>
+                            </h2>
+                        </div>
 
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Plane className="w-12 h-12 text-blue-500 dark:text-blue-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Leave Request Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a leave request from the list to view details and verify.
-                                        </p>
+                        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+                            {selectedItem ? (
+                                renderDetailContent()
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Plane className="w-12 h-12 text-blue-500 dark:text-blue-400" />
                                     </div>
-                                )}
-                            </div>
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                        No Leave Request Selected
+                                    </h3>
+                                    <p className="text-gray-500 dark:text-gray-400">
+                                        Select a leave request from the list to view details and verify.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
+                {/* END RIGHT PANEL */}
+
+            </div>
+            {/* END GRID */}
+
         </div>
+        // END outer space-y-6
     );
 };
 

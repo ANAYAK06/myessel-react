@@ -344,7 +344,7 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
                         <InfoRow icon={Hash}         label="Installments"   value={src.NoOfInstallments ?? selectedItem.NoOfInstallments} />
                         <InfoRow icon={Hash}         label="Balance EMIs"   value={src.NoOfBalanceInstallments ?? selectedItem.NoOfBalanceInstallments} />
                         <InfoRow icon={Calendar}     label="Requested Date" value={src.RequestedDate || selectedItem.RequestedDate} />
-                        {src.EMIStartDate && <InfoRow icon={CalendarClock} label="EMI Start"    value={src.EMIStartDate} />}
+                        {src.EMIStartDate  && <InfoRow icon={CalendarClock} label="EMI Start"    value={src.EMIStartDate} />}
                         {src.SADeductMonth && <InfoRow icon={CalendarClock} label="Deduct Month" value={src.SADeductMonth} />}
                         {(src.Purpose || selectedItem.EmpRemarks) && (
                             <InfoRow icon={User} label="Purpose" value={src.Purpose || selectedItem.EmpRemarks} />
@@ -490,75 +490,80 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
             </div>
 
             <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    {/* Left panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={setSelectedItem}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={loading.inbox}
-                            error={errors.inbox}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title:           'Pending Verification',
-                                icon:            Clock,
-                                emptyMessage:    'No advance payment requests pending.',
-                                itemKey:         'LTAId',
-                                enableCollapse:  true,
-                                enableRefresh:   true,
-                                enableHover:     true,
-                                maxHeight:       '100%',
-                                headerGradient:  'from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20',
-                            }}
-                        />
-                    </div>
+                className={`grid transition-all duration-300 ${
+                    isLeftPanelCollapsed && !isLeftPanelHovered
+                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
+                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
+                }`}
+                onMouseLeave={() => {
+                    if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+                }}
+            >
+                {/* Left panel */}
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
+                    <LeftPanel
+                        items={filteredItems}
+                        selectedItem={selectedItem}
+                        onItemSelect={setSelectedItem}
+                        renderItem={renderItemCard}
+                        renderCollapsedItem={renderCollapsedItem}
+                        isCollapsed={isLeftPanelCollapsed}
+                        onCollapseToggle={setIsLeftPanelCollapsed}
+                        isHovered={isLeftPanelHovered}
+                        onHoverChange={setIsLeftPanelHovered}
+                        loading={loading.inbox}
+                        error={errors.inbox}
+                        onRefresh={handleRefresh}
+                        config={{
+                            title:           'Pending Verification',
+                            icon:            Clock,
+                            emptyMessage:    'No advance payment requests pending.',
+                            itemKey:         'LTAId',
+                            enableCollapse:  true,
+                            enableRefresh:   true,
+                            enableHover:     true,
+                            maxHeight:       '100%',
+                            headerGradient:  'from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20',
+                        }}
+                    />
+                </div>
 
-                    {/* Right panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center gap-2">
-                                <div className="p-2 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg">
-                                    <CreditCard className="w-4 h-4 text-white" />
-                                </div>
-                                <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                                    {selectedItem ? 'Advance Payment Verification' : 'Select a Request'}
-                                </h2>
+                {/* Right panel */}
+                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center gap-2">
+                            <div className="p-2 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg">
+                                <CreditCard className="w-4 h-4 text-white" />
                             </div>
+                            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                                {selectedItem ? 'Advance Payment Verification' : 'Select a Request'}
+                            </h2>
+                        </div>
 
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? renderDetailContent() : (
-                                    <div className="text-center py-16">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <CreditCard className="w-12 h-12 text-teal-400 dark:text-teal-500" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Request Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                            Select an advance payment request from the list to review and verify.
-                                        </p>
+                        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+                            {selectedItem ? renderDetailContent() : (
+                                <div className="text-center py-16">
+                                    <div className="w-24 h-24 bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <CreditCard className="w-12 h-12 text-teal-400 dark:text-teal-500" />
                                     </div>
-                                )}
-                            </div>
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                        No Request Selected
+                                    </h3>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                        Select an advance payment request from the list to review and verify.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
+                {/* END right panel */}
+
+            </div>
+            {/* END grid */}
+
         </div>
+        // END outer space-y-6
     );
 };
 

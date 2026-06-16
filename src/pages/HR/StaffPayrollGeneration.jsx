@@ -81,7 +81,12 @@ const MultiSelectDropdown = ({
     const btnRef = useRef(null);   // FIX 1: ref on the trigger button to measure position
 
     useEffect(() => {
-        const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        const h = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+                setQ('');
+            }
+        };
         document.addEventListener('mousedown', h);
         return () => document.removeEventListener('mousedown', h);
     }, []);
@@ -94,6 +99,7 @@ const MultiSelectDropdown = ({
             const spaceBelow = window.innerHeight - rect.bottom;
             setOpenUp(spaceBelow < 420); // 420 px ≈ max panel height (max-h-96)
         }
+        if (open) setQ(''); // clear search when closing
         setOpen(p => !p);
     };
 
@@ -138,39 +144,39 @@ const MultiSelectDropdown = ({
                 </button>
 
                 {open && !loading && (
-                    // FIX 1: switch between top-full (down) and bottom-full (up) based on openUp
-                    <div className={`absolute z-50 w-full bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-lg max-h-96 overflow-hidden
+                    <div className={`absolute z-50 w-full bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-lg overflow-hidden
                                     ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
-                        <div className="p-3 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-0 z-10">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    placeholder="Search…"
-                                    value={q}
-                                    onChange={e => setQ(e.target.value)}
-                                    onClick={e => e.stopPropagation()}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-gray-600 dark:text-white text-sm"
-                                />
+                        {/* Single scroll container — sticky headers inside so they stick correctly and nothing gets clipped */}
+                        <div className="max-h-96 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#a5b4fc #f3f4f6" }}>
+                            <div className="p-3 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-0 z-10">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="Search…"
+                                        value={q}
+                                        onChange={e => setQ(e.target.value)}
+                                        onClick={e => e.stopPropagation()}
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-gray-600 dark:text-white text-sm"
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="p-3 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-[73px] z-10">
-                            <label className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
-                                <input
-                                    type="checkbox"
-                                    checked={allChecked}
-                                    onChange={() => onChange(allChecked ? [] : options.map(getValue))}
-                                    className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
-                                />
-                                <span className="font-semibold text-gray-900 dark:text-white text-sm">
-                                    Select All ({options.length})
-                                </span>
-                            </label>
-                        </div>
+                            <div className="p-3 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-[73px] z-10">
+                                <label className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={allChecked}
+                                        onChange={() => onChange(allChecked ? [] : options.map(getValue))}
+                                        className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                    <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                                        Select All ({options.length})
+                                    </span>
+                                </label>
+                            </div>
 
-                        <div className="max-h-72 overflow-y-scroll" style={{ scrollbarWidth: "thin", scrollbarColor: "#a5b4fc #f3f4f6" }}>
                             {filtered.length === 0
                                 ? <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">No results</div>
                                 : filtered.map(o => {
@@ -544,6 +550,7 @@ const StaffPayrollGeneration = () => {
     const [tableRows,     setTableRows]     = useState([]);
     const [detailsMap,    setDetailsMap]    = useState({});   // EmpRefno → MonthlySalaryDetailsData[]
     const [optionalMap,   setOptionalMap]   = useState({});   // EmpRefno → lstOptionalHeads[]
+    const [pfesiMap,      setPfesiMap]      = useState({});   // EmpRefno → MonthlyPFESIData[]
     const [generatedData, setGeneratedData] = useState(null);
 
     // Table search
@@ -671,13 +678,18 @@ const StaffPayrollGeneration = () => {
 
             setTableRows(enriched);
 
-            const dm = {}, om = {};
+            const pfesis = data?.MonthlyPFESIData || [];
+            console.log('🔍 MonthlyPFESIData from API:', pfesis);
+            const dm = {}, om = {}, pm = {};
             rows.forEach(r => {
                 dm[r.EmpRefno] = dets.filter(d => d.EmployeeId === r.EmpRefno);
                 om[r.EmpRefno] = optals.filter(o => o.EmpRefno  === r.EmpRefno);
+                pm[r.EmpRefno] = pfesis.filter(p => p.EmployeeId === r.EmpRefno);
             });
+            console.log('🔍 pfesiMap built:', pm);
             setDetailsMap(dm);
             setOptionalMap(om);
+            setPfesiMap(pm);
 
             toast.success(`Payroll generated for ${rows.length} employee(s)`);
         } catch (err) {
@@ -698,6 +710,7 @@ const StaffPayrollGeneration = () => {
         setModalEmp(null);
         setTableSearch('');
         setPayrollWarnings(null);
+        setPfesiMap({});
         dispatch(clearSaveResult());
         toast.info('All filters reset successfully');
     };
@@ -806,6 +819,23 @@ const StaffPayrollGeneration = () => {
                 ? `${payrollDate.getFullYear()}-${String(payrollDate.getMonth() + 1).padStart(2, '0')}-${String(payrollDate.getDate()).padStart(2, '0')}`
                 : String(payrollDate);
 
+            const pfesiData = pfesiMap[empRefNo] || [];
+
+            // Match the format the SP's XML-style JSON parser expects:
+            // all numeric values must be quoted strings, no extra fields.
+            const pfesiFormatted = pfesiData.map(p => ({
+                EmployeeContAmt:  String(p.EmployeeContAmt  ?? 0),
+                EmployeeContDca:  p.EmployeeContDca  ?? '',
+                EmployerContDca:  p.EmployerContDca  ?? '',
+                Type:             p.Type             ?? '',
+                IsEditable:       p.IsEditable       ?? 'No',
+                EmpContPercent:   String(p.EmpContPercent  ?? 0),
+                EmprContPercent:  String(p.EmprContPercent ?? 0),
+                AdminPercent:     String(p.AdminPercent    ?? 0),
+            }));
+            console.log('🔍 pfesiData for', empRefNo, ':', pfesiData);
+            console.log('🔍 pfesiJsonString being sent:', JSON.stringify(pfesiFormatted));
+
             const result = await dispatch(savePayRollForSingleEmp({
                 payRollForDate:       payrollDateStr,
                 empRefNo,
@@ -815,7 +845,7 @@ const StaffPayrollGeneration = () => {
                 createdBy:            String(userName),
                 mainJsonString,
                 salaryHeadJsonString,
-                pfesiJsonString:      '[]',
+                pfesiJsonString:      JSON.stringify(pfesiFormatted),
                 advanceJsonString:    '[]',
             })).unwrap();
 
@@ -833,7 +863,7 @@ const StaffPayrollGeneration = () => {
     // ── Dropdown helpers ──────────────────────────────────────────────────────
     const ccOptions  = Array.isArray(salaryEmpCostCenters) ? salaryEmpCostCenters : [];
     const getCCCode  = o => o.CCCode  || o.CC_Code  || '';
-    const getCCLabel = o => `${o.CCCode || o.CC_Code} – ${o.CCName || o.CC_Name || ''}`;
+    const getCCLabel = o => o.CCName || o.CC_Name || o.CCCode || o.CC_Code || '';
 
     const empOptions  = Array.isArray(employeesList) ? employeesList : [];
     const getEmpId    = o => o.EmpRefNo  || o.EmpRefno  || '';

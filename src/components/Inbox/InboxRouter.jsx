@@ -54,6 +54,7 @@ import VerifyLabourBankChange from '../../pages/HR/VerifyLabourBankChange';
 import VerifyLabourTypeChange from '../../pages/HR/VerifyLabourTypeChange';
 import VerifyHRAdvancePayment from '../../pages/HR/VerifyHRAdvancePayment';
 import VerifyItemCode from '../../pages/Purchase/VerifyItemCode';
+import VerifyIndentCreation from '../../pages/Purchase/VerifyIndentCreation';
 
 
 // ============================================================================
@@ -1026,6 +1027,35 @@ const isLabourExitVerification = (path, category, title, displayName, workflowTy
     return isMatch;
 };
 
+const isIndentCreationVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/purchase/verifyindentcreation',
+        '/purchase/verifyindent',
+        '/indent/verifyindent',
+        'verifyindentcreation',
+        'indent creation',
+        'indentcreation',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('indent creation') ||
+        category.includes('indentcreation') ||
+        category.includes('verifyindent') ||
+        title.includes('indent creation') ||
+        title.includes('indentcreation') ||
+        title.includes('verifyindent') ||
+        displayName.includes('indent creation') ||
+        displayName.includes('indentcreation') ||
+        workflowType.includes('indent creation') ||
+        workflowType.includes('indentcreation') ||
+        workflowType.includes('verifyindent');
+    if (isMatch) {
+        console.log('✅ Indent Creation Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Indent Creation Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isHRAdvancePaymentVerification = (path) => {
     const isMatch = path.includes('/hr/verifyhradvancepayment') ||
                     path.includes('/hr/verifyhradpayment');
@@ -1631,6 +1661,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isLabourTypeChangeVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyLabourTypeChange');
             return <VerifyLabourTypeChange
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // INDENT CREATION VERIFICATION
+        // ====================================================================
+        if (isIndentCreationVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyIndentCreation');
+            return <VerifyIndentCreation
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

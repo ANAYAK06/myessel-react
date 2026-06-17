@@ -514,7 +514,8 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
     const filteredAmendments = amendmentsList.filter(amendment => {
         const matchesSearch = amendment.CCCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             amendment.CCBudgetAmendmentid?.toString().includes(searchQuery) ||
-            amendment.CCName?.toLowerCase().includes(searchQuery.toLowerCase());
+            amendment.CCName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            amendment.OtherCCCode?.toLowerCase().includes(searchQuery.toLowerCase());
 
         const matchesCCCode = filterCCCode === 'All' || amendment.CCCode === filterCCCode;
         const matchesAmendType = filterAmendType === 'All' || amendment.AmendmentType === filterAmendType;
@@ -685,6 +686,14 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                             {amendment.AmendmentDate ? new Date(amendment.AmendmentDate).toLocaleDateString() : 'N/A'}
                         </span>
                     </div>
+                    {amendment.OtherCCCode && (
+                        <div className="flex items-center space-x-1 mt-1 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded border border-indigo-200 dark:border-indigo-700">
+                            <ChevronLeft className="w-3 h-3 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+                            <span className="text-indigo-600 dark:text-indigo-400 font-medium truncate">
+                                From: {amendment.OtherCCCode}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -778,6 +787,22 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                         </div>
                     </div>
 
+                    {selectedAmendment?.OtherCCCode && (
+                        <div className="mt-4 bg-indigo-600/10 dark:bg-indigo-900/40 border border-indigo-300 dark:border-indigo-600 rounded-lg px-4 py-3 flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center flex-shrink-0">
+                                <ChevronLeft className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
+                            </div>
+                            <div>
+                                <span className="text-xs font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider block">
+                                    Budget Transfer Source
+                                </span>
+                                <span className="text-sm font-bold text-indigo-800 dark:text-indigo-200">
+                                    Transferred from Cost Center: {selectedAmendment.OtherCCCode}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     {selectedAmendmentData.FilePath && (
                         <div className="mt-4 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                             <div className="flex items-center justify-between">
@@ -850,11 +875,24 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="flex items-center space-x-2">
-                                            <span className="font-medium text-gray-800 dark:text-gray-200">Amendment Requested Value</span>
+                                            <span className="font-medium text-gray-800 dark:text-gray-200">
+                                                {selectedAmendment?.OtherCCCode
+                                                    ? `Amount Transferred from ${selectedAmendment.OtherCCCode}`
+                                                    : 'Amendment Requested Value'
+                                                }
+                                            </span>
                                             <span className={`px-2 py-0.5 text-xs rounded-full border font-medium ${getAmendTypeColor(selectedAmendmentData.AmendmentType)}`}>
                                                 {selectedAmendmentData.AmendmentType}
                                             </span>
                                         </div>
+                                        {selectedAmendment?.OtherCCCode && (
+                                            <div className="flex items-center space-x-1 mt-1">
+                                                <ChevronLeft className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
+                                                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                                                    Source CC: {selectedAmendment.OtherCCCode}
+                                                </span>
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-4 py-4 text-right">
                                         <span className={`font-bold text-base ${selectedAmendmentData.AmendmentType === 'Add' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
@@ -1048,7 +1086,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                             <Search className="absolute left-3 top-3 w-4 h-4 text-blue-300" />
                             <input
                                 type="text"
-                                placeholder="Search by CC code, amendment ID, CC name..."
+                                placeholder="Search by CC code, amendment ID, CC name, source CC..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-blue-300 border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm"

@@ -101,11 +101,11 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
     // ── Fetch status & remarks when detail loads ──
     useEffect(() => {
         if (!selectedItem || !roleId || !verifyDetail) return;
-        const moid = verifyDetail?.Header?.MOID || verifyDetail?.MOID || 650;
+        const moid = verifyDetail?.Header?.MOID || verifyDetail?.MOID || 648;
         dispatch(fetchStatusList({ MOID: moid, ROID: roleId, ChkAmt: 0 }));
         dispatch(setSelectedMOID(moid));
         dispatch(fetchRemarks({
-            trno: verifyDetail?.Header?.TransactionRefNo || selectedItem?.TransactionRefNo || '',
+            trno: verifyDetail?.Header?.NotifRefno || selectedItem?.NotifRefno || '',
             moid,
         }));
     }, [selectedItem, roleId, verifyDetail, dispatch]);
@@ -166,16 +166,12 @@ const VerifyLabourPayRoll = ({ notificationData, onNavigate }) => {
         }
 
         const hdr = verifyDetail?.Header || {};
-        const existingNote = hdr.Remarks || '';
-        const newNote = existingNote.trim()
-            ? `${existingNote.trim()}||${currentRole} : ${currentUser} : ${verificationComment.trim()}`
-            : `${currentRole} : ${currentUser} : ${verificationComment.trim()}`;
 
         const payload = {
             PayrollId:         hdr.PayrollId || selectedItem.PayrollId,
             TransactionRefNo:  hdr.TransactionRefNo || selectedItem.TransactionRefNo || '',
             ConslidateTransNo: hdr.ConslidateTransNo || 0,
-            Note:              newNote,
+            Note:              verificationComment.trim(),
             Action:            actionValue,
             RoleId:            roleId,
             CreatedBy:         currentUser,

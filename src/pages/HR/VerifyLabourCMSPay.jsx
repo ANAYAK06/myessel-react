@@ -66,37 +66,44 @@ const BANK_HEADERS = [
 
 const FIXED_EMAIL = 'epplhdfclp@gmail.com';
 
-const generateBankExcel = (workers, transNo, ccCode) => {
+const generateBankExcel = (workers, transNo, ccCode, labourType) => {
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dateStr = `${dd}/${mm}/${today.getFullYear()}`;
 
-    const rows = workers.map((w) => {
+    const isOwn = labourType?.toLowerCase().includes('own');
+    const prefix = isOwn ? 'LPOWN' : 'PRW';
+    const bwRef  = `${prefix}-${ccCode}-BW`;
+    const awRef  = `${prefix}-${ccCode}-AW`;
+
+    const buildRow = (w, amount, refNo) => [
+        'N',                                           // Transaction Type
+        '',                                            // Beneficiary Code
+        w.BankAccountNo || w.AccountNo || '',          // Beneficiary Account Number
+        amount,                                        // Instrument Amount
+        w.LabourName || w.WorkerName || w.Name || '',  // Beneficiary Name
+        '',                                            // Drawee Location
+        '',                                            // Print Location
+        '', '', '', '', '',                            // Bene Address 1-5
+        refNo,                                         // Instruction Reference Number
+        refNo,                                         // Customer Reference Number
+        '', '', '', '', '', '', '',                    // Payment details 1-7
+        '',                                            // Cheque Number
+        dateStr,                                       // Chq / Trn Date
+        '',                                            // MICR Number
+        w.IFSCCode || w.IFSC || '',                    // IFSC Code
+        w.BankName || '',                              // Bene Bank Name
+        w.BranchName || w.BankBranchName || '',        // Bene Bank Branch Name
+        FIXED_EMAIL,                                   // Beneficiary email id
+    ];
+
+    const rows = [];
+    workers.forEach((w) => {
         const basic     = parseFloat(w.BasicAmount     || w.BasicPayNow     || w.BasicBalance     || 0);
         const allowance = parseFloat(w.AllowanceAmount || w.AllowancePayNow || w.AllowanceBalance || 0);
-        const net       = parseFloat(w.NetAmount       || w.Amount          || 0) || basic + allowance;
-        return [
-            'N',                                              // Transaction Type
-            '',                                              // Beneficiary Code
-            w.BankAccountNo || w.AccountNo || '',            // Beneficiary Account Number
-            net,                                             // Instrument Amount
-            w.LabourName || w.WorkerName || w.Name || '',    // Beneficiary Name
-            '',                                              // Drawee Location
-            '',                                              // Print Location
-            ccCode || '',                                    // Bene Address 1
-            ccCode || '',                                    // Bene Address 2
-            '', '', '',                                      // Bene Address 3-5
-            '', '',                                          // Instruction Ref, Customer Ref
-            '', '', '', '', '', '', '',                      // Payment details 1-7
-            '',                                              // Cheque Number
-            dateStr,                                         // Chq / Trn Date
-            '',                                              // MICR Number
-            w.IFSCCode || w.IFSC || '',                      // IFSC Code
-            w.BankName || '',                                // Bene Bank Name
-            w.BranchName || w.BankBranchName || '',          // Bene Bank Branch Name
-            FIXED_EMAIL,                                     // Beneficiary email id
-        ];
+        if (basic > 0)     rows.push(buildRow(w, basic,     bwRef));
+        if (allowance > 0) rows.push(buildRow(w, allowance, awRef));
     });
 
     const ws = XLSX.utils.aoa_to_sheet([BANK_HEADERS, ...rows]);
@@ -244,7 +251,7 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
 
             if (actionValue.toLowerCase() === 'approve' && workerGrid.length > 0) {
                 const transNo = detail?.CMSTransactionNo || selectedItem?.CMSTransactionNo || '';
-                generateBankExcel(workerGrid, transNo, detail?.CCCode || selectedItem?.CCCode || '');
+                generateBankExcel(workerGrid, transNo, detail?.CCCode || selectedItem?.CCCode || '', detail?.LabourType || selectedItem?.LabourType || '');
             }
 
             setTimeout(() => {
@@ -269,7 +276,7 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
             toast.error('No worker data available to export');
             return;
         }
-        generateBankExcel(workerGrid, transNo, detail?.CCCode || selectedItem?.CCCode || '');
+        generateBankExcel(workerGrid, transNo, detail?.CCCode || selectedItem?.CCCode || '', detail?.LabourType || selectedItem?.LabourType || '');
         toast.success('Excel downloaded');
     };
 

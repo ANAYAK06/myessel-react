@@ -186,6 +186,13 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
         try {
             const result = await dispatch(submitItemCodeVerification(buildPayload(actionValue))).unwrap();
             const msg = typeof result === 'string' ? result : JSON.stringify(result);
+
+            // Backend returns "Invalid ..." strings in Data even when IsSuccessful: true
+            if (typeof result === 'string' && result.toLowerCase().startsWith('invalid')) {
+                toast.error(result, { autoClose: 10000 });
+                return;
+            }
+
             toast.success(`${action.text || actionValue} completed successfully!`);
             if (msg.includes('$')) {
                 const info = msg.split('$')[1];
@@ -401,13 +408,34 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                                     Basic Price
+                                    {detail?.Basicprice && (
+                                        <span className="ml-1 text-gray-400 font-normal">
+                                            (max: ₹{detail.Basicprice})
+                                        </span>
+                                    )}
                                 </label>
                                 <input
-                                    type="text"
+                                    type="number"
                                     value={editBasicprice}
-                                    onChange={(e) => setEditBasicprice(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-orange-300 dark:border-orange-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        const original = parseFloat(detail?.Basicprice || 0);
+                                        if (val !== '' && parseFloat(val) > original) return;
+                                        setEditBasicprice(val);
+                                    }}
+                                    max={detail?.Basicprice || undefined}
+                                    min={0}
+                                    className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-400 ${
+                                        parseFloat(editBasicprice) > parseFloat(detail?.Basicprice || 0)
+                                            ? 'border-red-400 dark:border-red-500'
+                                            : 'border-orange-300 dark:border-orange-600'
+                                    }`}
                                 />
+                                {parseFloat(editBasicprice) > parseFloat(detail?.Basicprice || 0) && (
+                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                        Price cannot exceed the original ₹{detail.Basicprice}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

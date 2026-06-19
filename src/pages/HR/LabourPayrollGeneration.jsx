@@ -992,8 +992,8 @@ const LabourPayrollGeneration = () => {
         const grossAmount = parseFloat(r.GrossAmount) || 0;
         const days        = parseFloat(r.DaysWorked) || 0;
 
-        const basicWage = Math.round(govtRate * days * 100) / 100;
-        const allowance = Math.round((grossAmount - basicWage) * 100) / 100;
+        const basicWage = Math.round(govtRate * days);
+        const allowance = Math.round(grossAmount - basicWage);
 
         const pfApply       = ov.pfApplicable !== false;
         const esiCeilExempt = form.esiCeilingApply && basicWage > (parseFloat(form.esiApplicabilityAmt) || 21000);
@@ -1041,9 +1041,9 @@ const LabourPayrollGeneration = () => {
             }
         }
 
-        const basicPayable     = Math.round((basicWage - pfEmp - esiEmp - ptEmp - lwfEmp) * 100) / 100;
-        const allowancePayable = Math.round((allowance - advance + otherAllow) * 100) / 100;
-        const netPayable       = Math.round((basicPayable + allowancePayable) * 100) / 100;
+        const basicPayable     = Math.round(basicWage - pfEmp - esiEmp - ptEmp - lwfEmp);
+        const allowancePayable = Math.round(allowance - advance + otherAllow);
+        const netPayable       = Math.round(basicPayable + allowancePayable);
 
         return { govtRate, grossAmount, basicWage, allowance, pfEmp, pfEmpr, esiEmp, esiEmpr, ptEmp, lwfEmp, lwfEmpr, advance, otherAllow, basicPayable, allowancePayable, netPayable, pfApply, esiApply };
     };
@@ -1137,15 +1137,15 @@ const LabourPayrollGeneration = () => {
                 aoa.push([
                     rowNum, r.LabourId, r.LabourName, r.Category,
                     r.LabourType || 'Own Labour', r.ContractorName || '',
-                    r.DaysWorked, r.grossAmount, r.govtRate || 0, r.basicWage, r.allowance,
+                    r.DaysWorked, Math.round(r.grossAmount), r.govtRate || 0, r.basicWage, r.allowance,
                     r.pfApply ? r.pfEmp : 0, r.pfApply ? r.pfEmpr : 0,
                     r.esiApply ? r.esiEmp : 0, r.esiApply ? r.esiEmpr : 0,
-                    r.advance, r.otherAllow,
+                    Math.round(r.advance), Math.round(r.otherAllow),
                     r.isValid ? r.basicPayable : '', r.isValid ? r.allowancePayable : '', r.isValid ? r.netPayable : '',
                     r.ValidationStatus,
                 ]);
             });
-            const gsum = (key) => validCalc.reduce((s, r) => s + (r[key] || 0), 0);
+            const gsum = (key) => Math.round(validCalc.reduce((s, r) => s + (r[key] || 0), 0));
             aoa.push([]);
             aoa.push([
                 '', 'GRAND TOTAL', `${validCalc.length} workers`, '', '', '', '',

@@ -134,7 +134,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
 
     useEffect(() => {
         if (!selectedItem) return;
-        const indno = selectedItem.Indno;
+        const indno = selectedItem.Indentno;
         dispatch(fetchIndentItems(indno));
         dispatch(fetchIndentRemarks(indno));
         dispatch(fetchStatusList({ MOID: INDENT_MOID, ROID: roleId, ChkAmt: 0 }));
@@ -169,14 +169,14 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                          : 'Approve';
 
         const payload = {
-            Rowid:          selectedItem.Rowid   || selectedItem.Indno || '',
+            Rowid:          selectedItem.Rowid      || selectedItem.Indentno || '',
             Appstatus:      appstatus,
             AprovalRemarks: verificationComment.trim(),
             Remarks:        verificationComment.trim(),
             Crtdby:         userName,
             Createdby:      userName,
-            Indent:         selectedItem.Indno   || '',
-            IndentNo:       selectedItem.Indno   || '',
+            Indent:         selectedItem.Indentno  || '',
+            IndentNo:       selectedItem.Indentno  || '',
             Roleid:         roleId,
             RoleId:         roleId,
         };
@@ -212,11 +212,10 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return (
-            item.Indno?.toLowerCase().includes(q)       ||
-            item.CreatedBy?.toLowerCase().includes(q)   ||
-            item.Department?.toLowerCase().includes(q)  ||
-            item.Status?.toLowerCase().includes(q)      ||
-            item.IndentDate?.toLowerCase().includes(q)
+            item.Indentno?.toLowerCase().includes(q)  ||
+            item.Costcenter?.toLowerCase().includes(q) ||
+            item.Status?.toLowerCase().includes(q)    ||
+            item.Date?.toLowerCase().includes(q)
         );
     });
 
@@ -232,30 +231,29 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                     <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-amber-400 rounded-full border-2 border-white dark:border-gray-800" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white font-mono truncate">{item.Indno}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.CreatedBy}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white font-mono truncate">{item.Indentno}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.Costcenter}</p>
                 </div>
             </div>
             <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                    <StatusBadge status={item.Status || item.ApprovalStatus} />
-                    {item.TotalItems != null && (
+                    <StatusBadge status={item.Status} />
+                    {item.TotalAmount != null && (
                         <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <Package className="w-3 h-3" />
-                            {item.TotalItems} items
+                            ₹{Number(item.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                     )}
                 </div>
-                {item.IndentDate && (
+                {item.Date && (
                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <Calendar className="w-3 h-3 shrink-0" />
-                        <span>{item.IndentDate}</span>
+                        <span>{item.Date}</span>
                     </div>
                 )}
-                {item.Department && (
+                {item.CCType && (
                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <Building2 className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{item.Department}</span>
+                        <span className="truncate">{item.CCType}</span>
                     </div>
                 )}
             </div>
@@ -290,17 +288,17 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                         </div>
                         <div className="flex-1">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white font-mono">
-                                {selectedItem.Indno}
+                                {selectedItem.Indentno}
                             </h2>
                             <p className="text-indigo-600 dark:text-indigo-400 font-semibold text-sm mt-0.5">
-                                {selectedItem.Department}
+                                {selectedItem.Costcenter}
                             </p>
                             <div className="flex flex-wrap gap-2 mt-3">
-                                <StatusBadge status={selectedItem.Status || selectedItem.ApprovalStatus} />
-                                {selectedItem.TotalItems != null && (
+                                <StatusBadge status={selectedItem.Status} />
+                                {selectedItem.CapitalMaterialType && (
                                     <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium flex items-center gap-1">
                                         <Package className="w-3 h-3" />
-                                        {selectedItem.TotalItems} items
+                                        {selectedItem.CapitalMaterialType.trim()}
                                     </span>
                                 )}
                             </div>
@@ -311,19 +309,16 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                 {/* Info cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <DetailCard title="Indent Info" icon={FileText} accent="indigo">
-                        <InfoRow icon={Hash}       label="Indent No"    value={selectedItem.Indno} />
-                        <InfoRow icon={Calendar}   label="Indent Date"  value={selectedItem.IndentDate} />
-                        <InfoRow icon={Calendar}   label="Created Date" value={selectedItem.CreatedDate} />
-                        <InfoRow icon={User}       label="Created By"   value={selectedItem.CreatedBy} />
-                        <InfoRow icon={Tag}        label="Status"       value={selectedItem.Status} />
+                        <InfoRow icon={Hash}       label="Indent No"   value={selectedItem.Indentno} />
+                        <InfoRow icon={Calendar}   label="Date"        value={selectedItem.Date} />
+                        <InfoRow icon={Tag}        label="Status"      value={selectedItem.Status} />
+                        <InfoRow icon={Package}    label="Material"    value={selectedItem.CapitalMaterialType?.trim()} />
                     </DetailCard>
 
-                    <DetailCard title="Department" icon={Building2} accent="teal">
-                        <InfoRow icon={Building2}  label="Department"       value={selectedItem.Department} />
-                        <InfoRow icon={Layers}     label="Approval Status"  value={selectedItem.ApprovalStatus} />
-                        {selectedItem.TotalItems != null && (
-                            <InfoRow icon={Package} label="Total Items" value={String(selectedItem.TotalItems)} />
-                        )}
+                    <DetailCard title="Cost Centre" icon={Building2} accent="teal">
+                        <InfoRow icon={Building2}  label="Cost Centre"  value={selectedItem.Costcenter} />
+                        <InfoRow icon={Layers}     label="CC Type"      value={selectedItem.CCType} />
+                        <InfoRow icon={Hash}       label="Total Amount" value={selectedItem.TotalAmount != null ? `₹${Number(selectedItem.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : undefined} />
                     </DetailCard>
                 </div>
 
@@ -453,10 +448,10 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     // ── Stats ──────────────────────────────────────────────────────────────────
 
     const statsCards = [
-        { icon: ShoppingCart, value: inbox.length,                                label: 'Total Pending',   color: 'indigo'  },
-        { icon: Clock,        value: inbox.length,                                label: 'Awaiting Action', color: 'purple'  },
-        { icon: Package,      value: selectedItem?.TotalItems ?? '—',             label: 'Items Selected',  color: 'teal'    },
-        { icon: User,         value: selectedItem?.CreatedBy || '—',              label: 'Requested By',    color: 'cyan'    },
+        { icon: ShoppingCart, value: inbox.length,                                                                                                              label: 'Total Pending',   color: 'indigo' },
+        { icon: Clock,        value: inbox.length,                                                                                                              label: 'Awaiting Action', color: 'purple' },
+        { icon: Package,      value: selectedItem?.TotalAmount != null ? `₹${Number(selectedItem.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—', label: 'Total Amount',    color: 'teal'   },
+        { icon: User,         value: selectedItem?.Costcenter || '—',                                                                                          label: 'Cost Centre',     color: 'cyan'   },
     ];
 
     // ── Render ─────────────────────────────────────────────────────────────────
@@ -473,7 +468,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                 badgeCount={inbox.length}
                 searchConfig={{
                     enabled:     true,
-                    placeholder: 'Search by indent no, department, created by…',
+                    placeholder: 'Search by indent no, cost centre, date…',
                     value:       searchQuery,
                     onChange:    (e) => setSearchQuery(e.target.value),
                 }}
@@ -517,7 +512,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                             title:          'Pending Verification',
                             icon:           Clock,
                             emptyMessage:   'No indent requests pending verification.',
-                            itemKey:        'Indno',
+                            itemKey:        'Indentno',
                             enableCollapse: true,
                             enableRefresh:  true,
                             enableHover:    true,
@@ -535,7 +530,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                                 <ShoppingCart className="w-4 h-4 text-white" />
                             </div>
                             <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                                {selectedItem ? `Indent: ${selectedItem.Indno}` : 'Select an Indent'}
+                                {selectedItem ? `Indent: ${selectedItem.Indentno}` : 'Select an Indent'}
                             </h2>
                         </div>
 

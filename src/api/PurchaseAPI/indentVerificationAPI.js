@@ -8,6 +8,7 @@ const handle = (err) => {
     throw err;
 };
 
+// 1. Inbox — pending items for the role
 export const getIndentVerificationGrid = async (roleId, created = '', userId = '') => {
     try {
         const res = await axios.get(
@@ -18,26 +19,95 @@ export const getIndentVerificationGrid = async (roleId, created = '', userId = '
     } catch (err) { handle(err); }
 };
 
-export const viewIndentItemsDetails = async (indno) => {
+// 2. Level config for this role — returns IndentPresentLevel, IndentDefineLevel, NewItemDefineLevel
+export const getIndentLevels = async (MOID, roleId) => {
     try {
         const res = await axios.get(
-            `${API_BASE_URL}/Purchase/ViewIndentItemsDetails?Indno=${indno}`,
+            `${API_BASE_URL}/Purchase/GetIndentLevels?MOID=${MOID}&Roleid=${roleId}`,
             { headers }
         );
         return res.data;
     } catch (err) { handle(err); }
 };
 
-export const viewIndentRemarks = async (indno) => {
+// 3. Indent header — MOID, Rowid, IndentTypeDefine, Status
+export const getVerificationIndentByCode = async (indentno, roleId) => {
     try {
         const res = await axios.get(
-            `${API_BASE_URL}/Purchase/ViewIndentRemarks?Indno=${indno}`,
+            `${API_BASE_URL}/Purchase/GetVerificationIndentbyCode?Indentno=${encodeURIComponent(indentno)}&RoleId=${roleId}`,
             { headers }
         );
         return res.data;
     } catch (err) { handle(err); }
 };
 
+// 4. Define types for a cost center code
+export const getIndentDefineType = async (CCode) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetIndentDefineType?CCode=${CCode}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 5. Items — CSK role (PresentLevel == DefineLevel)
+export const getItemCodesByCSKDetails = async (Indent, Role) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetItemCodesbyCSKDetails?Indent=${encodeURIComponent(Indent)}&Role=${Role}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 6. Items — PUM role (PresentLevel == NewItemDefineLevel)
+export const getItemCodesByPUMDetails = async (Indent, CCCode = '', CType = '') => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetItemCodesbyPUMDetails?Indent=${encodeURIComponent(Indent)}&CCCode=${CCCode}&CType=${CType}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 7. Items — Other roles (all remaining levels: CC early + higher mgmt)
+export const getItemCodesByOtherDetails = async (Indent, Role) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetItemCodesbyOtherDetails?Indent=${encodeURIComponent(Indent)}&Role=${Role}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 8. Remarks history for indent
+export const getRemarksByCCDetails = async (Indent) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetRemarksbyCCDetails?Indent=${encodeURIComponent(Indent)}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 9. Subtotal breakdown
+export const getItemCodesSubtotalDetails = async (Indent) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetItemCodesSubtotalDetails?Indent=${encodeURIComponent(Indent)}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 10. Verify / Approve / Return / Reject
 export const verifyIndent = async (payload) => {
     try {
         const res = await axios.put(

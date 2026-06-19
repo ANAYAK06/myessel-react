@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
     ShoppingCart, Clock, Hash, Calendar, Building2,
     User, Package, ChevronDown, ChevronUp, Tag,
-    FileText, Layers,
+    FileText, Layers, CheckSquare, AlertCircle,
 } from 'lucide-react';
 
 import InboxHeader      from '../../components/Inbox/InboxHeader';
@@ -16,18 +16,31 @@ import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
     fetchIndentInbox,
-    fetchIndentItems,
-    fetchIndentRemarks,
+    fetchIndentDetail,
+    fetchIndentLevels,
+    fetchItemsByCSKRole,
+    fetchItemsByPUMRole,
+    fetchItemsByOtherRole,
+    fetchIndentSubtotal,
     submitIndentVerification,
     clearDetail,
-    clearApprovalResult,
     resetAll,
     selectIndentInbox,
+    selectIndentDetail,
+    selectIndentLevels,
+    selectRoleType,
     selectIndentItems,
-    selectIndentRemarks,
+    selectIndentSubtotal,
     selectIndentLoading,
     selectIndentErrors,
 } from '../../slices/purchaseSlice/indentVerificationSlice';
+
+import {
+    fetchRemarks,
+    selectRemarks,
+    selectRemarksLoading,
+    setSelectedMOID,
+} from '../../slices/supplierPOSlice/purcahseHelperSlice';
 
 import {
     fetchStatusList,
@@ -39,12 +52,9 @@ import {
     setShowReturnButton,
 } from '../../slices/CommonSlice/getStatusSlice';
 
-// MOID for Purchase Indent module — update if backend provides a different value
-const INDENT_MOID = 171;
-
 const cn = (...c) => c.filter(Boolean).join(' ');
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+// ── Tiny shared UI ─────────────────────────────────────────────────────────────
 
 const InfoRow = ({ icon: Icon, label, value, valueClass }) => (
     <div className="flex items-start gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
@@ -55,26 +65,6 @@ const InfoRow = ({ icon: Icon, label, value, valueClass }) => (
         </span>
     </div>
 );
-
-const DetailCard = ({ title, icon: Icon, children, accent = 'indigo' }) => {
-    const styles = {
-        indigo: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-indigo-200 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 bg-indigo-500',
-        amber:  'from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-500',
-        teal:   'from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-teal-200 dark:border-teal-700 text-teal-600 dark:text-teal-400 bg-teal-500',
-    };
-    const p = styles[accent].split(' ');
-    return (
-        <div className={cn('rounded-xl border p-4 bg-gradient-to-r', p[0], p[1], p[2], p[3], p[4], p[5])}>
-            <div className="flex items-center gap-2 mb-3">
-                <div className={cn('p-1.5 rounded-lg', p[12])}>
-                    <Icon className="h-3.5 w-3.5 text-white" />
-                </div>
-                <h4 className={cn('text-xs font-bold uppercase tracking-wide', p[6], p[7])}>{title}</h4>
-            </div>
-            {children}
-        </div>
-    );
-};
 
 const StatusBadge = ({ status }) => {
     const s = (status || '').toLowerCase();
@@ -89,16 +79,375 @@ const StatusBadge = ({ status }) => {
     );
 };
 
+const RoleBadge = ({ roleType }) => {
+    if (!roleType) return null;
+    const config = {
+        CSK:   { label: 'Stock Keeper (CSK)',     cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+        PUM:   { label: 'Purchase Manager (PUM)', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
+        CC:    { label: 'Cost Centre Approval',   cls: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' },
+        OTHER: { label: 'Senior Approver',        cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+    }[roleType] || { label: roleType, cls: 'bg-gray-100 text-gray-600' };
+    return (
+        <span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold', config.cls)}>
+            <CheckSquare className="w-3 h-3" />
+            {config.label}
+        </span>
+    );
+};
+
+// ── Table helpers ─────────────────────────────────────────────────────────────
+
+const Th = ({ children, right }) => (
+    <th className={cn('px-2 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 whitespace-nowrap', right ? 'text-right' : 'text-left')}>
+        {children}
+    </th>
+);
+
+const Td = ({ children, right, mono, className }) => (
+    <td className={cn('px-2 py-2 text-xs text-gray-800 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700/50', right ? 'text-right' : 'text-left', mono && 'font-mono', className)}>
+        {children}
+    </td>
+);
+
+const fmtAmt = (v) => v != null ? Number(v).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '—';
+
+// ── Role-specific tables ───────────────────────────────────────────────────────
+
+// CC / OTHER — read-only with row checkboxes
+const ReadOnlyTable = ({ items, checkedItems, onToggle, roleType }) => {
+    const allChecked = items.length > 0 && checkedItems.size === items.length;
+    const isPUM_OTHER = roleType === 'OTHER';
+
+    return (
+        <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+                <thead>
+                    <tr>
+                        <Th>
+                            <input
+                                type="checkbox"
+                                checked={allChecked}
+                                onChange={() => {
+                                    if (allChecked) onToggle(null, true);
+                                    else onToggle(null, false);
+                                }}
+                                className="w-3.5 h-3.5 accent-indigo-600"
+                            />
+                        </Th>
+                        <Th>#</Th>
+                        <Th>Item Code</Th>
+                        <Th>Item Name</Th>
+                        <Th>Specification</Th>
+                        <Th>DCA / Sub DCA</Th>
+                        <Th right>Basic Price</Th>
+                        <Th>Units</Th>
+                        <Th right>Indent Qty</Th>
+                        {isPUM_OTHER && <Th right>Issued CS</Th>}
+                        {isPUM_OTHER && <Th right>Issued New Stock</Th>}
+                        {isPUM_OTHER && <Th right>Purchase Qty</Th>}
+                        <Th right>Amount</Th>
+                        <Th right>Avl at CC</Th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map((item, idx) => (
+                        <tr key={item.IndentListId || idx}
+                            className={cn('hover:bg-gray-50 dark:hover:bg-gray-700/30', checkedItems.has(item.IndentListId) && 'bg-green-50 dark:bg-green-900/10')}>
+                            <Td>
+                                <input
+                                    type="checkbox"
+                                    checked={checkedItems.has(item.IndentListId)}
+                                    onChange={() => onToggle(item.IndentListId)}
+                                    className="w-3.5 h-3.5 accent-indigo-600"
+                                />
+                            </Td>
+                            <Td>{idx + 1}</Td>
+                            <Td mono className="text-indigo-600 dark:text-indigo-400">{item.ItemCode?.trim()}</Td>
+                            <Td>
+                                <p className="truncate max-w-[160px]" title={item.ItemName}>{item.ItemName}</p>
+                            </Td>
+                            <Td>
+                                <p className="truncate max-w-[140px] text-gray-500 dark:text-gray-400 text-[10px]" title={item.Specification}>{item.Specification || '—'}</p>
+                            </Td>
+                            <Td>
+                                <span className="text-indigo-600 dark:text-indigo-400">{item.DcaCode}</span>
+                                {item.SubDcaCode && <span className="text-gray-400"> / {item.SubDcaCode}</span>}
+                            </Td>
+                            <Td right>{fmtAmt(item.BasicPrice)}</Td>
+                            <Td>{item.Units}</Td>
+                            <Td right className="font-semibold">{item.Quantity}</Td>
+                            {isPUM_OTHER && <Td right>{item.Stock || '0'}</Td>}
+                            {isPUM_OTHER && <Td right>{item.NewStock || '0'}</Td>}
+                            {isPUM_OTHER && <Td right>{item.PurchasedQty || '—'}</Td>}
+                            <Td right className="font-semibold text-indigo-700 dark:text-indigo-300">
+                                {fmtAmt(item.sumamt || item.Amount)}
+                            </Td>
+                            <Td right>{item.AvlQtyAtCC || item.AvailableQty || '0'}</Td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+// CSK — interactive issued qty inputs per row
+const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle }) => {
+    const allChecked = items.length > 0 && checkedItems.size === items.length;
+
+    const validateQty = (item, val) => {
+        const v = parseFloat(val);
+        const raised = parseFloat(item.Quantity) || 0;
+        const avl = parseFloat(item.Stock || 0) + parseFloat(item.NewStock || 0);
+        if (isNaN(v) || v < 0) return '0';
+        if (v > raised) { toast.warn(`Issued qty cannot exceed raised qty (${raised})`); return String(raised); }
+        return val;
+    };
+
+    return (
+        <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+                <thead>
+                    <tr>
+                        <Th>
+                            <input type="checkbox" checked={allChecked}
+                                onChange={() => onToggle(null, allChecked)}
+                                className="w-3.5 h-3.5 accent-indigo-600" />
+                        </Th>
+                        <Th>#</Th>
+                        <Th>Item Code</Th>
+                        <Th>Item Name</Th>
+                        <Th>Specification</Th>
+                        <Th>DCA / Sub DCA</Th>
+                        <Th right>Basic Price</Th>
+                        <Th>Units</Th>
+                        <Th right>Raised Qty</Th>
+                        <Th right>Old Stock</Th>
+                        <Th right>New Stock</Th>
+                        <Th right>Avl Qty</Th>
+                        <Th right>Issued Qty</Th>
+                        <Th right>Amount</Th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map((item, idx) => {
+                        const isAsset = (item.ItemCode?.trim() || '').startsWith('1');
+                        const qty = rowInputs[item.IndentListId]?.issuedQty ?? '0';
+                        const basic = parseFloat(item.BasicPrice) || 0;
+                        const raised = parseFloat(item.Quantity) || 0;
+                        const issued = parseFloat(qty) || 0;
+                        const remainAmt = basic * Math.max(0, raised - issued);
+
+                        return (
+                            <tr key={item.IndentListId || idx}
+                                className={cn('hover:bg-gray-50 dark:hover:bg-gray-700/30', checkedItems.has(item.IndentListId) && 'bg-blue-50 dark:bg-blue-900/10')}>
+                                <Td>
+                                    <input type="checkbox" checked={checkedItems.has(item.IndentListId)}
+                                        onChange={() => onToggle(item.IndentListId)}
+                                        className="w-3.5 h-3.5 accent-indigo-600" />
+                                </Td>
+                                <Td>{idx + 1}</Td>
+                                <Td mono className="text-indigo-600 dark:text-indigo-400">{item.ItemCode?.trim()}</Td>
+                                <Td>
+                                    <p className="truncate max-w-[150px]" title={item.ItemName}>{item.ItemName}</p>
+                                </Td>
+                                <Td>
+                                    <p className="truncate max-w-[120px] text-[10px] text-gray-500 dark:text-gray-400" title={item.Specification}>{item.Specification || '—'}</p>
+                                </Td>
+                                <Td>
+                                    <span className="text-indigo-600 dark:text-indigo-400">{item.DcaCode}</span>
+                                    {item.SubDcaCode && <span className="text-gray-400"> / {item.SubDcaCode}</span>}
+                                </Td>
+                                <Td right>{fmtAmt(item.BasicPrice)}</Td>
+                                <Td>{item.Units}</Td>
+                                <Td right className="font-semibold">{item.Quantity}</Td>
+                                <Td right className="text-amber-600 dark:text-amber-400">{item.Stock || '0'}</Td>
+                                <Td right className="text-green-600 dark:text-green-400">{item.NewStock || '0'}</Td>
+                                <Td right>{item.AvailableQty || '0'}</Td>
+                                <Td right>
+                                    {isAsset ? (
+                                        <span className="text-xs text-gray-400 italic">Asset — serial select N/A</span>
+                                    ) : (
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.0001"
+                                            value={qty}
+                                            onChange={(e) => {
+                                                const validated = validateQty(item, e.target.value);
+                                                onQtyChange(item.IndentListId, validated);
+                                            }}
+                                            className="w-20 px-2 py-1 text-right border border-indigo-300 dark:border-indigo-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        />
+                                    )}
+                                </Td>
+                                <Td right className="font-semibold text-indigo-700 dark:text-indigo-300">
+                                    {fmtAmt(remainAmt)}
+                                </Td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+// PUM — issued new stock inputs + CC selectors
+const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCCType, pumCCCode, onCCTypeChange, onCCCodeChange, onRefreshWithCC }) => {
+    const allChecked = items.length > 0 && checkedItems.size === items.length;
+
+    const validateQty = (item, val) => {
+        const v = parseFloat(val);
+        const newStock = parseFloat(item.AvailableQty || 0);
+        const purchQty = parseFloat(item.PurchasedQty || 0);
+        const issuedOld = parseFloat(item.IssuedQty || 0);
+        const balance = Math.max(0, (parseFloat(item.Quantity) || 0) - issuedOld);
+        if (isNaN(v) || v < 0) return '0';
+        if (v > balance) { toast.warn(`Cannot exceed balance qty (${balance})`); return String(balance); }
+        if (newStock > 0 && v > newStock) { toast.warn(`Exceeds available new stock (${newStock})`); return String(newStock); }
+        return val;
+    };
+
+    return (
+        <div className="space-y-3">
+            {/* CC selector for new stock */}
+            <div className="flex flex-wrap gap-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                <div className="flex items-center gap-2">
+                    <label className="text-xs font-semibold text-purple-700 dark:text-purple-300 whitespace-nowrap">CC Type</label>
+                    <select
+                        value={pumCCType}
+                        onChange={(e) => onCCTypeChange(e.target.value)}
+                        className="text-xs border border-purple-300 dark:border-purple-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    >
+                        <option value="">Select Type</option>
+                        <option value="PCC">Performing</option>
+                        <option value="NPCC">Non-Performing</option>
+                    </select>
+                </div>
+                <div className="flex items-center gap-2">
+                    <label className="text-xs font-semibold text-purple-700 dark:text-purple-300 whitespace-nowrap">Issue From CC</label>
+                    <input
+                        type="text"
+                        value={pumCCCode}
+                        onChange={(e) => onCCCodeChange(e.target.value)}
+                        placeholder="Enter CC Code"
+                        className="text-xs border border-purple-300 dark:border-purple-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500 w-32"
+                    />
+                    <button
+                        onClick={onRefreshWithCC}
+                        className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium"
+                    >
+                        Load
+                    </button>
+                </div>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                    <thead>
+                        <tr>
+                            <Th>
+                                <input type="checkbox" checked={allChecked}
+                                    onChange={() => onToggle(null, allChecked)}
+                                    className="w-3.5 h-3.5 accent-indigo-600" />
+                            </Th>
+                            <Th>#</Th>
+                            <Th>Item Code</Th>
+                            <Th>Item Name</Th>
+                            <Th>Specification</Th>
+                            <Th>DCA / Sub DCA</Th>
+                            <Th right>Basic Price</Th>
+                            <Th>Units</Th>
+                            <Th right>Indent Qty</Th>
+                            <Th right>Old Issued</Th>
+                            <Th right>Purchase Qty</Th>
+                            <Th right>Issued New Stock</Th>
+                            <Th right>Amount</Th>
+                            <Th right>New Stock</Th>
+                            <Th right>Avl at CC</Th>
+                            <Th>New Stock?</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items.map((item, idx) => {
+                            const isAsset = (item.ItemCode?.trim() || '').startsWith('1');
+                            const qty = rowInputs[item.IndentListId]?.issuedQty ?? '0';
+
+                            return (
+                                <tr key={item.IndentListId || idx}
+                                    className={cn('hover:bg-gray-50 dark:hover:bg-gray-700/30', checkedItems.has(item.IndentListId) && 'bg-purple-50 dark:bg-purple-900/10')}>
+                                    <Td>
+                                        <input type="checkbox" checked={checkedItems.has(item.IndentListId)}
+                                            onChange={() => onToggle(item.IndentListId)}
+                                            className="w-3.5 h-3.5 accent-indigo-600" />
+                                    </Td>
+                                    <Td>{idx + 1}</Td>
+                                    <Td mono className="text-indigo-600 dark:text-indigo-400">{item.ItemCode?.trim()}</Td>
+                                    <Td><p className="truncate max-w-[150px]" title={item.ItemName}>{item.ItemName}</p></Td>
+                                    <Td><p className="truncate max-w-[120px] text-[10px] text-gray-500 dark:text-gray-400" title={item.Specification}>{item.Specification || '—'}</p></Td>
+                                    <Td>
+                                        <span className="text-indigo-600 dark:text-indigo-400">{item.DcaCode}</span>
+                                        {item.SubDcaCode && <span className="text-gray-400"> / {item.SubDcaCode}</span>}
+                                    </Td>
+                                    <Td right>{fmtAmt(item.BasicPrice)}</Td>
+                                    <Td>{item.Units}</Td>
+                                    <Td right className="font-semibold">{item.Quantity}</Td>
+                                    <Td right className="text-amber-600 dark:text-amber-400">{item.IssuedQty || '0'}</Td>
+                                    <Td right className="text-green-600 dark:text-green-400">{item.PurchasedQty || '0'}</Td>
+                                    <Td right>
+                                        {isAsset ? (
+                                            <span className="text-[10px] text-gray-400 italic">Asset</span>
+                                        ) : (
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.0001"
+                                                value={qty}
+                                                onChange={(e) => {
+                                                    const v = validateQty(item, e.target.value);
+                                                    onQtyChange(item.IndentListId, v);
+                                                }}
+                                                className="w-20 px-2 py-1 text-right border border-purple-300 dark:border-purple-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                            />
+                                        )}
+                                    </Td>
+                                    <Td right className="font-semibold text-indigo-700 dark:text-indigo-300">{fmtAmt(item.sumamt)}</Td>
+                                    <Td right>{item.AvailableQty || '0'}</Td>
+                                    <Td right>{item.AvlQtyAtCC || '0'}</Td>
+                                    <Td>
+                                        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded',
+                                            item.NewStockApplicable === 'Yes'
+                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400')}>
+                                            {item.NewStockApplicable || 'No'}
+                                        </span>
+                                    </Td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     const dispatch = useDispatch();
 
-    const inbox   = useSelector(selectIndentInbox);
-    const items   = useSelector(selectIndentItems);
-    const remarks = useSelector(selectIndentRemarks);
-    const loading = useSelector(selectIndentLoading);
-    const errors  = useSelector(selectIndentErrors);
+    const inbox        = useSelector(selectIndentInbox);
+    const indentDetail = useSelector(selectIndentDetail);
+    const levels       = useSelector(selectIndentLevels);
+    const roleType     = useSelector(selectRoleType);
+    const items        = useSelector(selectIndentItems);
+    const remarks         = useSelector(selectRemarks);
+    const remarksLoading  = useSelector(selectRemarksLoading);
+    const subtotal     = useSelector(selectIndentSubtotal);
+    const loading      = useSelector(selectIndentLoading);
+    const errors       = useSelector(selectIndentErrors);
 
     const statusLoading  = useSelector(selectStatusListLoading);
     const statusError    = useSelector(selectStatusListError);
@@ -111,8 +460,12 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     const userName = userData?.userName || userData?.UserName || 'system';
 
     const [selectedItem,         setSelectedItem]         = useState(null);
-    const [isVerified,           setIsVerified]           = useState(false);
+    const [rowInputs,            setRowInputs]            = useState({});
+    const [checkedItems,         setCheckedItems]         = useState(new Set());
+    const [pumCCType,            setPumCCType]            = useState('');
+    const [pumCCCode,            setPumCCCode]            = useState('');
     const [verificationComment,  setVerificationComment]  = useState('');
+    const [isVerified,           setIsVerified]           = useState(false);
     const [showRemarksHistory,   setShowRemarksHistory]   = useState(false);
     const [showItemsTable,       setShowItemsTable]       = useState(true);
     const [searchQuery,          setSearchQuery]          = useState('');
@@ -126,82 +479,182 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     useEffect(() => {
         if (roleId) dispatch(fetchIndentInbox({ roleId, created: userName, userId }));
         dispatch(setShowReturnButton('Yes'));
-        return () => {
-            dispatch(resetAll());
-            dispatch(resetApprovalData());
-        };
+        return () => { dispatch(resetAll()); dispatch(resetApprovalData()); };
     }, [roleId, userId, userName, dispatch]);
 
+    // On item select: fetch detail + levels (if MOID available) + remarks + subtotal in parallel
     useEffect(() => {
         if (!selectedItem) return;
-        const indno = selectedItem.Indentno;
-        dispatch(fetchIndentItems(indno));
-        dispatch(fetchIndentRemarks(indno));
-        dispatch(fetchStatusList({ MOID: INDENT_MOID, ROID: roleId, ChkAmt: 0 }));
+        const moid = selectedItem.MOID || selectedItem.Moid || 0;
+
+        dispatch(fetchIndentDetail({ indentno: selectedItem.Indentno, roleId }));
+        dispatch(setSelectedMOID(moid));
+        dispatch(fetchRemarks({ trno: selectedItem.Indentno, moid }));
+        dispatch(fetchIndentSubtotal(selectedItem.Indentno));
+
+        if (moid) {
+            dispatch(fetchIndentLevels({ MOID: moid, roleId }));
+            dispatch(fetchStatusList({ MOID: moid, ROID: roleId, ChkAmt: selectedItem.ChkAmt || 0 }));
+        }
+
+        setRowInputs({});
+        setCheckedItems(new Set());
+        setPumCCType('');
+        setPumCCCode('');
         setIsVerified(false);
         setVerificationComment('');
         setShowRemarksHistory(false);
         setShowItemsTable(true);
+        setIsLeftPanelCollapsed(true);
     }, [selectedItem, roleId, dispatch]);
 
+    // Fallback: if inbox item had no MOID, use MOID from indentDetail once it arrives
     useEffect(() => {
-        if (selectedItem) setIsLeftPanelCollapsed(true);
-    }, [selectedItem]);
+        if (!indentDetail?.MOID || !selectedItem) return;
+        const inboxMoid = selectedItem.MOID || selectedItem.Moid || 0;
+        if (!inboxMoid) {
+            dispatch(fetchIndentLevels({ MOID: indentDetail.MOID, roleId }));
+            dispatch(fetchStatusList({ MOID: indentDetail.MOID, ROID: roleId, ChkAmt: 0 }));
+        }
+    }, [indentDetail, selectedItem, roleId, dispatch]);
+
+    // When levels arrive → fetch role-specific items
+    useEffect(() => {
+        if (!levels || !selectedItem) return;
+        const { IndentPresentLevel: p, IndentDefineLevel: d, NewItemDefineLevel: n } = levels;
+        const indent = selectedItem.Indentno;
+
+        if (p === d) {
+            dispatch(fetchItemsByCSKRole({ Indent: indent, Role: roleId }));
+        } else if (n && p === n) {
+            dispatch(fetchItemsByPUMRole({ Indent: indent, CCCode: '', CType: '' }));
+        } else {
+            dispatch(fetchItemsByOtherRole({ Indent: indent, Role: roleId }));
+        }
+    }, [levels, selectedItem, roleId, dispatch]);
+
+    // Initialise row inputs when items arrive for interactive roles
+    useEffect(() => {
+        if (!items.length) return;
+        if (roleType === 'CSK' || roleType === 'PUM') {
+            const init = {};
+            items.forEach((item) => { init[item.IndentListId] = { issuedQty: '0' }; });
+            setRowInputs(init);
+        }
+        setCheckedItems(new Set());
+    }, [items, roleType]);
 
     // ── Handlers ───────────────────────────────────────────────────────────────
 
-    const handleRefresh = () => {
+    const handleRefresh = useCallback(() => {
         if (roleId) dispatch(fetchIndentInbox({ roleId, created: userName, userId }));
-    };
+    }, [roleId, userName, userId, dispatch]);
 
     const handleBackToInbox = () => {
         if (onNavigate) onNavigate('dashboard', { name: 'Dashboard', type: 'dashboard' });
     };
 
+    const handleQtyChange = useCallback((indentListId, val) => {
+        setRowInputs((prev) => ({ ...prev, [indentListId]: { ...prev[indentListId], issuedQty: val } }));
+    }, []);
+
+    const handleToggleCheck = useCallback((id, clearAll = false) => {
+        if (id === null) {
+            // toggle-all
+            setCheckedItems(clearAll ? new Set() : new Set(items.map((i) => i.IndentListId)));
+            return;
+        }
+        setCheckedItems((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, [items]);
+
+    const handlePUMRefresh = useCallback(() => {
+        if (!selectedItem) return;
+        dispatch(fetchItemsByPUMRole({ Indent: selectedItem.Indentno, CCCode: pumCCCode, CType: pumCCType }));
+    }, [selectedItem, pumCCCode, pumCCType, dispatch]);
+
     const handleActionClick = async (action) => {
-        if (!selectedItem) { toast.error('No indent selected.'); return; }
-        if (!verificationComment.trim()) { toast.error('Verification comment is mandatory.'); return; }
-        if (!isVerified) { toast.error('Please check the verification checkbox before proceeding.'); return; }
+        if (!selectedItem || !indentDetail) { toast.error('No indent selected.'); return; }
+        if (!verificationComment.trim()) { toast.error('Verification comment is required.'); return; }
+        if (!isVerified) { toast.error('Please check the verification checkbox.'); return; }
 
-        const actionText = action.value || action.text || action.type || 'Approve';
-        const appstatus  = actionText.toLowerCase().includes('reject') ? 'Reject'
-                         : actionText.toLowerCase().includes('return') ? 'Return'
-                         : 'Approve';
+        if ((roleType === 'CC' || roleType === 'OTHER') && checkedItems.size < items.length) {
+            toast.error('Please verify all items by checking their checkboxes.'); return;
+        }
+        if (roleType === 'CSK' && checkedItems.size < items.length) {
+            toast.error('Please verify all items by checking their checkboxes.'); return;
+        }
 
-        const payload = {
-            Rowid:          selectedItem.Rowid      || selectedItem.Indentno || '',
-            Appstatus:      appstatus,
-            AprovalRemarks: verificationComment.trim(),
-            Remarks:        verificationComment.trim(),
-            Crtdby:         userName,
-            Createdby:      userName,
-            Indent:         selectedItem.Indentno  || '',
-            IndentNo:       selectedItem.Indentno  || '',
-            Roleid:         roleId,
-            RoleId:         roleId,
+        const actionText = action.value || action.text || action.type || '';
+        const Action = actionText.toLowerCase().includes('reject') ? 'Reject'
+                     : actionText.toLowerCase().includes('return') ? 'Return'
+                     : actionText.toLowerCase().includes('approv') ? 'Approve'
+                     : 'Verify';
+
+        // Payload uses C# Indent model property names (not SP param names)
+        // IC.Rowid → @Rid + @Nids + @Newids | IC.Remarks → @AprovalRemarks | IC.Appstatus → @Action
+        // IC.RoleID → @RoleId | IC.Indentno → @IndentNo | IC.Qtys → @NQty + @NewQtys
+        // IC.Amts → @Amounts | IC.TotalQtys → @Totalqty | IC.FromCC → @IssueNewStockCCCode
+        const base = {
+            Rowid:     indentDetail.Rowid || '',
+            Indentno:  selectedItem.Indentno,
+            Remarks:   verificationComment.trim(),
+            Appstatus: Action,
+            RoleID:    String(roleId),
+            Createdby: userName,
         };
+
+        let payload = base;
+
+        if ((roleType === 'CSK' || roleType === 'PUM') && Action === 'Verify') {
+            let Rowid = '', Qtys = '', Basics = '', Amts = '';
+            let TotalQtys = 0;
+
+            items.forEach((item) => {
+                const isAsset = (item.ItemCode?.trim() || '').startsWith('1');
+                if (!isAsset) {
+                    const issued = parseFloat(rowInputs[item.IndentListId]?.issuedQty || 0);
+                    const basic  = parseFloat(item.BasicPrice) || 0;
+                    const raised = parseFloat(item.Quantity) || 0;
+                    const remain = Math.max(0, raised - issued);
+                    Rowid     += item.IndentListId + ',';
+                    Qtys      += issued + ',';
+                    Basics    += basic + ',';
+                    Amts      += (basic * remain).toFixed(2) + ',';
+                    TotalQtys += issued;
+                }
+            });
+
+            // Rowid carries comma-sep IndentListIds for CSK/PUM (@Nids + @Newids both receive it)
+            payload = { ...base, Rowid, Qtys, Basics, Amts, TotalQtys: String(TotalQtys) };
+
+            if (roleType === 'PUM') {
+                payload.FromCC = pumCCCode || '';
+            }
+        }
 
         try {
             await dispatch(submitIndentVerification(payload)).unwrap();
-
-            const verb = appstatus === 'Reject' ? 'Rejected'
-                       : appstatus === 'Return' ? 'Returned'
-                       : 'Approved';
+            const verb = { Reject: 'Rejected', Return: 'Returned', Approve: 'Approved', Verify: 'Verified' }[Action] || Action + 'd';
             toast.success(`Indent ${verb} successfully!`);
 
             setTimeout(() => {
-                dispatch(fetchIndentInbox({ roleId, created: '', userId }));
+                dispatch(fetchIndentInbox({ roleId, created: userName, userId }));
                 setSelectedItem(null);
+                setRowInputs({});
+                setCheckedItems(new Set());
                 setVerificationComment('');
                 setIsVerified(false);
-                setShowRemarksHistory(false);
                 setIsLeftPanelCollapsed(false);
                 dispatch(clearDetail());
-                dispatch(clearApprovalResult());
                 dispatch(resetApprovalData());
             }, 800);
         } catch (err) {
-            const msg = typeof err === 'string' ? err : err?.message || `Failed to ${appstatus.toLowerCase()} indent`;
+            const msg = typeof err === 'string' ? err : err?.message || `Failed to ${Action.toLowerCase()} indent`;
             toast.error(msg, { autoClose: 10000 });
         }
     };
@@ -212,9 +665,9 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return (
-            item.Indentno?.toLowerCase().includes(q)  ||
+            item.Indentno?.toLowerCase().includes(q)   ||
             item.Costcenter?.toLowerCase().includes(q) ||
-            item.Status?.toLowerCase().includes(q)    ||
+            item.Status?.toLowerCase().includes(q)     ||
             item.Date?.toLowerCase().includes(q)
         );
     });
@@ -239,7 +692,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                 <div className="flex items-center justify-between">
                     <StatusBadge status={item.Status} />
                     {item.TotalAmount != null && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                             ₹{Number(item.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                     )}
@@ -266,17 +719,123 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         </div>
     );
 
-    // ── Right panel detail ─────────────────────────────────────────────────────
+    // ── Right panel ────────────────────────────────────────────────────────────
+
+    const renderItemsSection = () => {
+        if (loading.levels || loading.items) {
+            return (
+                <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+                    <span className="text-sm text-blue-700 dark:text-blue-400">
+                        {loading.levels ? 'Determining role level…' : 'Loading items…'}
+                    </span>
+                </div>
+            );
+        }
+
+        if (!roleType && !loading.levels) {
+            return (
+                <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-700 text-sm text-amber-700 dark:text-amber-400">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    Role level configuration not loaded yet.
+                </div>
+            );
+        }
+
+        return (
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <button
+                    onClick={() => setShowItemsTable(!showItemsTable)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-b border-gray-200 dark:border-gray-700"
+                >
+                    <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        Indent Items {items.length > 0 && `(${items.length})`}
+                        {roleType && <RoleBadge roleType={roleType} />}
+                    </span>
+                    {showItemsTable ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                </button>
+
+                {showItemsTable && (
+                    <div className="p-1">
+                        {items.length === 0 ? (
+                            <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
+                                No items found for this indent.
+                            </p>
+                        ) : roleType === 'CSK' ? (
+                            <CSKTable
+                                items={items}
+                                rowInputs={rowInputs}
+                                onQtyChange={handleQtyChange}
+                                checkedItems={checkedItems}
+                                onToggle={handleToggleCheck}
+                            />
+                        ) : roleType === 'PUM' ? (
+                            <PUMTable
+                                items={items}
+                                rowInputs={rowInputs}
+                                onQtyChange={handleQtyChange}
+                                checkedItems={checkedItems}
+                                onToggle={handleToggleCheck}
+                                pumCCType={pumCCType}
+                                pumCCCode={pumCCCode}
+                                onCCTypeChange={setPumCCType}
+                                onCCCodeChange={setPumCCCode}
+                                onRefreshWithCC={handlePUMRefresh}
+                            />
+                        ) : (
+                            <ReadOnlyTable
+                                items={items}
+                                checkedItems={checkedItems}
+                                onToggle={handleToggleCheck}
+                                roleType={roleType}
+                            />
+                        )}
+
+                        {/* Subtotal row */}
+                        {subtotal.length > 0 && (
+                            <div className="flex flex-wrap gap-6 p-3 mt-1 bg-gray-50 dark:bg-gray-700/30 border-t border-gray-200 dark:border-gray-700 text-xs">
+                                {subtotal.map((s, i) => (
+                                    <React.Fragment key={i}>
+                                        {s.TotalAmount != null && (
+                                            <span className="text-gray-600 dark:text-gray-300">
+                                                Sub Total: <strong className="text-indigo-700 dark:text-indigo-300">₹{fmtAmt(s.TotalAmount)}</strong>
+                                            </span>
+                                        )}
+                                        {s.IssueOldstockAmount > 0 && (
+                                            <span className="text-gray-600 dark:text-gray-300">
+                                                Issue CS: <strong className="text-amber-600 dark:text-amber-400">₹{fmtAmt(s.IssueOldstockAmount)}</strong>
+                                            </span>
+                                        )}
+                                        {s.IssueNewStockAmount > 0 && (
+                                            <span className="text-gray-600 dark:text-gray-300">
+                                                Issue New Stock: <strong className="text-green-600 dark:text-green-400">₹{fmtAmt(s.IssueNewStockAmount)}</strong>
+                                            </span>
+                                        )}
+                                        {s.NewPurchaseAmount > 0 && (
+                                            <span className="text-gray-600 dark:text-gray-300">
+                                                Purchase: <strong className="text-purple-700 dark:text-purple-400">₹{fmtAmt(s.NewPurchaseAmount)}</strong>
+                                            </span>
+                                        )}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const renderDetailContent = () => {
         if (!selectedItem) return null;
 
         return (
             <div className="space-y-5">
-                {loading.items && (
+                {(loading.detail || loading.levels) && (
                     <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
-                        <span className="text-sm text-blue-700 dark:text-blue-400">Loading indent items…</span>
+                        <span className="text-sm text-blue-700 dark:text-blue-400">Loading indent details…</span>
                     </div>
                 )}
 
@@ -295,10 +854,10 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                             </p>
                             <div className="flex flex-wrap gap-2 mt-3">
                                 <StatusBadge status={selectedItem.Status} />
-                                {selectedItem.CapitalMaterialType && (
-                                    <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium flex items-center gap-1">
-                                        <Package className="w-3 h-3" />
-                                        {selectedItem.CapitalMaterialType.trim()}
+                                {roleType && <RoleBadge roleType={roleType} />}
+                                {levels && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                                        Level {levels.IndentPresentLevel} / {levels.IndentDefineLevel}
                                     </span>
                                 )}
                             </div>
@@ -308,90 +867,47 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
 
                 {/* Info cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <DetailCard title="Indent Info" icon={FileText} accent="indigo">
-                        <InfoRow icon={Hash}       label="Indent No"   value={selectedItem.Indentno} />
-                        <InfoRow icon={Calendar}   label="Date"        value={selectedItem.Date} />
-                        <InfoRow icon={Tag}        label="Status"      value={selectedItem.Status} />
-                        <InfoRow icon={Package}    label="Material"    value={selectedItem.CapitalMaterialType?.trim()} />
-                    </DetailCard>
-
-                    <DetailCard title="Cost Centre" icon={Building2} accent="teal">
-                        <InfoRow icon={Building2}  label="Cost Centre"  value={selectedItem.Costcenter} />
-                        <InfoRow icon={Layers}     label="CC Type"      value={selectedItem.CCType} />
-                        <InfoRow icon={Hash}       label="Total Amount" value={selectedItem.TotalAmount != null ? `₹${Number(selectedItem.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : undefined} />
-                    </DetailCard>
-                </div>
-
-                {/* Items table */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <button
-                        onClick={() => setShowItemsTable(!showItemsTable)}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-b border-gray-200 dark:border-gray-700"
-                    >
-                        <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-2">
-                            <Package className="h-4 w-4" />
-                            Indent Items {items.length > 0 && `(${items.length})`}
-                        </span>
-                        {showItemsTable ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
-                    </button>
-
-                    {showItemsTable && (
-                        <div className="overflow-x-auto">
-                            {items.length === 0 && !loading.items ? (
-                                <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
-                                    No items found for this indent.
-                                </p>
-                            ) : (
-                                <table className="w-full text-xs">
-                                    <thead>
-                                        <tr className="bg-gray-50 dark:bg-gray-700/50">
-                                            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-gray-300">#</th>
-                                            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-gray-300">Item Code</th>
-                                            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-gray-300">Item Name</th>
-                                            <th className="px-3 py-2.5 text-right font-semibold text-gray-600 dark:text-gray-300">Qty</th>
-                                            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-gray-300">UOM</th>
-                                            <th className="px-3 py-2.5 text-right font-semibold text-gray-600 dark:text-gray-300">Rate</th>
-                                            <th className="px-3 py-2.5 text-right font-semibold text-gray-600 dark:text-gray-300">Amount</th>
-                                            <th className="px-3 py-2.5 text-left font-semibold text-gray-600 dark:text-gray-300">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                        {items.map((item, idx) => (
-                                            <tr key={item.ItemId || idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                                                <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{idx + 1}</td>
-                                                <td className="px-3 py-2 font-mono text-indigo-600 dark:text-indigo-400">{item.ItemCode}</td>
-                                                <td className="px-3 py-2 text-gray-800 dark:text-gray-200 max-w-[200px]">
-                                                    <p className="truncate" title={item.ItemName}>{item.ItemName}</p>
-                                                    {item.Description && (
-                                                        <p className="text-gray-400 dark:text-gray-500 truncate text-[10px]">{item.Description}</p>
-                                                    )}
-                                                </td>
-                                                <td className="px-3 py-2 text-right font-semibold text-gray-800 dark:text-gray-200">{item.Quantity}</td>
-                                                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{item.UOM}</td>
-                                                <td className="px-3 py-2 text-right text-gray-800 dark:text-gray-200">
-                                                    {item.Rate != null ? Number(item.Rate).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '—'}
-                                                </td>
-                                                <td className="px-3 py-2 text-right font-semibold text-indigo-700 dark:text-indigo-300">
-                                                    {item.Amount != null ? `₹${Number(item.Amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
-                                                </td>
-                                                <td className="px-3 py-2">
-                                                    {item.Status ? <StatusBadge status={item.Status} /> : '—'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
+                    <div className="rounded-xl border p-4 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-indigo-200 dark:border-indigo-700">
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1.5 rounded-lg bg-indigo-500">
+                                <FileText className="h-3.5 w-3.5 text-white" />
+                            </div>
+                            <h4 className="text-xs font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">Indent Info</h4>
                         </div>
-                    )}
+                        <InfoRow icon={Hash}     label="Indent No"  value={selectedItem.Indentno} />
+                        <InfoRow icon={Calendar} label="Date"       value={selectedItem.Date} />
+                        <InfoRow icon={Tag}      label="Status"     value={selectedItem.Status} />
+                        <InfoRow icon={Package}  label="Material"   value={selectedItem.CapitalMaterialType?.trim()} />
+                        {indentDetail?.IndentTypeDefine && (
+                            <InfoRow icon={Layers} label="Type Define" value={indentDetail.IndentTypeDefine} />
+                        )}
+                    </div>
+
+                    <div className="rounded-xl border p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-teal-200 dark:border-teal-700">
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1.5 rounded-lg bg-teal-500">
+                                <Building2 className="h-3.5 w-3.5 text-white" />
+                            </div>
+                            <h4 className="text-xs font-bold uppercase tracking-wide text-teal-600 dark:text-teal-400">Cost Centre</h4>
+                        </div>
+                        <InfoRow icon={Building2} label="Cost Centre"  value={selectedItem.Costcenter} />
+                        <InfoRow icon={Layers}    label="CC Type"      value={selectedItem.CCType} />
+                        <InfoRow icon={Hash}      label="Total Amount" value={selectedItem.TotalAmount != null ? `₹${Number(selectedItem.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : undefined} />
+                        {levels && (
+                            <InfoRow icon={User} label="Role Level" value={`Present: ${levels.IndentPresentLevel} | CSK: ${levels.IndentDefineLevel} | PUM: ${levels.NewItemDefineLevel}`} />
+                        )}
+                    </div>
                 </div>
+
+                {/* Items table — role-based */}
+                {renderItemsSection()}
 
                 {/* Remarks history */}
                 <RemarksHistory
                     isOpen={showRemarksHistory}
                     onToggle={() => setShowRemarksHistory(!showRemarksHistory)}
                     remarks={remarks}
-                    loading={loading.remarks}
+                    loading={remarksLoading}
                     title="Approval History"
                 />
 
@@ -448,10 +964,10 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     // ── Stats ──────────────────────────────────────────────────────────────────
 
     const statsCards = [
-        { icon: ShoppingCart, value: inbox.length,                                                                                                              label: 'Total Pending',   color: 'indigo' },
-        { icon: Clock,        value: inbox.length,                                                                                                              label: 'Awaiting Action', color: 'purple' },
-        { icon: Package,      value: selectedItem?.TotalAmount != null ? `₹${Number(selectedItem.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—', label: 'Total Amount',    color: 'teal'   },
-        { icon: User,         value: selectedItem?.Costcenter || '—',                                                                                          label: 'Cost Centre',     color: 'cyan'   },
+        { icon: ShoppingCart, value: inbox.length,  label: 'Total Pending',   color: 'indigo' },
+        { icon: Clock,        value: inbox.length,  label: 'Awaiting Action', color: 'purple' },
+        { icon: Package,      value: selectedItem?.TotalAmount != null ? `₹${Number(selectedItem.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—', label: 'Total Amount', color: 'teal' },
+        { icon: User,         value: selectedItem?.Costcenter || '—',          label: 'Cost Centre',     color: 'cyan' },
     ];
 
     // ── Render ─────────────────────────────────────────────────────────────────
@@ -493,7 +1009,6 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                     if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
                 }}
             >
-                {/* Left panel */}
                 <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
                     <LeftPanel
                         items={filteredItems}
@@ -522,7 +1037,6 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                     />
                 </div>
 
-                {/* Right panel */}
                 <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
                         <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center gap-2">
@@ -540,12 +1054,8 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                                     <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/20 dark:to-violet-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <ShoppingCart className="w-12 h-12 text-indigo-400 dark:text-indigo-500" />
                                     </div>
-                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                        No Indent Selected
-                                    </h3>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                        Select an indent from the list to review items and verify.
-                                    </p>
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Indent Selected</h3>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">Select an indent from the list to review items and verify.</p>
                                 </div>
                             )}
                         </div>

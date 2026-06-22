@@ -4,8 +4,10 @@ import { toast } from 'react-toastify';
 import {
     ShoppingCart, Clock, Hash, Calendar, Building2,
     User, Package, ChevronDown, ChevronUp, Tag,
-    FileText, Layers, CheckSquare, AlertCircle,
+    FileText, Layers, CheckSquare, AlertCircle, BarChart2, X,
 } from 'lucide-react';
+
+import { getIndentItemSummaryPopup } from '../../api/PurchaseAPI/indentCreationAPI';
 
 import InboxHeader      from '../../components/Inbox/InboxHeader';
 import StatsCards       from '../../components/Inbox/StatsCards';
@@ -114,7 +116,7 @@ const fmtAmt = (v) => v != null ? Number(v).toLocaleString('en-IN', { minimumFra
 // ── Role-specific tables ───────────────────────────────────────────────────────
 
 // CC / OTHER — read-only with row checkboxes
-const ReadOnlyTable = ({ items, checkedItems, onToggle, roleType }) => {
+const ReadOnlyTable = ({ items, checkedItems, onToggle, roleType, onStockClick }) => {
     const allChecked = items.length > 0 && checkedItems.size === items.length;
     const isPUM_OTHER = roleType === 'OTHER';
 
@@ -182,7 +184,16 @@ const ReadOnlyTable = ({ items, checkedItems, onToggle, roleType }) => {
                             <Td right className="font-semibold text-indigo-700 dark:text-indigo-300">
                                 {fmtAmt(item.sumamt || item.Amount)}
                             </Td>
-                            <Td right>{item.AvlQtyAtCC || item.AvailableQty || '0'}</Td>
+                            <Td right>
+                                <button
+                                    onClick={() => onStockClick?.(item)}
+                                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline hover:text-indigo-800 dark:hover:text-indigo-200 flex items-center gap-1 ml-auto"
+                                    title="View stock summary"
+                                >
+                                    <BarChart2 className="w-3 h-3" />
+                                    {item.AvlQtyAtCC || item.AvailableQty || '0'}
+                                </button>
+                            </Td>
                         </tr>
                     ))}
                 </tbody>
@@ -192,7 +203,7 @@ const ReadOnlyTable = ({ items, checkedItems, onToggle, roleType }) => {
 };
 
 // CSK — interactive issued qty inputs per row
-const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle }) => {
+const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, onStockClick }) => {
     const allChecked = items.length > 0 && checkedItems.size === items.length;
 
     const validateQty = (item, val) => {
@@ -263,7 +274,16 @@ const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle }) => 
                                 <Td right className="font-semibold">{item.Quantity}</Td>
                                 <Td right className="text-amber-600 dark:text-amber-400">{item.Stock || '0'}</Td>
                                 <Td right className="text-green-600 dark:text-green-400">{item.NewStock || '0'}</Td>
-                                <Td right>{item.AvailableQty || '0'}</Td>
+                                <Td right>
+                                    <button
+                                        onClick={() => onStockClick?.(item)}
+                                        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline hover:text-indigo-800 dark:hover:text-indigo-200 flex items-center gap-1 ml-auto"
+                                        title="View stock summary"
+                                    >
+                                        <BarChart2 className="w-3 h-3" />
+                                        {item.AvailableQty || '0'}
+                                    </button>
+                                </Td>
                                 <Td right>
                                     {isAsset ? (
                                         <span className="text-xs text-gray-400 italic">Asset — serial select N/A</span>
@@ -294,7 +314,7 @@ const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle }) => 
 };
 
 // PUM — issued new stock inputs + CC selectors
-const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCCType, pumCCCode, onCCTypeChange, onCCCodeChange, onRefreshWithCC }) => {
+const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCCType, pumCCCode, onCCTypeChange, onCCCodeChange, onRefreshWithCC, onStockClick }) => {
     const allChecked = items.length > 0 && checkedItems.size === items.length;
 
     const validateQty = (item, val) => {
@@ -414,7 +434,16 @@ const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCC
                                     </Td>
                                     <Td right className="font-semibold text-indigo-700 dark:text-indigo-300">{fmtAmt(item.sumamt)}</Td>
                                     <Td right>{item.AvailableQty || '0'}</Td>
-                                    <Td right>{item.AvlQtyAtCC || '0'}</Td>
+                                    <Td right>
+                                        <button
+                                            onClick={() => onStockClick?.(item)}
+                                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline hover:text-indigo-800 dark:hover:text-indigo-200 flex items-center gap-1 ml-auto"
+                                            title="View stock summary"
+                                        >
+                                            <BarChart2 className="w-3 h-3" />
+                                            {item.AvlQtyAtCC || '0'}
+                                        </button>
+                                    </Td>
                                     <Td>
                                         <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded',
                                             item.NewStockApplicable === 'Yes'
@@ -428,6 +457,110 @@ const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCC
                         })}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    );
+};
+
+// ── Stock Summary Popup ────────────────────────────────────────────────────────
+
+const typeStyle = (type) => {
+    if (type === 'D') return 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-600';
+    if (type === 'B') return 'bg-green-50 dark:bg-green-900/20 border-t border-gray-200 dark:border-gray-700';
+    return '';
+};
+const typeQtyClass = (type) => {
+    if (type === 'A') return 'text-blue-700 dark:text-blue-300';
+    if (type === 'B') return 'text-green-700 dark:text-green-300 font-bold';
+    if (type === 'C') return 'text-orange-600 dark:text-orange-400';
+    if (type === 'D') return 'text-indigo-700 dark:text-indigo-200 font-extrabold text-base';
+    return 'text-gray-700 dark:text-gray-300';
+};
+
+const StockSummaryPopup = ({ popup, onClose }) => {
+    if (!popup.isOpen) return null;
+
+    const first = popup.data?.[0];
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-4"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-indigo-500 to-violet-600 rounded-t-2xl p-4 flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <BarChart2 className="w-4 h-4 text-white/80 shrink-0" />
+                            <span className="text-xs text-indigo-100 font-mono">{first?.PopItemCode}</span>
+                            {first?.PopUnits && (
+                                <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full">{first.PopUnits}</span>
+                            )}
+                        </div>
+                        <h3 className="text-white font-bold text-sm leading-tight truncate">{first?.PopItemName}</h3>
+                        {first?.PopSpec && (
+                            <p className="text-indigo-200 text-[11px] mt-0.5 truncate">{first.PopSpec}</p>
+                        )}
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="ml-3 p-1 rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-colors shrink-0"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-4">
+                    {popup.loading ? (
+                        <div className="flex items-center justify-center py-10 gap-3">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600" />
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Loading stock summary…</span>
+                        </div>
+                    ) : popup.error ? (
+                        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-sm text-red-600 dark:text-red-400">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            {popup.error}
+                        </div>
+                    ) : popup.data.length === 0 ? (
+                        <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">No stock data available.</p>
+                    ) : (
+                        <div className="space-y-0.5 max-h-80 overflow-y-auto">
+                            {popup.data.map((row, i) => (
+                                <div
+                                    key={i}
+                                    className={cn(
+                                        'flex items-center justify-between px-3 py-2 rounded-lg',
+                                        typeStyle(row.PopType)
+                                    )}
+                                >
+                                    <span className={cn(
+                                        'text-xs flex-1 pr-3',
+                                        row.PopType === 'D' ? 'font-bold text-indigo-700 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300'
+                                    )}>
+                                        {row.PopFor}
+                                    </span>
+                                    <span className={cn('text-sm tabular-nums shrink-0', typeQtyClass(row.PopType))}>
+                                        {parseFloat(row.PopQuantity || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="px-4 pb-3 text-right">
+                    <button
+                        onClick={onClose}
+                        className="text-xs px-4 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium"
+                    >
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -471,6 +604,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     const [searchQuery,          setSearchQuery]          = useState('');
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [isLeftPanelHovered,   setIsLeftPanelHovered]   = useState(false);
+    const [stockPopup,           setStockPopup]           = useState({ isOpen: false, loading: false, data: [], error: null });
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -576,6 +710,17 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         if (!selectedItem) return;
         dispatch(fetchItemsByPUMRole({ Indent: selectedItem.Indentno, CCCode: pumCCCode, CType: pumCCType }));
     }, [selectedItem, pumCCCode, pumCCType, dispatch]);
+
+    const handleOpenStockPopup = useCallback(async (itemCode, ccCode) => {
+        if (!itemCode || !ccCode) return;
+        setStockPopup({ isOpen: true, loading: true, data: [], error: null });
+        try {
+            const res = await getIndentItemSummaryPopup(itemCode, ccCode);
+            setStockPopup({ isOpen: true, loading: false, data: res?.Data || [], error: null });
+        } catch {
+            setStockPopup({ isOpen: true, loading: false, data: [], error: 'Failed to load stock summary' });
+        }
+    }, []);
 
     const handleActionClick = async (action) => {
         if (!selectedItem || !indentDetail) { toast.error('No indent selected.'); return; }
@@ -769,6 +914,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                                 onQtyChange={handleQtyChange}
                                 checkedItems={checkedItems}
                                 onToggle={handleToggleCheck}
+                                onStockClick={(item) => handleOpenStockPopup(item.ItemCode?.trim(), selectedItem?.Costcenter)}
                             />
                         ) : roleType === 'PUM' ? (
                             <PUMTable
@@ -782,6 +928,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                                 onCCTypeChange={setPumCCType}
                                 onCCCodeChange={setPumCCCode}
                                 onRefreshWithCC={handlePUMRefresh}
+                                onStockClick={(item) => handleOpenStockPopup(item.ItemCode?.trim(), selectedItem?.Costcenter)}
                             />
                         ) : (
                             <ReadOnlyTable
@@ -789,6 +936,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                                 checkedItems={checkedItems}
                                 onToggle={handleToggleCheck}
                                 roleType={roleType}
+                                onStockClick={(item) => handleOpenStockPopup(item.ItemCode?.trim(), selectedItem?.Costcenter)}
                             />
                         )}
 
@@ -973,6 +1121,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     // ── Render ─────────────────────────────────────────────────────────────────
 
     return (
+        <>
         <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Indent Verification'} (${inbox.length})`}
@@ -1063,6 +1212,12 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                 </div>
             </div>
         </div>
+
+        <StockSummaryPopup
+            popup={stockPopup}
+            onClose={() => setStockPopup({ isOpen: false, loading: false, data: [], error: null })}
+        />
+        </>
     );
 };
 

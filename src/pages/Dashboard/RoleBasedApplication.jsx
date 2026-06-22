@@ -98,6 +98,7 @@ import SPPOInvoiceCreation from '../SPPO/SPPOInvoiceCreation';
 import SupplierPOInvoiceCreation from '../SupplierPO/SupplierPOInvoiceCreation';
 import LoadWallet from '../Accounts/LoadWallet';
 import LCBGCreation from '../Accounts/LCBGCreation';
+import IndentCreation from '../Purchase/IndentCreation';
 import SPPOPayment from '../Purchase/SPPOPayment';
 import VendorCMSPayment from '../Purchase/VendorCMSPayment';
 import VendorTDSPayment from '../Purchase/VendorTDSPayment';
@@ -964,7 +965,17 @@ const RoleBasedApplication = () => {
 
 
 
-   // Main menu function link starts here 
+   // Main menu function link starts here
+
+    const isIndentCreation = (menuData) => {
+        if (!menuData) return false;
+        return menuData.path === '/Purchase/IndentCreation' ||
+            menuData.path?.toLowerCase().includes('indentcreation') ||
+            menuData.name?.toLowerCase().includes('indent creation') ||
+            menuData.name?.toLowerCase().includes('indentcreation') ||
+            menuData.name?.toLowerCase().includes('create indent') ||
+            menuData.reactRoute?.toLowerCase().includes('indentcreation');
+    };
 
    const costCenterCreation = (menuData) => {
         if (!menuData) return false;    
@@ -1918,6 +1929,12 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isLabourRuleConfigPage(currentMenuData)) {
             console.log('✅ Rendering LabourRuleConfig for:', currentMenuData.name);
             return <LabourRuleConfig menuData={currentMenuData} />;
+        }
+
+        // Indent Creation
+        if (currentMenuData && isIndentCreation(currentMenuData)) {
+            console.log('✅ Rendering IndentCreation for:', currentMenuData.name);
+            return <IndentCreation menuData={currentMenuData} />;
         }
 
         // Check if this should load from legacy application

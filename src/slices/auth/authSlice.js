@@ -108,6 +108,7 @@ export const validateUser = createAsyncThunk(
                         roleId: roleId,
                         employeeId: credentials.employeeId,
                         ccCodes: response.Data.ccCodes,
+                        ccCodeswithnames: response.Data.ccCodeswithnames,
                         isFirstTimeLogin: response.Data.IsFirstTimeLogin,
                         isExist: response.Data.IsExist,
                         UID: response.Data.UID,

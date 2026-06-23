@@ -1041,11 +1041,15 @@ const LabourPayrollGeneration = () => {
             }
         }
 
-        const basicPayable     = Math.round(basicWage - pfEmp - esiEmp - ptEmp - lwfEmp);
-        const allowancePayable = Math.round(allowance - advance + otherAllow);
+        // Advance is absorbed by allowance first; any remaining overflow spills into basic
+        const rawAllowPayable  = Math.round(allowance + otherAllow - advance);
+        const allowancePayable = Math.max(0, rawAllowPayable);
+        const advanceOverflow  = rawAllowPayable < 0 ? -rawAllowPayable : 0;
+        const basicPayable     = Math.round(basicWage - pfEmp - esiEmp - ptEmp - lwfEmp - advanceOverflow);
         const netPayable       = Math.round(basicPayable + allowancePayable);
+        const advanceExceedsAll = basicPayable < 0;
 
-        return { govtRate, grossAmount, basicWage, allowance, pfEmp, pfEmpr, esiEmp, esiEmpr, ptEmp, lwfEmp, lwfEmpr, advance, otherAllow, basicPayable, allowancePayable, netPayable, pfApply, esiApply };
+        return { govtRate, grossAmount, basicWage, allowance, pfEmp, pfEmpr, esiEmp, esiEmpr, ptEmp, lwfEmp, lwfEmpr, advance, otherAllow, basicPayable, allowancePayable, netPayable, pfApply, esiApply, advanceOverflow, advanceExceedsAll };
     };
 
     // ── Step 1: Preview + live calculation
@@ -1176,6 +1180,16 @@ const LabourPayrollGeneration = () => {
                     </div>
                 )}
 
+                {calcAll.some(r => r.isValid && r.advanceExceedsAll) && (
+                    <div className="flex items-start gap-2 p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 text-sm">
+                        <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <span>
+                            <strong className="mr-1">{calcAll.filter(r => r.isValid && r.advanceExceedsAll).length} worker(s)</strong>
+                            have advance exceeding total payable (Allowance + Basic). Reduce the advance amount — payroll cannot go negative.
+                        </span>
+                    </div>
+                )}
+
                 <SectionCard
                     title={`Labour-wise Payroll Calculation — ${validRows.length} Valid / ${previewRows.length} Total Workers`}
                     icon={Users}
@@ -1267,7 +1281,9 @@ const LabourPayrollGeneration = () => {
                                             rows.push(
                                                 <tr key={r.LabourId} className={cn(
                                                     'hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10',
-                                                    !r.isValid && 'bg-rose-50/60 dark:bg-rose-900/10 opacity-60'
+                                                    !r.isValid && 'bg-rose-50/60 dark:bg-rose-900/10 opacity-60',
+                                                    r.isValid && r.advanceExceedsAll && 'bg-rose-50/70 dark:bg-rose-900/20',
+                                                    r.isValid && !r.advanceExceedsAll && r.advanceOverflow > 0 && 'bg-amber-50/60 dark:bg-amber-900/10'
                                                 )}>
                                                     <td className="px-2 py-2 text-gray-400">{rowNum}</td>
                                                     <td className="px-2 py-2 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{r.LabourId}</td>
@@ -1343,13 +1359,34 @@ const LabourPayrollGeneration = () => {
                                                             disabled={!r.isValid} />
                                                     </td>
 
-                                                    <td className="px-2 py-2 text-right text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
-                                                        {r.isValid ? `₹${fmt(r.basicPayable)}` : '—'}
+                                                    <td className={cn(
+                                                        'px-2 py-2 text-right text-xs bg-emerald-50/40 dark:bg-emerald-900/10',
+                                                        r.isValid && r.advanceExceedsAll
+                                                            ? 'text-rose-600 dark:text-rose-400 font-bold'
+                                                            : 'text-emerald-600 dark:text-emerald-400'
+                                                    )}>
+                                                        {r.isValid
+                                                            ? r.advanceExceedsAll
+                                                                ? <span title="Advance exceeds total payable">⚠ ₹{r.basicPayable}</span>
+                                                                : `₹${fmt(r.basicPayable)}`
+                                                            : '—'}
                                                     </td>
-                                                    <td className="px-2 py-2 text-right text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
-                                                        {r.isValid ? `₹${fmt(r.allowancePayable)}` : '—'}
+                                                    <td className="px-2 py-2 text-right text-xs bg-emerald-50/40 dark:bg-emerald-900/10">
+                                                        {r.isValid
+                                                            ? r.advanceOverflow > 0
+                                                                ? <span className="text-amber-600 dark:text-amber-400 font-semibold"
+                                                                    title={`₹${fmt(r.advanceOverflow)} advance carried to Basic Payable`}>
+                                                                    ₹0 ↑
+                                                                  </span>
+                                                                : <span className="text-emerald-600 dark:text-emerald-400">₹{fmt(r.allowancePayable)}</span>
+                                                            : '—'}
                                                     </td>
-                                                    <td className="px-2 py-2 text-right text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-900/10">
+                                                    <td className={cn(
+                                                        'px-2 py-2 text-right text-xs font-bold bg-emerald-50/40 dark:bg-emerald-900/10',
+                                                        r.isValid && r.advanceExceedsAll
+                                                            ? 'text-rose-600 dark:text-rose-400'
+                                                            : 'text-emerald-600 dark:text-emerald-400'
+                                                    )}>
                                                         {r.isValid ? `₹${fmt(r.netPayable)}` : '—'}
                                                     </td>
                                                 </tr>
@@ -1501,7 +1538,7 @@ const LabourPayrollGeneration = () => {
                     <Btn variant="success"
                         onClick={() => { setLastGenerateError(''); handleGenerate(); }}
                         loading={generateLoading}
-                        disabled={!validCalc.length}>
+                        disabled={!validCalc.length || validCalc.some(r => r.advanceExceedsAll)}>
                         <CheckCircle2 className="h-3.5 w-3.5" /> Generate & Submit for Approval
                     </Btn>
                 </div>

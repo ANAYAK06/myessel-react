@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
@@ -24,6 +25,7 @@ import {
     fetchItemsByPUMRole,
     fetchItemsByOtherRole,
     fetchIndentSubtotal,
+    fetchAssetItemCodes,
     submitIndentVerification,
     clearDetail,
     resetAll,
@@ -35,6 +37,7 @@ import {
     selectIndentSubtotal,
     selectIndentLoading,
     selectIndentErrors,
+    selectAssetItemCodes,
 } from '../../slices/purchaseSlice/indentVerificationSlice';
 
 import {
@@ -203,8 +206,15 @@ const ReadOnlyTable = ({ items, checkedItems, onToggle, roleType, onStockClick }
 };
 
 // CSK — interactive issued qty inputs per row
-const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, onStockClick }) => {
+const CSKTable = ({ items, rowInputs, onQtyChange, onAssetCodesToggle, checkedItems, onToggle, onStockClick, assetItemCodes }) => {
     const allChecked = items.length > 0 && checkedItems.size === items.length;
+    const [openDropdown, setOpenDropdown] = useState(null);
+    const [dropdownPos, setDropdownPos]   = useState({ top: 0, right: 0 });
+
+    const openItem         = openDropdown ? items.find((i) => i.IndentListId === openDropdown) : null;
+    const openOptions      = openItem ? (assetItemCodes?.[openItem.IndentListId]?.options ?? []) : [];
+    const openSelectedCodes = openItem ? (rowInputs[openItem.IndentListId]?.selectedAssetCodes ?? []) : [];
+    const openMaxQty       = openItem ? Math.max(1, Math.floor(parseFloat(openItem.Quantity) || 0)) : 1;
 
     const validateQty = (item, val) => {
         const v = parseFloat(val);
@@ -216,6 +226,7 @@ const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, onSto
     };
 
     return (
+        <>
         <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
                 <thead>
@@ -285,9 +296,43 @@ const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, onSto
                                     </button>
                                 </Td>
                                 <Td right>
-                                    {isAsset ? (
-                                        <span className="text-xs text-gray-400 italic">Asset — serial select N/A</span>
-                                    ) : (
+                                    {isAsset ? (() => {
+                                        const assetData     = assetItemCodes?.[item.IndentListId];
+                                        const selectedCodes = rowInputs[item.IndentListId]?.selectedAssetCodes ?? [];
+                                        const maxQty        = Math.max(1, Math.floor(raised));
+                                        const isOpen        = openDropdown === item.IndentListId;
+
+                                        if (assetData?.loading) {
+                                            return <span className="text-[10px] text-gray-400 italic">Loading…</span>;
+                                        }
+                                        const options = assetData?.options || [];
+                                        if (!options.length) {
+                                            return <span className="text-[10px] text-gray-400 italic">No serials available</span>;
+                                        }
+                                        return (
+                                            <button
+                                                onClick={(e) => {
+                                                    if (openDropdown === item.IndentListId) { setOpenDropdown(null); return; }
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setDropdownPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                                    setOpenDropdown(item.IndentListId);
+                                                }}
+                                                className={cn(
+                                                    'flex items-center justify-between gap-1.5 text-xs border rounded px-2 py-1 min-w-[120px] focus:outline-none focus:ring-1 focus:ring-indigo-500',
+                                                    selectedCodes.length
+                                                        ? 'border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold'
+                                                        : 'border-indigo-300 dark:border-indigo-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                                                )}
+                                            >
+                                                <span className="truncate">
+                                                    {selectedCodes.length
+                                                        ? `${selectedCodes.length} / ${maxQty} selected`
+                                                        : '— Select Serial —'}
+                                                </span>
+                                                <ChevronDown className="w-3 h-3 shrink-0" />
+                                            </button>
+                                        );
+                                    })() : (
                                         <input
                                             type="number"
                                             min="0"
@@ -310,6 +355,53 @@ const CSKTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, onSto
                 </tbody>
             </table>
         </div>
+
+        {/* Asset serial dropdown — rendered via portal so it escapes overflow:hidden/auto */}
+        {openDropdown && openItem && createPortal(
+            <>
+                <div className="fixed inset-0 z-[9998]" onClick={() => setOpenDropdown(null)} />
+                <div
+                    className="z-[9999] bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-600 rounded-lg shadow-2xl"
+                    style={{ position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, minWidth: 180, maxWidth: 240 }}
+                >
+                    <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                            Select up to {openMaxQty} serial(s)
+                        </span>
+                        <span className="text-[10px] text-gray-400">{openSelectedCodes.length}/{openMaxQty}</span>
+                    </div>
+                    <div className="p-1.5 space-y-0.5 max-h-52 overflow-y-auto">
+                        {openOptions.map((opt) => {
+                            const checked    = openSelectedCodes.includes(opt.ItemId);
+                            const maxReached = !checked && openSelectedCodes.length >= openMaxQty;
+                            return (
+                                <label
+                                    key={opt.ItemId}
+                                    className={cn(
+                                        'flex items-center gap-2 py-1 px-1.5 rounded select-none',
+                                        maxReached ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20',
+                                        checked && 'bg-indigo-50 dark:bg-indigo-900/30'
+                                    )}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        disabled={maxReached}
+                                        onChange={() => onAssetCodesToggle(openItem.IndentListId, opt.ItemId, openMaxQty)}
+                                        className="w-3.5 h-3.5 accent-indigo-600 shrink-0"
+                                    />
+                                    <span className="text-[11px] font-mono text-gray-700 dark:text-gray-200 truncate">
+                                        {opt.Itemtext}
+                                    </span>
+                                </label>
+                            );
+                        })}
+                    </div>
+                </div>
+            </>,
+            document.body
+        )}
+        </>
     );
 };
 
@@ -578,9 +670,10 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     const items        = useSelector(selectIndentItems);
     const remarks         = useSelector(selectRemarks);
     const remarksLoading  = useSelector(selectRemarksLoading);
-    const subtotal     = useSelector(selectIndentSubtotal);
-    const loading      = useSelector(selectIndentLoading);
-    const errors       = useSelector(selectIndentErrors);
+    const subtotal       = useSelector(selectIndentSubtotal);
+    const assetItemCodes = useSelector(selectAssetItemCodes);
+    const loading        = useSelector(selectIndentLoading);
+    const errors         = useSelector(selectIndentErrors);
 
     const statusLoading  = useSelector(selectStatusListLoading);
     const statusError    = useSelector(selectStatusListError);
@@ -672,11 +765,23 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         if (!items.length) return;
         if (roleType === 'CSK' || roleType === 'PUM') {
             const init = {};
-            items.forEach((item) => { init[item.IndentListId] = { issuedQty: '0' }; });
+            items.forEach((item) => { init[item.IndentListId] = { issuedQty: '0', selectedAssetCodes: [] }; });
             setRowInputs(init);
         }
         setCheckedItems(new Set());
     }, [items, roleType]);
+
+    // Fetch asset serial codes for every asset row in CSK view
+    useEffect(() => {
+        if (roleType !== 'CSK' || !items.length || !selectedItem?.Costcenter) return;
+        const cccode = selectedItem.Costcenter;
+        items.forEach((item) => {
+            const isAsset = (item.ItemCode?.trim() || '').startsWith('1');
+            if (isAsset) {
+                dispatch(fetchAssetItemCodes({ itemcode: item.ItemCode.trim(), cccode, indentListId: item.IndentListId }));
+            }
+        });
+    }, [items, roleType, selectedItem, dispatch]);
 
     // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -690,6 +795,22 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
 
     const handleQtyChange = useCallback((indentListId, val) => {
         setRowInputs((prev) => ({ ...prev, [indentListId]: { ...prev[indentListId], issuedQty: val } }));
+    }, []);
+
+    const handleAssetCodesToggle = useCallback((indentListId, code, maxQty) => {
+        setRowInputs((prev) => {
+            const current = prev[indentListId]?.selectedAssetCodes || [];
+            let updated;
+            if (current.includes(code)) {
+                updated = current.filter((c) => c !== code);
+            } else if (current.length < maxQty) {
+                updated = [...current, code];
+            } else {
+                toast.warn(`Only ${maxQty} serial(s) can be selected for this item`);
+                return prev;
+            }
+            return { ...prev, [indentListId]: { ...prev[indentListId], selectedAssetCodes: updated } };
+        });
     }, []);
 
     const handleToggleCheck = useCallback((id, clearAll = false) => {
@@ -912,9 +1033,11 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                                 items={items}
                                 rowInputs={rowInputs}
                                 onQtyChange={handleQtyChange}
+                                onAssetCodesToggle={handleAssetCodesToggle}
                                 checkedItems={checkedItems}
                                 onToggle={handleToggleCheck}
                                 onStockClick={(item) => handleOpenStockPopup(item.ItemCode?.trim(), selectedItem?.Costcenter)}
+                                assetItemCodes={assetItemCodes}
                             />
                         ) : roleType === 'PUM' ? (
                             <PUMTable

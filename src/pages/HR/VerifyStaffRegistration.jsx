@@ -1039,16 +1039,21 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                     <Target className="w-5 h-5 mr-2" /> Work Experience ({selectedStaffData.ExperienceData.length})
                                 </h4>
                                 <div className="space-y-3">
-                                    {selectedStaffData.ExperienceData.map((exp, index) => (
-                                        <div key={index} className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-pink-200 dark:border-pink-600">
-                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-                                                <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Organization</span><span className="font-medium text-gray-900 dark:text-white">{exp.OrganisationName}</span></div>
-                                                <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Role</span><span className="font-medium text-gray-800 dark:text-gray-200">{exp.Role}</span></div>
-                                                <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Duration</span><span className="font-medium text-gray-800 dark:text-gray-200">{exp.ExpFromYear || exp.FromYear} - {exp.ExpToYear || exp.ToYear}</span></div>
-                                                <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Experience</span><span className="font-medium text-green-600 dark:text-green-400">{exp.ExperienceYears} years</span></div>
+                                    {selectedStaffData.ExperienceData.map((exp, index) => {
+                                        const fromYr = parseInt(exp.ExpFromYear || exp.FromYear);
+                                        const toYr   = parseInt(exp.ExpToYear   || exp.ToYear);
+                                        const yrs    = (!isNaN(fromYr) && !isNaN(toYr)) ? toYr - fromYr : null;
+                                        return (
+                                            <div key={index} className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-pink-200 dark:border-pink-600">
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                                                    <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Organization</span><span className="font-medium text-gray-900 dark:text-white">{exp.OrganisationName}</span></div>
+                                                    <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Role</span><span className="font-medium text-gray-800 dark:text-gray-200">{exp.Role}</span></div>
+                                                    <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Duration</span><span className="font-medium text-gray-800 dark:text-gray-200">{exp.ExpFromYear || exp.FromYear} - {exp.ExpToYear || exp.ToYear}</span></div>
+                                                    <div><span className="text-pink-600 dark:text-pink-400 block text-xs">Experience</span><span className="font-medium text-green-600 dark:text-green-400">{yrs !== null ? `${yrs} ${yrs === 1 ? 'year' : 'years'}` : '—'}</span></div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

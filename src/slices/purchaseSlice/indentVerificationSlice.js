@@ -100,6 +100,17 @@ export const fetchIndentSubtotal = createAsyncThunk(
     }
 );
 
+// Per-row asset serial codes for CSK dropdown (keyed by IndentListId)
+export const fetchAssetItemCodes = createAsyncThunk(
+    'indentVerification/fetchAssetItemCodes',
+    async ({ itemcode, cccode, indentListId }, { rejectWithValue }) => {
+        try {
+            const res = await api.getAssetItemCodes(itemcode, cccode);
+            return { indentListId, options: res?.Data || [] };
+        } catch (err) { return rejectWithValue({ indentListId, error: err.message || 'Failed to fetch asset codes' }); }
+    }
+);
+
 export const submitIndentVerification = createAsyncThunk(
     'indentVerification/submit',
     async (payload, { rejectWithValue }) => {
@@ -120,6 +131,7 @@ const initialState = {
     remarks:      [],
     subtotal:     [],
     defineTypes:  [],
+    assetItemCodes: {},   // { [IndentListId]: { loading, options, error } }
     approvalResult: null,
     loading: {
         inbox:       false,
@@ -156,13 +168,14 @@ const indentVerificationSlice = createSlice({
     initialState,
     reducers: {
         clearDetail: (state) => {
-            state.indentDetail  = null;
-            state.levels        = null;
-            state.items         = [];
-            state.remarks       = [];
-            state.subtotal      = [];
-            state.approvalResult = null;
-            state.errors.submit = null;
+            state.indentDetail    = null;
+            state.levels          = null;
+            state.items           = [];
+            state.remarks         = [];
+            state.subtotal        = [];
+            state.assetItemCodes  = {};
+            state.approvalResult  = null;
+            state.errors.submit   = null;
         },
         resetAll: () => initialState,
     },
@@ -215,6 +228,20 @@ const indentVerificationSlice = createSlice({
             .addCase(fetchIndentSubtotal.fulfilled, (s, a) => { s.loading.subtotal = false; s.subtotal = a.payload; })
             .addCase(fetchIndentSubtotal.rejected,  (s, a) => { s.loading.subtotal = false; s.errors.subtotal = a.payload; });
 
+        // asset item codes (per IndentListId)
+        builder
+            .addCase(fetchAssetItemCodes.pending, (s, a) => {
+                const id = a.meta.arg.indentListId;
+                s.assetItemCodes[id] = { loading: true, options: [], error: null };
+            })
+            .addCase(fetchAssetItemCodes.fulfilled, (s, a) => {
+                s.assetItemCodes[a.payload.indentListId] = { loading: false, options: a.payload.options, error: null };
+            })
+            .addCase(fetchAssetItemCodes.rejected, (s, a) => {
+                const id = a.payload?.indentListId ?? a.meta.arg.indentListId;
+                s.assetItemCodes[id] = { loading: false, options: [], error: a.payload?.error || 'Failed' };
+            });
+
         // submit
         builder
             .addCase(submitIndentVerification.pending,   (s) => { s.loading.submit = true;  s.errors.submit = null; })
@@ -236,6 +263,7 @@ export const selectIndentSubtotal   = (s) => Array.isArray(s.indentVerification.
 export const selectIndentDefineTypes = (s) => Array.isArray(s.indentVerification.defineTypes) ? s.indentVerification.defineTypes : [];
 export const selectIndentLoading    = (s) => s.indentVerification.loading;
 export const selectIndentErrors     = (s) => s.indentVerification.errors;
+export const selectAssetItemCodes   = (s) => s.indentVerification.assetItemCodes;
 
 // Derives 'CSK' | 'PUM' | 'CC' | 'OTHER' | null from level data
 export const selectRoleType = (s) => {

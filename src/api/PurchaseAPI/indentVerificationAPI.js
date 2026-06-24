@@ -107,7 +107,18 @@ export const getItemCodesSubtotalDetails = async (Indent) => {
     } catch (err) { handle(err); }
 };
 
-// 10. Verify / Approve / Return / Reject
+// 10. Asset serial item codes for CSK issuance (serialised assets)
+export const getAssetItemCodes = async (itemcode, cccode) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GETAssetItemcodes?itemcode=${encodeURIComponent(itemcode)}&For=CSK&cccode=${encodeURIComponent(cccode)}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 11. Verify / Approve / Return / Reject
 export const verifyIndent = async (payload) => {
     try {
         const res = await axios.put(

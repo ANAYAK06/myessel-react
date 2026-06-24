@@ -890,7 +890,7 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                             <span className="font-medium text-gray-800 dark:text-gray-200">{selectedStaffData.ReportToRole}</span>
                                         </div>
                                     )}
-                                    {(selectedStaffData.ContractStartDate || selectedStaffData.ContractEndDate) && (
+                                    {selectedStaffData.Category === 'Contract Management Staff' && (selectedStaffData.ContractStartDate || selectedStaffData.ContractEndDate) && (
                                         <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded">
                                             <span className="text-green-600 dark:text-green-400 text-xs block">Contract Period</span>
                                             <p className="font-medium text-gray-800 dark:text-gray-200 text-sm">

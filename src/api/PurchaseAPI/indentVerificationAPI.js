@@ -129,3 +129,60 @@ export const verifyIndent = async (payload) => {
         return res.data;
     } catch (err) { handle(err); }
 };
+
+// 12. CC list for PUM "Issue From CC" dropdown
+export const getIndentNewStockCCs = async (Indentno, cctype) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GETIndentnewstockCCs?Indentno=${encodeURIComponent(Indentno)}&cctype=${encodeURIComponent(cctype)}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 13. 5-series trade item codes that match an indent item
+export const getTradeItemCodes = async (Itemcode, Units, Quantity, ItemTypeval) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetTradeItemCodes?Itemcode=${encodeURIComponent(Itemcode)}&Units=${encodeURIComponent(Units)}&Quantity=${encodeURIComponent(Quantity)}&ItemTypeval=${encodeURIComponent(ItemTypeval)}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 14. Details (available qty, name, etc.) for a selected trade item code
+export const getTradeItemDetails = async (TradeItemcode) => {
+    try {
+        const res = await axios.get(
+            `${API_BASE_URL}/Purchase/GetTradeItemDetails?TradeItemcode=${encodeURIComponent(TradeItemcode)}`,
+            { headers }
+        );
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 15. Save a 5-series trade item issue against an indent line
+export const saveTradeItem = async (payload) => {
+    try {
+        const res = await axios.post(`${API_BASE_URL}/Purchase/SaveTradeItem`, payload, { headers, timeout: 30000 });
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 16. Reject the trade item issue for one indent line
+export const rejectTradeItem = async (payload) => {
+    try {
+        const res = await axios.post(`${API_BASE_URL}/Purchase/RejectTradeItem`, payload, { headers, timeout: 30000 });
+        return res.data;
+    } catch (err) { handle(err); }
+};
+
+// 17. Reject all pending trade item issues
+export const rejectTradeItemAll = async (payload) => {
+    try {
+        const res = await axios.post(`${API_BASE_URL}/Purchase/RejectTradeItemAll`, payload, { headers, timeout: 30000 });
+        return res.data;
+    } catch (err) { handle(err); }
+};

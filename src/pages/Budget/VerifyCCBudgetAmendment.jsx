@@ -300,7 +300,9 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
             CCBudgetAmendmentid: selectedAmendment.CCBudgetAmendmentid.toString(),
             CCCode: selectedAmendmentData?.CCCode || selectedAmendment.CCCode,
             CreatedBy: currentUser,
+            FYYear: selectedAmendmentData?.FYYear || "",
             Roleid: (roleId || selectedRoleId).toString(),
+            UID: uid || 0,
             VerificationType: actionValue
         };
     };

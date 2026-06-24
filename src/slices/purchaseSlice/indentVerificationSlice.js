@@ -121,6 +121,50 @@ export const submitIndentVerification = createAsyncThunk(
     }
 );
 
+// PUM CC dropdown — fetch CC codes available for the selected cctype + indent
+export const fetchPumCCList = createAsyncThunk(
+    'indentVerification/fetchPumCCList',
+    async ({ Indentno, cctype }, { rejectWithValue }) => {
+        try {
+            const res = await api.getIndentNewStockCCs(Indentno, cctype);
+            return res?.Data || [];
+        } catch (err) { return rejectWithValue(err.message || 'Failed to fetch CC list'); }
+    }
+);
+
+// Trade item save (5-series issue against an indent line)
+export const submitSaveTradeItem = createAsyncThunk(
+    'indentVerification/saveTradeItem',
+    async (payload, { rejectWithValue }) => {
+        try {
+            const res = await api.saveTradeItem(payload);
+            return res?.Data ?? res;
+        } catch (err) { return rejectWithValue(err.message || 'Failed to save trade item'); }
+    }
+);
+
+// Reject trade item for one indent line
+export const submitRejectTradeItem = createAsyncThunk(
+    'indentVerification/rejectTradeItem',
+    async (payload, { rejectWithValue }) => {
+        try {
+            const res = await api.rejectTradeItem(payload);
+            return res?.Data ?? res;
+        } catch (err) { return rejectWithValue(err.message || 'Failed to reject trade item'); }
+    }
+);
+
+// Reject all pending trade items
+export const submitRejectTradeItemAll = createAsyncThunk(
+    'indentVerification/rejectTradeItemAll',
+    async (payload, { rejectWithValue }) => {
+        try {
+            const res = await api.rejectTradeItemAll(payload);
+            return res?.Data ?? res;
+        } catch (err) { return rejectWithValue(err.message || 'Failed to reject all trade items'); }
+    }
+);
+
 // ── Initial state ─────────────────────────────────────────────────────────────
 
 const initialState = {
@@ -132,26 +176,31 @@ const initialState = {
     subtotal:     [],
     defineTypes:  [],
     assetItemCodes: {},   // { [IndentListId]: { loading, options, error } }
+    pumCCList:    [],     // CC codes for PUM "Issue From CC" dropdown
     approvalResult: null,
     loading: {
-        inbox:       false,
-        detail:      false,
-        levels:      false,
-        items:       false,
-        remarks:     false,
-        subtotal:    false,
-        defineTypes: false,
-        submit:      false,
+        inbox:          false,
+        detail:         false,
+        levels:         false,
+        items:          false,
+        remarks:        false,
+        subtotal:       false,
+        defineTypes:    false,
+        submit:         false,
+        pumCCList:      false,
+        tradeItemSave:  false,
     },
     errors: {
-        inbox:       null,
-        detail:      null,
-        levels:      null,
-        items:       null,
-        remarks:     null,
-        subtotal:    null,
-        defineTypes: null,
-        submit:      null,
+        inbox:          null,
+        detail:         null,
+        levels:         null,
+        items:          null,
+        remarks:        null,
+        subtotal:       null,
+        defineTypes:    null,
+        submit:         null,
+        pumCCList:      null,
+        tradeItemSave:  null,
     },
 };
 
@@ -174,6 +223,7 @@ const indentVerificationSlice = createSlice({
             state.remarks         = [];
             state.subtotal        = [];
             state.assetItemCodes  = {};
+            state.pumCCList       = [];
             state.approvalResult  = null;
             state.errors.submit   = null;
         },
@@ -247,6 +297,28 @@ const indentVerificationSlice = createSlice({
             .addCase(submitIndentVerification.pending,   (s) => { s.loading.submit = true;  s.errors.submit = null; })
             .addCase(submitIndentVerification.fulfilled, (s, a) => { s.loading.submit = false; s.approvalResult = a.payload; })
             .addCase(submitIndentVerification.rejected,  (s, a) => { s.loading.submit = false; s.errors.submit = a.payload; });
+
+        // PUM CC list
+        builder
+            .addCase(fetchPumCCList.pending,   (s) => { s.loading.pumCCList = true;  s.errors.pumCCList = null; s.pumCCList = []; })
+            .addCase(fetchPumCCList.fulfilled, (s, a) => { s.loading.pumCCList = false; s.pumCCList = a.payload; })
+            .addCase(fetchPumCCList.rejected,  (s, a) => { s.loading.pumCCList = false; s.errors.pumCCList = a.payload; });
+
+        // trade item save / reject / reject-all (share a single loading flag)
+        builder
+            .addCase(submitSaveTradeItem.pending,   (s) => { s.loading.tradeItemSave = true;  s.errors.tradeItemSave = null; })
+            .addCase(submitSaveTradeItem.fulfilled, (s) => { s.loading.tradeItemSave = false; })
+            .addCase(submitSaveTradeItem.rejected,  (s, a) => { s.loading.tradeItemSave = false; s.errors.tradeItemSave = a.payload; });
+
+        builder
+            .addCase(submitRejectTradeItem.pending,   (s) => { s.loading.tradeItemSave = true;  s.errors.tradeItemSave = null; })
+            .addCase(submitRejectTradeItem.fulfilled, (s) => { s.loading.tradeItemSave = false; })
+            .addCase(submitRejectTradeItem.rejected,  (s, a) => { s.loading.tradeItemSave = false; s.errors.tradeItemSave = a.payload; });
+
+        builder
+            .addCase(submitRejectTradeItemAll.pending,   (s) => { s.loading.tradeItemSave = true;  s.errors.tradeItemSave = null; })
+            .addCase(submitRejectTradeItemAll.fulfilled, (s) => { s.loading.tradeItemSave = false; })
+            .addCase(submitRejectTradeItemAll.rejected,  (s, a) => { s.loading.tradeItemSave = false; s.errors.tradeItemSave = a.payload; });
     },
 });
 
@@ -254,16 +326,17 @@ export const { clearDetail, resetAll } = indentVerificationSlice.actions;
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
 
-export const selectIndentInbox      = (s) => Array.isArray(s.indentVerification.inbox)       ? s.indentVerification.inbox       : [];
-export const selectIndentDetail     = (s) => s.indentVerification.indentDetail;
-export const selectIndentLevels     = (s) => s.indentVerification.levels;
-export const selectIndentItems      = (s) => Array.isArray(s.indentVerification.items)       ? s.indentVerification.items       : [];
-export const selectIndentRemarks    = (s) => Array.isArray(s.indentVerification.remarks)     ? s.indentVerification.remarks     : [];
-export const selectIndentSubtotal   = (s) => Array.isArray(s.indentVerification.subtotal)    ? s.indentVerification.subtotal    : [];
-export const selectIndentDefineTypes = (s) => Array.isArray(s.indentVerification.defineTypes) ? s.indentVerification.defineTypes : [];
-export const selectIndentLoading    = (s) => s.indentVerification.loading;
-export const selectIndentErrors     = (s) => s.indentVerification.errors;
-export const selectAssetItemCodes   = (s) => s.indentVerification.assetItemCodes;
+export const selectIndentInbox       = (s) => Array.isArray(s.indentVerification.inbox)        ? s.indentVerification.inbox        : [];
+export const selectIndentDetail      = (s) => s.indentVerification.indentDetail;
+export const selectIndentLevels      = (s) => s.indentVerification.levels;
+export const selectIndentItems       = (s) => Array.isArray(s.indentVerification.items)        ? s.indentVerification.items        : [];
+export const selectIndentRemarks     = (s) => Array.isArray(s.indentVerification.remarks)      ? s.indentVerification.remarks      : [];
+export const selectIndentSubtotal    = (s) => Array.isArray(s.indentVerification.subtotal)     ? s.indentVerification.subtotal     : [];
+export const selectIndentDefineTypes = (s) => Array.isArray(s.indentVerification.defineTypes)  ? s.indentVerification.defineTypes  : [];
+export const selectIndentLoading     = (s) => s.indentVerification.loading;
+export const selectIndentErrors      = (s) => s.indentVerification.errors;
+export const selectAssetItemCodes    = (s) => s.indentVerification.assetItemCodes;
+export const selectPumCCList         = (s) => Array.isArray(s.indentVerification.pumCCList)    ? s.indentVerification.pumCCList    : [];
 
 // Derives 'CSK' | 'PUM' | 'CC' | 'OTHER' | null from level data
 export const selectRoleType = (s) => {

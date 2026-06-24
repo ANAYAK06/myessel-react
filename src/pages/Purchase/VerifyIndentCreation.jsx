@@ -6,9 +6,11 @@ import {
     ShoppingCart, Clock, Hash, Calendar, Building2,
     User, Package, ChevronDown, ChevronUp, Tag,
     FileText, Layers, CheckSquare, AlertCircle, BarChart2, X,
+    ArrowRightLeft, RefreshCw, Ban,
 } from 'lucide-react';
 
 import { getIndentItemSummaryPopup } from '../../api/PurchaseAPI/indentCreationAPI';
+import { getTradeItemCodes, getTradeItemDetails } from '../../api/PurchaseAPI/indentVerificationAPI';
 
 import InboxHeader      from '../../components/Inbox/InboxHeader';
 import StatsCards       from '../../components/Inbox/StatsCards';
@@ -26,7 +28,11 @@ import {
     fetchItemsByOtherRole,
     fetchIndentSubtotal,
     fetchAssetItemCodes,
+    fetchPumCCList,
     submitIndentVerification,
+    submitSaveTradeItem,
+    submitRejectTradeItem,
+    submitRejectTradeItemAll,
     clearDetail,
     resetAll,
     selectIndentInbox,
@@ -38,6 +44,7 @@ import {
     selectIndentLoading,
     selectIndentErrors,
     selectAssetItemCodes,
+    selectPumCCList,
 } from '../../slices/purchaseSlice/indentVerificationSlice';
 
 import {
@@ -405,14 +412,13 @@ const CSKTable = ({ items, rowInputs, onQtyChange, onAssetCodesToggle, checkedIt
     );
 };
 
-// PUM — issued new stock inputs + CC selectors
-const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCCType, pumCCCode, onCCTypeChange, onCCCodeChange, onRefreshWithCC, onStockClick }) => {
+// PUM — issued new stock inputs + CC dropdown + trade item popup trigger
+const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCCType, pumCCCode, pumCCList, pumCCLoading, onCCTypeChange, onCCCodeChange, onStockClick, onTradeItemClick }) => {
     const allChecked = items.length > 0 && checkedItems.size === items.length;
 
     const validateQty = (item, val) => {
         const v = parseFloat(val);
         const newStock = parseFloat(item.AvailableQty || 0);
-        const purchQty = parseFloat(item.PurchasedQty || 0);
         const issuedOld = parseFloat(item.IssuedQty || 0);
         const balance = Math.max(0, (parseFloat(item.Quantity) || 0) - issuedOld);
         if (isNaN(v) || v < 0) return '0';
@@ -423,7 +429,7 @@ const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCC
 
     return (
         <div className="space-y-3">
-            {/* CC selector for new stock */}
+            {/* CC selector — dropdown populated from API */}
             <div className="flex flex-wrap gap-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
                 <div className="flex items-center gap-2">
                     <label className="text-xs font-semibold text-purple-700 dark:text-purple-300 whitespace-nowrap">CC Type</label>
@@ -439,20 +445,33 @@ const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCC
                 </div>
                 <div className="flex items-center gap-2">
                     <label className="text-xs font-semibold text-purple-700 dark:text-purple-300 whitespace-nowrap">Issue From CC</label>
-                    <input
-                        type="text"
-                        value={pumCCCode}
-                        onChange={(e) => onCCCodeChange(e.target.value)}
-                        placeholder="Enter CC Code"
-                        className="text-xs border border-purple-300 dark:border-purple-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500 w-32"
-                    />
-                    <button
-                        onClick={onRefreshWithCC}
-                        className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium"
-                    >
-                        Load
-                    </button>
+                    {pumCCLoading ? (
+                        <span className="text-xs text-purple-500 dark:text-purple-400 flex items-center gap-1">
+                            <RefreshCw className="w-3 h-3 animate-spin" /> Loading…
+                        </span>
+                    ) : (
+                        <select
+                            value={pumCCCode}
+                            onChange={(e) => onCCCodeChange(e.target.value)}
+                            disabled={!pumCCType || pumCCList.length === 0}
+                            className="text-xs border border-purple-300 dark:border-purple-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-w-[180px] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <option value="">{pumCCType ? (pumCCList.length === 0 ? 'No CC available' : '— Select CC —') : '— Select CC Type first —'}</option>
+                            {pumCCList.map((cc, i) => (
+                                <option key={cc.CCID || i} value={cc.CCID || ''}>
+                                    {cc.CCVAL || cc.CCID}
+                                </option>
+                            ))}
+                        </select>
+                    )}
                 </div>
+                {pumCCCode && (
+                    <div className="flex items-center">
+                        <span className="text-[10px] text-purple-500 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full">
+                            New stock loaded for: <strong>{pumCCCode}</strong>
+                        </span>
+                    </div>
+                )}
             </div>
 
             <div className="overflow-x-auto">
@@ -478,13 +497,14 @@ const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCC
                             <Th right>Amount</Th>
                             <Th right>New Stock</Th>
                             <Th right>Avl at CC</Th>
-                            <Th>New Stock?</Th>
+                            <Th>Trade Issue</Th>
                         </tr>
                     </thead>
                     <tbody>
                         {items.map((item, idx) => {
-                            const isAsset = (item.ItemCode?.trim() || '').startsWith('1');
-                            const qty = rowInputs[item.IndentListId]?.issuedQty ?? '0';
+                            const isAsset   = (item.ItemCode?.trim() || '').startsWith('1');
+                            const qty       = rowInputs[item.IndentListId]?.issuedQty ?? '0';
+                            const noStock   = parseFloat(item.AvailableQty || 0) === 0;
 
                             return (
                                 <tr key={item.IndentListId || idx}
@@ -516,20 +536,29 @@ const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCC
                                                 min="0"
                                                 step="0.0001"
                                                 value={qty}
+                                                disabled={noStock}
                                                 onChange={(e) => {
                                                     const v = validateQty(item, e.target.value);
                                                     onQtyChange(item.IndentListId, v);
                                                 }}
-                                                className="w-20 px-2 py-1 text-right border border-purple-300 dark:border-purple-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                                title={noStock ? 'No new stock available' : undefined}
+                                                className={cn(
+                                                    'w-20 px-2 py-1 text-right border rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500',
+                                                    noStock
+                                                        ? 'border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-50'
+                                                        : 'border-purple-300 dark:border-purple-600 bg-white dark:bg-gray-800'
+                                                )}
                                             />
                                         )}
                                     </Td>
                                     <Td right className="font-semibold text-indigo-700 dark:text-indigo-300">{fmtAmt(item.sumamt)}</Td>
-                                    <Td right>{item.AvailableQty || '0'}</Td>
+                                    <Td right className={parseFloat(item.AvailableQty || 0) > 0 ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-gray-400'}>
+                                        {item.AvailableQty || '0'}
+                                    </Td>
                                     <Td right>
                                         <button
                                             onClick={() => onStockClick?.(item)}
-                                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline hover:text-indigo-800 dark:hover:text-indigo-200 flex items-center gap-1 ml-auto"
+                                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 ml-auto"
                                             title="View stock summary"
                                         >
                                             <BarChart2 className="w-3 h-3" />
@@ -537,12 +566,14 @@ const PUMTable = ({ items, rowInputs, onQtyChange, checkedItems, onToggle, pumCC
                                         </button>
                                     </Td>
                                     <Td>
-                                        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded',
-                                            item.NewStockApplicable === 'Yes'
-                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400')}>
-                                            {item.NewStockApplicable || 'No'}
-                                        </span>
+                                        <button
+                                            onClick={() => onTradeItemClick?.(item)}
+                                            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800/40 transition-colors whitespace-nowrap"
+                                            title="Issue 5-series trade item"
+                                        >
+                                            <ArrowRightLeft className="w-3 h-3" />
+                                            Trade Issue
+                                        </button>
                                     </Td>
                                 </tr>
                             );
@@ -658,6 +689,256 @@ const StockSummaryPopup = ({ popup, onClose }) => {
     );
 };
 
+// ── Trade Item Popup (5-series issue) ─────────────────────────────────────────
+
+const TradeItemPopup = ({ isOpen, onClose, item, indentno, indentId, costcenter, tradeCC, userName, onQtyFilled, onAllQtyCleared, dispatch }) => {
+    const [tradeList,        setTradeList]        = useState([]);
+    const [loadingList,      setLoadingList]      = useState(false);
+    const [selectedCode,     setSelectedCode]     = useState('');
+    const [tradeDetail,      setTradeDetail]      = useState(null);
+    const [loadingDetail,    setLoadingDetail]    = useState(false);
+    const [tradeQty,         setTradeQty]         = useState('');
+    const [saving,           setSaving]           = useState(false);
+
+    useEffect(() => {
+        if (!isOpen || !item) return;
+        setTradeList([]);
+        setSelectedCode('');
+        setTradeDetail(null);
+        setTradeQty('');
+        setLoadingList(true);
+        getTradeItemCodes(
+            item.ItemCode?.trim() || '',
+            item.Units || '',
+            item.Quantity || '0',
+            '1'
+        )
+            .then((res) => setTradeList(res?.Data || []))
+            .catch(() => toast.error('Failed to fetch trade items'))
+            .finally(() => setLoadingList(false));
+    }, [isOpen, item]);
+
+    const handleSelectCode = async (code) => {
+        setSelectedCode(code);
+        setTradeDetail(null);
+        setTradeQty('');
+        if (!code) return;
+        setLoadingDetail(true);
+        try {
+            const res  = await getTradeItemDetails(code);
+            const data = res?.Data;
+            const d    = Array.isArray(data) ? data[0] : data;
+            setTradeDetail(d);
+            setTradeQty(String(d?.TradeItemQuantity ?? '0'));
+        } catch {
+            toast.error('Failed to fetch trade item details');
+        } finally {
+            setLoadingDetail(false);
+        }
+    };
+
+    const handleAdd = async () => {
+        if (!selectedCode || !tradeDetail) { toast.warn('Select a trade item first'); return; }
+        if (!tradeCC) { toast.warn('Select "Issue From CC" before adding trade item'); return; }
+        setSaving(true);
+        try {
+            const result = await dispatch(submitSaveTradeItem({
+                OldItemCode:   item.ItemCode?.trim(),
+                TradeItemCode: selectedCode,
+                Costcenter:    costcenter,
+                TradeCC:       tradeCC,
+                TradeQty:      String(tradeQty),
+                IndentId:      String(indentId || ''),
+                Createdby:     userName,
+            })).unwrap();
+
+            const parts = typeof result === 'string' ? result.split(',') : [];
+            if (parts[0] === 'Submited') {
+                toast.success(`Trade item issued${parts[1] ? `. Ref: ${parts[1]}` : ''}`);
+                onQtyFilled(item.IndentListId, parseFloat(tradeQty) || 0);
+                onClose();
+            } else {
+                toast.error(result || 'Save failed');
+            }
+        } catch (err) {
+            toast.error(typeof err === 'string' ? err : err?.message || 'Save failed');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (!tradeCC) { toast.warn('Select "Issue From CC" first'); return; }
+        setSaving(true);
+        try {
+            await dispatch(submitRejectTradeItem({
+                OldItemCode: item.ItemCode?.trim(),
+                Costcenter:  costcenter,
+                TradeCC:     tradeCC,
+                TradeQty:    String(item.Quantity || '0'),
+                IndentId:    String(indentId || ''),
+                Createdby:   userName,
+            })).unwrap();
+            toast.success('Trade item rejected');
+            onQtyFilled(item.IndentListId, 0);
+            onClose();
+        } catch (err) {
+            toast.error(typeof err === 'string' ? err : err?.message || 'Reject failed');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRejectAll = async () => {
+        setSaving(true);
+        try {
+            await dispatch(submitRejectTradeItemAll({ Createdby: userName })).unwrap();
+            toast.success('All trade items rejected');
+            onAllQtyCleared();
+            onClose();
+        } catch (err) {
+            toast.error(typeof err === 'string' ? err : err?.message || 'Reject all failed');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (!isOpen || !item) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+            <div
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg mx-4"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-violet-600 to-purple-700 rounded-t-2xl p-4 flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <ArrowRightLeft className="w-4 h-4 text-white/80 shrink-0" />
+                            <span className="text-xs text-violet-200 font-mono">{item.ItemCode?.trim()}</span>
+                            {item.Units && (
+                                <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full">{item.Units}</span>
+                            )}
+                        </div>
+                        <h3 className="text-white font-bold text-sm leading-tight">{item.ItemName}</h3>
+                        <p className="text-violet-200 text-[11px] mt-1">
+                            Indent Qty: <strong>{item.Quantity}</strong>
+                            {tradeCC && <> &nbsp;·&nbsp; Issue From: <strong>{tradeCC}</strong></>}
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="ml-3 p-1 rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-colors shrink-0">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-4 space-y-4">
+                    {/* Step 1: Select trade item */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                            Select 5-Series Trade Item
+                        </label>
+                        {loadingList ? (
+                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 py-2">
+                                <RefreshCw className="w-4 h-4 animate-spin" /> Fetching matching trade items…
+                            </div>
+                        ) : tradeList.length === 0 ? (
+                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">No matching trade items found for this item.</p>
+                        ) : (
+                            <select
+                                value={selectedCode}
+                                onChange={(e) => handleSelectCode(e.target.value)}
+                                className="w-full text-xs border border-violet-300 dark:border-violet-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            >
+                                <option value="">— Select trade item —</option>
+                                {tradeList.map((t, i) => (
+                                    <option key={t.TItemCode || i} value={t.TItemCode || ''}>
+                                        {t.TItemName || t.TItemCode}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
+                    {/* Step 2: Trade item details */}
+                    {loadingDetail && (
+                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                            <RefreshCw className="w-4 h-4 animate-spin" /> Loading details…
+                        </div>
+                    )}
+                    {tradeDetail && !loadingDetail && (
+                        <div className="bg-violet-50 dark:bg-violet-900/20 rounded-lg p-3 border border-violet-200 dark:border-violet-700 space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                {tradeDetail.TradeItemSpecs && (
+                                    <div className="col-span-2">
+                                        <span className="text-violet-500 block text-[10px] uppercase tracking-wide">Specification</span>
+                                        <span className="font-semibold text-gray-800 dark:text-gray-100">{tradeDetail.TradeItemSpecs}</span>
+                                    </div>
+                                )}
+                                <div>
+                                    <span className="text-violet-500 block text-[10px] uppercase tracking-wide">Available Qty</span>
+                                    <span className="font-bold text-green-600 dark:text-green-400">{tradeDetail.TradeItemQuantity ?? '—'}</span>
+                                </div>
+                                <div>
+                                    <span className="text-violet-500 block text-[10px] uppercase tracking-wide">Units</span>
+                                    <span className="font-semibold text-gray-800 dark:text-gray-100">{item.Units || '—'}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide block mb-1">
+                                    Issue Qty
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.0001"
+                                    value={tradeQty}
+                                    onChange={(e) => setTradeQty(e.target.value)}
+                                    className="w-32 px-2 py-1 text-right text-sm border border-violet-300 dark:border-violet-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer actions */}
+                <div className="px-4 pb-4 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleReject}
+                            disabled={saving}
+                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-800/40 font-semibold disabled:opacity-50"
+                        >
+                            <Ban className="w-3 h-3" /> Reject This
+                        </button>
+                        <button
+                            onClick={handleRejectAll}
+                            disabled={saving}
+                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800/40 font-semibold disabled:opacity-50"
+                        >
+                            <Ban className="w-3 h-3" /> Reject All
+                        </button>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={onClose} className="text-xs px-4 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium">
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleAdd}
+                            disabled={saving || !selectedCode || !tradeDetail}
+                            className="flex items-center gap-1 text-xs px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {saving ? <RefreshCw className="w-3 h-3 animate-spin" /> : <ArrowRightLeft className="w-3 h-3" />}
+                            {saving ? 'Saving…' : 'Add to Issued'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
@@ -672,6 +953,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     const remarksLoading  = useSelector(selectRemarksLoading);
     const subtotal       = useSelector(selectIndentSubtotal);
     const assetItemCodes = useSelector(selectAssetItemCodes);
+    const pumCCList      = useSelector(selectPumCCList);
     const loading        = useSelector(selectIndentLoading);
     const errors         = useSelector(selectIndentErrors);
 
@@ -698,6 +980,7 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [isLeftPanelHovered,   setIsLeftPanelHovered]   = useState(false);
     const [stockPopup,           setStockPopup]           = useState({ isOpen: false, loading: false, data: [], error: null });
+    const [tradePopup,           setTradePopup]           = useState({ isOpen: false, item: null });
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -827,10 +1110,39 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         });
     }, [items]);
 
-    const handlePUMRefresh = useCallback(() => {
-        if (!selectedItem) return;
-        dispatch(fetchItemsByPUMRole({ Indent: selectedItem.Indentno, CCCode: pumCCCode, CType: pumCCType }));
-    }, [selectedItem, pumCCCode, pumCCType, dispatch]);
+    // CC Type changes → fetch CC dropdown list, clear selected CC code
+    const handlePumCCTypeChange = useCallback((cctype) => {
+        setPumCCType(cctype);
+        setPumCCCode('');
+        if (cctype && selectedItem?.Indentno) {
+            dispatch(fetchPumCCList({ Indentno: selectedItem.Indentno, cctype }));
+        }
+    }, [selectedItem, dispatch]);
+
+    // CC Code selected from dropdown → auto-reload items with new CC
+    const handlePumCCCodeChange = useCallback((cccode) => {
+        setPumCCCode(cccode);
+        if (cccode && selectedItem?.Indentno) {
+            dispatch(fetchItemsByPUMRole({ Indent: selectedItem.Indentno, CCCode: cccode, CType: pumCCType }));
+        }
+    }, [selectedItem, pumCCType, dispatch]);
+
+    // Trade item popup handlers
+    const handleOpenTradePopup = useCallback((item) => {
+        setTradePopup({ isOpen: true, item });
+    }, []);
+
+    const handleTradeQtyFilled = useCallback((indentListId, qty) => {
+        setRowInputs((prev) => ({ ...prev, [indentListId]: { ...prev[indentListId], issuedQty: String(qty) } }));
+    }, []);
+
+    const handleAllTradeQtyCleared = useCallback(() => {
+        setRowInputs((prev) => {
+            const next = { ...prev };
+            Object.keys(next).forEach((id) => { next[id] = { ...next[id], issuedQty: '0' }; });
+            return next;
+        });
+    }, []);
 
     const handleOpenStockPopup = useCallback(async (itemCode, ccCode) => {
         if (!itemCode || !ccCode) return;
@@ -1048,10 +1360,12 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                                 onToggle={handleToggleCheck}
                                 pumCCType={pumCCType}
                                 pumCCCode={pumCCCode}
-                                onCCTypeChange={setPumCCType}
-                                onCCCodeChange={setPumCCCode}
-                                onRefreshWithCC={handlePUMRefresh}
+                                pumCCList={pumCCList}
+                                pumCCLoading={loading.pumCCList}
+                                onCCTypeChange={handlePumCCTypeChange}
+                                onCCCodeChange={handlePumCCCodeChange}
                                 onStockClick={(item) => handleOpenStockPopup(item.ItemCode?.trim(), selectedItem?.Costcenter)}
+                                onTradeItemClick={handleOpenTradePopup}
                             />
                         ) : (
                             <ReadOnlyTable
@@ -1339,6 +1653,20 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         <StockSummaryPopup
             popup={stockPopup}
             onClose={() => setStockPopup({ isOpen: false, loading: false, data: [], error: null })}
+        />
+
+        <TradeItemPopup
+            isOpen={tradePopup.isOpen}
+            onClose={() => setTradePopup({ isOpen: false, item: null })}
+            item={tradePopup.item}
+            indentno={selectedItem?.Indentno}
+            indentId={indentDetail?.MOID}
+            costcenter={selectedItem?.Costcenter}
+            tradeCC={pumCCCode}
+            userName={userName}
+            onQtyFilled={handleTradeQtyFilled}
+            onAllQtyCleared={handleAllTradeQtyCleared}
+            dispatch={dispatch}
         />
         </>
     );

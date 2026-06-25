@@ -13,6 +13,22 @@ npm test -- --testPathPattern=<filename>  # Run a single test file
 
 The backend API runs separately at `http://localhost:57771/api` (configured in `src/config/apiConfig.js`). There is a commented-out production URL pointing to `https://myesselapi.esselprojects.com/api`.
 
+## Pushing to GitHub
+
+**ALWAYS use `deploy.ps1` to push to GitHub. Never run `git push` directly.**
+
+```powershell
+.\deploy.ps1
+```
+
+The script handles the full deploy sequence automatically:
+1. Switches `apiConfig.js` to the production URL
+2. Commits and pushes to `origin master`
+3. Restores the localhost URL
+4. Commits the restore
+
+Do not manually swap the API URL or run `git push origin master` — always delegate to `deploy.ps1`.
+
 ## Architecture Overview
 
 This is a Create React App (React 19) ERP frontend for "RAPP-SLAPP", an enterprise resource planning system for a construction/project company (Essel Projects). It uses Redux Toolkit for state management, Axios for API calls, Tailwind CSS (dark mode via `class` strategy), Formik + Yup for forms, and react-toastify for notifications.

@@ -751,7 +751,7 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                                             <span className="text-indigo-600 dark:text-indigo-400 block text-xs">Marital Status</span>
                                             <span className="font-medium text-gray-800 dark:text-gray-200">{selectedStaffData.MartialStatus}</span>
                                         </div>
-                                        {selectedStaffData.DateofMarriage && (
+                                        {selectedStaffData.MartialStatus !== 'Single' && selectedStaffData.DateofMarriage && !selectedStaffData.DateofMarriage.includes('1900') && (
                                             <div>
                                                 <span className="text-indigo-600 dark:text-indigo-400 block text-xs">Marriage Date</span>
                                                 <span className="font-medium text-gray-800 dark:text-gray-200">{selectedStaffData.DateofMarriage}</span>

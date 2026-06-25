@@ -24,8 +24,7 @@ export const S3_FOLDERS = {
     LEAVE_ATTACHMENTS: 'LeaveAttachments',
     SPPO_AMENDMENTS: 'SPPOAmendPROD',
     VENDOR_INVOICES: 'VendorTEST',
-   
-    // Add more folders as needed
+    LOST_DAMAGED_ITEMS: 'LandDPROD',
 };
 
 /**
@@ -70,6 +69,10 @@ export const buildStaffDocumentUrl = (filePath) => {
 
 export const buildLeaveAttachmentUrl = (filePath) => {
     return buildS3Url(S3_FOLDERS.LEAVE_ATTACHMENTS, filePath);
+};
+
+export const buildLostDamagedItemsUrl = (filePath) => {
+    return buildS3Url(S3_FOLDERS.LOST_DAMAGED_ITEMS, filePath);
 };
 
 /**

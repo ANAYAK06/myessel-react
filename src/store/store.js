@@ -37,6 +37,7 @@ import VendorPaymentReducer from "../slices/VendorPaymentSlice/vendorPaymentSlic
 import SuppplierInvoiceReducer from "../slices/vendorInvoiceSlice/supplierInvoiceSlice";
 import SupplierPOReducer from "../slices/supplierPOSlice/supplierPOSlice";
 import purchaseHelperReducer from "../slices/supplierPOSlice/purcahseHelperSlice";
+import supplierPOCreationReducer from "../slices/supplierPOSlice/supplierPOCreationSlice";
 import SppoReducer from "../slices/spPOSlice/spPoSlice"
 import costCenterSlice from "../slices/costCenterSlice/costCenterAppprovalSlice";
 import generalInvoiceSlice from "../slices/generalInvoiceSlice/genralInvoiceSlice";
@@ -176,6 +177,7 @@ const store = configureStore({
     supplierinvoice: SuppplierInvoiceReducer,
     supplierpo: SupplierPOReducer,
     purchaseHelper: purchaseHelperReducer,
+    supplierPOCreation: supplierPOCreationReducer,
     sppo: SppoReducer,
     costCenter: costCenterSlice,
     generalInvoice:generalInvoiceSlice,

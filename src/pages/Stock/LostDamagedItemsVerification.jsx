@@ -55,6 +55,7 @@ import {
 } from '../../slices/CommonSlice/getStatusSlice';
 
 import { formatIndianCurrency } from '../../utilities/amountToTextHelper';
+import { buildLostDamagedItemsUrl } from '../../config/s3Config';
 
 const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
     const dispatch = useDispatch();
@@ -129,14 +130,14 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
             toast.error('No attachment available');
             return;
         }
-        
-        const fullUrl = filePath; // Adjust based on your S3 config
-        
+
+        const fullUrl = buildLostDamagedItemsUrl(filePath);
+
         if (!fullUrl) {
             toast.error('Invalid file path');
             return;
         }
-        
+
         console.log('Viewing attachment:', fullUrl);
         setAttachmentUrl(fullUrl);
         setShowAttachmentModal(true);

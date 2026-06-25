@@ -96,6 +96,7 @@ import GeneralInvoicePayment from '../Accounts/GeneralInvoicePayment';
 import CCSalEsiPfPayment from '../Accounts/CCSalEsiPfPayment';
 import SPPOInvoiceCreation from '../SPPO/SPPOInvoiceCreation';
 import SupplierPOInvoiceCreation from '../SupplierPO/SupplierPOInvoiceCreation';
+import SupplierPOCreation from '../SupplierPO/SupplierPOCreation';
 import LoadWallet from '../Accounts/LoadWallet';
 import LCBGCreation from '../Accounts/LCBGCreation';
 import IndentCreation from '../Purchase/IndentCreation';
@@ -975,6 +976,19 @@ const RoleBasedApplication = () => {
             menuData.name?.toLowerCase().includes('indentcreation') ||
             menuData.name?.toLowerCase().includes('create indent') ||
             menuData.reactRoute?.toLowerCase().includes('indentcreation');
+    };
+
+    const isSupplierPOCreation = (menuData) => {
+        if (!menuData) return false;
+        const path = menuData.path?.toLowerCase() || '';
+        const name = menuData.name?.toLowerCase() || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return path.includes('/purchase/supplierpocreation') ||
+            path.includes('supplierpocreation') ||
+            name.includes('supplier po creation') ||
+            name.includes('supplierpocreation') ||
+            name.includes('create supplier po') ||
+            route.includes('supplierpocreation');
     };
 
    const costCenterCreation = (menuData) => {
@@ -1929,6 +1943,12 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isLabourRuleConfigPage(currentMenuData)) {
             console.log('✅ Rendering LabourRuleConfig for:', currentMenuData.name);
             return <LabourRuleConfig menuData={currentMenuData} />;
+        }
+
+        // Supplier PO Creation
+        if (currentMenuData && isSupplierPOCreation(currentMenuData)) {
+            console.log('✅ Rendering SupplierPOCreation for:', currentMenuData.name);
+            return <SupplierPOCreation menuData={currentMenuData} />;
         }
 
         // Indent Creation

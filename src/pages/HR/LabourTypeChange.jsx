@@ -31,6 +31,30 @@ import {
 
 const cn = (...c) => c.filter(Boolean).join(' ');
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    const s = String(dateStr).trim();
+    let m = s.match(/\/Date\((-?\d+)([+-]\d+)?\)\//);
+    if (m) return new Date(+m[1]);
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) return new Date(+m[3], +m[1] - 1, +m[2]);
+    m = s.match(/^(\d{2})-(\d{2})-(\d{4})/);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
+};
+
+const fmt = (dateStr) => {
+    if (!dateStr) return '—';
+    const d = parseDate(dateStr);
+    if (d) return `${String(d.getDate()).padStart(2, '0')}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
+    return String(dateStr).split('T')[0].split(' ')[0];
+};
+
 const Label = ({ children, required }) => (
     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
         {children}{required && <span className="text-rose-500 ml-0.5">*</span>}
@@ -611,7 +635,7 @@ const LabourTypeChange = () => {
                                                 </td>
                                             )}
                                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                                {labour.JoiningDate ? labour.JoiningDate.split('T')[0] : '—'}
+                                                {fmt(labour.JoiningDate)}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <button

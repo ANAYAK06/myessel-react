@@ -222,7 +222,7 @@ const LabourTypeChange = () => {
                     : 'text-emerald-600 dark:text-emerald-400'
             )}>
                 <Calendar className="h-3 w-3" />
-                Earliest allowed: <strong>{minDate.MinDate}</strong>
+                Earliest allowed: <strong>{fmt(minDate.MinDate)}</strong>
                 {minDate.HasApprovedPayroll && ' (payroll constraint)'}
             </p>
         );
@@ -281,7 +281,7 @@ const LabourTypeChange = () => {
                                         )}
                                         <p className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
-                                            {h.WithEffectFrom} → {h.ToDate}
+                                            {fmt(h.WithEffectFrom)} → {h.ToDate === 'Present' ? 'Present' : fmt(h.ToDate)}
                                         </p>
                                     </div>
                                 </div>

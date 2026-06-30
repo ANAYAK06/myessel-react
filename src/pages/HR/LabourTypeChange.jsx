@@ -414,7 +414,7 @@ const LabourTypeChange = () => {
                                 onChange={setEffectDate}
                                 format="DD-MMM-YYYY"
                                 placeholder="Select effective date"
-                                minDate={minDate?.MinDate}
+                                minDate={minDate?.MinDate ? parseDate(minDate.MinDate) : null}
                             />
                             {renderMinDateHint()}
                         </div>

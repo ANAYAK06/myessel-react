@@ -84,6 +84,53 @@ const initialState = {
 // HELPERS
 // ==============================================
 
+const isPFHead = (name) =>
+    name.includes('P.F') || name.includes('PF') || name.includes('PROVIDENT');
+
+const isESIHead = (name) =>
+    name.includes('E.S.I') || name.includes('ESI') || name.includes('EMPLOYEE STATE');
+
+const isAdminPFHead = (name) => name.includes('ADMIN');
+
+// When basic salary changes and PF/ESI is applicable, auto-calculate their amounts
+const autoFillPFESI = (heads, empRule) => {
+    if (!empRule) return heads;
+
+    const basicHead = heads.find(
+        (h) => h.HeadType === 'Earning' && h.HeadName?.toUpperCase().includes('BASIC')
+    );
+    const basicSalary = parseFloat(basicHead?.HeadAmount) || 0;
+
+    return heads.map((h) => {
+        const name = h.HeadName?.toUpperCase() || '';
+
+        if (h.HeadType === 'Deduction' && empRule.PFExist === 'Yes' && isPFHead(name)) {
+            const amount = parseFloat(((basicSalary * (parseFloat(empRule.PFPercent) || 0)) / 100).toFixed(2));
+            return { ...h, HeadAmount: amount, isAutoFilled: true };
+        }
+
+        if ((h.HeadType === 'Benefit' || h.HeadType === 'OtherBenefit') && empRule.PFExist === 'Yes' && isPFHead(name)) {
+            const rate = isAdminPFHead(name)
+                ? (parseFloat(empRule.PFAdminPercent) || 0)
+                : (parseFloat(empRule.PFemployerPercent) || 0);
+            const amount = parseFloat(((basicSalary * rate) / 100).toFixed(2));
+            return { ...h, HeadAmount: amount, isAutoFilled: true };
+        }
+
+        if (h.HeadType === 'Deduction' && empRule.ESIExist === 'Yes' && isESIHead(name)) {
+            const amount = parseFloat(((basicSalary * (parseFloat(empRule.ESIPercent) || 0)) / 100).toFixed(2));
+            return { ...h, HeadAmount: amount, isAutoFilled: true };
+        }
+
+        if ((h.HeadType === 'Benefit' || h.HeadType === 'OtherBenefit') && empRule.ESIExist === 'Yes' && isESIHead(name)) {
+            const amount = parseFloat(((basicSalary * (parseFloat(empRule.ESIemployerPercent) || 0)) / 100).toFixed(2));
+            return { ...h, HeadAmount: amount, isAutoFilled: true };
+        }
+
+        return h;
+    });
+};
+
 // Recalculate all total rows based on current editable amounts
 const recalculateTotals = (heads) => {
     const updated = heads.map((h) => ({ ...h }));
@@ -131,7 +178,7 @@ const staffCTCCreationSlice = createSlice({
     name: 'staffCTCCreation',
     initialState,
     reducers: {
-        // Update a single head's amount and recalculate totals
+        // Update a single head's amount, auto-fill PF/ESI if basic salary changed, then recalculate totals
         updateHeadAmount: (state, action) => {
             const { rowno, amount } = action.payload;
             const idx = state.localHeads.findIndex((h) => h.Rowno === rowno);
@@ -139,7 +186,18 @@ const staffCTCCreationSlice = createSlice({
                 state.localHeads[idx] = {
                     ...state.localHeads[idx],
                     HeadAmount: parseFloat(amount) || 0,
+                    isAutoFilled: false,
                 };
+
+                const updatedHead = state.localHeads[idx];
+                const isBasicSalary =
+                    updatedHead.HeadType === 'Earning' &&
+                    updatedHead.HeadName?.toUpperCase().includes('BASIC');
+
+                if (isBasicSalary && state.ctcData?.EmpRuleStatus) {
+                    state.localHeads = autoFillPFESI(state.localHeads, state.ctcData.EmpRuleStatus);
+                }
+
                 state.localHeads = recalculateTotals(state.localHeads);
             }
         },

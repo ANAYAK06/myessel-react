@@ -97,9 +97,22 @@ const HeadRow = ({ head, onAmountChange, disabled }) => {
         onAmountChange(head.Rowno, val);
     };
 
+    const amount = parseFloat(head.HeadAmount) || 0;
+    const monthly = amount;
+    const yearly = amount * 12;
+
     return (
-        <tr className="border-b border-gray-100 dark:border-gray-700 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors">
-            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{head.HeadName}</td>
+        <tr className={`border-b border-gray-100 dark:border-gray-700 transition-colors ${
+            head.isAutoFilled
+                ? 'bg-blue-50/40 dark:bg-blue-900/10 hover:bg-blue-50/70 dark:hover:bg-blue-900/20'
+                : 'hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10'
+        }`}>
+            <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">
+                {head.HeadName}
+                {head.isAutoFilled && (
+                    <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 rounded">Auto</span>
+                )}
+            </td>
             <td className="py-3 px-4 text-xs text-gray-500 dark:text-gray-400">{head.AmountType || '—'}</td>
             <td className="py-3 px-4 text-xs text-gray-500 dark:text-gray-400">{head.ApplicableType || '—'}</td>
             <td className="py-3 px-4 text-xs">
@@ -111,7 +124,7 @@ const HeadRow = ({ head, onAmountChange, disabled }) => {
             </td>
             <td className="py-3 px-4 text-xs text-gray-500 dark:text-gray-400">{head.ValidationMsg || '—'}</td>
             <td className="py-3 px-4">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 justify-end">
                     <span className="text-gray-400 dark:text-gray-500 text-sm">₹</span>
                     <input
                         type="number"
@@ -125,15 +138,22 @@ const HeadRow = ({ head, onAmountChange, disabled }) => {
                     />
                 </div>
             </td>
+            <td className="py-3 px-4 text-sm text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                {amount > 0 ? fmt(monthly) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+            </td>
+            <td className="py-3 px-4 text-sm text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                {amount > 0 ? fmt(yearly) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+            </td>
         </tr>
     );
 };
 
-// Total row (read-only)
+// Total row (read-only) — colSpan=6 covers label+input col; then Monthly and Yearly
 const TotalRow = ({ label, value, colorClass = 'text-indigo-700 dark:text-indigo-300' }) => (
     <tr className="bg-indigo-50/60 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800">
-        <td colSpan={5} className={`py-3 px-4 text-sm font-bold ${colorClass}`}>{label}</td>
-        <td className={`py-3 px-4 text-sm font-bold text-right ${colorClass}`}>₹{fmt(value)}</td>
+        <td colSpan={6} className={`py-3 px-4 text-sm font-bold ${colorClass}`}>{label}</td>
+        <td className={`py-3 px-4 text-sm font-bold text-right whitespace-nowrap ${colorClass}`}>₹{fmt(value)}</td>
+        <td className={`py-3 px-4 text-sm font-bold text-right whitespace-nowrap ${colorClass}`}>₹{fmt((value || 0) * 12)}</td>
     </tr>
 );
 
@@ -282,7 +302,9 @@ const StaffPayrollStructure = () => {
                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Applicable</th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mandatory</th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Validation</th>
-                <th className="py-3 px-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Monthly Amount</th>
+                <th className="py-3 px-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">CTC Amount</th>
+                <th className="py-3 px-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Monthly</th>
+                <th className="py-3 px-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Yearly</th>
             </tr>
         </thead>
     );

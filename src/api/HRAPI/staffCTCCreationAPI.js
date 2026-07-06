@@ -80,6 +80,10 @@ const transformHeadsForPayload = (heads) => {
             yearlyAmount  = amount;
             monthlyAmount = parseFloat((amount / 12).toFixed(2));
             dailyAmount   = Math.round(amount / 313);
+        } else if (applicable === 'Daily') {
+            dailyAmount   = amount;
+            monthlyAmount = parseFloat((amount * 26).toFixed(2));
+            yearlyAmount  = parseFloat((monthlyAmount * 12).toFixed(2));
         }
 
         return {

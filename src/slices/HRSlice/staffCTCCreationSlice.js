@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as staffCTCCreationAPI from '../../api/HRAPI/staffCTCCreationAPI';
+import { toMonthlyEquivalent, fromMonthlyEquivalent } from '../../utilities/ctcAmountUtils';
 
 // ==============================================
 // ASYNC THUNKS
@@ -99,31 +100,41 @@ const autoFillPFESI = (heads, empRule) => {
     const basicHead = heads.find(
         (h) => h.HeadType === 'Earning' && h.HeadName?.toUpperCase().includes('BASIC')
     );
-    const basicSalary = parseFloat(basicHead?.HeadAmount) || 0;
+    // Normalize to a monthly figure regardless of the Basic head's own ApplicableType
+    const basicSalary = toMonthlyEquivalent(basicHead?.HeadAmount, basicHead?.ApplicableType);
+
+    // PF/ESI/etc. are computed as a % of monthly Basic; convert that monthly
+    // result back into the target head's own ApplicableType before storing.
+    const storeAmount = (h, monthlyAmount) =>
+        parseFloat(fromMonthlyEquivalent(monthlyAmount, h.ApplicableType).toFixed(2));
 
     return heads.map((h) => {
         const name = h.HeadName?.toUpperCase() || '';
 
         if (h.HeadType === 'Deduction' && empRule.PFExist === 'Yes' && isPFHead(name)) {
-            const amount = parseFloat(((basicSalary * (parseFloat(empRule.PFPercent) || 0)) / 100).toFixed(2));
+            const amount = storeAmount(h, (basicSalary * (parseFloat(empRule.PFPercent) || 0)) / 100);
             return { ...h, HeadAmount: amount, isAutoFilled: true };
         }
 
         if ((h.HeadType === 'Benefit' || h.HeadType === 'OtherBenefit') && empRule.PFExist === 'Yes' && isPFHead(name)) {
+            // There is no separate head for PF Admin Charges, so the employer PF
+            // head must carry both the employer contribution and the admin charge
+            // (e.g. 12% + 1% = 13%). If a dedicated Admin head exists, it gets
+            // only the admin percent to avoid double-counting.
             const rate = isAdminPFHead(name)
                 ? (parseFloat(empRule.PFAdminPercent) || 0)
-                : (parseFloat(empRule.PFemployerPercent) || 0);
-            const amount = parseFloat(((basicSalary * rate) / 100).toFixed(2));
+                : (parseFloat(empRule.PFemployerPercent) || 0) + (parseFloat(empRule.PFAdminPercent) || 0);
+            const amount = storeAmount(h, (basicSalary * rate) / 100);
             return { ...h, HeadAmount: amount, isAutoFilled: true };
         }
 
         if (h.HeadType === 'Deduction' && empRule.ESIExist === 'Yes' && isESIHead(name)) {
-            const amount = parseFloat(((basicSalary * (parseFloat(empRule.ESIPercent) || 0)) / 100).toFixed(2));
+            const amount = storeAmount(h, (basicSalary * (parseFloat(empRule.ESIPercent) || 0)) / 100);
             return { ...h, HeadAmount: amount, isAutoFilled: true };
         }
 
         if ((h.HeadType === 'Benefit' || h.HeadType === 'OtherBenefit') && empRule.ESIExist === 'Yes' && isESIHead(name)) {
-            const amount = parseFloat(((basicSalary * (parseFloat(empRule.ESIemployerPercent) || 0)) / 100).toFixed(2));
+            const amount = storeAmount(h, (basicSalary * (parseFloat(empRule.ESIemployerPercent) || 0)) / 100);
             return { ...h, HeadAmount: amount, isAutoFilled: true };
         }
 
@@ -138,7 +149,7 @@ const recalculateTotals = (heads) => {
     const sum = (type) =>
         updated
             .filter((h) => h.HeadType === type)
-            .reduce((acc, h) => acc + (parseFloat(h.HeadAmount) || 0), 0);
+            .reduce((acc, h) => acc + toMonthlyEquivalent(h.HeadAmount, h.ApplicableType), 0);
 
     const earningsTotal    = sum('Earning');
     const deductionTotal   = sum('Deduction');

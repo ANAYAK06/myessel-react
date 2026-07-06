@@ -32,6 +32,8 @@ import {
     selectSaveError,
 } from '../../slices/HRSlice/staffCTCCreationSlice';
 
+import { toMonthlyYearly, minAmountForType } from '../../utilities/ctcAmountUtils';
+
 import {
     User, Loader2, AlertCircle,
     RotateCcw, Send, IndianRupee, TrendingUp, TrendingDown,
@@ -91,15 +93,15 @@ const HeadRow = ({ head, onAmountChange, disabled }) => {
     const handleBlur = () => {
         const parsed = parseFloat(inputVal);
         const val = isNaN(parsed) ? 0 : parsed;
-        if (val < (head.MinMonthAmount || 0)) {
-            toast.warn(`Minimum monthly amount for ${head.HeadName} is ₹${fmt(head.MinMonthAmount)}`);
+        const minAmount = minAmountForType(head);
+        if (val < minAmount) {
+            toast.warn(`Minimum ${(head.ApplicableType || 'monthly').toLowerCase()} amount for ${head.HeadName} is ₹${fmt(minAmount)}`);
         }
         onAmountChange(head.Rowno, val);
     };
 
     const amount = parseFloat(head.HeadAmount) || 0;
-    const monthly = amount;
-    const yearly = amount * 12;
+    const { monthly, yearly } = toMonthlyYearly(amount, head.ApplicableType);
 
     return (
         <tr className={`border-b border-gray-100 dark:border-gray-700 transition-colors ${

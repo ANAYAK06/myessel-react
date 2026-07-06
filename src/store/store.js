@@ -30,6 +30,7 @@ import lcbgReducer from "../slices/lcbgSlice/lcbgSlice";
 import stockSummaryReducer from "../slices/financialReportSlice/stockSummarySlice";
 import unsecuredLoanReportReducer from "../slices/termLoanSlice/unsecuredLoanReportSlice";
 import cmsPaymentReportSlice from "../slices/HrReportSlice/cmsPaymentReportSlice";
+import labourCMSPaymentReportReducer from "../slices/HrReportSlice/labourCMSPaymentReportSlice";
 import inboxNotificationReducer from "../slices/notificationSlice/userInboxNotificationSlice";
 
 import approvalReducer from "../slices/CommonSlice/getStatusSlice";
@@ -171,6 +172,7 @@ const store = configureStore({
     stocksummary: stockSummaryReducer,
     unsecuredloanreport: unsecuredLoanReportReducer,
     cmspaymentreport:cmsPaymentReportSlice,
+    labourcmspaymentreport: labourCMSPaymentReportReducer,
     inboxnotifications: inboxNotificationReducer,
     approval: approvalReducer,
     vendorpayment: VendorPaymentReducer,

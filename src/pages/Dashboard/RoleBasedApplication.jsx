@@ -39,6 +39,7 @@ import LCBGStatusReportPage from '../FinancialReports/LCBGStatusReportPage';
 import StockSummaryPage from '../FinancialReports/StockSummaryPage';
 import UnsecuredLoanReportPage from '../TermLoan/UnsecuredLoanReportPage';
 import StaffCMSPaymentReportPage from '../HRReports/StaffCMSPaymentReportPage';
+import LabourCMSPaymentReportPage from '../HRReports/LabourCMSPaymentReportPage';
 import StaffAttendanceReportPage from '../HRReports/StaffAttendanceReportPage';
 import EmployeeExitReportPage from '../HRReports/EmployeeExitReportPage';
 import LeaveReportPage from '../HRReports/LeaveReportPage';
@@ -895,6 +896,18 @@ const RoleBasedApplication = () => {
         return pathMatches || nameMatches || routeMatches;
     };
 
+    const isLabourCMSPaymentReportPage = (menuData) => {
+        if (!menuData) return false;
+        const pathMatches = menuData.path === '/HR/CMSPayReport?Type=Labour' ||
+            menuData.path?.toLowerCase().includes('labourcmspaymentreport') ||
+            menuData.path?.toLowerCase().includes('lbcmspaymentreport');
+        const nameMatches = menuData.name?.toLowerCase().includes('labourcmspaymentreport') ||
+            menuData.name?.toLowerCase().includes('labour cms payment report');
+        const routeMatches = menuData.reactRoute?.toLowerCase().includes('labourcmspaymentreport');
+
+        return pathMatches || nameMatches || routeMatches;
+    };
+
 
     // Staff Attendance Entry Page (/HR/StaffAttendance?Type=Staff)
     const isStaffAttendanceEntryPage = (menuData) => {
@@ -1434,6 +1447,13 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isUnsecuredLoanReportPage(currentMenuData)) {
             console.log('✅ Rendering UnsecuredLoanReportPage for:', currentMenuData.name);
             return <UnsecuredLoanReportPage menuData={currentMenuData} />;
+        }
+        // Check if this menu item should route to Labour CMS Payment Report Page
+        // (checked before the Staff CMS Payment Report page since the Staff matcher's
+        // 'cms payment report' substring also matches the Labour menu name)
+        if (currentMenuData && isLabourCMSPaymentReportPage(currentMenuData)) {
+            console.log('✅ Rendering LabourCMSPaymentReportPage for:', currentMenuData.name);
+            return <LabourCMSPaymentReportPage menuData={currentMenuData} />;
         }
         // Check if this menu item should route to CMS Payment Report Page
         if (currentMenuData && isCMSPaymentReportPage(currentMenuData)) {

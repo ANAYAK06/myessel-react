@@ -93,8 +93,7 @@ import {
 
 // ✅ REUSABLE INBOX COMPONENTS
 import InboxHeader from '../../components/Inbox/InboxHeader';
-import LeftPanel from '../../components/Inbox/LeftPanel';
-import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import AttachmentModal from '../../components/Inbox/AttachmentModal';
 
 // ✅ S3 CONFIG
@@ -1864,62 +1863,59 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                         options: ccTypes
                     }
                 ]}
+                enableViewToggle
             />
 
             {/* Main Content */}
-            <div className={`grid gap-6 transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1 lg:grid-cols-3'}`}>
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}`}>
-                    <LeftPanel
-                        items={filteredPOs}
-                        selectedItem={selectedPO}
-                        onItemSelect={handlePOSelect}
-                        renderItem={renderItemCard}
-                        renderCollapsedItem={renderCollapsedItem}
-                        isCollapsed={isLeftPanelCollapsed}
-                        onCollapseToggle={setIsLeftPanelCollapsed}
-                        isHovered={isLeftPanelHovered}
-                        onHoverChange={setIsLeftPanelHovered}
-                        loading={posLoading}
-                        error={posError ? 'Error loading POs' : null}
-                        onRefresh={() => dispatch(fetchVerificationSupplierPOs({ roleId: roleId || selectedRoleId, userId: uid, ccType: 'PCC' }))}
-                        config={{
-                            title: 'Pending Verification',
-                            icon: Clock,
-                            emptyMessage: 'No POs found!',
-                            itemKey: 'PONo',
-                            enableCollapse: true,
-                            enableRefresh: true,
-                            enableHover: true,
-                            maxHeight: 'calc(100vh - 300px)',
-                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
-                        }}
-                        renderPopupContent={(_item) => renderDetailContent(true)}
-                        popupConfig={{
-                            title: 'PO Verification',
-                            icon: ShoppingCart,
-                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
-                        }}
-                    />
-                </div>
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}`}>
-                    <RightDetailPanel
-                        selectedItem={selectedPO}
-                        loading={false}
-                        renderContent={renderDetailContent}
-                        config={{
-                            title: 'Select a PO',
-                            icon: ShoppingCart,
-                            selectedTitle: 'PO Verification',
-                            emptyTitle: 'No PO Selected',
-                            emptyMessage: 'Select a supplier PO from the list to view details and take action.',
-                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
-                            maxHeight: 'calc(100vh - 200px)',
-                            sticky: true,
-                            stickyTop: '1.5rem',
-                        }}
-                    />
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredPOs,
+                    selectedItem: selectedPO,
+                    onItemSelect: handlePOSelect,
+                    renderItem: renderItemCard,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: posLoading,
+                    error: posError ? 'Error loading POs' : null,
+                    onRefresh: () => dispatch(fetchVerificationSupplierPOs({ roleId: roleId || selectedRoleId, userId: uid, ccType: 'PCC' })),
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No POs found!',
+                        itemKey: 'PONo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: 'calc(100vh - 300px)',
+                        headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(true),
+                    popupConfig: {
+                        title: 'PO Verification',
+                        icon: ShoppingCart,
+                        headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                    }
+                }}
+                right={{
+                    selectedItem: selectedPO,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Select a PO',
+                        icon: ShoppingCart,
+                        selectedTitle: 'PO Verification',
+                        emptyTitle: 'No PO Selected',
+                        emptyMessage: 'Select a supplier PO from the list to view details and take action.',
+                        headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    }
+                }}
+            />
 
             {/* ✅ NEW: Price Update Confirmation Modal */}
             {renderPriceUpdateModal()}

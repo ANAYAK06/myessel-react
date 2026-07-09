@@ -11,8 +11,7 @@ import {
 import InboxHeader from '../../components/Inbox/InboxHeader';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
-import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -540,6 +539,31 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked, since a card
+    // designed for a narrow sidebar wastes space when stretched full width.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px]">
+                Ref: {item.TransactionRefno}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                CC: {item.CCCodes}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[130px]">
+                <Hash className="w-3 h-3" />
+                Consolidate: {item.ConslidateTransNo}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[80px]">
+                <Calendar className="w-3 h-3" />
+                {item.Month}/{item.Year}
+            </span>
+            <span className="ml-auto px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium whitespace-nowrap">
+                {item.PayRoleDate}
+            </span>
+        </div>
+    );
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <Banknote className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -845,70 +869,59 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                     { value: filterMonth, onChange: (e) => setFilterMonth(e.target.value), defaultLabel: 'All Months', options: months },
                     { value: filterYear, onChange: (e) => setFilterYear(e.target.value), defaultLabel: 'All Years', options: years }
                 ]}
+                enableViewToggle
             />
 
-            <div
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                        }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={inboxLoading}
-                            error={inboxError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No payroll records pending verification',
-                                itemKey: 'TransactionRefno',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
-                            }}
-                            renderPopupContent={(_item) => renderDetailContent(true)}
-                            popupConfig={{
-                                title: 'Payroll Verification',
-                                icon: Banknote,
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <RightDetailPanel
-                            selectedItem={selectedItem}
-                            loading={detailsLoading}
-                            renderContent={renderDetailContent}
-                            config={{
-                                title: 'Payroll Verification',
-                                icon: Banknote,
-                                selectedTitle: 'Payroll Verification',
-                                emptyTitle: 'No Payroll Record Selected',
-                                emptyMessage: 'Select a payroll record from the list to view employee details and process verification.',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                                maxHeight: 'calc(100vh - 200px)',
-                                sticky: true,
-                                stickyTop: '1.5rem',
-                            }}
-                        />
-                    </div>
-                </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: inboxLoading,
+                    error: inboxError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No payroll records pending verification',
+                        itemKey: 'TransactionRefno',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(true),
+                    popupConfig: {
+                        title: 'Payroll Verification',
+                        icon: Banknote,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    }
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: detailsLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Payroll Verification',
+                        icon: Banknote,
+                        selectedTitle: 'Payroll Verification',
+                        emptyTitle: 'No Payroll Record Selected',
+                        emptyMessage: 'Select a payroll record from the list to view employee details and process verification.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    }
+                }}
+            />
         </div>
     );
 };

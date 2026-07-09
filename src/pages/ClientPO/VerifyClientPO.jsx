@@ -12,7 +12,7 @@ import StatsCards from '../../components/Inbox/StatsCards';
 import AttachmentModal from '../../components/Inbox/AttachmentModal';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -763,6 +763,7 @@ const VerifyClientPO = ({ notificationData, onNavigate }) => {
                     }
                 ]}
                 className="bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"
+                enableViewToggle
             />
 
             <div className="px-6 -mt-auto mb-6">
@@ -775,86 +776,54 @@ const VerifyClientPO = ({ notificationData, onNavigate }) => {
             </div>
 
             <div className="container mx-auto px-6">
-                <div 
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        // When mouse leaves the entire grid area, ensure side panel can expand
-                        if (selectedPO && isLeftPanelCollapsed) {
-                            setIsLeftPanelHovered(false);
+                <InboxSplitLayout
+                    isLeftPanelCollapsed={isLeftPanelCollapsed}
+                    onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                    isLeftPanelHovered={isLeftPanelHovered}
+                    onLeftPanelHoverChange={setIsLeftPanelHovered}
+                    left={{
+                        items: filteredPOs,
+                        selectedItem: selectedPO,
+                        onItemSelect: handlePOSelect,
+                        renderItem: renderPOItem,
+                        renderCollapsedItem: renderCollapsedItem,
+                        loading: clientPOsLoading,
+                        error: clientPOsError,
+                        onRefresh: handleRefresh,
+                        config: {
+                            title: 'Pending',
+                            icon: Clock,
+                            emptyMessage: 'No Client POs found!',
+                            itemKey: 'pono',
+                            enableCollapse: true,
+                            enableRefresh: true,
+                            enableHover: true,
+                            maxHeight: '100%',
+                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20'
+                        },
+                        renderPopupContent: (_item) => renderDetailContent(),
+                        popupConfig: {
+                            title: 'Client PO Verification',
+                            icon: FileText,
+                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
                         }
                     }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredPOs}
-                            selectedItem={selectedPO}
-                            onItemSelect={handlePOSelect}
-                            renderItem={renderPOItem}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={clientPOsLoading}
-                            error={clientPOsError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending',
-                                icon: Clock,
-                                emptyMessage: 'No Client POs found!',
-                                itemKey: 'pono',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20'
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div 
-                            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
-                            onMouseEnter={() => {
-                                if (selectedPO && !isLeftPanelHovered) {
-                                    setIsLeftPanelHovered(false);
-                                }
-                            }}
-                        >
-                            <div className="bg-gradient-to-r from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-500 rounded-lg">
-                                        <FileText className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedPO ? 'Client PO Verification' : 'Client PO Details'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh-200px)' }}>
-                                {selectedPO ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <AlertCircle className="w-12 h-12 text-purple-500 dark:text-purple-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Client PO Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a Client Purchase Order from the list to view details and take action.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    right={{
+                        selectedItem: selectedPO,
+                        loading: false,
+                        renderContent: renderDetailContent,
+                        config: {
+                            title: 'Client PO Details',
+                            icon: FileText,
+                            selectedTitle: 'Client PO Verification',
+                            emptyTitle: 'No Client PO Selected',
+                            emptyMessage: 'Select a Client Purchase Order from the list to view details and take action.',
+                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                            maxHeight: 'calc(100vh-200px)',
+                            sticky: false,
+                        }
+                    }}
+                />
             </div>
 
             <AttachmentModal

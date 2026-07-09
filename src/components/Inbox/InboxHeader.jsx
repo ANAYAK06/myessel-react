@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowLeft, Search, Briefcase } from 'lucide-react';
+import { ArrowLeft, Search, Briefcase, LayoutGrid, List } from 'lucide-react';
+import { useInboxView } from '../../contexts/InboxViewContext';
 
 const InboxHeader = ({
     title = 'Verification',
@@ -24,8 +25,13 @@ const InboxHeader = ({
     filters = [],
     renderCustomContent = null,
 
+    // Opt-in: only pages migrated onto InboxSplitLayout should enable this,
+    // otherwise the toggle would be shown with no effect on the page layout.
+    enableViewToggle = false,
+
     className = ''
 }) => {
+    const { viewMode, setSplitView, setListView } = useInboxView();
     return (
         <div className={`relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-lg shadow-blue-900/20 px-5 py-3 text-white mb-2 ${className}`}>
             {/* Dot pattern */}
@@ -79,6 +85,30 @@ const InboxHeader = ({
                         </p>
                     )}
                 </div>
+
+                {/* View mode toggle — split (Outlook-style) vs list (classic) */}
+                {enableViewToggle && (
+                    <div className="flex items-center gap-0.5 bg-white/10 border border-white/20 rounded-lg p-0.5 shrink-0 ml-auto">
+                        <button
+                            onClick={setSplitView}
+                            className={`p-1.5 rounded-md transition-colors ${
+                                viewMode === 'split' ? 'bg-white/25 text-white' : 'text-blue-300 hover:text-white'
+                            }`}
+                            title="Split view"
+                        >
+                            <LayoutGrid className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            onClick={setListView}
+                            className={`p-1.5 rounded-md transition-colors ${
+                                viewMode === 'list' ? 'bg-white/25 text-white' : 'text-blue-300 hover:text-white'
+                            }`}
+                            title="List view"
+                        >
+                            <List className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                )}
 
                 {/* Search + filters — right side */}
                 {(searchConfig.enabled || filters.length > 0 || renderCustomContent) && (

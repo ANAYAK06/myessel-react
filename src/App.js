@@ -14,10 +14,12 @@ import SessionExpiredPage from './pages/SessionExpiredPage';
 
 // Import ThemeProvider
 import { ThemeProvider } from './contexts/ThemeContext';
+import { InboxViewProvider } from './contexts/InboxViewContext';
 
 function App() {
   return (
     <ThemeProvider>
+      <InboxViewProvider>
       <div className="App bg-white dark:bg-gray-900 min-h-screen transition-colors">
         <BrowserRouter>
           <SessionProvider>  {/* ADD THIS WRAPPER */}
@@ -82,6 +84,7 @@ function App() {
           theme="colored"
         />
       </div>
+      </InboxViewProvider>
     </ThemeProvider>
   );
 }

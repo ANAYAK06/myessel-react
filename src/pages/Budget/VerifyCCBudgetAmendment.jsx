@@ -10,11 +10,12 @@ import {
     FileX, Calculator,
     Clipboard, ChevronDown, ChevronUp,
     ChevronRight, ChevronLeft, TrendingDown,
-    Briefcase, FileDown, Eye, X
+    Briefcase, FileDown, Eye, X,
+    LayoutGrid, List
 } from 'lucide-react';
 
-import LeftPanel from '../../components/Inbox/LeftPanel';
-import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
+import { useInboxView } from '../../contexts/InboxViewContext';
 
 // ✅ CC BUDGET AMENDMENT SLICE
 import {
@@ -110,6 +111,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
     const [showRemarksHistory, setShowRemarksHistory] = useState(false);
     const [showAttachmentModal, setShowAttachmentModal] = useState(false);
     const [attachmentUrl, setAttachmentUrl] = useState(null);
+    const { viewMode, setSplitView, setListView } = useInboxView();
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -1079,6 +1081,28 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                             </p>
                         </div>
                     </div>
+
+                    {/* View mode toggle — split (Outlook-style) vs list (classic) */}
+                    <div className="flex items-center gap-0.5 bg-white/10 border border-white/20 rounded-lg p-0.5 shrink-0">
+                        <button
+                            onClick={setSplitView}
+                            className={`p-1.5 rounded-md transition-colors ${
+                                viewMode === 'split' ? 'bg-white/25 text-white' : 'text-blue-300 hover:text-white'
+                            }`}
+                            title="Split view"
+                        >
+                            <LayoutGrid className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            onClick={setListView}
+                            className={`p-1.5 rounded-md transition-colors ${
+                                viewMode === 'list' ? 'bg-white/25 text-white' : 'text-blue-300 hover:text-white'
+                            }`}
+                            title="List view"
+                        >
+                            <List className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Search and Filters */}
@@ -1123,69 +1147,55 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
             </div>
 
             {/* Main Content */}
-            <div
-                className={`grid transition-all duration-300 ${
-                    isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                }`}
-                onMouseLeave={() => {
-                    if (selectedAmendment && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredAmendments,
+                    selectedItem: selectedAmendment,
+                    onItemSelect: handleAmendmentSelect,
+                    renderItem: renderItemCard,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: amendmentsLoading,
+                    error: amendmentsError,
+                    onRefresh: () => dispatch(fetchApprovalCCAmendBudgetDetails({ roleId, uid })),
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No amendments found!',
+                        itemKey: 'CCBudgetAmendmentid',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20'
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(true),
+                    popupConfig: {
+                        title: 'CC Budget Amendment',
+                        icon: Briefcase,
+                        headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20',
+                    }
                 }}
-            >
-                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                    <LeftPanel
-                        items={filteredAmendments}
-                        selectedItem={selectedAmendment}
-                        onItemSelect={handleAmendmentSelect}
-                        renderItem={renderItemCard}
-                        renderCollapsedItem={renderCollapsedItem}
-                        isCollapsed={isLeftPanelCollapsed}
-                        onCollapseToggle={setIsLeftPanelCollapsed}
-                        isHovered={isLeftPanelHovered}
-                        onHoverChange={setIsLeftPanelHovered}
-                        loading={amendmentsLoading}
-                        error={amendmentsError}
-                        onRefresh={() => dispatch(fetchApprovalCCAmendBudgetDetails({ roleId, uid }))}
-                        config={{
-                            title: 'Pending Verification',
-                            icon: Clock,
-                            emptyMessage: 'No amendments found!',
-                            itemKey: 'CCBudgetAmendmentid',
-                            enableCollapse: true,
-                            enableRefresh: true,
-                            enableHover: true,
-                            maxHeight: '100%',
-                            headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20'
-                        }}
-                        renderPopupContent={(_item) => renderDetailContent(true)}
-                        popupConfig={{
-                            title: 'CC Budget Amendment',
-                            icon: Briefcase,
-                            headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20',
-                        }}
-                    />
-                </div>
-
-                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                    <RightDetailPanel
-                        selectedItem={selectedAmendment}
-                        loading={amendmentDataLoading}
-                        renderContent={renderDetailContent}
-                        config={{
-                            title: 'CC Budget Amendment',
-                            icon: Briefcase,
-                            selectedTitle: 'Amendment Verification',
-                            emptyTitle: 'No Amendment Selected',
-                            emptyMessage: 'Select a CC budget amendment from the list to view details and take action.',
-                            headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20',
-                            maxHeight: 'calc(100vh - 200px)',
-                            sticky: true,
-                            stickyTop: '1.5rem',
-                        }}
-                    />
-                </div>
-            </div>
+                right={{
+                    selectedItem: selectedAmendment,
+                    loading: amendmentDataLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'CC Budget Amendment',
+                        icon: Briefcase,
+                        selectedTitle: 'Amendment Verification',
+                        emptyTitle: 'No Amendment Selected',
+                        emptyMessage: 'Select a CC budget amendment from the list to view details and take action.',
+                        headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    }
+                }}
+            />
         </div>
     );
 };

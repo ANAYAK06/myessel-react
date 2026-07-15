@@ -85,6 +85,9 @@ const parseCCType = (menuData) => {
     return 'PCC';
 };
 
+// Extract the cost center prefix from an IndentNo, e.g. "CC-01/2026-27/86" -> "CC-01"
+const parseCCPrefix = (indentNo) => (indentNo || '').split('/')[0];
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 const SupplierPOCreation = ({ menuData }) => {
@@ -118,6 +121,9 @@ const SupplierPOCreation = ({ menuData }) => {
 
     // Editable grid rows keyed by IndentListId
     const [rowEdits, setRowEdits] = useState({});
+
+    // Which rows (by IndentListId) are checked for inclusion in this PO
+    const [selectedRows, setSelectedRows] = useState({});
 
     // Header form
     const [header, setHeader] = useState({
@@ -172,6 +178,7 @@ const SupplierPOCreation = ({ menuData }) => {
                 };
             });
             setRowEdits(initial);
+            setSelectedRows({});
             setBudgetPassed(false);
         }
     }, [gridData]);
@@ -198,19 +205,31 @@ const SupplierPOCreation = ({ menuData }) => {
 
     // ── Computed values ───────────────────────────────────────────────────────
 
+    // Only rows the user has checked participate in this PO
+    const selectedItems = useMemo(() =>
+        gridData.filter((item) => selectedRows[item.IndentListId]),
+    [gridData, selectedRows]);
+
     const baseValue = useMemo(() => {
-        return gridData.reduce((sum, item) => {
+        return selectedItems.reduce((sum, item) => {
             const e = rowEdits[item.IndentListId];
             if (!e) return sum;
             return sum + (parseFloat(e.purchasePrice) || 0) * (parseFloat(e.poQty) || 0);
         }, 0);
-    }, [gridData, rowEdits]);
+    }, [selectedItems, rowEdits]);
 
     const qcRequired = baseValue > 50000;
 
     const indentListIds = useMemo(() =>
-        gridData.map((r) => r.IndentListId).join(',') + (gridData.length > 0 ? ',' : ''),
-    [gridData]);
+        selectedItems.map((r) => r.IndentListId).join(',') + (selectedItems.length > 0 ? ',' : ''),
+    [selectedItems]);
+
+    // Part indents pending for the same cost center as the currently selected new indent
+    const relatedPartIndents = useMemo(() => {
+        if (!selectedIndentNo) return [];
+        const cc = parseCCPrefix(selectedIndentNo);
+        return partIndentList.filter((p) => parseCCPrefix(p.IndentNo) === cc);
+    }, [partIndentList, selectedIndentNo]);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -251,7 +270,22 @@ const SupplierPOCreation = ({ menuData }) => {
 
     const handleRowEdit = (id, field, value) => {
         setBudgetPassed(false);
+
+        if (field === 'poQty') {
+            const item = gridData.find((g) => g.IndentListId === id);
+            const indentQty = parseFloat(item?.Requestedqty ?? item?.quantity) || 0;
+            const numVal = parseFloat(value);
+            if (indentQty > 0 && !isNaN(numVal) && numVal > indentQty) {
+                toast.error(`PO Qty cannot exceed Indent Qty (${indentQty})`);
+                value = String(indentQty);
+            }
+        }
+
         setRowEdits((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+    };
+
+    const toggleRowSelect = (id) => {
+        setSelectedRows((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
     const handleHeaderChange = (field, value) => {
@@ -308,7 +342,7 @@ const SupplierPOCreation = ({ menuData }) => {
     // Budget check
     const handleBudgetCheck = async () => {
         if (!loadedIndentNo) { toast.warning('Load an indent first'); return; }
-        if (!gridData.length) { toast.warning('No items in grid'); return; }
+        if (!selectedItems.length) { toast.warning('Please select at least one item'); return; }
 
         const result = await dispatch(checkPOBudget({
             IndentListids: indentListIds,
@@ -317,12 +351,17 @@ const SupplierPOCreation = ({ menuData }) => {
         }));
 
         if (checkPOBudget.fulfilled.match(result)) {
-            const msg = result.payload;
-            if (typeof msg === 'string' && msg.toLowerCase().includes('ok')) {
-                toast.success('Budget check passed');
+            const payload = result.payload;
+            const isSuccessful = typeof payload === 'string'
+                ? payload.toLowerCase().includes('ok') || payload.toLowerCase().includes('sufficient')
+                : !!payload?.IsSuccessful;
+            const msg = (typeof payload === 'string' ? payload : payload?.Data || payload?.Message) || '';
+
+            if (isSuccessful) {
+                toast.success(msg || 'Budget check passed');
                 setBudgetPassed(true);
             } else {
-                toast.error(typeof msg === 'string' ? msg : 'Budget check failed. Please review amounts.');
+                toast.error(msg || 'Budget check failed. Please review amounts.');
                 setBudgetPassed(false);
             }
         }
@@ -336,14 +375,18 @@ const SupplierPOCreation = ({ menuData }) => {
         if (!header.poExpiryDate) { toast.error('Please enter PO Expiry Date'); return; }
         if (!budgetPassed)      { toast.error('Please run Budget Check before saving'); return; }
         if (qcRequired && !qcFile) { toast.error('PO value exceeds ₹50,000 — please upload QC document'); return; }
+        if (!selectedItems.length) { toast.error('Please select at least one item to create the PO'); return; }
 
-        const itemsHavePrice = gridData.every((item) => {
+        const itemsValid = selectedItems.every((item) => {
             const e = rowEdits[item.IndentListId];
-            return e && parseFloat(e.purchasePrice) > 0 && parseFloat(e.poQty) > 0;
+            const qty = parseFloat(e?.poQty);
+            const price = parseFloat(e?.purchasePrice);
+            const indentQty = parseFloat(item.Requestedqty ?? item.quantity) || 0;
+            return e && qty > 0 && price > 0 && qty <= indentQty;
         });
-        if (!itemsHavePrice) { toast.error('All items must have PO Qty and Purchase Price > 0'); return; }
+        if (!itemsValid) { toast.error('Selected items must have PO Qty > 0 (not exceeding Indent Qty) and Purchase Price > 0'); return; }
 
-        const items = gridData.map((item) => {
+        const items = selectedItems.map((item) => {
             const e = rowEdits[item.IndentListId] || {};
             return {
                 IndentListId:  item.IndentListId,
@@ -407,6 +450,7 @@ const SupplierPOCreation = ({ menuData }) => {
         setSelectedIndentNo('');
         setLoadedIndentNo('');
         setRowEdits({});
+        setSelectedRows({});
         setHeader({ vendorId: '', vendorName: '', poDate: '', poExpiryDate: '', paymentType: 'Direct', ref: '', lcApplicable: 'No' });
         setAddr({ invoiceAddress: '', deliveryAddress: '', companyGstNo: '', vendorGstNo: '', contactPersonNo: '' });
         setTermsLines([{ id: Date.now(), text: '' }]);
@@ -546,14 +590,14 @@ const SupplierPOCreation = ({ menuData }) => {
                     </div>
                 )}
 
-                {/* Part indent list reference */}
-                {activeTab === 'new' && partIndentList.length > 0 && (
+                {/* Part indent list reference — only part indents matching the selected indent's CC */}
+                {activeTab === 'new' && selectedIndentNo && relatedPartIndents.length > 0 && (
                     <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-3">
                         <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-1">
-                            Part Indents pending for this CC:
+                            Part Indents pending for this CC ({parseCCPrefix(selectedIndentNo)}):
                         </p>
                         <div className="flex flex-wrap gap-2">
-                            {partIndentList.map((p) => (
+                            {relatedPartIndents.map((p) => (
                                 <span key={p.IndentId}
                                     className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded text-xs font-mono">
                                     {p.IndentNo}
@@ -655,14 +699,14 @@ const SupplierPOCreation = ({ menuData }) => {
             {gridHasData && (
                 <SectionCard icon={Package}
                     title="Item Details"
-                    subtitle={`${gridData.length} item${gridData.length !== 1 ? 's' : ''}`}
+                    subtitle={`${selectedItems.length} of ${gridData.length} item${gridData.length !== 1 ? 's' : ''} selected`}
                     accent="purple">
 
                     <div className="overflow-x-auto rounded-lg border border-purple-200 dark:border-purple-700">
                         <table className="w-full text-xs">
                             <thead>
                                 <tr className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-                                    {['#', 'Item Code', 'Item Name', 'Specification', 'DCA', 'Unit',
+                                    {['Select', '#', 'Item Code', 'Item Name', 'Specification', 'DCA', 'Unit',
                                       'Indent Qty', 'Quoted Price*', 'PO Qty*', 'Purchase Price*', 'Amount', 'Remarks*'].map((h) => (
                                         <th key={h} className="px-3 py-2.5 text-left font-semibold whitespace-nowrap">
                                             {h}
@@ -674,11 +718,17 @@ const SupplierPOCreation = ({ menuData }) => {
                                 {gridData.map((item, idx) => {
                                     const e   = rowEdits[item.IndentListId] || {};
                                     const amt = (parseFloat(e.purchasePrice) || 0) * (parseFloat(e.poQty) || 0);
+                                    const isSelected = !!selectedRows[item.IndentListId];
                                     const row = idx % 2 === 0
                                         ? 'bg-white dark:bg-gray-800'
                                         : 'bg-purple-50/40 dark:bg-purple-900/10';
                                     return (
                                         <tr key={item.IndentListId} className={`${row} border-b border-purple-100 dark:border-purple-800 last:border-0`}>
+                                            <td className="px-3 py-2">
+                                                <input type="checkbox" className="w-4 h-4 accent-indigo-600 cursor-pointer"
+                                                    checked={isSelected}
+                                                    onChange={() => toggleRowSelect(item.IndentListId)} />
+                                            </td>
                                             <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{idx + 1}</td>
                                             <td className="px-3 py-2 font-mono text-gray-800 dark:text-gray-200 whitespace-nowrap">{item.itemcode?.trim()}</td>
                                             <td className="px-3 py-2 text-gray-800 dark:text-gray-200 max-w-[180px]">
@@ -732,8 +782,8 @@ const SupplierPOCreation = ({ menuData }) => {
                             </tbody>
                             <tfoot>
                                 <tr className="bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30">
-                                    <td colSpan={10} className="px-3 py-2.5 text-right font-bold text-gray-700 dark:text-gray-300 text-xs">
-                                        Base Value (excl. tax):
+                                    <td colSpan={11} className="px-3 py-2.5 text-right font-bold text-gray-700 dark:text-gray-300 text-xs">
+                                        Base Value (excl. tax) — selected items only:
                                     </td>
                                     <td className="px-3 py-2.5 text-right font-bold text-lg text-indigo-700 dark:text-indigo-400">
                                         ₹{baseValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -948,8 +998,8 @@ const SupplierPOCreation = ({ menuData }) => {
                                         }}>
                                         <option value="">-- Select Head --</option>
                                         {termHeads.map((h) => {
-                                            const id   = h.HeadId   || h.headId   || h.ID;
-                                            const name = h.HeadName || h.headName || h.Name;
+                                            const id   = h.HeadId   || h.headId   || h.ID   || h.ItemId;
+                                            const name = h.HeadName || h.headName || h.Name || h.ItemHeadName;
                                             return (
                                                 <option key={id} value={id} data-name={name}>{name}</option>
                                             );

@@ -51,6 +51,7 @@ import VerifyLabourCMSPay from '../../pages/HR/VerifyLabourCMSPay';
 import VerifyBulkWorker from '../../pages/HR/VerifyBulkWorker';
 import VerifyWorkerStaffReg from '../../pages/HR/VerifyWorkerStaffReg';
 import VerifyLabourBankChange from '../../pages/HR/VerifyLabourBankChange';
+import VerifyEmpBankChange from '../../pages/HR/VerifyEmpBankChange';
 import VerifyLabourTypeChange from '../../pages/HR/VerifyLabourTypeChange';
 import VerifyHRAdvancePayment from '../../pages/HR/VerifyHRAdvancePayment';
 import VerifyItemCode from '../../pages/Purchase/VerifyItemCode';
@@ -920,6 +921,32 @@ const isLabourBankChangeVerification = (path, category, title, displayName, work
     return isMatch;
 };
 
+const isEmpBankChangeVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/hr/verifyeditempbank',
+        '/hr/verifyempbankchange',
+        '/hr/approveempbankchange',
+        'verifyeditempbank',
+        'employee bank change',
+        'empbankchange',
+    ];
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        category.includes('employee bank change') ||
+        category.includes('empbankchange') ||
+        title.includes('employee bank change') ||
+        title.includes('empbankchange') ||
+        displayName.includes('employee bank change') ||
+        displayName.includes('empbankchange') ||
+        workflowType.includes('employee bank change') ||
+        workflowType.includes('empbankchange');
+    if (isMatch) {
+        console.log('✅ Employee Bank Change Verification detected by:', { path, category, title, displayName, workflowType });
+    } else {
+        console.log('❌ Employee Bank Change Verification not detected. Path:', path);
+    }
+    return isMatch;
+};
+
 const isBulkWorkerVerification = (path, category, title, displayName, workflowType) => {
     const pathMatches = [
         '/hr/verifybulkworker',
@@ -1639,6 +1666,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isLabourBankChangeVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyLabourBankChange');
             return <VerifyLabourBankChange
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // EMPLOYEE BANK CHANGE VERIFICATION
+        // ====================================================================
+        if (isEmpBankChangeVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyEmpBankChange');
+            return <VerifyEmpBankChange
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

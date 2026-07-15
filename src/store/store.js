@@ -128,6 +128,7 @@ import bulkWorkerVerifyReducer from "../slices/HRSlice/bulkWorkerVerificationSli
 import generalPaymentReducer from "../slices/accountsSlice/generalPaymentSlice";
 import labourReportReducer from "../slices/HrReportSlice/labourReportSlice";
 import labourBankChangeReducer from "../slices/HRSlice/labourBankChangeSlice";
+import empBankChangeReducer from "../slices/HRSlice/empBankChangeSlice";
 import itemCodeVerificationReducer from "../slices/purchaseSlice/itemCodeVerificationSlice";
 import labourTypeChangeReducer from "../slices/HRSlice/labourTypeChangeSlice";
 import hrAdvancePayReducer from "../slices/HRSlice/hrAdvancePayVerifySlice";
@@ -269,6 +270,7 @@ const store = configureStore({
     generalPayment:        generalPaymentReducer,
     labourreport:          labourReportReducer,
     labourBankChange:      labourBankChangeReducer,
+    empBankChange:         empBankChangeReducer,
     itemCodeVerification:  itemCodeVerificationReducer,
     labourTypeChange:      labourTypeChangeReducer,
     hrAdvancePay:          hrAdvancePayReducer,

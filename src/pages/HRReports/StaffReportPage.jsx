@@ -27,7 +27,8 @@ import {
     CreditCard,
     IdCard,
     Globe,
-    X
+    X,
+    Edit2
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -52,6 +53,7 @@ import {
 
 // Import Attachment Modal
 import AttachmentModal from '../../components/Inbox/AttachmentModal';
+import EditEmpBankModal from './EditEmpBankModal';
 
 // Tooltip Component
 const Tooltip = ({ children, content }) => {
@@ -75,7 +77,7 @@ const Tooltip = ({ children, content }) => {
 };
 
 // Staff Details Component (Expandable Row Content)
-const StaffDetailsExpanded = ({ staffData, loading, onDocumentView }) => {
+const StaffDetailsExpanded = ({ staffData, loading, onDocumentView, onEditBank }) => {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
@@ -318,10 +320,20 @@ const StaffDetailsExpanded = ({ staffData, loading, onDocumentView }) => {
                 {/* Bank Details */}
                 {(staffData.BankAccountNo || staffData.BankName) && (
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-blue-200 dark:border-blue-700">
-                        <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-4 flex items-center">
-                            <CreditCard className="w-5 h-5 mr-2" />
-                            Bank Details
-                        </h4>
+                        <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-semibold text-blue-800 dark:text-blue-300 flex items-center">
+                                <CreditCard className="w-5 h-5 mr-2" />
+                                Bank Details
+                            </h4>
+                            <button
+                                onClick={() => onEditBank(staffData)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
+                                title="Edit bank details"
+                            >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                Edit
+                            </button>
+                        </div>
                         <div className="space-y-3 text-sm">
                             {staffData.BankName && (
                                 <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
@@ -814,6 +826,7 @@ const StaffReportPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [showDocumentModal, setShowDocumentModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState(null);
+    const [editBankTarget, setEditBankTarget] = useState(null);
 
     // Load initial data
     useEffect(() => {
@@ -929,6 +942,19 @@ const StaffReportPage = () => {
         } catch (error) {
             console.error('Error creating document URL:', error);
             return null;
+        }
+    };
+
+    const handleEditBank = (staffData) => {
+        const fullName = [staffData.FirstName, staffData.MiddleName, staffData.LastName].filter(Boolean).join(' ');
+        setEditBankTarget({ empRefNo: staffData.EmpRefNo, empName: fullName });
+    };
+
+    const handleEditBankSuccess = () => {
+        const empRefNo = editBankTarget?.empRefNo;
+        setEditBankTarget(null);
+        if (empRefNo) {
+            dispatch(fetchStaffDetailsByRefNo({ empRefNo, roleId }));
         }
     };
 
@@ -1212,6 +1238,7 @@ const StaffReportPage = () => {
                                                         staffData={staffDetails?.Data || staffDetails}
                                                         loading={staffDetailsLoading}
                                                         onDocumentView={handleDocumentView}
+                                                        onEditBank={handleEditBank}
                                                     />
                                                 </td>
                                             </tr>
@@ -1281,6 +1308,16 @@ const StaffReportPage = () => {
                     onError={() => {
                         toast.error('Failed to load document');
                     }}
+                />
+            )}
+
+            {/* Edit Bank Modal */}
+            {editBankTarget && (
+                <EditEmpBankModal
+                    empRefNo={editBankTarget.empRefNo}
+                    empName={editBankTarget.empName}
+                    onClose={() => setEditBankTarget(null)}
+                    onSuccess={handleEditBankSuccess}
                 />
             )}
 

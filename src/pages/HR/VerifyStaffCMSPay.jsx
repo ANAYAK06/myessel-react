@@ -7,11 +7,10 @@ import {
     CalendarDays,  Banknote,
     Receipt} from 'lucide-react';
 
-import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
-import ActionButtons from '../../components/Inbox/ActionButtons';
-import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxHeader       from '../../components/Inbox/InboxHeader';
+import ActionButtons     from '../../components/Inbox/ActionButtons';
+import RemarksHistory    from '../../components/Inbox/RemarksHistory';
+import InboxSplitLayout  from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -334,33 +333,6 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
         return matchesSearch && matchesMonth && matchesYear;
     });
 
-    const statsCards = [
-        {
-            icon: Receipt,
-            value: cmsPayInbox.length,
-            label: 'Total Records',
-            color: 'blue'
-        },
-        {
-            icon: Clock,
-            value: cmsPayInbox.length,
-            label: 'Pending Verification',
-            color: 'purple'
-        },
-        {
-            icon: DollarSign,
-            value: cmsPayDetails?.Total ? `₹${cmsPayDetails.Total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
-            label: 'Total Amount',
-            color: 'indigo'
-        },
-        {
-            icon: Users,
-            value: cmsReportData?.length || 0,
-            label: 'Beneficiaries',
-            color: 'violet'
-        }
-    ];
-
     const renderItemCard = (item, isSelected) => {
         return (
             <div className="p-4">
@@ -400,6 +372,30 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
             </div>
         );
     };
+
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px]">
+                CMS: {item.CMSTransactionNo}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[130px]">
+                Consolidate: {item.ConsolidateNo}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[90px]">
+                <Hash className="w-3 h-3" />
+                {item.TransactionRefno}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" />
+                {item.Month} {item.Year}
+            </span>
+            <span className="ml-auto px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium whitespace-nowrap">
+                ₹{item.Total?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+            </span>
+        </div>
+    );
 
     const renderCollapsedItem = (item, isSelected) => (
         <div className="w-full h-full rounded-lg border-2 border-blue-200 dark:border-blue-600 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-800/50 dark:to-purple-800/50 flex items-center justify-center">
@@ -534,7 +530,7 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
         );
     };
 
-    const renderDetailContent = () => {
+    const renderDetailContent = (isPopup = false) => {
         if (!selectedItem) return null;
 
         const displayData = cmsPayDetails || selectedItem;
@@ -731,96 +727,59 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                         options: years
                     }
                 ]}
+                enableViewToggle
             />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                        }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) {
-                            setIsLeftPanelHovered(false);
-                        }
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={inboxLoading}
-                            error={inboxError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No CMS payment records found!',
-                                itemKey: 'CMSTransactionNo',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20'
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div
-                            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
-                            onMouseEnter={() => {
-                                if (selectedItem && !isLeftPanelHovered) {
-                                    setIsLeftPanelHovered(false);
-                                }
-                            }}
-                        >
-                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                                        <Receipt className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedItem ? 'CMS Payment Verification' : 'CMS Payment Details'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Receipt className="w-12 h-12 text-blue-500 dark:text-blue-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No CMS Payment Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a CMS payment record from the list to view details and verify payment information.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: inboxLoading,
+                    error: inboxError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No CMS payment records found!',
+                        itemKey: 'CMSTransactionNo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20'
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(true),
+                    popupConfig: {
+                        title: 'CMS Payment Verification',
+                        icon: Receipt,
+                        headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'CMS Payment Details',
+                        icon: Receipt,
+                        selectedTitle: 'CMS Payment Verification',
+                        emptyTitle: 'No CMS Payment Selected',
+                        emptyMessage: 'Select a CMS payment record from the list to view details and verify payment information.',
+                        headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

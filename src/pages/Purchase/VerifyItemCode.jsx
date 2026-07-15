@@ -7,11 +7,10 @@ import {
     Pencil
 } from 'lucide-react';
 
-import InboxHeader from '../../components/Inbox/InboxHeader';
-import ActionButtons    from '../../components/Inbox/ActionButtons';
-import RemarksHistory   from '../../components/Inbox/RemarksHistory';
-import LeftPanel        from '../../components/Inbox/LeftPanel';
-import RightDetailPanel  from '../../components/Inbox/RightDetailPanel';
+import InboxHeader       from '../../components/Inbox/InboxHeader';
+import ActionButtons     from '../../components/Inbox/ActionButtons';
+import RemarksHistory    from '../../components/Inbox/RemarksHistory';
+import InboxSplitLayout  from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -257,6 +256,27 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                     <Hash className="w-3 h-3" />{item.Rowid}
                 </span>
             </div>
+        </div>
+    );
+
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[200px] truncate">
+                {item.Itemname || '—'}
+            </span>
+            <span className="font-mono text-gray-500 dark:text-gray-400 min-w-[110px]">
+                {item.ItemCode}
+            </span>
+            {item.Basicprice && (
+                <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
+                    ₹ {item.Basicprice}
+                </span>
+            )}
+            <span className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs">
+                <Hash className="w-3 h-3" />{item.Rowid}
+            </span>
         </div>
     );
 
@@ -605,7 +625,7 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
     return (
         <div className="space-y-6">
             <InboxHeader
-                title={InboxTitle || 'Item Code Verification'}
+                title={`${InboxTitle || 'Item Code Verification'} (${inbox.length})`}
                 subtitle={ModuleDisplayName}
                 itemCount={inbox.length}
                 onBackClick={handleBackToInbox}
@@ -618,74 +638,59 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                     value: searchQuery,
                     onChange: (e) => setSearchQuery(e.target.value),
                 }}
+                enableViewToggle
             />
 
-            {/* Main Content */}
-            <div
-                className={`grid transition-all duration-300 ${
-                    isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                }`}
-                onMouseLeave={() => {
-                    if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: setSelectedItem,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: loading.inbox,
+                    error: errors.inbox,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No item codes pending verification.',
+                        itemKey: 'Rowid',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(true),
+                    popupConfig: {
+                        title: 'Item Code Verification',
+                        icon: Package,
+                        headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                    },
                 }}
-            >
-                {/* Left panel */}
-                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                    <LeftPanel
-                        items={filteredItems}
-                        selectedItem={selectedItem}
-                        onItemSelect={setSelectedItem}
-                        renderItem={renderItemCard}
-                        renderCollapsedItem={renderCollapsedItem}
-                        isCollapsed={isLeftPanelCollapsed}
-                        onCollapseToggle={setIsLeftPanelCollapsed}
-                        isHovered={isLeftPanelHovered}
-                        onHoverChange={setIsLeftPanelHovered}
-                        loading={loading.inbox}
-                        error={errors.inbox}
-                        onRefresh={handleRefresh}
-                        config={{
-                            title: 'Pending Verification',
-                            icon: Clock,
-                            emptyMessage: 'No item codes pending verification.',
-                            itemKey: 'Rowid',
-                            enableCollapse: true,
-                            enableRefresh: true,
-                            enableHover: true,
-                            maxHeight: '100%',
-                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
-                        }}
-                        renderPopupContent={(_item) => renderDetailContent(true)}
-                        popupConfig={{
-                            title: 'Item Code Verification',
-                            icon: Package,
-                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
-                        }}
-                    />
-                </div>
-
-                {/* Right panel */}
-                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                    <RightDetailPanel
-                        selectedItem={selectedItem}
-                        loading={loading.detail}
-                        renderContent={renderDetailContent}
-                        config={{
-                            title: 'Item Code Verification',
-                            icon: Package,
-                            selectedTitle: 'Item Code Verification',
-                            emptyTitle: 'No Item Code Selected',
-                            emptyMessage: 'Select an item code from the list to review and verify.',
-                            headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
-                            maxHeight: 'calc(100vh - 200px)',
-                            sticky: true,
-                            stickyTop: '1.5rem',
-                        }}
-                    />
-                </div>
-            </div>
+                right={{
+                    selectedItem: selectedItem,
+                    loading: loading.detail,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Item Code Verification',
+                        icon: Package,
+                        selectedTitle: 'Item Code Verification',
+                        emptyTitle: 'No Item Code Selected',
+                        emptyMessage: 'Select an item code from the list to review and verify.',
+                        headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

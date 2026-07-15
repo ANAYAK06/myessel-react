@@ -10,12 +10,11 @@ import {
 } from 'lucide-react';
 
 // ✅ REUSABLE COMPONENT IMPORTS
-import ActionButtons from '../../components/Inbox/ActionButtons';
-import InboxHeader from '../../components/Inbox/InboxHeader';
-import LeftPanel from '../../components/Inbox/LeftPanel';
-import RightDetailPanel from '../../components/Inbox/RightDetailPanel';
+import ActionButtons     from '../../components/Inbox/ActionButtons';
+import InboxHeader       from '../../components/Inbox/InboxHeader';
+import InboxSplitLayout  from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
-import AttachmentModal from '../../components/Inbox/AttachmentModal';
+import AttachmentModal   from '../../components/Inbox/AttachmentModal';
 
 // ✅ STAFF REGISTRATION VERIFY SLICE IMPORTS
 import {
@@ -541,6 +540,40 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                         <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{staff.EmpRefNo}</span>
                     </div>
                 </div>
+            </div>
+        );
+    };
+
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (staff) => {
+        const priority = getPriority(staff);
+        const priorityColors = {
+            'High':   'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200',
+            'Medium': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200',
+            'Low':    'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200'
+        };
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                    {getFullName(staff)}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 min-w-[130px] truncate">
+                    {staff.DesignatedAs}
+                </span>
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[130px] truncate">
+                    <Building2 className="w-3 h-3" />
+                    {staff.Department}
+                </span>
+                <span className="text-indigo-600 dark:text-indigo-400 font-medium min-w-[100px]">
+                    {staff.Category}
+                </span>
+                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">
+                    {staff.EmpRefNo}
+                </span>
+                <span className={`ml-auto px-2 py-0.5 text-xs rounded-full border whitespace-nowrap ${priorityColors[priority]}`}>
+                    {priority}
+                </span>
             </div>
         );
     };
@@ -1382,72 +1415,59 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                         options: categories
                     }
                 ]}
+                enableViewToggle
             />
 
-            {/* Main Content */}
-            <div
-                className={`grid transition-all duration-300 ${
-                    isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                }`}
-                onMouseLeave={() => {
-                    if (selectedStaff && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredStaff,
+                    selectedItem: selectedStaff,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: staffLoading,
+                    error: staffError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No staff registrations found!',
+                        itemKey: 'Id',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(true),
+                    popupConfig: {
+                        title: 'Staff Registration',
+                        icon: User,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
                 }}
-            >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredStaff}
-                            selectedItem={selectedStaff}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={staffLoading}
-                            error={staffError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No staff registrations found!',
-                                itemKey: 'Id',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
-                            }}
-                            renderPopupContent={(_item) => renderDetailContent(true)}
-                            popupConfig={{
-                                title: 'Staff Registration',
-                                icon: User,
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <RightDetailPanel
-                            selectedItem={selectedStaff}
-                            loading={staffDataLoading}
-                            renderContent={renderDetailContent}
-                            config={{
-                                title: 'Staff Registration',
-                                icon: User,
-                                selectedTitle: 'Staff Registration Details',
-                                emptyTitle: 'No Application Selected',
-                                emptyMessage: 'Select a staff registration from the list to view details and verify.',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                                maxHeight: 'calc(100vh - 200px)',
-                                sticky: true,
-                                stickyTop: '1.5rem',
-                            }}
-                        />
-                    </div>
-                </div>
+                right={{
+                    selectedItem: selectedStaff,
+                    loading: staffDataLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Staff Registration',
+                        icon: User,
+                        selectedTitle: 'Staff Registration Details',
+                        emptyTitle: 'No Application Selected',
+                        emptyMessage: 'Select a staff registration from the list to view details and verify.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
 
             {showDocumentModal && selectedDocument && (
                 <AttachmentModal

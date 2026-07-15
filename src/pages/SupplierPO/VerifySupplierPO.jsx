@@ -930,6 +930,36 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (po) => {
+        const priority = getPriority(po);
+        const amountDisplay = getAmountDisplay(calculatePOTotalAmount(po));
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                    {po.VendorName}
+                </span>
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[110px]">
+                    <Hash className="w-3 h-3" />
+                    {po.PONo}
+                </span>
+                <span className="text-blue-800 dark:text-blue-400 font-medium min-w-[100px]">
+                    ₹{amountDisplay.formatted}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                    Indent: {po.IndentNo?.slice(-6) || 'N/A'}
+                </span>
+                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">
+                    {po.CCCode}
+                </span>
+                <span className={`ml-auto px-2 py-0.5 text-xs rounded-full border whitespace-nowrap ${getPriorityColor(priority)}`}>
+                    {priority}
+                </span>
+            </div>
+        );
+    };
+
     // Detail content — shared by RightDetailPanel and the LeftPanel popup
     const renderDetailContent = (isPopup = false) => {
         if (poDataLoading) {
@@ -1877,6 +1907,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedPO,
                     onItemSelect: handlePOSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: posLoading,
                     error: posError ? 'Error loading POs' : null,

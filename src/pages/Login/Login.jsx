@@ -431,7 +431,7 @@ const Login = () => {
                                     }}
                                 >
                                     <img
-                                        src="/sllogo.png"
+                                        src="/logohaip.png"
                                         alt="Essel Projects logo"
                                         className="w-full h-full object-contain"
                                     />
@@ -447,8 +447,15 @@ const Login = () => {
 
                             {/* ── Tagline ── */}
                             <p className="text-base tracking-wide mb-8
-                                          text-orange-600 dark:text-orange-400">
-                                Built On Integrity. Driven By Performance
+                                         ">
+                                             <span className="text-[#0d1b5e] dark:text-white">
+                                               Built On Integrity. 
+                                            </span>
+                                            <span>
+                                                <span className="text-orange-500 dark:text-orange-400">Driven By Performance </span>
+                                            </span>
+                                           
+                                 
                             </p>
 
                             {/* ── Stats grid ── */}

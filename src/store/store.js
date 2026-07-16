@@ -98,6 +98,8 @@ import clientManfInvoiceReducer from "../slices/accountsSlice/clientManufacturin
 import clientScrapInvoiceReducer from "../slices/accountsSlice/clientScrapSaleInvoiceSlice";
 import clientTradingInvoiceReducer from "../slices/accountsSlice/clientTradingInvoiceSlice";
 import genInvoiceCreationReducer from "../slices/accountsSlice/generalInvoiceCreationSlice";
+import miscInvoiceCreationReducer from "../slices/accountsSlice/miscInvoiceCreationSlice";
+import miscInvoiceVerificationReducer from "../slices/accountsSlice/miscInvoiceVerificationSlice";
 import bankWithdrawalReducer from "../slices/accountsSlice/bankWithdrawalSlice";
 import bankTransferReducer from "../slices/accountsSlice/bankTransferSlice";
 import genInvPaymentReducer from "../slices/accountsSlice/generalInvoicePaymentSlice";
@@ -240,6 +242,8 @@ const store = configureStore({
     clientScrapInvoice:    clientScrapInvoiceReducer,
     clientTradingInvoice:  clientTradingInvoiceReducer,
     genInvoiceCreation:    genInvoiceCreationReducer,
+    miscInvoiceCreation:      miscInvoiceCreationReducer,
+    miscInvoiceVerification:  miscInvoiceVerificationReducer,
     bankWithdrawal:        bankWithdrawalReducer,
     bankTransfer:          bankTransferReducer,
     genInvPayment:         genInvPaymentReducer,

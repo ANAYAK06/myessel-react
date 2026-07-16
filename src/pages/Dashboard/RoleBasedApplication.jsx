@@ -91,6 +91,7 @@ import ClientManufacturingInvoiceCreation from '../Accounts/ClientManufacturingI
 import ClientScrapSaleInvoiceCreation from '../Accounts/ClientScrapSaleInvoiceCreation';
 import ClientTradingInvoiceCreation from '../Accounts/ClientTradingInvoiceCreation';
 import GeneralInvoiceCreation from '../Accounts/GeneralInvoiceCreation';
+import MiscellaneousInvoiceCreation from '../Accounts/MiscellaneousInvoiceCreation';
 import BankWithdrawal from '../Accounts/BankWithdrawal';
 import BankTransfer from '../Accounts/BankTransfer';
 import GeneralInvoicePayment from '../Accounts/GeneralInvoicePayment';
@@ -1767,6 +1768,15 @@ const RoleBasedApplication = () => {
             currentMenuData.name?.toLowerCase().includes('gen invoice')
         )) {
             return <GeneralInvoiceCreation menuData={currentMenuData} />;
+        }
+
+        // Miscellaneous Taxable Invoice Creation
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/Miscellaneous' ||
+            currentMenuData.path?.toLowerCase().includes('miscellaneous') ||
+            currentMenuData.name?.toLowerCase().includes('miscellaneous')
+        )) {
+            return <MiscellaneousInvoiceCreation menuData={currentMenuData} />;
         }
 
         // Client Trading Invoice Creation

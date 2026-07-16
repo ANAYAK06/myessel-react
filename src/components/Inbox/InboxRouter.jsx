@@ -15,6 +15,7 @@ import GeneralInvoiceApproval from '../../pages/GeneralInvoice/GeneralInvoiceApp
 import VerifyCCBudgetAmendment from '../../pages/Budget/VerifyCCBudgetAmendment';
 import VerifyDCABudgetAmendment from '../../pages/Budget/VerifyDCABudgetAmendment';
 import VerifyClientPO from '../../pages/ClientPO/VerifyClientPO';
+import VerifyMiscInvoice from '../../pages/Accounts/VerifyMiscInvoice';
 import LostDamagedItemsVerification from '../../pages/Stock/LostDamagedItemsVerification';
 import VerifyDailyIssue from '../../pages/Stock/VerifyDailyIssue';
 import VerifyScrapSale from '../../pages/Stock/VerifyScrapSale';
@@ -372,6 +373,21 @@ const isClientPOVerification = (path, category, title, displayName, workflowType
         });
     }
     return isMatch;
+};
+
+const isMiscInvoiceVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/accountsapproval/verifymisc',
+        'verifymisc',
+        'miscellaneous invoice',
+        'misc invoice',
+        'miscinvoice',
+    ];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('misc invoice') || category.includes('miscinvoice') || category.includes('miscellaneous') ||
+        title.includes('misc invoice') || title.includes('miscinvoice') || title.includes('miscellaneous') ||
+        displayName.includes('misc invoice') || displayName.includes('miscinvoice') || displayName.includes('miscellaneous') ||
+        workflowType.includes('misc invoice') || workflowType.includes('miscinvoice');
 };
 
 const isLostDamagedItemsVerification = (path, category, title, displayName, workflowType) => {
@@ -1254,6 +1270,17 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isClientPOVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyClientPO');
             return <VerifyClientPO
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // MISCELLANEOUS TAXABLE INVOICE VERIFICATION
+        // ====================================================================
+        if (isMiscInvoiceVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyMiscInvoice');
+            return <VerifyMiscInvoice
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

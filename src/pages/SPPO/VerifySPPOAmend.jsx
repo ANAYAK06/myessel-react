@@ -2,19 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    FileText, Clock, CheckCircle2,
-    AlertCircle, Hash, IndianRupee, Calendar,
-    User, Building2, Package, Pencil,
-    ShoppingCart, Truck, DollarSign, Plus,
-    Minus, TrendingUp, TrendingDown
+    FileText, Clock, IndianRupee, Calendar,
+    User, Package, Pencil, DollarSign, Plus, Minus,
+    TrendingUp, TrendingDown, Loader2,
 } from 'lucide-react';
 
-import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
-import AttachmentModal from '../../components/Inbox/AttachmentModal';
-import ActionButtons from '../../components/Inbox/ActionButtons';
-import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxHeader       from '../../components/Inbox/InboxHeader';
+import AttachmentModal   from '../../components/Inbox/AttachmentModal';
+import ActionButtons     from '../../components/Inbox/ActionButtons';
+import RemarksHistory    from '../../components/Inbox/RemarksHistory';
+import InboxSplitLayout  from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 // S3 Configuration Import
@@ -35,10 +32,7 @@ import {
     selectVerificationSPPOAmendLoading,
     selectSPPOAmendDataLoading,
     selectApproveSPPOAmendLoading,
-    selectPOUploadedDocsLoading,
     selectVerificationSPPOAmendError,
-    selectSPPOAmendDataError,
-    selectApprovalResult,
     setSelectedRoleId,
     setSelectedUserId
 } from '../../slices/spPOSlice/sppoAmendSlice';
@@ -72,13 +66,10 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
 
     const sppoAmendData = useSelector(selectSPPOAmendData);
     const sppoAmendDataLoading = useSelector(selectSPPOAmendDataLoading);
-    const sppoAmendDataError = useSelector(selectSPPOAmendDataError);
 
     const poUploadedDocs = useSelector(selectPOUploadedDocs);
-    const poDocsLoading = useSelector(selectPOUploadedDocsLoading);
 
     const approvalLoading = useSelector(selectApproveSPPOAmendLoading);
-    const approvalResult = useSelector(selectApprovalResult);
 
     const remarks = useSelector(selectRemarks);
     const remarksLoading = useSelector(selectRemarksLoading);
@@ -110,60 +101,34 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
     const ccCodes = [...new Set(sppoAmendList.map(item => item.CCCode))].filter(Boolean);
     const vendors = [...new Set(sppoAmendList.map(item => item.VendorName))].filter(Boolean);
 
-    const getCurrentUser = () => {
-        return userData?.userName || userDetails?.userName || 'system';
-    };
+    const getCurrentUser = () => userData?.userName || userDetails?.userName || 'system';
 
-    const getCurrentRoleName = () => {
-        return userDetails?.roleName || userData?.roleName ||
-            notificationData?.InboxTitle ||
-            notificationData?.ModuleDisplayName ||
-            'SPPO Amendment Verifier';
-    };
+    const getCurrentRoleName = () =>
+        userDetails?.roleName || userData?.roleName ||
+        notificationData?.InboxTitle || notificationData?.ModuleDisplayName || 'SPPO Amendment Verifier';
 
-    const formatApprovalComment = (roleName, userName, comment) => {
-        return `${roleName} : ${userName} : ${comment}`;
-    };
+    const formatApprovalComment = (roleName, userName, comment) => `${roleName} : ${userName} : ${comment}`;
 
     const updateRemarksHistory = (existingRemarks, newRoleName, newUserName, newComment) => {
         const formattedNewComment = formatApprovalComment(newRoleName, newUserName, newComment);
-        if (!existingRemarks || existingRemarks.trim() === '') {
-            return formattedNewComment;
-        }
+        if (!existingRemarks || existingRemarks.trim() === '') return formattedNewComment;
         return `${existingRemarks.trim()}||${formattedNewComment}`;
     };
 
-    /**
-     * Handle viewing attachment using S3 config
-     * @param {string} filePath - File path from API
-     */
     const handleViewAttachment = (filePath) => {
         if (!filePath) {
             toast.error('No attachment available');
-            console.warn('⚠️ View Attachment attempted with no file path');
             return;
         }
-
-        // Build S3 URL using config
         const fullUrl = buildS3Url(S3_FOLDERS.SPPO_AMENDMENTS, filePath);
-
-        console.group('📄 SPPO Amendment Document View');
-        console.log('Original File Path:', filePath);
-        console.log('S3 Folder:', S3_FOLDERS.SPPO_AMENDMENTS);
-        console.log('Generated S3 URL:', fullUrl);
-        console.log('File Name:', getFileName(filePath));
-        console.log('Timestamp:', new Date().toLocaleString());
-        console.groupEnd();
-
         setAttachmentUrl(fullUrl);
         setShowAttachmentModal(true);
     };
 
-    // Initialize - Fetch amendment list
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
     useEffect(() => {
         if (roleId && uid) {
-            console.log('🎯 Initializing SPPO Amendment with:', { roleId, uid });
-
             dispatch(setSelectedRoleId(roleId));
             dispatch(setSelectedUserId(uid));
             dispatch(fetchVerificationSPPOAmend({ roleId, userId: uid }));
@@ -179,30 +144,14 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
         };
     }, [dispatch]);
 
-    // Fetch amendment details when item is selected
     useEffect(() => {
         if (selectedItem?.AmendId) {
-            console.log('🔍 Fetching SPPO Amendment Details:', {
-                amendId: selectedItem.AmendId,
-                roleId,
-                userId: uid
-            });
-
             dispatch(setSelectedAmendId(selectedItem.AmendId));
             dispatch(setSelectedPONo(selectedItem.SPPONo));
+            dispatch(fetchSPPOAmendById({ roleId, amendId: selectedItem.AmendId, userId: uid }));
 
-            dispatch(fetchSPPOAmendById({
-                roleId,
-                amendId: selectedItem.AmendId,
-                userId: uid
-            }));
-
-            // Fetch uploaded documents if PO number exists
             if (selectedItem.SPPONo) {
-                dispatch(fetchPOUploadedDocs({
-                    poNo: selectedItem.SPPONo,
-                    forType: 'Amendment'
-                }));
+                dispatch(fetchPOUploadedDocs({ poNo: selectedItem.SPPONo, forType: 'Amendment' }));
             }
 
             setIsVerified(false);
@@ -211,67 +160,40 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
         }
     }, [selectedItem, roleId, uid, dispatch]);
 
-    // Fetch status list when amendment data is loaded
     useEffect(() => {
-        if (selectedItem && roleId && sppoAmendData) {
-            const moid = sppoAmendData?.MOID;
-            if (moid) {
-                console.log('📊 Fetching Status List for MOID:', moid);
-                dispatch(fetchStatusList({
-                    MOID: moid,
-                    ROID: roleId,
-                    ChkAmt: sppoAmendData?.AmendAmount || 0
-                }));
-            }
+        if (selectedItem && roleId && sppoAmendData?.MOID) {
+            dispatch(fetchStatusList({
+                MOID: sppoAmendData.MOID,
+                ROID: roleId,
+                ChkAmt: sppoAmendData?.AmendAmount || 0
+            }));
         }
     }, [selectedItem, roleId, sppoAmendData, dispatch]);
 
-    // Fetch remarks history
     useEffect(() => {
-        if (selectedItem && sppoAmendData) {
-            const moid = sppoAmendData?.MOID;
-            if (moid) {
-                console.log('💬 Fetching Remarks for MOID:', moid);
-                dispatch(setSelectedMOID(moid));
-                dispatch(fetchRemarks({
-                    trno: sppoAmendData.SPPONo || selectedItem.SPPONo || '',
-                    moid: moid
-                }));
-            }
+        if (selectedItem && sppoAmendData?.MOID) {
+            dispatch(setSelectedMOID(sppoAmendData.MOID));
+            dispatch(fetchRemarks({ trno: sppoAmendData.SPPONo || selectedItem.SPPONo || '', moid: sppoAmendData.MOID }));
         }
     }, [selectedItem, sppoAmendData, dispatch]);
 
     useEffect(() => {
-        if (selectedItem) {
-            setIsLeftPanelCollapsed(true);
-        }
+        if (selectedItem) setIsLeftPanelCollapsed(true);
     }, [selectedItem]);
 
+    // ── Handlers ──────────────────────────────────────────────────────────────
+
     const handleBackToInbox = () => {
-        if (onNavigate) {
-            onNavigate('dashboard', { name: 'Dashboard', type: 'dashboard' });
-        }
+        if (onNavigate) onNavigate('dashboard', { name: 'Dashboard', type: 'dashboard' });
     };
 
     const handleRefresh = () => {
         if (roleId && uid) {
-            console.log('🔄 Refreshing SPPO Amendment list');
-
             dispatch(fetchVerificationSPPOAmend({ roleId, userId: uid }));
-
             if (selectedItem) {
-                dispatch(fetchSPPOAmendById({
-                    roleId,
-                    amendId: selectedItem.AmendId,
-                    userId: uid
-                }));
+                dispatch(fetchSPPOAmendById({ roleId, amendId: selectedItem.AmendId, userId: uid }));
             }
         }
-    };
-
-    const handleItemSelect = (item) => {
-        console.log('✅ Selected SPPO Amendment Item:', item);
-        setSelectedItem(item);
     };
 
     const buildSPPOAmendApprovalPayload = (actionValue) => {
@@ -285,8 +207,7 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
             verificationComment.trim()
         );
 
-        // Payload structure matching backend requirements
-        const payload = {
+        return {
             AmendId: sppoAmendData?.AmendId || selectedItem?.AmendId || 0,
             SPPONo: sppoAmendData?.SPPONo || selectedItem?.SPPONo || '',
             VendorCode: sppoAmendData?.VendorCode || selectedItem?.VendorCode || '',
@@ -301,58 +222,35 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
             SubstractAmount: sppoAmendData?.SubstractAmount || selectedItem?.SubstractAmount || 0,
             Terms: sppoAmendData?.Terms || selectedItem?.Terms || ''
         };
-
-        console.log('📤 SPPO Amendment Approval Payload:', payload);
-        return payload;
     };
 
     const handleActionClick = async (action) => {
-        if (!selectedItem) {
-            toast.error('No SPPO Amendment selected');
-            return;
-        }
-
+        if (!selectedItem) { toast.error('No SPPO Amendment selected'); return; }
         if (!verificationComment || verificationComment.trim() === '') {
             toast.error('Verification comment is mandatory. Please add your comments before proceeding.');
             return;
         }
-
         if (!isVerified) {
             toast.error('Please verify the SPPO amendment details by checking the verification checkbox.');
             return;
         }
 
         let actionValue = action.value || action.text || action.type;
-
         if (!actionValue || actionValue.trim() === '') {
-            const typeToValueMap = {
-                'approve': 'Approve',
-                'verify': 'Verify',
-                'reject': 'Reject',
-                'return': 'Return'
-            };
+            const typeToValueMap = { approve: 'Approve', verify: 'Verify', reject: 'Reject', return: 'Return' };
             actionValue = typeToValueMap[action.type?.toLowerCase()] || 'Verify';
         }
 
         try {
             const payload = buildSPPOAmendApprovalPayload(actionValue);
-
             const result = await dispatch(approveSPPOAmend(payload)).unwrap();
 
-            if (result && typeof result === 'string') {
-                if (result.includes('$')) {
-                    const [status, additionalInfo] = result.split('$');
-                    toast.success(`${action.text || actionValue} completed successfully!`);
-                    if (additionalInfo) {
-                        setTimeout(() => {
-                            toast.info(additionalInfo, { autoClose: 6000 });
-                        }, 500);
-                    }
-                } else {
-                    toast.success(result || `${action.text || actionValue} completed successfully!`);
-                }
-            } else {
+            if (result && typeof result === 'string' && result.includes('$')) {
+                const [, additionalInfo] = result.split('$');
                 toast.success(`${action.text || actionValue} completed successfully!`);
+                if (additionalInfo) setTimeout(() => toast.info(additionalInfo, { autoClose: 6000 }), 500);
+            } else {
+                toast.success((typeof result === 'string' && result) || `${action.text || actionValue} completed successfully!`);
             }
 
             setTimeout(() => {
@@ -366,23 +264,16 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
                 dispatch(resetApprovalData());
                 dispatch(clearApprovalResult());
             }, 1000);
-
         } catch (error) {
-            console.error('❌ Approval Error:', error);
-
             let errorMessage = `Failed to ${action.text?.toLowerCase() || actionValue.toLowerCase()}`;
-
-            if (error && typeof error === 'string') {
-                errorMessage = error;
-            } else if (error?.message) {
-                errorMessage = error.message;
-            } else if (error?.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-
+            if (error && typeof error === 'string') errorMessage = error;
+            else if (error?.message) errorMessage = error.message;
+            else if (error?.response?.data?.message) errorMessage = error.response.data.message;
             toast.error(errorMessage, { autoClose: 10000 });
         }
     };
+
+    // ── Filtered list ─────────────────────────────────────────────────────────
 
     const filteredItems = sppoAmendList.filter(item => {
         const matchesSearch = searchQuery === '' ||
@@ -397,402 +288,241 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
         return matchesSearch && matchesCCCode && matchesVendor;
     });
 
-    const statsCards = [
-        {
-            icon: FileText,
-            value: sppoAmendList.length,
-            label: 'Total Amendments',
-            color: 'indigo'
-        },
-        {
-            icon: Clock,
-            value: sppoAmendList.length,
-            label: 'Pending Verification',
-            color: 'orange'
-        },
-        {
-            icon: IndianRupee,
-            value: sppoAmendData ? `₹${formatIndianCurrency(sppoAmendData.AmendAmount || 0)}` : '₹0',
-            label: 'Amendment Amount',
-            color: 'green'
-        },
-        {
-            icon: DollarSign,
-            value: sppoAmendData ? `₹${formatIndianCurrency(sppoAmendData.POBalance || 0)}` : '₹0',
-            label: 'PO Balance',
-            color: 'purple'
-        }
-    ];
+    // ── Left panel card renderers ─────────────────────────────────────────────
 
-    const renderItemCard = (item, isSelected) => {
+    const renderItemCard = (item) => {
         const hasPlus = (item.AmendPlusValue || 0) > 0;
         const hasMinus = (item.AmendMinusValue || 0) > 0;
 
         return (
             <div className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                    <div className="relative">
-                        <div className="w-12 h-12 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
-                            <Pencil className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-orange-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-11 h-11 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center shrink-0">
+                        <Pencil className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                            {item.VendorName}
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {item.SPPONo} • Amend #{item.AmendId}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.VendorName}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.SPPONo} • Amend #{item.AmendId}</p>
                     </div>
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                    <div className="flex items-center justify-between">
-                        <span className="flex items-center space-x-1">
-                            <Building2 className="w-3 h-3" />
-                            <span>{item.CCCode}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>{item.AmendDate}</span>
-                        </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="flex items-center space-x-1">
-                            <IndianRupee className="w-3 h-3" />
-                            <span>₹{formatIndianCurrency(item.AmendAmount || 0)}</span>
-                        </span>
-                        {(hasPlus || hasMinus) && (
-                            <div className="flex items-center space-x-1">
-                                {hasPlus && <Plus className="w-3 h-3 text-green-600" />}
-                                {hasMinus && <Minus className="w-3 h-3 text-red-600" />}
-                            </div>
-                        )}
-                    </div>
+                <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                        <Calendar className="w-3 h-3" /> {item.AmendDate}
+                    </span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                        ₹{formatIndianCurrency(item.AmendAmount || 0)}
+                        {hasPlus && <Plus className="w-3 h-3 text-green-600" />}
+                        {hasMinus && <Minus className="w-3 h-3 text-red-600" />}
+                    </span>
                 </div>
             </div>
         );
     };
 
-    const renderCollapsedItem = (item, isSelected) => (
-        <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px]">{item.VendorName}</span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[140px]">{item.SPPONo} • #{item.AmendId}</span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[100px]">{item.AmendDate}</span>
+            <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{formatIndianCurrency(item.AmendAmount || 0)}</span>
+        </div>
+    );
+
+    const renderCollapsedItem = () => (
+        <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center">
             <Pencil className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
         </div>
     );
+
+    // ── Detail panel ──────────────────────────────────────────────────────────
 
     const renderDetailContent = () => {
         if (!selectedItem) return null;
 
         const displayData = sppoAmendData || selectedItem;
         const hasDetailedData = !!sppoAmendData;
-
         const hasPlus = (displayData.AmendPlusValue || 0) > 0;
         const hasMinus = (displayData.AmendMinusValue || 0) > 0;
 
         return (
             <div className="space-y-6">
                 {sppoAmendDataLoading && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
-                        <div className="flex items-center space-x-3">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                            <span className="text-blue-700 dark:text-blue-400 text-sm">
-                                Loading amendment details...
-                            </span>
-                        </div>
+                    <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                        <span className="text-sm text-blue-700 dark:text-blue-400">Loading amendment details...</span>
                     </div>
                 )}
 
-                {/* CUSTOM HEADER */}
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-indigo-200 dark:border-indigo-700">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                            <div className="relative">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                                    <Pencil className="w-8 h-8 text-white" />
-                                </div>
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 rounded-full border-3 border-white dark:border-gray-800 flex items-center justify-center">
-                                    <AlertCircle className="w-4 h-4 text-white" />
-                                </div>
+                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 rounded-2xl p-6 border-2 border-indigo-200 dark:border-indigo-700">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shrink-0">
+                                <Pencil className="w-7 h-7 text-white" />
                             </div>
-
-                            <div className="flex-1">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                                    {displayData.VendorName}
-                                </h2>
-                                <p className="text-indigo-600 dark:text-indigo-400 font-semibold mb-3">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{displayData.VendorName}</h2>
+                                <p className="text-indigo-600 dark:text-indigo-400 font-semibold text-sm mt-0.5">
                                     Amendment #{displayData.AmendId} • SPPO: {displayData.SPPONo}
                                 </p>
-
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 mt-3">
                                     <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium">
                                         Service PO Amendment
                                     </span>
                                     {hasPlus && (
-                                        <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium flex items-center space-x-1">
-                                            <Plus className="w-3 h-3" />
-                                            <span>Addition: ₹{formatIndianCurrency(displayData.AmendPlusValue || 0)}</span>
+                                        <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium flex items-center gap-1">
+                                            <Plus className="w-3 h-3" /> Addition: ₹{formatIndianCurrency(displayData.AmendPlusValue || 0)}
                                         </span>
                                     )}
                                     {hasMinus && (
-                                        <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-xs font-medium flex items-center space-x-1">
-                                            <Minus className="w-3 h-3" />
-                                            <span>Deduction: ₹{formatIndianCurrency(displayData.AmendMinusValue || 0)}</span>
+                                        <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-xs font-medium flex items-center gap-1">
+                                            <Minus className="w-3 h-3" /> Deduction: ₹{formatIndianCurrency(displayData.AmendMinusValue || 0)}
                                         </span>
                                     )}
                                     <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-xs font-medium">
                                         Status: {displayData.Status}
                                     </span>
-                                    {displayData.VendorName && (
-                                        <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
-                                            {displayData.VendorName}
-                                        </span>
-                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {hasDetailedData && (
-                            <div className="text-right">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Amendment Amount</p>
-                                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                                    ₹{formatIndianCurrency(sppoAmendData.AmendAmount || 0)}
-                                </p>
-                                <div className="mt-2 space-y-1">
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                                        PO Value: ₹{formatIndianCurrency(sppoAmendData.POValue || 0)}
-                                    </p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                                        PO Balance: ₹{formatIndianCurrency(sppoAmendData.POBalance || 0)}
-                                    </p>
-                                    {sppoAmendData.AmendDate && (
-                                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                                            Amend Date: {sppoAmendData.AmendDate}
-                                        </p>
-                                    )}
-                                </div>
+                            <div className="text-right shrink-0">
+                                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">₹{formatIndianCurrency(sppoAmendData.AmendAmount || 0)}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Amendment Amount</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">PO Value: ₹{formatIndianCurrency(sppoAmendData.POValue || 0)}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-500">PO Balance: ₹{formatIndianCurrency(sppoAmendData.POBalance || 0)}</p>
                             </div>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-5 gap-4 mt-6 pt-6 border-t border-indigo-200 dark:border-indigo-700">
-                        {hasDetailedData && sppoAmendData.MOID && (
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">MOID</p>
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                    {sppoAmendData.MOID}
-                                </p>
-                            </div>
-                        )}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amendment ID</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                {displayData.AmendId}
-                            </p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Amendment ID</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{displayData.AmendId}</p>
                         </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SPPO No</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                {displayData.SPPONo}
-                            </p>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">SPPO No</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{displayData.SPPONo}</p>
                         </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Vendor Code</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                {displayData.VendorCode}
-                            </p>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Vendor Code</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{displayData.VendorCode}</p>
                         </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Cost Center</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                {displayData.CCCode}
-                            </p>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Cost Center</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{displayData.CCCode}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Amendment Value Breakdown */}
                 {hasDetailedData && (displayData.AmendPlusValue > 0 || displayData.AmendMinusValue > 0 || displayData.AmendTotalValue > 0) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-                            <TrendingUp className="w-5 h-5 text-indigo-600" />
-                            <span>Amendment Value Breakdown</span>
-                        </h3>
+                    <div className="rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide mb-3 text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5" /> Amendment Value Breakdown
+                        </p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {displayData.AmendPlusValue > 0 && (
-                                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                        <Plus className="w-4 h-4 text-green-600" />
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Addition</p>
-                                    </div>
-                                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                                        ₹{formatIndianCurrency(displayData.AmendPlusValue)}
-                                    </p>
+                                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-1"><Plus className="w-3 h-3 text-green-600" /> Addition</p>
+                                    <p className="text-sm font-bold text-green-600 dark:text-green-400">₹{formatIndianCurrency(displayData.AmendPlusValue)}</p>
                                 </div>
                             )}
                             {displayData.AmendMinusValue > 0 && (
-                                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                        <Minus className="w-4 h-4 text-red-600" />
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Deduction</p>
-                                    </div>
-                                    <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                                        ₹{formatIndianCurrency(displayData.AmendMinusValue)}
-                                    </p>
+                                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-700">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-1"><Minus className="w-3 h-3 text-red-600" /> Deduction</p>
+                                    <p className="text-sm font-bold text-red-600 dark:text-red-400">₹{formatIndianCurrency(displayData.AmendMinusValue)}</p>
                                 </div>
                             )}
                             {displayData.SubstractAmount > 0 && (
-                                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                        <TrendingDown className="w-4 h-4 text-orange-600" />
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Subtract Amount</p>
-                                    </div>
-                                    <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                                        ₹{formatIndianCurrency(displayData.SubstractAmount)}
-                                    </p>
+                                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 border border-orange-200 dark:border-orange-700">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-1"><TrendingDown className="w-3 h-3 text-orange-600" /> Subtract Amount</p>
+                                    <p className="text-sm font-bold text-orange-600 dark:text-orange-400">₹{formatIndianCurrency(displayData.SubstractAmount)}</p>
                                 </div>
                             )}
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-700">
-                                <div className="flex items-center space-x-2 mb-2">
-                                    <IndianRupee className="w-4 h-4 text-indigo-600" />
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Amendment</p>
-                                </div>
-                                <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                                    ₹{formatIndianCurrency(displayData.AmendTotalValue || displayData.AmendAmount)}
-                                </p>
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-200 dark:border-indigo-700">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-1"><IndianRupee className="w-3 h-3 text-indigo-600" /> Total Amendment</p>
+                                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(displayData.AmendTotalValue || displayData.AmendAmount)}</p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* PO Value Comparison */}
                 {hasDetailedData && (displayData.OldPOValue > 0 || displayData.TotalPOValue > 0) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-                            <DollarSign className="w-5 h-5 text-purple-600" />
-                            <span>PO Value Comparison</span>
-                        </h3>
+                    <div className="rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide mb-3 text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <DollarSign className="w-3.5 h-3.5" /> PO Value Comparison
+                        </p>
                         <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Old PO Value</p>
-                                <p className="text-base font-semibold text-gray-900 dark:text-white">
-                                    ₹{formatIndianCurrency(displayData.OldPOValue || 0)}
-                                </p>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Old PO Value</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">₹{formatIndianCurrency(displayData.OldPOValue || 0)}</p>
                             </div>
-                            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Current PO Value</p>
-                                <p className="text-base font-semibold text-purple-600 dark:text-purple-400">
-                                    ₹{formatIndianCurrency(displayData.POValue || 0)}
-                                </p>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Current PO Value</p>
+                                <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(displayData.POValue || 0)}</p>
                             </div>
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-700">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">PO Balance</p>
-                                <p className="text-base font-semibold text-indigo-600 dark:text-indigo-400">
-                                    ₹{formatIndianCurrency(displayData.POBalance || 0)}
-                                </p>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">PO Balance</p>
+                                <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">₹{formatIndianCurrency(displayData.POBalance || 0)}</p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Item Details */}
                 {hasDetailedData && sppoAmendData.ItemDescList && sppoAmendData.ItemDescList.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                    <Package className="w-5 h-5 text-white" />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                    Amendment Item Details
-                                </h3>
-                            </div>
+                    <div className="rounded-xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/10 p-4">
+                        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
+                                <Package className="w-3.5 h-3.5" /> Amendment Item Details
+                            </p>
                             {sppoAmendData.FilePath && (
                                 <button
-                                    onClick={() => {
-                                        console.log('🔘 Main Document View Button Clicked');
-                                        console.log('File Path:', sppoAmendData.FilePath);
-                                        handleViewAttachment(sppoAmendData.FilePath);
-                                    }}
-                                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all text-sm font-medium shadow-md hover:shadow-lg flex items-center space-x-2"
+                                    onClick={() => handleViewAttachment(sppoAmendData.FilePath)}
+                                    className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-lg hover:from-indigo-700 hover:to-violet-700 transition-all text-xs font-semibold shadow-sm flex items-center gap-1.5"
                                 >
-                                    <FileText className="w-4 h-4" />
-                                    <span>View Document</span>
+                                    <FileText className="w-3.5 h-3.5" /> View Document
                                 </button>
                             )}
                         </div>
 
-                        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Description
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Unit
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Current Qty
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Amend Qty
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Rate
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Client Rate
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Amount
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Type
-                                        </th>
+                        <div className="overflow-x-auto rounded-lg border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-800">
+                            <table className="w-full text-xs">
+                                <thead>
+                                    <tr className="bg-indigo-100/60 dark:bg-indigo-900/20">
+                                        <th className="px-3 py-2 text-left font-bold text-indigo-700 dark:text-indigo-300 uppercase">Description</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Unit</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Current Qty</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Amend Qty</th>
+                                        <th className="px-3 py-2 text-right font-bold text-indigo-700 dark:text-indigo-300 uppercase">Rate</th>
+                                        <th className="px-3 py-2 text-right font-bold text-indigo-700 dark:text-indigo-300 uppercase">Client Rate</th>
+                                        <th className="px-3 py-2 text-right font-bold text-indigo-700 dark:text-indigo-300 uppercase">Amount</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Type</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <tbody>
                                     {sppoAmendData.ItemDescList.map((item, index) => (
-                                        <tr key={item.SPPOItemId || index} className="hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors">
-                                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                                {item.Description}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-center font-medium text-gray-900 dark:text-white">
-                                                {item.Unit}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-center font-medium text-gray-900 dark:text-white">
-                                                {item.CurrentQuantity || item.Quantity || '-'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-center">
+                                        <tr key={item.SPPOItemId || index} className="border-t border-indigo-100 dark:border-indigo-900/30">
+                                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{item.Description}</td>
+                                            <td className="px-3 py-2 text-center font-medium text-gray-900 dark:text-white">{item.Unit}</td>
+                                            <td className="px-3 py-2 text-center font-medium text-gray-900 dark:text-white">{item.CurrentQuantity || item.Quantity || '-'}</td>
+                                            <td className="px-3 py-2 text-center">
                                                 {item.AmendQuantity ? (
-                                                    <span className={`font-medium ${item.AmendQuantity > 0
-                                                        ? 'text-green-600 dark:text-green-400'
-                                                        : 'text-red-600 dark:text-red-400'
-                                                        }`}>
+                                                    <span className={`font-medium ${item.AmendQuantity > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                                         {item.AmendQuantity > 0 ? '+' : ''}{item.AmendQuantity}
                                                     </span>
                                                 ) : '-'}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-right font-medium text-indigo-700 dark:text-indigo-400">
-                                                ₹{formatIndianCurrency(item.Rate || item.PRWRate || 0)}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-right font-medium text-purple-700 dark:text-purple-400">
-                                                ₹{formatIndianCurrency(item.ClientRate || 0)}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">
-                                                ₹{formatIndianCurrency(item.Amount || 0)}
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
+                                            <td className="px-3 py-2 text-right font-medium text-indigo-700 dark:text-indigo-400">₹{formatIndianCurrency(item.Rate || item.PRWRate || 0)}</td>
+                                            <td className="px-3 py-2 text-right font-medium text-violet-700 dark:text-violet-400">₹{formatIndianCurrency(item.ClientRate || 0)}</td>
+                                            <td className="px-3 py-2 text-right font-bold text-gray-900 dark:text-white">₹{formatIndianCurrency(item.Amount || 0)}</td>
+                                            <td className="px-3 py-2 text-center">
                                                 {item.POType && (
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.POType.toLowerCase() === 'add'
-                                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                                                        }`}>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.POType.toLowerCase() === 'add' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
                                                         {item.POType}
                                                     </span>
                                                 )}
                                                 {item.ItemStatus && (
-                                                    <span className="ml-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-medium">
+                                                    <span className="ml-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-medium">
                                                         {item.ItemStatus}
                                                     </span>
                                                 )}
@@ -805,124 +535,73 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
                     </div>
                 )}
 
-                {/* Terms & Conditions */}
                 {hasDetailedData && (sppoAmendData.Terms || sppoAmendData.OldTerms) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-                            <FileText className="w-5 h-5 text-indigo-600" />
-                            <span>Terms & Conditions</span>
-                        </h3>
-
+                    <div className="rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide mb-3 text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5" /> Terms &amp; Conditions
+                        </p>
                         {sppoAmendData.OldTerms && (
-                            <div className="mb-4">
-                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Original Terms:</p>
-                                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                        {sppoAmendData.OldTerms.split('|').filter(Boolean).join('\n• ')}
-                                    </p>
-                                </div>
+                            <div className="mb-3">
+                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Original Terms:</p>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                                    {sppoAmendData.OldTerms.split('|').filter(Boolean).join('\n• ')}
+                                </p>
                             </div>
                         )}
-
                         {sppoAmendData.Terms && sppoAmendData.Terms !== sppoAmendData.OldTerms && (
                             <div>
-                                <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-2">Amended Terms:</p>
-                                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-700">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                        {sppoAmendData.Terms.split('|').filter(Boolean).join('\n• ')}
-                                    </p>
-                                </div>
+                                <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-1.5">Amended Terms:</p>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-200 dark:border-indigo-700">
+                                    {sppoAmendData.Terms.split('|').filter(Boolean).join('\n• ')}
+                                </p>
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* Approval History */}
                 {hasDetailedData && sppoAmendData.ApprovedUser && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-                            <User className="w-5 h-5 text-green-600" />
-                            <span>Approved By</span>
-                        </h3>
-                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
-                            <p className="text-sm text-gray-700 dark:text-gray-300">
-                                {sppoAmendData.ApprovedUser}
-                            </p>
-                        </div>
+                    <div className="rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide mb-2 text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5" /> Approved By
+                        </p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                            {sppoAmendData.ApprovedUser}
+                        </p>
                     </div>
                 )}
 
-                {/* Uploaded Documents */}
-                {/* Uploaded Documents */}
                 {poUploadedDocs && poUploadedDocs.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-                            <FileText className="w-5 h-5 text-blue-600" />
-                            <span>Uploaded Documents ({poUploadedDocs.length})</span>
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide mb-3 text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5" /> Uploaded Documents ({poUploadedDocs.length})
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {poUploadedDocs.map((doc, index) => {
-                                // Check if Path exists and is not null
-                                if (!doc.Path) {
-                                    console.log(`⚠️ Document #${index + 1} has no path:`, doc);
-                                    return null; // Skip documents without Path
-                                }
-
-                                // Build S3 URL using the Path field
-                                const docUrl = buildS3Url(S3_FOLDERS.SPPO_AMENDMENTS, doc.Path);
+                                if (!doc.Path) return null;
                                 const fileName = getFileName(doc.Path) || `Document ${index + 1}`;
-
                                 return (
-                                    <div
-                                        key={index}
-                                        className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                                    >
-                                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                            <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                                    <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                            <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                    {fileName}
-                                                </p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${doc.POType === 'Amend'
-                                                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                                                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                                        }`}>
+                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{fileName}</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${doc.POType === 'Amend' ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
                                                         {doc.POType}
                                                     </span>
-                                                    {doc.For && (
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                            {doc.For}
-                                                        </span>
-                                                    )}
-                                                    {doc.POCount > 0 && (
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                            Count: {doc.POCount}
-                                                        </span>
-                                                    )}
+                                                    {doc.For && <span className="text-xs text-gray-500 dark:text-gray-400">{doc.For}</span>}
                                                 </div>
                                             </div>
                                         </div>
                                         <button
-                                            onClick={() => {
-                                                console.log(`🔘 Uploaded Document #${index + 1} View Button Clicked`);
-                                                console.log('Document Info:', {
-                                                    fileName,
-                                                    path: doc.Path,
-                                                    poType: doc.POType,
-                                                    poNo: doc.PONO,
-                                                    for: doc.For,
-                                                    generatedUrl: docUrl
-                                                });
-                                                handleViewAttachment(doc.Path);
-                                            }}
-                                            className="ml-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium flex-shrink-0"
+                                            onClick={() => handleViewAttachment(doc.Path)}
+                                            className="ml-2 px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-medium shrink-0"
                                         >
                                             View
                                         </button>
                                     </div>
                                 );
-                            }).filter(Boolean)} {/* Filter out null entries */}
+                            }).filter(Boolean)}
                         </div>
                     </div>
                 )}
@@ -951,29 +630,23 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
                         showCharCount: true,
                         validationStyle: 'dynamic',
                         checkboxGradient: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
-                        commentGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                        commentBorder: 'border-indigo-200 dark:border-indigo-700'
+                        commentGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                        commentBorder: 'border-indigo-200 dark:border-indigo-700',
                     }}
                 />
 
                 {statusLoading ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-center space-x-3">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                            <span className="text-gray-600 dark:text-gray-400">Loading actions...</span>
-                        </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-3">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                        <span className="text-gray-600 dark:text-gray-400">Loading actions...</span>
                     </div>
                 ) : statusError ? (
-                    <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 border border-red-200 dark:border-red-700">
-                        <p className="text-red-600 dark:text-red-400 text-center">
-                            ⚠️ Error loading actions: {statusError}
-                        </p>
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-5 border border-red-200 dark:border-red-700 text-center text-sm text-red-600 dark:text-red-400">
+                        Error loading actions: {statusError}
                     </div>
-                ) : !hasActions || !enabledActions || enabledActions.length === 0 ? (
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-6 border border-yellow-200 dark:border-yellow-700">
-                        <p className="text-yellow-700 dark:text-yellow-400 text-center">
-                            ℹ️ No actions available for this SPPO amendment
-                        </p>
+                ) : !hasActions || !enabledActions?.length ? (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-5 border border-yellow-200 dark:border-yellow-700 text-center text-sm text-yellow-700 dark:text-yellow-400">
+                        No actions available for this SPPO amendment
                     </div>
                 ) : (
                     <ActionButtons
@@ -990,8 +663,10 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // ── Main render ───────────────────────────────────────────────────────────
+
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'SPPO Amendment'} (${sppoAmendList.length})`}
                 subtitle={ModuleDisplayName}
@@ -1004,115 +679,65 @@ const VerifySPPOAmend = ({ notificationData, onNavigate }) => {
                     enabled: true,
                     placeholder: 'Search by SPPO no, amend ID, vendor, CC code...',
                     value: searchQuery,
-                    onChange: (e) => setSearchQuery(e.target.value)
+                    onChange: (e) => setSearchQuery(e.target.value),
                 }}
                 filters={[
-                    {
-                        value: filterCCCode,
-                        onChange: (e) => setFilterCCCode(e.target.value),
-                        defaultLabel: 'All Cost Centers',
-                        options: ccCodes
-                    },
-                    {
-                        value: filterVendor,
-                        onChange: (e) => setFilterVendor(e.target.value),
-                        defaultLabel: 'All Vendors',
-                        options: vendors
-                    }
+                    { value: filterCCCode, onChange: (e) => setFilterCCCode(e.target.value), defaultValue: 'All', defaultLabel: 'All Cost Centers', options: ccCodes },
+                    { value: filterVendor, onChange: (e) => setFilterVendor(e.target.value), defaultValue: 'All', defaultLabel: 'All Vendors', options: vendors },
                 ]}
-                className="bg-gradient-to-r from-indigo-600 via-purple-500 to-purple-600"
+                enableViewToggle
             />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <div
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                        }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) {
-                            setIsLeftPanelHovered(false);
-                        }
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={sppoAmendLoading}
-                            error={sppoAmendError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Amendments',
-                                icon: Clock,
-                                emptyMessage: 'No SPPO amendments found!',
-                                itemKey: 'AmendId',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div
-                            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
-                            onMouseEnter={() => {
-                                if (selectedItem && !isLeftPanelHovered) {
-                                    setIsLeftPanelHovered(false);
-                                }
-                            }}
-                        >
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                        <Pencil className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedItem ? 'SPPO Amendment Verification' : 'Amendment Details'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Pencil className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Amendment Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select an amendment from the list to view details and take action.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: setSelectedItem,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: sppoAmendLoading,
+                    error: sppoAmendError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Amendments',
+                        icon: Clock,
+                        emptyMessage: 'No SPPO amendments found!',
+                        itemKey: 'AmendId',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'SPPO Amendment Verification',
+                        icon: Pencil,
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: sppoAmendDataLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Amendment Details',
+                        icon: Pencil,
+                        selectedTitle: 'SPPO Amendment Verification',
+                        emptyTitle: 'No Amendment Selected',
+                        emptyMessage: 'Select an amendment from the list to view details and take action.',
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
 
             <AttachmentModal
                 isOpen={showAttachmentModal}

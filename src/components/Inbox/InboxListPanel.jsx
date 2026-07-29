@@ -157,6 +157,7 @@ const InboxListPanel = ({
                     title={popupConfig?.title || mergedConfig.title}
                     icon={popupConfig?.icon || IconComponent}
                     headerGradient={popupConfig?.headerGradient}
+                    maxWidth={popupConfig?.maxWidth}
                 />
             )}
         </>

@@ -21,6 +21,7 @@ import { X } from 'lucide-react';
  * @param {string} title - Popup header title
  * @param {React.ComponentType} icon - Icon component shown in the header
  * @param {string} headerGradient - Tailwind gradient classes for the header background
+ * @param {string} maxWidth - Tailwind max-width class for the modal (default max-w-4xl)
  */
 const DetailPopupModal = ({
     item,
@@ -28,7 +29,8 @@ const DetailPopupModal = ({
     renderContent,
     title = 'Detail View',
     icon: Icon,
-    headerGradient = 'from-[#0d1b5e]/5 to-orange-50/30 dark:from-[#0d1b5e]/20 dark:to-gray-800'
+    headerGradient = 'from-[#0d1b5e]/5 to-orange-50/30 dark:from-[#0d1b5e]/20 dark:to-gray-800',
+    maxWidth = 'max-w-4xl'
 }) => {
     const shouldShow = Boolean(item && renderContent);
     const content = shouldShow ? renderContent(item) : null;
@@ -51,7 +53,7 @@ const DetailPopupModal = ({
 
             {/* Modal */}
             <div
-                className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+                className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full ${maxWidth} max-h-[90vh] flex flex-col overflow-hidden`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Modal Header */}

@@ -100,6 +100,8 @@ import clientTradingInvoiceReducer from "../slices/accountsSlice/clientTradingIn
 import genInvoiceCreationReducer from "../slices/accountsSlice/generalInvoiceCreationSlice";
 import miscInvoiceCreationReducer from "../slices/accountsSlice/miscInvoiceCreationSlice";
 import miscInvoiceVerificationReducer from "../slices/accountsSlice/miscInvoiceVerificationSlice";
+import miscPaymentReducer from "../slices/accountsSlice/miscPaymentSlice";
+import miscPaymentVerificationReducer from "../slices/accountsSlice/miscPaymentVerificationSlice";
 import bankWithdrawalReducer from "../slices/accountsSlice/bankWithdrawalSlice";
 import bankTransferReducer from "../slices/accountsSlice/bankTransferSlice";
 import genInvPaymentReducer from "../slices/accountsSlice/generalInvoicePaymentSlice";
@@ -113,6 +115,11 @@ import vendorCMSPaymentReducer from "../slices/purchaseSlice/vendorCMSPaymentSli
 import vendorTDSPaymentReducer from "../slices/purchaseSlice/vendorTDSPaymentSlice";
 import boeSettlementReducer from "../slices/purchaseSlice/boeSettlementSlice";
 import clientBadDebtReducer from "../slices/accountsSlice/clientBadDebtSlice";
+import clientReceiptReducer from "../slices/accountsSlice/clientReceiptSlice";
+import clientRecievableVerificationReducer from "../slices/accountsSlice/clientRecievableVerificationSlice";
+import advancePaymentVerificationReducer from "../slices/accountsSlice/advancePaymentVerificationSlice";
+import retentionPaymentVerificationReducer from "../slices/accountsSlice/retentionPaymentVerificationSlice";
+import holdPaymentVerificationReducer from "../slices/accountsSlice/holdPaymentVerificationSlice";
 import journalVoucherReducer from "../slices/accountsSlice/journalVoucherSlice";
 import creditDebitNoteReducer from "../slices/purchaseSlice/creditDebitNoteSlice";
 import lcbgAmendReducer from "../slices/purchaseSlice/lcbgAmendSlice";
@@ -244,6 +251,8 @@ const store = configureStore({
     genInvoiceCreation:    genInvoiceCreationReducer,
     miscInvoiceCreation:      miscInvoiceCreationReducer,
     miscInvoiceVerification:  miscInvoiceVerificationReducer,
+    miscPayment:              miscPaymentReducer,
+    miscPaymentVerification:  miscPaymentVerificationReducer,
     bankWithdrawal:        bankWithdrawalReducer,
     bankTransfer:          bankTransferReducer,
     genInvPayment:         genInvPaymentReducer,
@@ -257,6 +266,11 @@ const store = configureStore({
     vendorTDSPayment:      vendorTDSPaymentReducer,
     boeSettlement:         boeSettlementReducer,
     clientBadDebt:         clientBadDebtReducer,
+    clientReceipt:         clientReceiptReducer,
+    clientRecievableVerification: clientRecievableVerificationReducer,
+    advancePaymentVerification:   advancePaymentVerificationReducer,
+    retentionPaymentVerification: retentionPaymentVerificationReducer,
+    holdPaymentVerification:      holdPaymentVerificationReducer,
     journalVoucher:        journalVoucherReducer,
     creditDebitNote:       creditDebitNoteReducer,
     lcbgAmend:             lcbgAmendReducer,

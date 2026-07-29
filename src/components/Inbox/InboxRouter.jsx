@@ -16,6 +16,7 @@ import VerifyCCBudgetAmendment from '../../pages/Budget/VerifyCCBudgetAmendment'
 import VerifyDCABudgetAmendment from '../../pages/Budget/VerifyDCABudgetAmendment';
 import VerifyClientPO from '../../pages/ClientPO/VerifyClientPO';
 import VerifyMiscInvoice from '../../pages/Accounts/VerifyMiscInvoice';
+import VerifyMiscPayment from '../../pages/Accounts/VerifyMiscPayment';
 import LostDamagedItemsVerification from '../../pages/Stock/LostDamagedItemsVerification';
 import VerifyDailyIssue from '../../pages/Stock/VerifyDailyIssue';
 import VerifyScrapSale from '../../pages/Stock/VerifyScrapSale';
@@ -57,6 +58,10 @@ import VerifyLabourTypeChange from '../../pages/HR/VerifyLabourTypeChange';
 import VerifyHRAdvancePayment from '../../pages/HR/VerifyHRAdvancePayment';
 import VerifyItemCode from '../../pages/Purchase/VerifyItemCode';
 import VerifyIndentCreation from '../../pages/Purchase/VerifyIndentCreation';
+import VerifyClientRecievable from '../../pages/Accounts/VerifyClientRecievable';
+import VerifyAdvancePayment from '../../pages/Accounts/VerifyAdvancePayment';
+import VerifyRetentionPayment from '../../pages/Accounts/VerifyRetentionPayment';
+import VerifyHoldPayment from '../../pages/Accounts/VerifyHoldPayment';
 
 
 // ============================================================================
@@ -375,6 +380,23 @@ const isClientPOVerification = (path, category, title, displayName, workflowType
     return isMatch;
 };
 
+// Must be matched before isMiscInvoiceVerification, whose 'verifymisc' substring check and
+// 'miscellaneous' category/title check would otherwise also swallow this path.
+const isMiscPaymentVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/accountsapproval/verifymiscpayment',
+        'verifymiscpayment',
+        'miscellaneous payment',
+        'misc payment',
+        'miscpayment',
+    ];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('misc payment') || category.includes('miscpayment') ||
+        title.includes('misc payment') || title.includes('miscpayment') ||
+        displayName.includes('misc payment') || displayName.includes('miscpayment') ||
+        workflowType.includes('misc payment') || workflowType.includes('miscpayment');
+};
+
 const isMiscInvoiceVerification = (path, category, title, displayName, workflowType) => {
     const pathMatches = [
         '/accountsapproval/verifymisc',
@@ -388,6 +410,44 @@ const isMiscInvoiceVerification = (path, category, title, displayName, workflowT
         title.includes('misc invoice') || title.includes('miscinvoice') || title.includes('miscellaneous') ||
         displayName.includes('misc invoice') || displayName.includes('miscinvoice') || displayName.includes('miscellaneous') ||
         workflowType.includes('misc invoice') || workflowType.includes('miscinvoice');
+};
+
+// Must be matched before the generic "advance"/HR catch-alls further down, which would
+// otherwise swallow this path since it also contains the substring "advance".
+const isClientRecievableVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = ['accountsapproval/verifyclientrecievable', 'verifyclientrecievable', 'client receipt verification'];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('client receipt') || category.includes('clientrecievable') ||
+        title.includes('client receipt') || title.includes('clientrecievable') ||
+        displayName.includes('client receipt') || displayName.includes('clientrecievable') ||
+        workflowType.includes('clientrecievable');
+};
+
+const isAdvancePaymentVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = ['accountsapproval/verifyadvancepayment', 'verifyadvancepayment', 'advance payment verification'];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('advance payment verification') || category.includes('verifyadvancepayment') ||
+        title.includes('advance payment verification') || title.includes('verifyadvancepayment') ||
+        displayName.includes('advance payment verification') || displayName.includes('verifyadvancepayment') ||
+        workflowType.includes('advancepaymentverification');
+};
+
+const isRetentionPaymentVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = ['accountsapproval/verifyretentionpayment', 'verifyretentionpayment', 'retention payment verification'];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('retention payment') || category.includes('verifyretentionpayment') ||
+        title.includes('retention payment') || title.includes('verifyretentionpayment') ||
+        displayName.includes('retention payment') || displayName.includes('verifyretentionpayment') ||
+        workflowType.includes('retentionpayment');
+};
+
+const isHoldPaymentVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = ['accountsapproval/verifyholdpayment', 'verifyholdpayment', 'hold payment verification'];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('hold payment') || category.includes('verifyholdpayment') ||
+        title.includes('hold payment') || title.includes('verifyholdpayment') ||
+        displayName.includes('hold payment') || displayName.includes('verifyholdpayment') ||
+        workflowType.includes('holdpayment');
 };
 
 const isLostDamagedItemsVerification = (path, category, title, displayName, workflowType) => {
@@ -1276,11 +1336,64 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         }
         // ====================================================================
 
+        // MISCELLANEOUS PAYMENT VERIFICATION (must precede Misc Invoice check below —
+        // its path/category/title substrings would otherwise also match this route)
+        // ====================================================================
+        if (isMiscPaymentVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyMiscPayment');
+            return <VerifyMiscPayment
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
         // MISCELLANEOUS TAXABLE INVOICE VERIFICATION
         // ====================================================================
         if (isMiscInvoiceVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyMiscInvoice');
             return <VerifyMiscInvoice
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // CLIENT RECEIPT (INVOICE SERVICE) VERIFICATION
+        // ====================================================================
+        if (isClientRecievableVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyClientRecievable');
+            return <VerifyClientRecievable
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ADVANCE PAYMENT VERIFICATION
+        // ====================================================================
+        if (isAdvancePaymentVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyAdvancePayment');
+            return <VerifyAdvancePayment
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // RETENTION PAYMENT VERIFICATION
+        // ====================================================================
+        if (isRetentionPaymentVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyRetentionPayment');
+            return <VerifyRetentionPayment
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // HOLD PAYMENT VERIFICATION
+        // ====================================================================
+        if (isHoldPaymentVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyHoldPayment');
+            return <VerifyHoldPayment
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

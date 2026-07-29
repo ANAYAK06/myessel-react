@@ -92,6 +92,7 @@ import ClientScrapSaleInvoiceCreation from '../Accounts/ClientScrapSaleInvoiceCr
 import ClientTradingInvoiceCreation from '../Accounts/ClientTradingInvoiceCreation';
 import GeneralInvoiceCreation from '../Accounts/GeneralInvoiceCreation';
 import MiscellaneousInvoiceCreation from '../Accounts/MiscellaneousInvoiceCreation';
+import MiscellaneousPayment from '../Accounts/MiscellaneousPayment';
 import BankWithdrawal from '../Accounts/BankWithdrawal';
 import BankTransfer from '../Accounts/BankTransfer';
 import GeneralInvoicePayment from '../Accounts/GeneralInvoicePayment';
@@ -107,6 +108,7 @@ import VendorCMSPayment from '../Purchase/VendorCMSPayment';
 import VendorTDSPayment from '../Purchase/VendorTDSPayment';
 import BOESettlement from '../Purchase/BOESettlement';
 import ClientBadDebtReceivables from '../Accounts/ClientBadDebtReceivables';
+import ClientReceipt from '../Accounts/ClientReceipt';
 import JournalVoucherCreation from '../Accounts/JournalVoucherCreation';
 import CreditDebitNote from '../Purchase/CreditDebitNote';
 import LCBGAmend from '../Purchase/LCBGAmend';
@@ -639,6 +641,23 @@ const RoleBasedApplication = () => {
             name.includes('writeoff') ||
             name.includes('write off receivable') ||
             route.includes('clientbaddebt')
+        );
+    };
+
+    // Check if menu item should route to Client Receipt
+    const isClientReceiptPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/accounts/clientrecievables' ||
+            path.includes('clientrecievables') ||
+            path.includes('clientreceivables') ||
+            name.includes('client receipt') ||
+            name.includes('clientreceipt') ||
+            route.includes('clientrecievables') ||
+            route.includes('clientreceipt')
         );
     };
 
@@ -1770,6 +1789,17 @@ const RoleBasedApplication = () => {
             return <GeneralInvoiceCreation menuData={currentMenuData} />;
         }
 
+        // Miscellaneous Payment (bank receipt against a misc invoice — checked BEFORE
+        // Miscellaneous Invoice Creation below to avoid the 'miscellaneous' name collision)
+        if (currentMenuData && (
+            currentMenuData.path === '/Accounts/MiscellaneousPayment' ||
+            currentMenuData.path?.toLowerCase().includes('miscellaneouspayment') ||
+            currentMenuData.name?.toLowerCase().includes('miscellaneous payment') ||
+            currentMenuData.name?.toLowerCase().includes('miscpayment')
+        )) {
+            return <MiscellaneousPayment menuData={currentMenuData} />;
+        }
+
         // Miscellaneous Taxable Invoice Creation
         if (currentMenuData && (
             currentMenuData.path === '/Accounts/Miscellaneous' ||
@@ -1894,6 +1924,11 @@ const RoleBasedApplication = () => {
         // Client Bad Debt Receivables / Write-off
         if (currentMenuData && isClientBadDebtPage(currentMenuData)) {
             return <ClientBadDebtReceivables menuData={currentMenuData} />;
+        }
+
+        // Client Receipt
+        if (currentMenuData && isClientReceiptPage(currentMenuData)) {
+            return <ClientReceipt menuData={currentMenuData} />;
         }
 
         // Journal Voucher Creation

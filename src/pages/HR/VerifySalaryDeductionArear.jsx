@@ -14,7 +14,7 @@ import InboxHeader from '../../components/Inbox/InboxHeader';
 import StatsCards from '../../components/Inbox/StatsCards';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -902,108 +902,56 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
             </div>
 
             {/* Body */}
-            <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    {/* Left Panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredInbox}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={inboxLoading}
-                            error={inboxError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No deduction or arear records pending verification',
-                                itemKey: 'EmpTransactionRefNo',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
-                            }}
-                        />
-                    </div>
-
-                    {/* Detail Panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            {/* Detail Header */}
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center space-x-2">
-                                <div className={`p-2 rounded-lg ${
-                                    selectedItem
-                                        ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                                        : 'bg-gradient-to-br from-gray-400 to-gray-500'
-                                }`}>
-                                    {selectedItem
-                                        ? activeTab === 'deduction'
-                                            ? <TrendingDown className="w-4 h-4 text-white" />
-                                            : <TrendingUp className="w-4 h-4 text-white" />
-                                        : <Layers className="w-4 h-4 text-white" />
-                                    }
-                                </div>
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {selectedItem
-                                        ? `${activeTab === 'deduction' ? 'Deduction' : 'Arear'} Verification`
-                                        : 'Verification Details'
-                                    }
-                                </h2>
-                                {selectedItem && (
-                                    <TypeBadge type={activeTab} />
-                                )}
-                            </div>
-
-                            {/* Detail Body */}
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-16">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Layers className="w-12 h-12 text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Record Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">
-                                            Select a salary deduction or arear record from the left panel to view details and process verification.
-                                        </p>
-                                        <div className="flex items-center justify-center space-x-4 mt-6">
-                                            <div className="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-700">
-                                                <TrendingDown className="w-4 h-4 text-indigo-500" />
-                                                <span className="text-xs text-indigo-700 dark:text-indigo-300 font-medium">{deductionInbox.length} Deductions</span>
-                                            </div>
-                                            <div className="flex items-center space-x-2 bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-700">
-                                                <TrendingUp className="w-4 h-4 text-purple-500" />
-                                                <span className="text-xs text-purple-700 dark:text-purple-300 font-medium">{arearInbox.length} Arears</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-center space-x-2 mt-4 text-indigo-500 text-xs">
-                                            <ChevronRight className="w-4 h-4" />
-                                            <span>Select from the left panel</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredInbox,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: inboxLoading,
+                    error: inboxError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No deduction or arear records pending verification',
+                        itemKey: 'EmpTransactionRefNo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Salary Deduction / Arear Verification',
+                        icon: Layers,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Verification Details',
+                        icon: Layers,
+                        selectedTitle: `${activeTab === 'deduction' ? 'Deduction' : 'Arear'} Verification`,
+                        emptyTitle: 'No Record Selected',
+                        emptyMessage: 'Select a salary deduction or arear record from the left panel to view details and process verification.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

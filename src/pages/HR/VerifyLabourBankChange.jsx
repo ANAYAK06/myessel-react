@@ -11,7 +11,7 @@ import InboxHeader      from '../../components/Inbox/InboxHeader';
 import StatsCards       from '../../components/Inbox/StatsCards';
 import ActionButtons    from '../../components/Inbox/ActionButtons';
 import RemarksHistory   from '../../components/Inbox/RemarksHistory';
-import LeftPanel        from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -476,75 +476,56 @@ const VerifyLabourBankChange = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    {/* Left panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={setSelectedItem}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={loading.inbox}
-                            error={errors.inbox}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No bank change requests pending.',
-                                itemKey: 'Id',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
-                            }}
-                        />
-                    </div>
-
-                    {/* Right panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center gap-2">
-                                <div className="p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg">
-                                    <CreditCard className="w-4 h-4 text-white" />
-                                </div>
-                                <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                                    {selectedItem ? 'Bank Change Verification' : 'Bank Change Details'}
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? renderDetailContent() : (
-                                    <div className="text-center py-16">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/20 dark:to-violet-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <CreditCard className="w-12 h-12 text-indigo-400 dark:text-indigo-500" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Record Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                            Select a bank change request from the list to review and verify.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: setSelectedItem,
+                    renderItem: renderItemCard,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: loading.inbox,
+                    error: errors.inbox,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No bank change requests pending.',
+                        itemKey: 'Id',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Labour Bank Change Verification',
+                        icon: CreditCard,
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Bank Change Details',
+                        icon: CreditCard,
+                        selectedTitle: 'Bank Change Verification',
+                        emptyTitle: 'No Record Selected',
+                        emptyMessage: 'Select a bank change request from the list to review and verify.',
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

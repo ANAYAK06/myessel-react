@@ -3,15 +3,19 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    ArrowLeft, IndianRupee, Building, Calendar, FileText,
-    CheckCircle, XCircle, Clock, AlertCircle, Search, RefreshCw,
-    ReceiptIndianRupee, User, MapPin, Hash, Target, TrendingUp,
-    Truck, Package, BadgeCheck, X, Eye, FileCheck,
-    Timer, UserCheck, CircleIndianRupee, FileBarChart,
-    FileX, ArrowUpCircle, Percent, Calculator,
-    ShoppingCart, CreditCard, FileSpreadsheet,
-    Landmark, CheckSquare, ArrowRightLeft, Layers, ExternalLink, AlertTriangle, Download
+    ArrowLeft, FileText,
+    CheckCircle, XCircle, Clock,
+    ReceiptIndianRupee, User, Hash,
+    Package, Eye, FileCheck,
+    UserCheck,
+    Percent, Calculator,
+    FileSpreadsheet,
+    ExternalLink, AlertTriangle, Download, X
 } from 'lucide-react';
+
+import InboxHeader from '../../components/Inbox/InboxHeader';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
+import VerificationInput from '../../components/Inbox/VerificationInput';
 
 // ✅ SUPPLIER INVOICE SLICE IMPORTS
 import {
@@ -154,10 +158,13 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
 
     // ✅ LOCAL STATE
     const [selectedInvoice, setSelectedInvoice] = useState(null);
+    const [isVerified, setIsVerified] = useState(false);
     const [verificationComment, setVerificationComment] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterVendor, setFilterVendor] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
+    const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
+    const [isLeftPanelHovered, setIsLeftPanelHovered] = useState(false);
 
     // ✅ EXTRACT NOTIFICATION DATA (FOR UI DISPLAY ONLY)
     const {
@@ -339,6 +346,9 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
         });
 
         setSelectedInvoice(invoice);
+        setIsVerified(false);
+        setVerificationComment('');
+        setIsLeftPanelCollapsed(true);
         dispatch(setSelectedInvoiceNo(invoice.InvoiceNo));
         dispatch(setSelectedSupplierCode(invoice.VendorId));
 
@@ -407,6 +417,11 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
             return;
         }
 
+        if (!isVerified) {
+            toast.error('Please verify the invoice details by checking the verification checkbox.');
+            return;
+        }
+
         let actionValue = action.value;
         if (!actionValue || actionValue.trim() === '') {
             const typeToValueMap = {
@@ -454,6 +469,8 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
                 dispatch(fetchVerificationSupplierInvoices({ roleId: roleId || selectedRoleId, userId: uid }));
                 setSelectedInvoice(null);
                 setVerificationComment('');
+                setIsVerified(false);
+                setIsLeftPanelCollapsed(false);
                 dispatch(resetSupplierInvoiceData());
                 dispatch(resetApprovalData());
             }, 1000);
@@ -490,7 +507,84 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
     const vendors = [...new Set(verificationInvoices.map(i => i.VendorName?.split(',')[1]?.trim()).filter(Boolean))];
     const statuses = [...new Set(verificationInvoices.map(i => i.Status).filter(Boolean))];
 
-    
+    const renderItemCard = (invoice) => {
+        const priority = getPriority(invoice);
+        const amountDisplay = getAmountDisplay(invoice.NetAmount || invoice.InvoiceValue);
+        const vendorDisplayName = invoice.VendorName?.split(',')[1]?.trim() || invoice.VendorName;
+
+        return (
+            <div className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
+                            <ReceiptIndianRupee className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                            {vendorDisplayName}
+                        </h3>
+                        <p className="text-xs text-gray-500 truncate">{invoice.VendorId}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
+                        {priority}
+                    </span>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <div className="flex items-center justify-between">
+                        <span className="flex items-center space-x-1">
+                            <Hash className="w-3 h-3" />
+                            <span className="truncate">{invoice.InvoiceNo}</span>
+                        </span>
+                        <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(invoice.Status)}`}>
+                            Status {invoice.Status}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-medium">₹{amountDisplay.formatted}</span>
+                        <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{invoice.CCCode}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-gray-500 text-xs">
+                            <Package className="w-3 h-3 inline mr-1" />
+                            PO: {invoice.PONo?.slice(-6) || 'N/A'}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                            MRR: {invoice.MRR?.slice(-6) || 'N/A'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderListItem = (invoice) => {
+        const priority = getPriority(invoice);
+        const amountDisplay = getAmountDisplay(invoice.NetAmount || invoice.InvoiceValue);
+        const vendorDisplayName = invoice.VendorName?.split(',')[1]?.trim() || invoice.VendorName;
+
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[140px]">{vendorDisplayName}</span>
+                <span className="font-mono text-gray-500 dark:text-gray-400 min-w-[110px]">{invoice.InvoiceNo}</span>
+                <span className={`px-2 py-0.5 text-xs rounded-full border ${getPriorityColor(priority)}`}>{priority}</span>
+                <span className={`px-2 py-0.5 text-xs rounded-full border ${getStatusColor(invoice.Status)}`}>
+                    Status {invoice.Status}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs">PO: {invoice.PONo?.slice(-6) || 'N/A'}</span>
+                <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{amountDisplay.formatted}</span>
+            </div>
+        );
+    };
+
+    const renderCollapsedItem = () => (
+        <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
+            <ReceiptIndianRupee className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+        </div>
+    );
+
+
     const renderActionButtons = () => {
         if (statusLoading) {
             return (
@@ -571,16 +665,16 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
                             <button
                                 key={`${action.type}-${index}`}
                                 onClick={() => onActionClick(action)}
-                                disabled={approvalLoading || verificationComment.trim() === ''}
+                                disabled={approvalLoading || verificationComment.trim() === '' || !isVerified}
                                 className={`
-                                flex items-center justify-center space-x-2 px-6 py-4 
-                                ${action.className} 
-                                text-white rounded-lg transition-all 
-                                disabled:opacity-50 disabled:cursor-not-allowed 
+                                flex items-center justify-center space-x-2 px-6 py-4
+                                ${action.className}
+                                text-white rounded-lg transition-all
+                                disabled:opacity-50 disabled:cursor-not-allowed
                                 font-medium shadow-lg hover:shadow-xl
                                 min-h-[60px]
                             `}
-                                title={verificationComment.trim() === '' ? 'Please add verification comments first' : `${action.text} (${action.type}: ${action.value})`}
+                                title={verificationComment.trim() === '' ? 'Please add verification comments first' : !isVerified ? 'Please check the verification checkbox first' : `${action.text} (${action.type}: ${action.value})`}
                             >
                                 <IconComponent className="w-5 h-5 flex-shrink-0" />
                                 <span className="truncate">
@@ -677,305 +771,18 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
     };
 
 
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                        <button
-                            onClick={handleBackToInbox}
-                            className="p-2 text-purple-100 hover:text-white hover:bg-purple-500 rounded-lg transition-colors"
-                            title="Back to Dashboard"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-purple-500 rounded-xl shadow-inner">
-                                <ReceiptIndianRupee className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold">
-                                    {InboxTitle || 'Supplier Invoice Verification'}
-                                </h1>
-                                <p className="text-purple-100 mt-1">
-                                    {ModuleDisplayName} • {verificationInvoices.length} invoices pending
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <div className="px-4 py-2 bg-purple-500 text-purple-100 text-sm rounded-full border border-purple-400">
-                            Invoice Verification
-                        </div>
-                        <div className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm rounded-full shadow-md">
-                            {verificationInvoices.length} Pending
-                        </div>
-                    </div>
-                </div>
+    const renderDetailContent = () => {
+        if (!selectedInvoice) return null;
 
-                {/* Search and Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="md:col-span-2">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-purple-200" />
-                            <input
-                                type="text"
-                                placeholder="Search by vendor, invoice, PO, MRR..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-purple-500/50 text-white placeholder-purple-200 border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 focus:border-purple-300 backdrop-blur-sm"
-                            />
-                        </div>
+        return (
+            <div className="space-y-4">
+                {invoiceDataLoading ? (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
                     </div>
-                    <div>
-                        <select
-                            value={filterVendor}
-                            onChange={(e) => setFilterVendor(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-purple-500/50 text-white border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 backdrop-blur-sm"
-                        >
-                            <option value="All">All Vendors</option>
-                            {vendors.map(vendor => (
-                                <option key={vendor} value={vendor}>{vendor}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-purple-500/50 text-white border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 backdrop-blur-sm"
-                        >
-                            <option value="All">All Status</option>
-                            {statuses.map(status => (
-                                <option key={status} value={status}>Status {status}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-6 border border-purple-200 dark:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
-                                <ReceiptIndianRupee className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{verificationInvoices.length}</p>
-                                <p className="text-sm text-purple-600 dark:text-purple-400">Total Invoices</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-2 mt-3">
-                            <div className="bg-purple-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-6 border border-red-200 dark:border-red-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-red-500 rounded-xl shadow-lg">
-                                <AlertCircle className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-red-700 dark:text-red-300">
-                                    {verificationInvoices.filter(i => getPriority(i) === 'High').length}
-                                </p>
-                                <p className="text-sm text-red-600 dark:text-red-400">High Priority</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-red-200 dark:bg-red-800 rounded-full h-2 mt-3">
-                            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${verificationInvoices.length > 0 ? (verificationInvoices.filter(i => getPriority(i) === 'High').length / verificationInvoices.length) * 100 : 0}%` }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-6 border border-indigo-200 dark:border-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-indigo-500 rounded-xl shadow-lg">
-                                <Building className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{vendors.length}</p>
-                                <p className="text-sm text-indigo-600 dark:text-indigo-400">Suppliers</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-indigo-200 dark:bg-indigo-800 rounded-full h-2 mt-3">
-                            <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-6 border border-purple-200 dark:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
-                                <TrendingUp className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-lg font-bold text-purple-700 dark:text-purple-300">
-                                    ₹{formatIndianCurrency(verificationInvoices.reduce((sum, i) => sum + (parseFloat(i.NetAmount) || 0), 0))}
-                                </p>
-                                <p className="text-sm text-purple-600 dark:text-purple-400">Total Amount</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-2 mt-3">
-                            <div className="bg-purple-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Supplier Invoices List */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors overflow-hidden">
-                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
-                                        <Clock className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>Pending ({filteredInvoices.length})</span>
-                                </h2>
-                                <button
-                                    onClick={() => {
-                                        console.log('🔄 Refresh Button Clicked with values:', { roleId, uid, selectedRoleId });
-                                        dispatch(fetchVerificationSupplierInvoices({ roleId: roleId || selectedRoleId, userId: uid }));
-                                    }}
-                                    className="p-2 text-purple-600 hover:text-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
-                                    title="Refresh"
-                                    disabled={invoicesLoading}
-                                >
-                                    <RefreshCw className={`w-4 h-4 ${invoicesLoading ? 'animate-spin' : ''}`} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                            {invoicesLoading ? (
-                                <div className="text-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                                    <p className="text-gray-500">Loading...</p>
-                                </div>
-                            ) : invoicesError ? (
-                                <div className="text-center py-8">
-                                    <XCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-                                    <p className="text-red-500 mb-2">Error loading data</p>
-                                    <button
-                                        onClick={() => {
-                                            console.log('🔄 Retry Button Clicked with values:', { roleId, uid, selectedRoleId });
-                                            dispatch(fetchVerificationSupplierInvoices({ roleId: roleId || selectedRoleId, userId: uid }));
-                                        }}
-                                        className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                                    >
-                                        Retry
-                                    </button>
-                                </div>
-                            ) : filteredInvoices.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                                    <p className="text-gray-500">No invoices found!</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {filteredInvoices.map((invoice) => {
-                                        const priority = getPriority(invoice);
-                                        const amountDisplay = getAmountDisplay(invoice.NetAmount || invoice.InvoiceValue);
-                                        const vendorDisplayName = invoice.VendorName?.split(',')[1]?.trim() || invoice.VendorName;
-
-                                        return (
-                                            <div
-                                                key={invoice.InvoiceNo}
-                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedInvoice?.InvoiceNo === invoice.InvoiceNo
-                                                    ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg'
-                                                    : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 bg-white dark:bg-gray-800'
-                                                    }`}
-                                                onClick={() => handleInvoiceSelect(invoice)}
-                                            >
-                                                <div className="p-4">
-                                                    <div className="flex items-center space-x-3 mb-3">
-                                                        <div className="relative">
-                                                            <div className="w-12 h-12 rounded-full border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
-                                                                <ReceiptIndianRupee className="w-5 h-5 text-purple-600" />
-                                                            </div>
-                                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                                                {vendorDisplayName}
-                                                            </h3>
-                                                            <p className="text-xs text-gray-500 truncate">{invoice.VendorId}</p>
-                                                        </div>
-                                                        <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
-                                                            {priority}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="flex items-center space-x-1">
-                                                                <Hash className="w-3 h-3" />
-                                                                <span className="truncate">{invoice.InvoiceNo}</span>
-                                                            </span>
-                                                            <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(invoice.Status)}`}>
-                                                                Status {invoice.Status}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-purple-600 dark:text-purple-400 font-medium">₹{amountDisplay.formatted}</span>
-                                                            <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{invoice.CCCode}</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-gray-500 text-xs">
-                                                                <Package className="w-3 h-3 inline mr-1" />
-                                                                PO: {invoice.PONo?.slice(-6) || 'N/A'}
-                                                            </span>
-                                                            <span className="text-gray-500 text-xs">
-                                                                MRR: {invoice.MRR?.slice(-6) || 'N/A'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Invoice Details Panel */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors sticky top-6">
-                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
-                                    <FileCheck className="w-4 h-4 text-white" />
-                                </div>
-                                <span>{selectedInvoice ? 'Invoice Verification' : 'Select an Invoice'}</span>
-                            </h2>
-                        </div>
-
-                        <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-                            {selectedInvoice ? (
-                                <div className="space-y-6">
-                                    {invoiceDataLoading ? (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
-                                        </div>
-                                    ) : selectedInvoiceData ? (
-                                        <>
+                ) : selectedInvoiceData ? (
+                    <>
                                             {/* Invoice Header */}
                                             <div className="p-6 rounded-xl border-2 bg-gradient-to-r from-indigo-50 via-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-indigo-200 dark:border-indigo-700">
                                                 <div className="flex items-center justify-between mb-4">
@@ -1347,61 +1154,128 @@ const VerifySupplierInvoice = ({ notificationData, onNavigate }) => {
                                                     </div>
                                                 );
                                             })()}
-                                            {/* Verification Comments */}
-                                            <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
-                                                <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
-                                                    <FileText className="w-4 h-4 mr-2" />
-                                                    <span className="text-red-600 dark:text-red-400">*</span> Verification Comments (Mandatory)
-                                                </label>
-                                                <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                                                    Please verify all invoice details, GST calculations, item quantities, and amounts.
-                                                </p>
-                                                <textarea
-                                                    value={verificationComment}
-                                                    onChange={(e) => setVerificationComment(e.target.value)}
-                                                    className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${verificationComment.trim() === ''
-                                                        ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                                                        : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-                                                        }`}
-                                                    rows="4"
-                                                    placeholder="Please verify invoice amount, GST calculations, item details, PO compliance, and all related documents..."
-                                                    required
-                                                />
-                                                {verificationComment.trim() === '' && (
-                                                    <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
-                                                        <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                                                        Verification comment is required before proceeding
-                                                    </p>
-                                                )}
-                                            </div>
+                                            {/* Verification Input */}
+                                            <VerificationInput
+                                                isVerified={isVerified}
+                                                onVerifiedChange={setIsVerified}
+                                                comment={verificationComment}
+                                                onCommentChange={(e) => setVerificationComment(e.target.value)}
+                                                config={{
+                                                    checkboxLabel: '✓ I have verified all supplier invoice details',
+                                                    checkboxDescription: 'Including GST calculations, item quantities, amounts, and PO compliance',
+                                                    commentLabel: 'Verification Comments',
+                                                    commentPlaceholder: 'Please verify invoice amount, GST calculations, item details, PO compliance, and all related documents...',
+                                                    commentRequired: true,
+                                                    commentMaxLength: 1000,
+                                                    showCharCount: true,
+                                                    validationStyle: 'dynamic',
+                                                    checkboxGradient: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+                                                    commentGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                                                    commentBorder: 'border-indigo-200 dark:border-indigo-700',
+                                                }}
+                                            />
 
                                             {/* Action Buttons */}
                                             <div className="space-y-4">
                                                 {renderActionButtons()}
                                             </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading invoice details...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <AlertCircle className="w-12 h-12 text-purple-500 dark:text-purple-400" />
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Invoice Selected</h3>
-                                    <p className="text-gray-500 dark:text-gray-400">
-                                        Select a supplier invoice from the list to view details and take action.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                                    </>
+                ) : (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading invoice details...</p>
                     </div>
-                </div>
+                )}
             </div>
+        );
+    };
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    return (
+        <div className="space-y-6">
+            <InboxHeader
+                title={`${InboxTitle || 'Supplier Invoice Verification'} (${verificationInvoices.length})`}
+                subtitle={ModuleDisplayName}
+                itemCount={verificationInvoices.length}
+                onBackClick={handleBackToInbox}
+                HeaderIcon={ReceiptIndianRupee}
+                badgeText="Invoice Verification"
+                badgeCount={verificationInvoices.length}
+                searchConfig={{
+                    enabled: true,
+                    placeholder: 'Search by vendor, invoice, PO, MRR...',
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                }}
+                filters={[
+                    {
+                        value: filterVendor,
+                        onChange: (e) => setFilterVendor(e.target.value),
+                        defaultLabel: 'All Vendors',
+                        options: vendors,
+                    },
+                    {
+                        value: filterStatus,
+                        onChange: (e) => setFilterStatus(e.target.value),
+                        defaultLabel: 'All Status',
+                        options: statuses,
+                    },
+                ]}
+                enableViewToggle
+            />
+
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredInvoices,
+                    selectedItem: selectedInvoice,
+                    onItemSelect: handleInvoiceSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: invoicesLoading,
+                    error: invoicesError,
+                    onRefresh: () => dispatch(fetchVerificationSupplierInvoices({ roleId: roleId || selectedRoleId, userId: uid })),
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No supplier invoices pending',
+                        itemKey: 'InvoiceNo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Supplier Invoice Verification',
+                        icon: ReceiptIndianRupee,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedInvoice,
+                    loading: invoiceDataLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Select an Invoice',
+                        icon: ReceiptIndianRupee,
+                        selectedTitle: 'Invoice Verification',
+                        emptyTitle: 'No Invoice Selected',
+                        emptyMessage: 'Select a supplier invoice from the list to view details and take action.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
+
             <PdfModal />
         </div>
     );

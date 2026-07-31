@@ -8,10 +8,9 @@ import {
 
 // ─── Shared Inbox Components ──────────────────────────────────────────────────
 import InboxHeader      from '../../components/Inbox/InboxHeader';
-import StatsCards       from '../../components/Inbox/StatsCards';
 import ActionButtons    from '../../components/Inbox/ActionButtons';
 import RemarksHistory   from '../../components/Inbox/RemarksHistory';
-import LeftPanel        from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 // ─── CC Cash Transfer slice ───────────────────────────────────────────────────
@@ -261,16 +260,6 @@ const VerifyCCCashTransfer = ({ notificationData, onNavigate }) => {
             t.Amount?.toString().includes(q);
     });
 
-    const totalAmount = transfers.reduce((s, t) => s + (parseFloat(t.Amount) || 0), 0);
-
-    // ── Stats ────────────────────────────────────────────────────────────────
-    const statsCards = [
-        { icon: ArrowRight,   value: transfers.length,    label: 'Total Transfers',     color: 'blue' },
-        { icon: Clock,        value: transfers.length,    label: 'Pending Verification', color: 'purple' },
-        { icon: IndianRupee,  value: `₹${fmt(totalAmount)}`, label: 'Total Amount',     color: 'indigo' },
-        { icon: Building2,    value: detail?.SelfCCCode || '—', label: 'Self CC',        color: 'violet' },
-    ];
-
     // ── Left panel renderers ─────────────────────────────────────────────────
     const renderItemCard = (item) => (
         <div className="p-4">
@@ -306,6 +295,20 @@ const VerifyCCCashTransfer = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px]">{item.Voucherno}</span>
+            <span className="font-mono text-gray-500 dark:text-gray-400 min-w-[110px]">{item.Refno}</span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[120px]">To: {item.PaidAgainstCCCode || '—'}</span>
+            {item.InvoiceDate && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                    <Calendar className="w-3 h-3" />{item.InvoiceDate}
+                </span>
+            )}
+            <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{fmt(item.Amount)}</span>
+        </div>
+    );
+
     const renderCollapsedItem = (item) => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <ArrowRight className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -320,7 +323,7 @@ const VerifyCCCashTransfer = ({ notificationData, onNavigate }) => {
         const otherCC = parseCCName(detail?.OtherCCCodename);
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
 
                 {/* Loading shimmer */}
                 {detailLoading && (
@@ -442,13 +445,12 @@ const VerifyCCCashTransfer = ({ notificationData, onNavigate }) => {
                         commentLabel: 'Verification Comments',
                         commentPlaceholder: 'Please enter your verification remarks…',
                         commentRequired: true,
-                        commentRows: 4,
                         commentMaxLength: 500,
                         showCharCount: true,
                         validationStyle: 'dynamic',
                         checkboxGradient: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
-                        commentGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20',
-                        commentBorder: 'border-blue-200 dark:border-blue-700',
+                        commentGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        commentBorder: 'border-indigo-200 dark:border-indigo-700',
                     }}
                 />
 
@@ -484,8 +486,7 @@ const VerifyCCCashTransfer = ({ notificationData, onNavigate }) => {
 
     // ── Render ───────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'CC Cash Transfer Verification'} (${transfers.length})`}
                 subtitle={ModuleDisplayName}
@@ -500,95 +501,60 @@ const VerifyCCCashTransfer = ({ notificationData, onNavigate }) => {
                     value: searchQuery,
                     onChange: (e) => setSearchQuery(e.target.value),
                 }}
-                filters={[]}
-                className="bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600"
+                enableViewToggle
             />
 
-            <div className="px-6 mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    {/* Left panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={listLoading}
-                            error={listError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Transfers',
-                                icon: Clock,
-                                emptyMessage: 'No pending CC cash transfers found!',
-                                itemKey: 'Refno',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                            }}
-                        />
-                    </div>
-
-                    {/* Right panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                        <ArrowRight className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedItem ? 'CC Cash Transfer Verification' : 'Transfer Details'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-14">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <ArrowRight className="w-12 h-12 text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Transfer Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                            Select a CC cash transfer from the list to verify.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: listLoading,
+                    error: listError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Transfers',
+                        icon: Clock,
+                        emptyMessage: 'No pending CC cash transfers found!',
+                        itemKey: 'Refno',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'CC Cash Transfer Verification',
+                        icon: ArrowRight,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: detailLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Transfer Details',
+                        icon: ArrowRight,
+                        selectedTitle: 'CC Cash Transfer Verification',
+                        emptyTitle: 'No Transfer Selected',
+                        emptyMessage: 'Select a CC cash transfer from the list to verify.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

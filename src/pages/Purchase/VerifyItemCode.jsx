@@ -672,6 +672,7 @@ const VerifyItemCode = ({ notificationData, onNavigate }) => {
                         title: 'Item Code Verification',
                         icon: Package,
                         headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     },
                 }}
                 right={{

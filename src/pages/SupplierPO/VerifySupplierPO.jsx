@@ -1928,6 +1928,7 @@ const VerifySupplierPO = ({ notificationData, onNavigate }) => {
                         title: 'PO Verification',
                         icon: ShoppingCart,
                         headerGradient: 'from-blue-50 to-orange-50 dark:from-blue-900/20 dark:to-orange-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     }
                 }}
                 right={{

@@ -579,7 +579,7 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
         }
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {detailsLoading && (
                     <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-700 flex items-center space-x-3">
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
@@ -790,7 +790,6 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                         commentLabel: 'Verification Comments',
                         commentPlaceholder: 'Please verify payroll details, salary heads, attendance records, and any discrepancies...',
                         commentRequired: true,
-                        commentRows: 4,
                         commentMaxLength: 1000,
                         showCharCount: true,
                         validationStyle: 'dynamic',
@@ -903,6 +902,7 @@ const VerifyStaffPayroll = ({ notificationData, onNavigate }) => {
                         title: 'Payroll Verification',
                         icon: Banknote,
                         headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     }
                 }}
                 right={{

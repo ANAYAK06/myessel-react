@@ -13,10 +13,9 @@ import { getIndentItemSummaryPopup } from '../../api/PurchaseAPI/indentCreationA
 import { getTradeItemCodes, getTradeItemDetails } from '../../api/PurchaseAPI/indentVerificationAPI';
 
 import InboxHeader      from '../../components/Inbox/InboxHeader';
-import StatsCards       from '../../components/Inbox/StatsCards';
 import ActionButtons    from '../../components/Inbox/ActionButtons';
 import RemarksHistory   from '../../components/Inbox/RemarksHistory';
-import LeftPanel        from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -1291,6 +1290,24 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-mono font-semibold text-gray-900 dark:text-white min-w-[140px]">{item.Indentno}</span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[120px]">{item.Costcenter}</span>
+            <StatusBadge status={item.Status} />
+            {item.Date && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                    <Calendar className="w-3 h-3" />{item.Date}
+                </span>
+            )}
+            {item.TotalAmount != null && (
+                <span className="ml-auto text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    ₹{Number(item.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+            )}
+        </div>
+    );
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center">
             <ShoppingCart className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -1508,7 +1525,6 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                         commentLabel:        'Verification Comments',
                         commentPlaceholder:  'Enter your verification remarks…',
                         commentRequired:     true,
-                        commentRows:         3,
                         commentMaxLength:    500,
                         showCharCount:       true,
                         validationStyle:     'dynamic',
@@ -1546,15 +1562,6 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
         );
     };
 
-    // ── Stats ──────────────────────────────────────────────────────────────────
-
-    const statsCards = [
-        { icon: ShoppingCart, value: inbox.length,  label: 'Total Pending',   color: 'indigo' },
-        { icon: Clock,        value: inbox.length,  label: 'Awaiting Action', color: 'purple' },
-        { icon: Package,      value: selectedItem?.TotalAmount != null ? `₹${Number(selectedItem.TotalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—', label: 'Total Amount', color: 'teal' },
-        { icon: User,         value: selectedItem?.Costcenter || '—',          label: 'Cost Centre',     color: 'cyan' },
-    ];
-
     // ── Render ─────────────────────────────────────────────────────────────────
 
     return (
@@ -1574,80 +1581,60 @@ const VerifyIndentCreation = ({ notificationData, onNavigate }) => {
                     value:       searchQuery,
                     onChange:    (e) => setSearchQuery(e.target.value),
                 }}
+                enableViewToggle
             />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div
-                className={`grid transition-all duration-300 ${
-                    isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                }`}
-                onMouseLeave={() => {
-                    if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: setSelectedItem,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: loading.inbox,
+                    error: errors.inbox,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title:          'Pending Verification',
+                        icon:           Clock,
+                        emptyMessage:   'No indent requests pending verification.',
+                        itemKey:        'Indentno',
+                        enableCollapse: true,
+                        enableRefresh:  true,
+                        enableHover:    true,
+                        maxHeight:      '100%',
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Indent Verification',
+                        icon: ShoppingCart,
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
                 }}
-            >
-                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                    <LeftPanel
-                        items={filteredItems}
-                        selectedItem={selectedItem}
-                        onItemSelect={setSelectedItem}
-                        renderItem={renderItemCard}
-                        renderCollapsedItem={renderCollapsedItem}
-                        isCollapsed={isLeftPanelCollapsed}
-                        onCollapseToggle={setIsLeftPanelCollapsed}
-                        isHovered={isLeftPanelHovered}
-                        onHoverChange={setIsLeftPanelHovered}
-                        loading={loading.inbox}
-                        error={errors.inbox}
-                        onRefresh={handleRefresh}
-                        config={{
-                            title:          'Pending Verification',
-                            icon:           Clock,
-                            emptyMessage:   'No indent requests pending verification.',
-                            itemKey:        'Indentno',
-                            enableCollapse: true,
-                            enableRefresh:  true,
-                            enableHover:    true,
-                            maxHeight:      '100%',
-                            headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
-                        }}
-                    />
-                </div>
-
-                <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                        <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl flex items-center gap-2">
-                            <div className="p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg">
-                                <ShoppingCart className="w-4 h-4 text-white" />
-                            </div>
-                            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                                {selectedItem ? `Indent: ${selectedItem.Indentno}` : 'Select an Indent'}
-                            </h2>
-                        </div>
-
-                        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                            {selectedItem ? renderDetailContent() : (
-                                <div className="text-center py-16">
-                                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/20 dark:to-violet-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <ShoppingCart className="w-12 h-12 text-indigo-400 dark:text-indigo-500" />
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Indent Selected</h3>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">Select an indent from the list to review items and verify.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                right={{
+                    selectedItem: selectedItem,
+                    loading: loading.detail,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Select an Indent',
+                        icon: ShoppingCart,
+                        selectedTitle: selectedItem ? `Indent: ${selectedItem.Indentno}` : 'Indent Verification',
+                        emptyTitle: 'No Indent Selected',
+                        emptyMessage: 'Select an indent from the list to review items and verify.',
+                        headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
 
         <StockSummaryPopup

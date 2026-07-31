@@ -806,6 +806,7 @@ const VerifyClientPO = ({ notificationData, onNavigate }) => {
                             title: 'Client PO Verification',
                             icon: FileText,
                             headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                            maxWidth: 'max-w-[80vw]',
                         }
                     }}
                     right={{

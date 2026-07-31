@@ -19,6 +19,9 @@ import {
     FileBarChart2, Shield, Globe, Activity
 } from 'lucide-react';
 
+import InboxHeader from '../../components/Inbox/InboxHeader';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
+
 // COST CENTER SLICE IMPORTS
 import {
     fetchApprovalCostCenterDetails,
@@ -647,83 +650,460 @@ const CostCenterApproval = ({ notificationData, onNavigate }) => {
         );
     };
 
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                        <button
-                            onClick={handleBackToInbox}
-                            className="p-2 text-purple-100 hover:text-white hover:bg-purple-500 rounded-lg transition-colors"
-                            title="Back to Dashboard"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-purple-500 rounded-xl shadow-inner">
-                                <Building className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold">
-                                    {InboxTitle || 'Cost Center Approval'}
-                                </h1>
-                                <p className="text-purple-100 mt-1">
-                                    {ModuleDisplayName} • {approvalCostCenterDetails.length} Cost Centers pending
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <div className="px-4 py-2 bg-purple-500 text-purple-100 text-sm rounded-full border border-purple-400">
-                            Cost Center Management
-                        </div>
-                        <div className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm rounded-full shadow-md">
-                            {approvalCostCenterDetails.length} Pending
-                        </div>
-                    </div>
-                </div>
+    const renderItemCard = (item, isSelected) => {
+        const priority = getPriority(item);
+        const dayLimit = item.DayLimit || 0;
+        const amountDisplay = getAmountDisplay(dayLimit);
 
-                {/* Search and Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="md:col-span-2">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-purple-200" />
-                            <input
-                                type="text"
-                                placeholder="Search by name, code, incharge, state..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-purple-500/50 text-white placeholder-purple-200 border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 focus:border-purple-300 backdrop-blur-sm"
-                            />
+        return (
+            <div className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-full border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+                            <Building className="w-5 h-5 text-purple-600" />
                         </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                     </div>
-                    <div>
-                        <select
-                            value={filterCCType}
-                            onChange={(e) => setFilterCCType(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-purple-500/50 text-white border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 backdrop-blur-sm"
-                        >
-                            <option value="All">All Types</option>
-                            {ccTypes.map(type => (
-                                <option key={type} value={type}>{type}</option>
-                            ))}
-                        </select>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                            {item.CCName}
+                        </h3>
+                        <p className="text-xs text-gray-500 truncate">{item.CCInchargeName}</p>
                     </div>
-                    <div>
-                        <select
-                            value={filterState}
-                            onChange={(e) => setFilterState(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-purple-500/50 text-white border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-300 backdrop-blur-sm"
-                        >
-                            <option value="All">All States</option>
-                            {states.map(state => (
-                                <option key={state} value={state}>{state}</option>
-                            ))}
-                        </select>
+                    <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
+                        {priority}
+                    </span>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <div className="flex items-center justify-between">
+                        <span className="flex items-center space-x-1">
+                            <Hash className="w-3 h-3" />
+                            <span className="truncate">{item.CCCode}</span>
+                        </span>
+                        <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(item.status)}`}>
+                            Status: {item.status}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-purple-600 dark:text-purple-400 font-medium">₹{amountDisplay.formatted}</span>
+                        <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{item.CCType}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-gray-500 text-xs">
+                            <MapPin className="w-3 h-3 inline mr-1" />
+                            {item.State}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                            Day Limit: ₹{formatIndianCurrency(item.DayLimit)}
+                        </span>
                     </div>
                 </div>
             </div>
+        );
+    };
+
+    const renderCollapsedItem = (item, isSelected) => (
+        <div className="w-full h-full rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+            <Building className="w-4 h-4 text-purple-600" />
+        </div>
+    );
+
+    const renderDetailContent = () => {
+        if (!selectedCC) return null;
+
+        return (
+            <div className="space-y-6">
+                {ccDataLoading ? (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
+                    </div>
+                ) : selectedCCData ? (
+                    <>
+                        {/* Enhanced Cost Center Header */}
+                        <div className="p-6 rounded-xl border-2 bg-gradient-to-r from-indigo-50 via-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-indigo-200 dark:border-indigo-700">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-4">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 rounded-full border-4 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-indigo-100 dark:from-indigo-800/50 dark:to-indigo-800/50 flex items-center justify-center shadow-lg">
+                                            <Building className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
+                                            <CheckCircle className="w-3 h-3 text-white" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-xl text-gray-900 dark:text-white">
+                                            {selectedCCData.CCName}
+                                        </h3>
+                                        <p className="font-semibold text-lg text-indigo-600 dark:text-indigo-400">
+                                            CC: {selectedCCData.CCCode}
+                                        </p>
+                                        <div className="flex items-center space-x-2 mt-1">
+                                            <span className="px-3 py-1 text-sm rounded-full border bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-opacity-20 dark:border-opacity-50">
+                                                {selectedCCData.CCType} Cost Center
+                                            </span>
+                                            <span className={`px-3 py-1 text-sm rounded-full border ${getStatusColor(selectedCCData.status)}`}>
+                                                Status: {selectedCCData.CC_Status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                                        ₹{formatIndianCurrency(selectedCCData.DayLimit)}
+                                    </p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Day Limit</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                                        Voucher: ₹{formatIndianCurrency(selectedCCData.VoucherLimit)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">CC ID</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.CC_Id}</span>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Sub Type</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.SubType}</span>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">State</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.State}</span>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Store Type</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.StoreType}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Document Viewer Section */}
+                        {(selectedCCData.contractscope || selectedCCData.contractpretenderBudget) && (
+                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-700">
+                                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
+                                    <FileText className="w-5 h-5 mr-2" />
+                                    Contract Documents
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {selectedCCData.contractscope && (
+                                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-600">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="p-2 bg-green-500 rounded-lg">
+                                                        <CheckSquare className="w-4 h-4 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-green-800 dark:text-green-200">Scope Check List</p>
+                                                        <p className="text-xs text-green-600 dark:text-green-400">Approved by Contracts</p>
+                                                        <p className="text-xs text-green-600 dark:text-green-400 font-mono">{selectedCCData.contractscope}</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => openPdfViewer(
+                                                        selectedCCData.contractscope,
+                                                        `Contract Scope: ${selectedCCData.CCCode}`,
+                                                        'scope'
+                                                    )}
+                                                    className="flex items-center space-x-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                                    title="View Contract Scope PDF"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    <span>View</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {selectedCCData.contractpretenderBudget && (
+                                        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-600">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="p-2 bg-indigo-500 rounded-lg">
+                                                        <FileBarChart className="w-4 h-4 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-indigo-800 dark:text-indigo-200">Client Work Order</p>
+                                                        <p className="text-xs text-indigo-600 dark:text-indigo-400">T&C Approved by Contracts</p>
+                                                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">{selectedCCData.contractpretenderBudget}</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => openPdfViewer(
+                                                        selectedCCData.contractpretenderBudget,
+                                                        `Client Work Order: ${selectedCCData.CCCode}`,
+                                                        'workorder'
+                                                    )}
+                                                    className="flex items-center space-x-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                                    title="View Client Work Order PDF"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    <span>View</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {!selectedCCData.contractscope && !selectedCCData.contractpretenderBudget && (
+                                    <div className="text-center py-4">
+                                        <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">No contract documents available</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Cost Center Details */}
+                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-700">
+                            <h4 className="font-semibold text-purple-800 dark:text-purple-200 flex items-center mb-4">
+                                <Settings className="w-5 h-5 mr-2" />
+                                Cost Center Information
+                            </h4>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <UserCircle className="w-4 h-4 mr-2" />
+                                            Incharge Details
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">Name:</span>
+                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.CCInchargeName}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">Phone:</span>
+                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.InchargePhNo}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">CC Phone:</span>
+                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.PhoneNo}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <Home className="w-4 h-4 mr-2" />
+                                            Location Details
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div>
+                                                <span className="text-gray-500">Address:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedCCData.SiteAddress}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">State:</span>
+                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.State}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <FileBarChart2 className="w-4 h-4 mr-2" />
+                                            Financial Limits
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">Day Limit:</span>
+                                                <span className="font-medium text-green-600 dark:text-green-400">₹{formatIndianCurrency(selectedCCData.DayLimit)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">Voucher Limit:</span>
+                                                <span className="font-medium text-orange-600 dark:text-orange-400">₹{formatIndianCurrency(selectedCCData.VoucherLimit)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <Activity className="w-4 h-4 mr-2" />
+                                            Project Details
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div>
+                                                <span className="text-gray-500">Group:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedCCData.Group || 'Not Assigned'}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">Store Applicable:</span>
+                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.IsStoreApplicable}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Contract & Offer Details */}
+                        {(selectedCCData.EPPLFinalOfferNo || selectedCCData.ClientAcceptanceReferenceNo) && (
+                            <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 p-6 rounded-xl border border-orange-200 dark:border-orange-700">
+                                <h4 className="font-semibold text-orange-800 dark:text-orange-200 mb-4 flex items-center">
+                                    <Clipboard className="w-5 h-5 mr-2" />
+                                    Contract & Offer Details
+                                </h4>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    {selectedCCData.EPPLFinalOfferNo && (
+                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-500">Final Offer No:</span>
+                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.EPPLFinalOfferNo}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-500">Offer Date:</span>
+                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.UpFinalOfferDate}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {selectedCCData.ClientAcceptanceReferenceNo && (
+                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-500">Client Ref No:</span>
+                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientAcceptanceReferenceNo}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-500">Acceptance Date:</span>
+                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.UpClientAcceptanceDate}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Client Details */}
+                        {(selectedCCData.ClientInchargeName || selectedCCData.ClientInchargePhNo || selectedCCData.ClientInchargemailid) && (
+                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-700">
+                                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
+                                    <Users className="w-5 h-5 mr-2" />
+                                    Client Information
+                                </h4>
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-500">Name:</span>
+                                            <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientInchargeName}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-500">Phone:</span>
+                                            <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientInchargePhNo}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-500">Email:</span>
+                                            <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientInchargemailid}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Approval History Toggle */}
+                        <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                            <button
+                                onClick={() => setShowRemarksHistory(!showRemarksHistory)}
+                                className="flex items-center justify-between w-full text-left"
+                            >
+                                <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                                    <UserCheck className="w-5 h-5 mr-2" />
+                                    View Approval History ({remarks.length})
+                                </h4>
+                                {showRemarksHistory ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                                ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                                )}
+                            </button>
+                        </div>
+
+                        {renderRemarksHistory()}
+
+                        {/* Approval Comments */}
+                        <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
+                            <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
+                                <FileText className="w-4 h-4 mr-2" />
+                                <span className="text-red-600 dark:text-red-400">*</span> Approval Comments (Mandatory)
+                            </label>
+                            <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                                Please review all cost center details, financial limits, incharge information, and provide your approval decision.
+                            </p>
+                            <textarea
+                                value={approvalComment}
+                                onChange={(e) => setApprovalComment(e.target.value)}
+                                className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${approvalComment.trim() === ''
+                                    ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                                    : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                                    }`}
+                                rows="4"
+                                placeholder="Please review cost center setup, financial limits, incharge details, location information..."
+                                required
+                            />
+                            {approvalComment.trim() === '' && (
+                                <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                                    Approval comment is required before proceeding
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="space-y-4">
+                            {renderActionButtons()}
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading cost center details...</p>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-6">
+            <InboxHeader
+                title={`${InboxTitle || 'Cost Center Approval'} (${approvalCostCenterDetails.length})`}
+                subtitle={ModuleDisplayName}
+                itemCount={approvalCostCenterDetails.length}
+                onBackClick={handleBackToInbox}
+                HeaderIcon={Building}
+                badgeText="Cost Center Management"
+                badgeCount={approvalCostCenterDetails.length}
+                searchConfig={{
+                    enabled: true,
+                    placeholder: 'Search by name, code, incharge, state...',
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                }}
+                filters={[
+                    {
+                        value: filterCCType,
+                        onChange: (e) => setFilterCCType(e.target.value),
+                        defaultLabel: 'All Types',
+                        options: ccTypes
+                    },
+                    {
+                        value: filterState,
+                        onChange: (e) => setFilterState(e.target.value),
+                        defaultLabel: 'All States',
+                        options: states
+                    }
+                ]}
+                className="bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"
+                enableViewToggle
+            />
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -804,571 +1184,56 @@ const CostCenterApproval = ({ notificationData, onNavigate }) => {
                 </div>
             </div>
 
-            {/* Main Content with Dynamic Grid Layout */}
-            <div className={`grid gap-6 transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                ? 'grid-cols-1 lg:grid-cols-12'
-                : 'grid-cols-1 lg:grid-cols-3'
-                }`}>
-                {/* Collapsible Cost Centers List */}
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                    ? 'lg:col-span-1'
-                    : 'lg:col-span-1'
-                    }`}>
-                    <div
-                        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
-                            }`}
-                        onMouseEnter={() => setIsLeftPanelHovered(true)}
-                        onMouseLeave={() => setIsLeftPanelHovered(false)}
-                    >
-                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
-                                    <div className="flex flex-col items-center space-y-2">
-                                        <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
-                                            <Clock className="w-4 h-4 text-white" />
-                                        </div>
-                                        <span className="text-xs text-purple-600 dark:text-purple-400 font-bold transform -rotate-90 whitespace-nowrap">
-                                            {filteredCostCenters.length}
-                                        </span>
-                                        <button
-                                            onClick={() => setIsLeftPanelCollapsed(false)}
-                                            className="p-1 text-purple-600 hover:text-purple-800 rounded hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
-                                            title="Expand Panel"
-                                        >
-                                            <ChevronRight className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
-                                                <Clock className="w-4 h-4 text-white" />
-                                            </div>
-                                            <span>Pending ({filteredCostCenters.length})</span>
-                                        </h2>
-                                        <div className="flex items-center space-x-2">
-                                            {selectedCC && (
-                                                <button
-                                                    onClick={() => setIsLeftPanelCollapsed(true)}
-                                                    className="p-2 text-purple-600 hover:text-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
-                                                    title="Collapse Panel"
-                                                >
-                                                    <ChevronLeft className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => {
-                                                    dispatch(fetchApprovalCostCenterDetails({ roleId: roleId || selectedRoleId, uid: uid }));
-                                                }}
-                                                className="p-2 text-purple-600 hover:text-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors"
-                                                title="Refresh"
-                                                disabled={ccDetailsLoading}
-                                            >
-                                                <RefreshCw className={`w-4 h-4 ${ccDetailsLoading ? 'animate-spin' : ''}`} />
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Cost Center List Content */}
-                        <div className={`p-4 max-h-[calc(100vh-300px)] overflow-y-auto transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
-                            }`}>
-                            {ccDetailsLoading ? (
-                                <div className="text-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">Loading...</p>}
-                                </div>
-                            ) : ccDetailsError ? (
-                                <div className="text-center py-8">
-                                    <XCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && (
-                                        <>
-                                            <p className="text-red-500 mb-2">Error loading data</p>
-                                            <button
-                                                onClick={() => {
-                                                    dispatch(fetchApprovalCostCenterDetails({ roleId: roleId || selectedRoleId, uid: uid }));
-                                                }}
-                                                className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                                            >
-                                                Retry
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            ) : filteredCostCenters.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">No Cost Centers found!</p>}
-                                </div>
-                            ) : (
-                                <div className={`space-y-3 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'flex flex-col items-center' : ''}`}>
-                                    {filteredCostCenters.map((cc) => {
-                                        const priority = getPriority(cc);
-                                        const dayLimit = cc.DayLimit || 0;
-                                        const amountDisplay = getAmountDisplay(dayLimit);
-
-                                        return (
-                                            <div
-                                                key={cc.CCCode}
-                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedCC?.CCCode === cc.CCCode
-                                                    ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg'
-                                                    : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 bg-white dark:bg-gray-800'
-                                                    } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
-                                                onClick={() => handleCCSelect(cc)}
-                                                title={isLeftPanelCollapsed && !isLeftPanelHovered ? `${cc.CCName} - ${cc.CCCode}` : ''}
-                                            >
-                                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
-                                                    <div className="w-full h-full rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
-                                                        <Building className="w-4 h-4 text-purple-600" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-4">
-                                                        <div className="flex items-center space-x-3 mb-3">
-                                                            <div className="relative">
-                                                                <div className="w-12 h-12 rounded-full border-2 border-purple-200 bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
-                                                                    <Building className="w-5 h-5 text-purple-600" />
-                                                                </div>
-                                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                                                    {cc.CCName}
-                                                                </h3>
-                                                                <p className="text-xs text-gray-500 truncate">{cc.CCInchargeName}</p>
-                                                            </div>
-                                                            <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
-                                                                {priority}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="flex items-center space-x-1">
-                                                                    <Hash className="w-3 h-3" />
-                                                                    <span className="truncate">{cc.CCCode}</span>
-                                                                </span>
-                                                                <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(cc.status)}`}>
-                                                                    Status: {cc.status}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-purple-600 dark:text-purple-400 font-medium">₹{amountDisplay.formatted}</span>
-                                                                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{cc.CCType}</span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-gray-500 text-xs">
-                                                                    <MapPin className="w-3 h-3 inline mr-1" />
-                                                                    {cc.State}
-                                                                </span>
-                                                                <span className="text-gray-500 text-xs">
-                                                                    Day Limit: ₹{formatIndianCurrency(cc.DayLimit)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Cost Center Details Panel with Dynamic Width */}
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                    ? 'lg:col-span-11'
-                    : 'lg:col-span-2'
-                    }`}>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors sticky top-6">
-                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
-                                    <FileCheck className="w-4 h-4 text-white" />
-                                </div>
-                                <span>{selectedCC ? 'Cost Center Approval' : 'Select a Cost Center'}</span>
-                            </h2>
-                        </div>
-
-                        <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-                            {selectedCC ? (
-                                <div className="space-y-6">
-                                    {ccDataLoading ? (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
-                                        </div>
-                                    ) : selectedCCData ? (
-                                        <>
-                                            {/* Enhanced Cost Center Header */}
-                                            <div className="p-6 rounded-xl border-2 bg-gradient-to-r from-indigo-50 via-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-indigo-200 dark:border-indigo-700">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center space-x-4">
-                                                        <div className="relative">
-                                                            <div className="w-16 h-16 rounded-full border-4 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-indigo-100 dark:from-indigo-800/50 dark:to-indigo-800/50 flex items-center justify-center shadow-lg">
-                                                                <Building className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                                                            </div>
-                                                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
-                                                                <CheckCircle className="w-3 h-3 text-white" />
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-bold text-xl text-gray-900 dark:text-white">
-                                                                {selectedCCData.CCName}
-                                                            </h3>
-                                                            <p className="font-semibold text-lg text-indigo-600 dark:text-indigo-400">
-                                                                CC: {selectedCCData.CCCode}
-                                                            </p>
-                                                            <div className="flex items-center space-x-2 mt-1">
-                                                                <span className="px-3 py-1 text-sm rounded-full border bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-opacity-20 dark:border-opacity-50">
-                                                                    {selectedCCData.CCType} Cost Center
-                                                                </span>
-                                                                <span className={`px-3 py-1 text-sm rounded-full border ${getStatusColor(selectedCCData.status)}`}>
-                                                                    Status: {selectedCCData.CC_Status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
-                                                            ₹{formatIndianCurrency(selectedCCData.DayLimit)}
-                                                        </p>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Day Limit</p>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                                                            Voucher: ₹{formatIndianCurrency(selectedCCData.VoucherLimit)}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">CC ID</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.CC_Id}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Sub Type</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.SubType}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">State</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.State}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Store Type</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.StoreType}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Document Viewer Section - NEW ADDITION */}
-                                            {(selectedCCData.contractscope || selectedCCData.contractpretenderBudget) && (
-                                                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-700">
-                                                    <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
-                                                        <FileText className="w-5 h-5 mr-2" />
-                                                        Contract Documents
-                                                    </h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {/* Contract Scope Document */}
-                                                        {selectedCCData.contractscope && (
-                                                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-600">
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center space-x-3">
-                                                                        <div className="p-2 bg-green-500 rounded-lg">
-                                                                            <CheckSquare className="w-4 h-4 text-white" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="font-semibold text-green-800 dark:text-green-200">Scope Check List</p>
-                                                                            <p className="text-xs text-green-600 dark:text-green-400">Approved by Contracts</p>
-                                                                            <p className="text-xs text-green-600 dark:text-green-400 font-mono">{selectedCCData.contractscope}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => openPdfViewer(
-                                                                            selectedCCData.contractscope,
-                                                                            `Contract Scope: ${selectedCCData.CCCode}`,
-                                                                            'scope'
-                                                                        )}
-                                                                        className="flex items-center space-x-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors shadow-md hover:shadow-lg"
-                                                                        title="View Contract Scope PDF"
-                                                                    >
-                                                                        <Eye className="w-4 h-4" />
-                                                                        <span>View</span>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Client Work Order Document */}
-                                                        {selectedCCData.contractpretenderBudget && (
-                                                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-600">
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center space-x-3">
-                                                                        <div className="p-2 bg-indigo-500 rounded-lg">
-                                                                            <FileBarChart className="w-4 h-4 text-white" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="font-semibold text-indigo-800 dark:text-indigo-200">Client Work Order</p>
-                                                                            <p className="text-xs text-indigo-600 dark:text-indigo-400">T&C Approved by Contracts</p>
-                                                                            <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">{selectedCCData.contractpretenderBudget}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => openPdfViewer(
-                                                                            selectedCCData.contractpretenderBudget,
-                                                                            `Client Work Order: ${selectedCCData.CCCode}`,
-                                                                            'workorder'
-                                                                        )}
-                                                                        className="flex items-center space-x-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-lg transition-colors shadow-md hover:shadow-lg"
-                                                                        title="View Client Work Order PDF"
-                                                                    >
-                                                                        <Eye className="w-4 h-4" />
-                                                                        <span>View</span>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* If no documents available */}
-                                                    {!selectedCCData.contractscope && !selectedCCData.contractpretenderBudget && (
-                                                        <div className="text-center py-4">
-                                                            <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-                                                            <p className="text-sm text-gray-600 dark:text-gray-400">No contract documents available</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Cost Center Details */}
-                                            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-700">
-                                                <h4 className="font-semibold text-purple-800 dark:text-purple-200 flex items-center mb-4">
-                                                    <Settings className="w-5 h-5 mr-2" />
-                                                    Cost Center Information
-                                                </h4>
-
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                    <div className="space-y-4">
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <UserCircle className="w-4 h-4 mr-2" />
-                                                                Incharge Details
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-gray-500">Name:</span>
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.CCInchargeName}</span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-gray-500">Phone:</span>
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.InchargePhNo}</span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-gray-500">CC Phone:</span>
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.PhoneNo}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <Home className="w-4 h-4 mr-2" />
-                                                                Location Details
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div>
-                                                                    <span className="text-gray-500">Address:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedCCData.SiteAddress}</p>
-                                                                </div>
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-gray-500">State:</span>
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.State}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-4">
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <FileBarChart2 className="w-4 h-4 mr-2" />
-                                                                Financial Limits
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-gray-500">Day Limit:</span>
-                                                                    <span className="font-medium text-green-600 dark:text-green-400">₹{formatIndianCurrency(selectedCCData.DayLimit)}</span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-gray-500">Voucher Limit:</span>
-                                                                    <span className="font-medium text-orange-600 dark:text-orange-400">₹{formatIndianCurrency(selectedCCData.VoucherLimit)}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <Activity className="w-4 h-4 mr-2" />
-                                                                Project Details
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div>
-                                                                    <span className="text-gray-500">Group:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedCCData.Group || 'Not Assigned'}</p>
-                                                                </div>
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-gray-500">Store Applicable:</span>
-                                                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.IsStoreApplicable}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Contract & Offer Details */}
-                                            {(selectedCCData.EPPLFinalOfferNo || selectedCCData.ClientAcceptanceReferenceNo) && (
-                                                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 p-6 rounded-xl border border-orange-200 dark:border-orange-700">
-                                                    <h4 className="font-semibold text-orange-800 dark:text-orange-200 mb-4 flex items-center">
-                                                        <Clipboard className="w-5 h-5 mr-2" />
-                                                        Contract & Offer Details
-                                                    </h4>
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                        {selectedCCData.EPPLFinalOfferNo && (
-                                                            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                                <div className="space-y-2 text-sm">
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-gray-500">Final Offer No:</span>
-                                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.EPPLFinalOfferNo}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-gray-500">Offer Date:</span>
-                                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.UpFinalOfferDate}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        {selectedCCData.ClientAcceptanceReferenceNo && (
-                                                            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                                <div className="space-y-2 text-sm">
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-gray-500">Client Ref No:</span>
-                                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientAcceptanceReferenceNo}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-gray-500">Acceptance Date:</span>
-                                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.UpClientAcceptanceDate}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Client Details */}
-                                            {(selectedCCData.ClientInchargeName || selectedCCData.ClientInchargePhNo || selectedCCData.ClientInchargemailid) && (
-                                                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-700">
-                                                    <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
-                                                        <Users className="w-5 h-5 mr-2" />
-                                                        Client Information
-                                                    </h4>
-                                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-gray-500">Name:</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientInchargeName}</span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-gray-500">Phone:</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientInchargePhNo}</span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-gray-500">Email:</span>
-                                                                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedCCData.ClientInchargemailid}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Approval History Toggle */}
-                                            <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                                                <button
-                                                    onClick={() => setShowRemarksHistory(!showRemarksHistory)}
-                                                    className="flex items-center justify-between w-full text-left"
-                                                >
-                                                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                                                        <UserCheck className="w-5 h-5 mr-2" />
-                                                        View Approval History ({remarks.length})
-                                                    </h4>
-                                                    {showRemarksHistory ? (
-                                                        <ChevronUp className="w-4 h-4 text-gray-400" />
-                                                    ) : (
-                                                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                                                    )}
-                                                </button>
-                                            </div>
-
-                                            {/* Remarks History Section */}
-                                            {renderRemarksHistory()}
-
-                                            {/* Approval Comments */}
-                                            <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
-                                                <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
-                                                    <FileText className="w-4 h-4 mr-2" />
-                                                    <span className="text-red-600 dark:text-red-400">*</span> Approval Comments (Mandatory)
-                                                </label>
-                                                <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                                                    Please review all cost center details, financial limits, incharge information, and provide your approval decision.
-                                                </p>
-                                                <textarea
-                                                    value={approvalComment}
-                                                    onChange={(e) => setApprovalComment(e.target.value)}
-                                                    className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${approvalComment.trim() === ''
-                                                        ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                                                        : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-                                                        }`}
-                                                    rows="4"
-                                                    placeholder="Please review cost center setup, financial limits, incharge details, location information..."
-                                                    required
-                                                />
-                                                {approvalComment.trim() === '' && (
-                                                    <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
-                                                        <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                                                        Approval comment is required before proceeding
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="space-y-4">
-                                                {renderActionButtons()}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading cost center details...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <AlertCircle className="w-12 h-12 text-purple-500 dark:text-purple-400" />
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Cost Center Selected</h3>
-                                    <p className="text-gray-500 dark:text-gray-400">
-                                        Select a Cost Center from the list to view details and take action.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredCostCenters,
+                    selectedItem: selectedCC,
+                    onItemSelect: handleCCSelect,
+                    renderItem: renderItemCard,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: ccDetailsLoading,
+                    error: ccDetailsError,
+                    onRefresh: () => dispatch(fetchApprovalCostCenterDetails({ roleId: roleId || selectedRoleId, uid: uid })),
+                    config: {
+                        title: 'Pending',
+                        icon: Clock,
+                        emptyMessage: 'No Cost Centers found!',
+                        itemKey: 'CCCode',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Cost Center Approval',
+                        icon: FileCheck,
+                        headerGradient: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedCC,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Select a Cost Center',
+                        icon: FileCheck,
+                        selectedTitle: 'Cost Center Approval',
+                        emptyTitle: 'No Cost Center Selected',
+                        emptyMessage: 'Select a Cost Center from the list to view details and take action.',
+                        headerGradient: 'from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
             <PdfModal />
         </div>
     );

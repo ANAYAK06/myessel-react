@@ -1449,6 +1449,7 @@ const VerifyStaffRegistration = ({ notificationData, onNavigate }) => {
                         title: 'Staff Registration',
                         icon: User,
                         headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     },
                 }}
                 right={{

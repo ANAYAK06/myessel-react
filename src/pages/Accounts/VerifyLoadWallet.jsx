@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    Wallet, Calendar, IndianRupee, ArrowRight, Clock,
-    Building2, RefreshCw,
+    Wallet, Calendar, ArrowRight, Clock,
 } from 'lucide-react';
 
 import InboxHeader     from '../../components/Inbox/InboxHeader';
-import StatsCards      from '../../components/Inbox/StatsCards';
 import ActionButtons   from '../../components/Inbox/ActionButtons';
 import RemarksHistory  from '../../components/Inbox/RemarksHistory';
-import LeftPanel       from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -196,34 +194,6 @@ const VerifyLoadWallet = ({ notificationData, onNavigate }) => {
         item.FromWalletName?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // ── Stats ─────────────────────────────────────────────────────────────────
-    const statsCards = [
-        {
-            icon: Wallet,
-            value: verifyGrid.length,
-            label: 'Total Pending',
-            color: 'indigo',
-        },
-        {
-            icon: IndianRupee,
-            value: `₹${formatAmount(verifyGrid.reduce((s, v) => s + parseFloat(v.TransferAmount || 0), 0))}`,
-            label: 'Total Amount',
-            color: 'purple',
-        },
-        {
-            icon: Building2,
-            value: [...new Set(verifyGrid.map(v => v.Transferfrom).filter(Boolean))].length,
-            label: 'Transfer Types',
-            color: 'blue',
-        },
-        {
-            icon: ArrowRight,
-            value: [...new Set(verifyGrid.map(v => v.ToWalletName).filter(Boolean))].length,
-            label: 'Destination Wallets',
-            color: 'violet',
-        },
-    ];
-
     // ── Left panel renderers ──────────────────────────────────────────────────
     const renderItemCard = (item) => (
         <div className="p-4">
@@ -263,6 +233,27 @@ const VerifyLoadWallet = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px]">{item.ToWalletName || '—'}</span>
+            <span className="font-mono text-indigo-600 dark:text-indigo-400 min-w-[110px]">{item.TransactionRefno}</span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[120px]">
+                {item.Transferfrom === 'Bank' ? item.FromBankName : item.FromWalletName}
+            </span>
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                item.Transferfrom === 'Bank'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+            }`}>
+                {item.Transferfrom}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" />{item.TransactionDate}
+            </span>
+            <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{formatAmount(item.TransferAmount)}</span>
+        </div>
+    );
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <Wallet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -274,7 +265,7 @@ const VerifyLoadWallet = ({ notificationData, onNavigate }) => {
         if (!selectedItem) return null;
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {detailLoading && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
                         <div className="flex items-center space-x-3">
@@ -407,7 +398,6 @@ const VerifyLoadWallet = ({ notificationData, onNavigate }) => {
                                 commentLabel: 'Verification Comments',
                                 commentPlaceholder: 'Please verify the transfer source, destination wallet, amount, and any discrepancies...',
                                 commentRequired: true,
-                                commentRows: 4,
                                 commentMaxLength: 1000,
                                 showCharCount: true,
                                 validationStyle: 'dynamic',
@@ -451,7 +441,7 @@ const VerifyLoadWallet = ({ notificationData, onNavigate }) => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Load Wallet Verification'} (${verifyGrid.length})`}
                 subtitle={ModuleDisplayName}
@@ -466,89 +456,60 @@ const VerifyLoadWallet = ({ notificationData, onNavigate }) => {
                     value: searchQuery,
                     onChange: (e) => setSearchQuery(e.target.value),
                 }}
-                className="bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-700"
+                enableViewToggle
             />
 
-            <div className="px-6 mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-2 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={setSelectedItem}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={listLoading}
-                            error={listError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No wallet transfers pending',
-                                itemKey: 'ID',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                        <Wallet className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>{selectedItem ? 'Transfer Verification' : 'Transfer Details'}</span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Wallet className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Transfer Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a wallet transfer from the list to view details and verify.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: setSelectedItem,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: listLoading,
+                    error: listError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No wallet transfers pending',
+                        itemKey: 'ID',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Load Wallet Verification',
+                        icon: Wallet,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: detailLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Transfer Details',
+                        icon: Wallet,
+                        selectedTitle: 'Transfer Verification',
+                        emptyTitle: 'No Transfer Selected',
+                        emptyMessage: 'Select a wallet transfer from the list to view details and verify.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

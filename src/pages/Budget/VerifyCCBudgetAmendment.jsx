@@ -1177,6 +1177,7 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                         title: 'CC Budget Amendment',
                         icon: Briefcase,
                         headerGradient: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     }
                 }}
                 right={{

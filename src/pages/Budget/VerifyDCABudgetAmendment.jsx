@@ -8,11 +8,10 @@ import {
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
 import AttachmentModal from '../../components/Inbox/AttachmentModal';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -425,46 +424,13 @@ const VerifyDCABudgetAmendment = ({ notificationData, onNavigate }) => {
         return matchesSearch && matchesCCCode && matchesState;
     });
 
-    const statsCards = [
-        {
-            icon: Building,
-            value: amendmentsList.length,
-            label: 'Total Amendments',
-            color: 'purple'
-        },
-        {
-            icon: TrendingUp,
-            value: detailedAmendmentData?.DcaAddition
-                ? `₹${formatIndianCurrency(detailedAmendmentData.DcaAddition)}`
-                : '₹0',
-            label: 'Budget Addition',
-            color: 'green'
-        },
-        {
-            icon: TrendingDown,
-            value: detailedAmendmentData?.DcaSubstraction
-                ? `₹${formatIndianCurrency(parseFloat(detailedAmendmentData.DcaSubstraction))}`
-                : '₹0',
-            label: 'BudgetSubtraction',
-            color: 'red'
-        },
-        {
-            icon: Hash,
-            value: detailedAmendmentData?.DCABudgetBalance
-                ? `₹${formatIndianCurrency(detailedAmendmentData.DCABudgetBalance)}`
-                : '₹0',
-            label: 'Budget Balance',
-            color: 'indigo'
-        }
-    ];
-
     const renderAmendmentItem = (amendment, isSelected) => {
         return (
             <div className="p-4">
                 <div className="flex items-center space-x-3 mb-3">
                     <div className="relative">
-                        <div className="w-12 h-12 rounded-full border-2 border-purple-200 dark:border-purple-600 bg-gradient-to-br from-purple-100 to-purple-100 dark:from-purple-800/50 dark:to-purple-800/50 flex items-center justify-center">
-                            <Building className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <div className="w-12 h-12 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
+                            <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                     </div>
@@ -492,9 +458,20 @@ const VerifyDCABudgetAmendment = ({ notificationData, onNavigate }) => {
         );
     };
 
+    const renderListItem = (amendment) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px]">{amendment.CCName || amendment.CCCode}</span>
+            <span className="font-mono text-gray-500 dark:text-gray-400 min-w-[100px]">{amendment.CCCode}</span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Hash className="w-3 h-3" />{amendment.cc_Type || 'N/A'}
+            </span>
+            <span className="ml-auto text-gray-500 dark:text-gray-400 whitespace-nowrap">{amendment.AmdDate || 'N/A'}</span>
+        </div>
+    );
+
     const renderCollapsedItem = (amendment, isSelected) => (
-        <div className="w-full h-full rounded-lg border-2 border-purple-200 dark:border-purple-600 bg-gradient-to-br from-purple-100 to-purple-100 dark:from-purple-800/50 dark:to-purple-800/50 flex items-center justify-center">
-            <Building className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+        <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
+            <Building className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
         </div>
     );
 
@@ -510,7 +487,7 @@ const VerifyDCABudgetAmendment = ({ notificationData, onNavigate }) => {
         const hasDetailedData = !!detailedAmendmentData;
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {detailedAmendmentLoading && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
                         <div className="flex items-center space-x-3">
@@ -770,13 +747,12 @@ const VerifyDCABudgetAmendment = ({ notificationData, onNavigate }) => {
                         commentLabel: 'Verification Comments',
                         commentPlaceholder: 'Please verify DCA additions, subtractions, net change calculations, and approval requirements...',
                         commentRequired: true,
-                        commentRows: 4,
                         commentMaxLength: 1000,
                         showCharCount: true,
                         validationStyle: 'dynamic',
                         checkboxGradient: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
-                        commentGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
-                        commentBorder: 'border-purple-200 dark:border-purple-700'
+                        commentGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        commentBorder: 'border-indigo-200 dark:border-indigo-700'
                     }}
                 />
 
@@ -815,9 +791,7 @@ const VerifyDCABudgetAmendment = ({ notificationData, onNavigate }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-
-
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Cost Center(PCC)'} (${amendmentsList.length})`}
                 subtitle={ModuleDisplayName}
@@ -846,90 +820,60 @@ const VerifyDCABudgetAmendment = ({ notificationData, onNavigate }) => {
                         options: states
                     }
                 ]}
-                className="bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"
+                enableViewToggle
             />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <div className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}>
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <div
-                            onMouseEnter={() => setIsLeftPanelHovered(true)}
-                            onMouseLeave={() => setIsLeftPanelHovered(false)}
-                            style={{ height: 'calc(100vh - 300px)' }}
-                            
-                        >
-                            <LeftPanel
-                                items={filteredAmendments}
-                                selectedItem={selectedAmendment}
-                                onItemSelect={handleAmendmentSelect}
-                                renderItem={renderAmendmentItem}
-                                renderCollapsedItem={renderCollapsedItem}
-                                isCollapsed={isLeftPanelCollapsed}
-                                onCollapseToggle={setIsLeftPanelCollapsed}
-                                loading={amendmentsLoading}
-                                error={amendmentsError}
-                                onRefresh={handleRefresh}
-                                config={{
-                                    title: 'Pending',
-                                    icon: Clock,
-                                    emptyMessage: 'No amendments found!',
-                                    itemKey: 'CCCode',
-                                    enableCollapse: true,
-                                    enableRefresh: true,
-                                    enableHover: true,
-                                    maxHeight: '100%',
-                                    headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20'
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-500 rounded-lg">
-                                        <FileCheck className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedAmendment ? 'Amendment Verification' : 'Amendment Details'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh-200px)' }}>
-                                {selectedAmendment ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <AlertCircle className="w-12 h-12 text-purple-500 dark:text-purple-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Amendment Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a cost center amendment from the list to view details and take action.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredAmendments,
+                    selectedItem: selectedAmendment,
+                    onItemSelect: handleAmendmentSelect,
+                    renderItem: renderAmendmentItem,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: amendmentsLoading,
+                    error: amendmentsError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending',
+                        icon: Clock,
+                        emptyMessage: 'No amendments found!',
+                        itemKey: 'CCCode',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'DCA Budget Amendment',
+                        icon: FileCheck,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedAmendment,
+                    loading: detailedAmendmentLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Amendment Details',
+                        icon: FileCheck,
+                        selectedTitle: 'Amendment Verification',
+                        emptyTitle: 'No Amendment Selected',
+                        emptyMessage: 'Select a cost center amendment from the list to view details and take action.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
 
             <AttachmentModal
                 isOpen={showAttachmentModal}

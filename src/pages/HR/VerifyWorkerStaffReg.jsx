@@ -9,7 +9,7 @@ import {
 import InboxHeader        from '../../components/Inbox/InboxHeader';
 import StatsCards         from '../../components/Inbox/StatsCards';
 import ActionButtons      from '../../components/Inbox/ActionButtons';
-import LeftPanel          from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout   from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput  from '../../components/Inbox/VerificationInput';
 import RemarksHistory     from '../../components/Inbox/RemarksHistory';
 
@@ -554,78 +554,56 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div
-                    className={`grid transition-all duration-300 ${
-                        isLeftPanelCollapsed && !isLeftPanelHovered
-                            ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                            : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedBatch && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    {/* Left panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredList}
-                            selectedItem={selectedBatch}
-                            onItemSelect={handleBatchSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={listLoading}
-                            error={listError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No worker registration batches found!',
-                                itemKey: 'Id',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                            }}
-                        />
-                    </div>
-
-                    {/* Right panel */}
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                        <FileText className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedBatch ? 'Batch Registration Details' : 'Select a Batch'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedBatch ? renderDetailContent() : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Users className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Batch Selected</h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a registration batch from the list to view details and verify.
-                                        </p>
-                                        {listError && (
-                                            <p className="text-red-500 dark:text-red-400 text-sm mt-3">{listError}</p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredList,
+                    selectedItem: selectedBatch,
+                    onItemSelect: handleBatchSelect,
+                    renderItem: renderItemCard,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: listLoading,
+                    error: listError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No worker registration batches found!',
+                        itemKey: 'Id',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Worker & Staff Registration Verification',
+                        icon: FileText,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedBatch,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Select a Batch',
+                        icon: FileText,
+                        selectedTitle: 'Batch Registration Details',
+                        emptyTitle: 'No Batch Selected',
+                        emptyMessage: 'Select a registration batch from the list to view details and verify.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

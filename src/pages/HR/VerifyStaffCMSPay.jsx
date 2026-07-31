@@ -761,6 +761,7 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                         title: 'CMS Payment Verification',
                         icon: Receipt,
                         headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     },
                 }}
                 right={{

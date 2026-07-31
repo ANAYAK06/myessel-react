@@ -31,7 +31,7 @@ const VerificationInput = ({
         commentLabel: 'Verification Comments',
         commentPlaceholder: 'Enter your verification comments...',
         commentRequired: true,
-        commentRows: 4,
+        commentRows: 2,
         commentMinLength: 0,
         commentMaxLength: 1000,
         showCharCount: false,
@@ -39,9 +39,14 @@ const VerificationInput = ({
         checkboxBorder: 'border-green-200 dark:border-green-700',
         commentGradient: 'from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20',
         commentBorder: 'border-indigo-200 dark:border-indigo-700',
-        validationStyle: 'dynamic' // 'dynamic', 'border-only', 'none'
+        validationStyle: 'dynamic', // 'dynamic', 'border-only', 'none'
+        checkboxContainerClass: 'p-3',
+        checkboxLabelClass: 'font-semibold text-xs text-green-800 dark:text-green-200 block',
+        checkboxDescClass: 'text-xs text-green-700 dark:text-green-300 mt-0.5',
+        commentContainerClass: 'p-3',
+        commentLabelClass: 'text-xs font-bold text-gray-800 dark:text-gray-200 mb-1.5 flex items-center'
     },
-    
+
     className = ''
 }) => {
     // Merge config with defaults
@@ -51,7 +56,7 @@ const VerificationInput = ({
         commentLabel: 'Verification Comments',
         commentPlaceholder: 'Enter your verification comments...',
         commentRequired: true,
-        commentRows: 4,
+        commentRows: 2,
         commentMinLength: 0,
         commentMaxLength: 1000,
         showCharCount: false,
@@ -60,6 +65,11 @@ const VerificationInput = ({
         commentGradient: 'from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20',
         commentBorder: 'border-indigo-200 dark:border-indigo-700',
         validationStyle: 'dynamic',
+        checkboxContainerClass: 'p-3',
+        checkboxLabelClass: 'font-semibold text-xs text-green-800 dark:text-green-200 block',
+        checkboxDescClass: 'text-xs text-green-700 dark:text-green-300 mt-0.5',
+        commentContainerClass: 'p-3',
+        commentLabelClass: 'text-xs font-bold text-gray-800 dark:text-gray-200 mb-1.5 flex items-center',
         ...config
     };
 
@@ -96,7 +106,7 @@ const VerificationInput = ({
     return (
         <div className={`space-y-6 ${className}`}>
             {/* Verification Checkbox */}
-            <div className={`bg-gradient-to-br ${mergedConfig.checkboxGradient} p-5 rounded-xl border-2 ${mergedConfig.checkboxBorder}`}>
+            <div className={`bg-gradient-to-br ${mergedConfig.checkboxGradient} ${mergedConfig.checkboxContainerClass} rounded-xl border-2 ${mergedConfig.checkboxBorder}`}>
                 <label className="flex items-start space-x-3 cursor-pointer">
                     <input
                         type="checkbox"
@@ -105,11 +115,11 @@ const VerificationInput = ({
                         className="w-5 h-5 mt-1 text-green-600 border-gray-300 rounded focus:ring-green-500"
                     />
                     <div>
-                        <span className="font-semibold text-green-800 dark:text-green-200 block">
+                        <span className={mergedConfig.checkboxLabelClass}>
                             {mergedConfig.checkboxLabel}
                         </span>
                         {mergedConfig.checkboxDescription && (
-                            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                            <p className={mergedConfig.checkboxDescClass}>
                                 {mergedConfig.checkboxDescription}
                             </p>
                         )}
@@ -118,8 +128,8 @@ const VerificationInput = ({
             </div>
 
             {/* Verification Comments */}
-            <div className={`bg-gradient-to-br ${mergedConfig.commentGradient} p-5 rounded-xl border-2 ${mergedConfig.commentBorder}`}>
-                <label className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
+            <div className={`bg-gradient-to-br ${mergedConfig.commentGradient} ${mergedConfig.commentContainerClass} rounded-xl border-2 ${mergedConfig.commentBorder}`}>
+                <label className={mergedConfig.commentLabelClass}>
                     <FileText className="w-4 h-4 mr-2" />
                     {mergedConfig.commentRequired && (
                         <span className="text-red-600 dark:text-red-400 mr-1">*</span>

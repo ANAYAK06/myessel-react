@@ -418,6 +418,7 @@ const VerifyHoldPayment = ({ notificationData, onNavigate }) => {
                         title: 'Hold Payment Verification',
                         icon: Lock,
                         headerGradient: 'from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     },
                 }}
                 right={{

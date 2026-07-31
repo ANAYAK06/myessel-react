@@ -9,10 +9,9 @@ import {
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -323,40 +322,13 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
         return matchesSearch && matchesStatus && matchesPaymentMode;
     });
 
-    const statsCards = [
-        {
-            icon: CreditCard,
-            value: paymentInbox.length,
-            label: 'Total Payments',
-            color: 'blue'
-        },
-        {
-            icon: Clock,
-            value: paymentInbox.length,
-            label: 'Pending Verification',
-            color: 'orange'
-        },
-        {
-            icon: DollarSign,
-            value: paymentDetails?.paymentMaster?.TotalAmount ? `₹${formatCurrency(paymentDetails.paymentMaster.TotalAmount)}` : '-',
-            label: 'Payment Amount',
-            color: 'green'
-        },
-        {
-            icon: Banknote,
-            value: paymentDetails?.paymentMaster?.PaymentMode || '-',
-            label: 'Payment Mode',
-            color: 'purple'
-        }
-    ];
-
     const renderItemCard = (item, isSelected) => {
         return (
             <div className="p-4">
                 <div className="flex items-center space-x-3 mb-3">
                     <div className="relative">
-                        <div className="w-12 h-12 rounded-full border-2 border-blue-200 dark:border-blue-600 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-800/50 dark:to-purple-800/50 flex items-center justify-center">
-                            <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <div className="w-12 h-12 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
+                            <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                     </div>
@@ -394,9 +366,24 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
         );
     };
 
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px]">{item.LotName}</span>
+            <span className="font-mono text-gray-500 dark:text-gray-400 min-w-[110px]">Ref: {item.TransactionRefNo}</span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[120px] truncate">{item.BankName}</span>
+            <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                {item.PaymentMode}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" />{item.PaymentDate}
+            </span>
+            <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{formatCurrency(item.TotalAmount || 0)}</span>
+        </div>
+    );
+
     const renderCollapsedItem = (item, isSelected) => (
-        <div className="w-full h-full rounded-lg border-2 border-blue-200 dark:border-blue-600 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-800/50 dark:to-purple-800/50 flex items-center justify-center">
-            <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
+            <CreditCard className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
         </div>
     );
 
@@ -637,7 +624,7 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
         const hasDetailedData = !!paymentDetails?.paymentMaster;
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {detailsLoading && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
                         <div className="flex items-center space-x-3">
@@ -650,11 +637,11 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
                 )}
 
                 {/* CUSTOM HEADER */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700">
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-indigo-200 dark:border-indigo-700">
                     <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-4">
                             <div className="relative">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
                                     <CreditCard className="w-8 h-8 text-white" />
                                 </div>
                                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-500 rounded-full border-3 border-white dark:border-gray-800 flex items-center justify-center">
@@ -666,12 +653,12 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
                                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                                     {displayData.LotName || 'Payment Processing'}
                                 </h2>
-                                <p className="text-blue-600 dark:text-blue-400 font-semibold mb-3">
+                                <p className="text-indigo-600 dark:text-indigo-400 font-semibold mb-3">
                                     Ref: {displayData.TransactionRefNo} • {displayData.BankName}
                                 </p>
 
                                 <div className="flex flex-wrap gap-2">
-                                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                                    <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium">
                                         {displayData.PaymentMode}
                                     </span>
                                     <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
@@ -701,7 +688,7 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-blue-200 dark:border-blue-700">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-indigo-200 dark:border-indigo-700">
                         {hasDetailedData && displayData.AccountNo && (
                             <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Account Number</p>
@@ -765,13 +752,12 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
                         commentLabel: 'Verification Comments',
                         commentPlaceholder: 'Please verify payment details, bank account, payment mode, cheque information, and any discrepancies...',
                         commentRequired: true,
-                        commentRows: 4,
                         commentMaxLength: 1000,
                         showCharCount: true,
                         validationStyle: 'dynamic',
-                        checkboxGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20',
-                        commentGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20',
-                        commentBorder: 'border-blue-200 dark:border-blue-700'
+                        checkboxGradient: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+                        commentGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        commentBorder: 'border-indigo-200 dark:border-indigo-700'
                     }}
                 />
 
@@ -810,7 +796,7 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Dividend Bank Payment Verification'} (${paymentInbox.length})`}
                 subtitle={ModuleDisplayName}
@@ -839,99 +825,60 @@ const DividendBankPaymentVerification = ({ notificationData, onNavigate }) => {
                         options: statuses
                     }
                 ]}
-                className="bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600"
+                enableViewToggle
             />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <div
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                        }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) {
-                            setIsLeftPanelHovered(false);
-                        }
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={inboxLoading}
-                            error={inboxError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No bank payments found!',
-                                itemKey: 'TransactionRefNo',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20'
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div
-                            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
-                            onMouseEnter={() => {
-                                if (selectedItem && !isLeftPanelHovered) {
-                                    setIsLeftPanelHovered(false);
-                                }
-                            }}
-                        >
-                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                                        <CreditCard className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedItem ? 'Payment Verification' : 'Payment Details'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <CreditCard className="w-12 h-12 text-blue-500 dark:text-blue-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Payment Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a bank payment from the list to view details and verify.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: inboxLoading,
+                    error: inboxError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No bank payments found!',
+                        itemKey: 'TransactionRefNo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Dividend Bank Payment Verification',
+                        icon: CreditCard,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: detailsLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Payment Details',
+                        icon: CreditCard,
+                        selectedTitle: 'Payment Verification',
+                        emptyTitle: 'No Payment Selected',
+                        emptyMessage: 'Select a bank payment from the list to view details and verify.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

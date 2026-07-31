@@ -418,6 +418,7 @@ const VerifyRetentionPayment = ({ notificationData, onNavigate }) => {
                         title: 'Retention Payment Verification',
                         icon: Landmark,
                         headerGradient: 'from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     },
                 }}
                 right={{

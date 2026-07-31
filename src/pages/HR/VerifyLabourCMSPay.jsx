@@ -649,6 +649,7 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
                                 title: 'Labour CMS Verification',
                                 icon: HardHat,
                                 headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                                maxWidth: 'max-w-[80vw]',
                             }}
                         />
                     </div>

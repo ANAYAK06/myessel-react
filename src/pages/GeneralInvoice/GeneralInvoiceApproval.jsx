@@ -19,6 +19,9 @@ import {
     FileBarChart2, Shield, Globe, Activity, Building2, CreditCard as CreditCardIcon
 } from 'lucide-react';
 
+import InboxHeader from '../../components/Inbox/InboxHeader';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
+
 // GENERAL INVOICE SLICE IMPORTS
 import {
     fetchVerificationGeneralInvoice,
@@ -566,71 +569,307 @@ const GeneralInvoiceApproval = ({ notificationData, onNavigate }) => {
         );
     };
 
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                        <button
-                            onClick={handleBackToInbox}
-                            className="p-2 text-blue-100 hover:text-white hover:bg-blue-500 rounded-lg transition-colors"
-                            title="Back to Dashboard"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-blue-500 rounded-xl shadow-inner">
-                                <Receipt className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold">
-                                    {InboxTitle || 'General Invoice Approval'}
-                                </h1>
-                                <p className="text-blue-100 mt-1">
-                                    {ModuleDisplayName} • {verificationGeneralInvoices.length} Invoices pending
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <div className="px-4 py-2 bg-blue-500 text-blue-100 text-sm rounded-full border border-blue-400">
-                            Invoice Management
-                        </div>
-                        <div className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm rounded-full shadow-md">
-                            {verificationGeneralInvoices.length} Pending
-                        </div>
-                    </div>
-                </div>
+    const renderItemCard = (item, isSelected) => {
+        const priority = getPriority(item);
+        const amountDisplay = getAmountDisplay(item.InvoiceAmount || 0);
 
-                {/* Search and Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-blue-200" />
-                            <input
-                                type="text"
-                                placeholder="Search by invoice number, name, cost center, amount..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-blue-500/50 text-white placeholder-blue-200 border border-blue-400 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-300 backdrop-blur-sm"
-                            />
+        return (
+            <div className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-full border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                            <Receipt className="w-5 h-5 text-blue-600" />
                         </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                     </div>
-                    <div>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-blue-500/50 text-white border border-blue-400 rounded-xl focus:ring-2 focus:ring-blue-300 backdrop-blur-sm"
-                        >
-                            <option value="All">All Status</option>
-                            {statuses.map(status => (
-                                <option key={status} value={status}>Status {status}</option>
-                            ))}
-                        </select>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                            Invoice #{item.InvoiceNo}
+                        </h3>
+                        <p className="text-xs text-gray-500 truncate">{item.Name || 'N/A'}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
+                        {priority}
+                    </span>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <div className="flex items-center justify-between">
+                        <span className="flex items-center space-x-1">
+                            <Calendar className="w-3 h-3" />
+                            <span className="truncate">{formatDate(item.InvoiceDate)}</span>
+                        </span>
+                        <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(item.Status)}`}>
+                            Status: {item.Status}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-blue-600 dark:text-blue-400 font-medium">₹{amountDisplay.formatted}</span>
+                        <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{item.CostCenter?.split(',')[0] || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-gray-500 text-xs">
+                            <Hash className="w-3 h-3 inline mr-1" />
+                            {item.InvoiceNo}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                            Amount: ₹{formatIndianCurrency(item.InvoiceAmount)}
+                        </span>
                     </div>
                 </div>
             </div>
+        );
+    };
+
+    const renderCollapsedItem = (item, isSelected) => (
+        <div className="w-full h-full rounded-lg border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+            <Receipt className="w-4 h-4 text-blue-600" />
+        </div>
+    );
+
+    const renderDetailContent = () => {
+        if (!selectedInvoice) return null;
+
+        return (
+            <div className="space-y-6">
+                {invoiceDataLoading ? (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
+                    </div>
+                ) : selectedInvoiceData ? (
+                    <>
+                        {/* Enhanced Invoice Header */}
+                        <div className="p-6 rounded-xl border-2 bg-gradient-to-r from-indigo-50 via-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 border-indigo-200 dark:border-indigo-700">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-4">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 rounded-full border-4 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-indigo-100 dark:from-indigo-800/50 dark:to-indigo-800/50 flex items-center justify-center shadow-lg">
+                                            <Receipt className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
+                                            <CheckCircle className="w-3 h-3 text-white" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-xl text-gray-900 dark:text-white">
+                                            Invoice #{selectedInvoiceData.InvoiceNo}
+                                        </h3>
+                                        <p className="font-semibold text-lg text-indigo-600 dark:text-indigo-400">
+                                            {selectedInvoiceData.Name || 'Invoice Approval'}
+                                        </p>
+                                        <div className="flex items-center space-x-2 mt-1">
+                                            <span className="px-3 py-1 text-sm rounded-full border bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-opacity-20 dark:border-opacity-50">
+                                                General Invoice
+                                            </span>
+                                            <span className={`px-3 py-1 text-sm rounded-full border ${getStatusColor(selectedInvoiceData.Status)}`}>
+                                                Status: {selectedInvoiceData.Status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                                        ₹{formatIndianCurrency(selectedInvoiceData.InvoiceAmount)}
+                                    </p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Invoice Amount</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                                        Date: {formatDate(selectedInvoiceData.InvoiceDate)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Invoice ID</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedInvoiceData.Id}</span>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">MOID</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{selectedInvoiceData.MOID}</span>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Balance</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">₹{formatIndianCurrency(selectedInvoiceData.Balance || 0)}</span>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Priority</span>
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{getPriority(selectedInvoiceData)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Cost Center & DCA Details */}
+                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-700">
+                            <h4 className="font-semibold text-purple-800 dark:text-purple-200 flex items-center mb-4">
+                                <CreditCardIcon className="w-5 h-5 mr-2" />
+                                Cost Center & DCA Information
+                            </h4>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <Building2 className="w-4 h-4 mr-2" />
+                                            Cost Center Details
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div>
+                                                <span className="text-gray-500">Code:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CostCenter?.split(',')[0] || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-500">Name:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CCName || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <CreditCard className="w-4 h-4 mr-2" />
+                                            DCA Information
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div>
+                                                <span className="text-gray-500">DCA Code:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DCACode || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-500">DCA Name:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DCAName || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <ArrowRightLeft className="w-4 h-4 mr-2" />
+                                            Credit Sub DCA
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div>
+                                                <span className="text-gray-500">Code:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CreditSubDca || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-500">Name:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CreditSubDCACodeName || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
+                                            <ArrowRightLeft className="w-4 h-4 mr-2" />
+                                            Debit Sub DCA
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div>
+                                                <span className="text-gray-500">Code:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DebitSubDca || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-500">Name:</span>
+                                                <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DebitSubDCACodeName || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Approval History Toggle */}
+                        <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                            <button
+                                onClick={() => setShowRemarksHistory(!showRemarksHistory)}
+                                className="flex items-center justify-between w-full text-left"
+                            >
+                                <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                                    <UserCheck className="w-5 h-5 mr-2" />
+                                    View Approval History ({remarks.length})
+                                </h4>
+                                {showRemarksHistory ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                                ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                                )}
+                            </button>
+                        </div>
+
+                        {renderRemarksHistory()}
+
+                        {/* Approval Comments */}
+                        <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
+                            <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
+                                <FileText className="w-4 h-4 mr-2" />
+                                <span className="text-red-600 dark:text-red-400">*</span> Approval Comments (Mandatory)
+                            </label>
+                            <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                                Please review all invoice details, amounts, DCA information, and provide your approval decision.
+                            </p>
+                            <textarea
+                                value={approvalComment}
+                                onChange={(e) => setApprovalComment(e.target.value)}
+                                className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${approvalComment.trim() === ''
+                                    ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                                    : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                                    }`}
+                                rows="4"
+                                placeholder="Please review invoice amount, cost center allocation, DCA details, and accounting entries..."
+                                required
+                            />
+                            {approvalComment.trim() === '' && (
+                                <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                                    Approval comment is required before proceeding
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="space-y-4">
+                            {renderActionButtons()}
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading invoice details...</p>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-6">
+            <InboxHeader
+                title={`${InboxTitle || 'General Invoice Approval'} (${verificationGeneralInvoices.length})`}
+                subtitle={ModuleDisplayName}
+                itemCount={verificationGeneralInvoices.length}
+                onBackClick={handleBackToInbox}
+                HeaderIcon={Receipt}
+                badgeText="Invoice Management"
+                badgeCount={verificationGeneralInvoices.length}
+                searchConfig={{
+                    enabled: true,
+                    placeholder: 'Search by invoice number, name, cost center, amount...',
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                }}
+                filters={[
+                    {
+                        value: filterStatus,
+                        onChange: (e) => setFilterStatus(e.target.value),
+                        defaultLabel: 'All Status',
+                        options: statuses.map(status => ({ value: status, label: `Status ${status}` }))
+                    }
+                ]}
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700"
+                enableViewToggle
+            />
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -711,421 +950,56 @@ const GeneralInvoiceApproval = ({ notificationData, onNavigate }) => {
                 </div>
             </div>
 
-            {/* Main Content with Dynamic Grid Layout */}
-            <div className={`grid gap-6 transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                ? 'grid-cols-1 lg:grid-cols-12'
-                : 'grid-cols-1 lg:grid-cols-3'
-                }`}>
-                {/* Collapsible Invoices List */}
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                    ? 'lg:col-span-1'
-                    : 'lg:col-span-1'
-                    }`}>
-                    <div
-                        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
-                            }`}
-                        onMouseEnter={() => setIsLeftPanelHovered(true)}
-                        onMouseLeave={() => setIsLeftPanelHovered(false)}
-                    >
-                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
-                                    <div className="flex flex-col items-center space-y-2">
-                                        <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
-                                            <Clock className="w-4 h-4 text-white" />
-                                        </div>
-                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-bold transform -rotate-90 whitespace-nowrap">
-                                            {filteredInvoices.length}
-                                        </span>
-                                        <button
-                                            onClick={() => setIsLeftPanelCollapsed(false)}
-                                            className="p-1 text-blue-600 hover:text-blue-800 rounded hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-colors"
-                                            title="Expand Panel"
-                                        >
-                                            <ChevronRight className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
-                                                <Clock className="w-4 h-4 text-white" />
-                                            </div>
-                                            <span>Pending ({filteredInvoices.length})</span>
-                                        </h2>
-                                        <div className="flex items-center space-x-2">
-                                            {selectedInvoice && (
-                                                <button
-                                                    onClick={() => setIsLeftPanelCollapsed(true)}
-                                                    className="p-2 text-blue-600 hover:text-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-colors"
-                                                    title="Collapse Panel"
-                                                >
-                                                    <ChevronLeft className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => {
-                                                    dispatch(fetchVerificationGeneralInvoice(roleId || selectedRoleId));
-                                                }}
-                                                className="p-2 text-blue-600 hover:text-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-colors"
-                                                title="Refresh"
-                                                disabled={invoicesLoading}
-                                            >
-                                                <RefreshCw className={`w-4 h-4 ${invoicesLoading ? 'animate-spin' : ''}`} />
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Invoice List Content */}
-                        <div className={`p-4 max-h-[calc(100vh-300px)] overflow-y-auto transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-16' : 'w-full'
-                            }`}>
-                            {invoicesLoading ? (
-                                <div className="text-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">Loading...</p>}
-                                </div>
-                            ) : invoicesError ? (
-                                <div className="text-center py-8">
-                                    <XCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && (
-                                        <>
-                                            <p className="text-red-500 mb-2">Error loading data</p>
-                                            <button
-                                                onClick={() => {
-                                                    dispatch(fetchVerificationGeneralInvoice(roleId || selectedRoleId));
-                                                }}
-                                                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                            >
-                                                Retry
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            ) : filteredInvoices.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                                    {(!isLeftPanelCollapsed || isLeftPanelHovered) && <p className="text-gray-500">No Invoices found!</p>}
-                                </div>
-                            ) : (
-                                <div className={`space-y-3 ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'flex flex-col items-center' : ''}`}>
-                                    {filteredInvoices.map((invoice) => {
-                                        const priority = getPriority(invoice);
-                                        const amountDisplay = getAmountDisplay(invoice.InvoiceAmount || 0);
-
-                                        return (
-                                            <div
-                                                key={invoice.InvoiceNo}
-                                                className={`rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${selectedInvoice?.InvoiceNo === invoice.InvoiceNo
-                                                    ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-lg'
-                                                    : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 bg-white dark:bg-gray-800'
-                                                    } ${isLeftPanelCollapsed && !isLeftPanelHovered ? 'w-12 h-12 p-1' : ''}`}
-                                                onClick={() => handleInvoiceSelect(invoice)}
-                                                title={isLeftPanelCollapsed && !isLeftPanelHovered ? `Invoice: ${invoice.InvoiceNo}` : ''}
-                                            >
-                                                {(isLeftPanelCollapsed && !isLeftPanelHovered) ? (
-                                                    <div className="w-full h-full rounded-lg border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-                                                        <Receipt className="w-4 h-4 text-blue-600" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-4">
-                                                        <div className="flex items-center space-x-3 mb-3">
-                                                            <div className="relative">
-                                                                <div className="w-12 h-12 rounded-full border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-                                                                    <Receipt className="w-5 h-5 text-blue-600" />
-                                                                </div>
-                                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                                                    Invoice #{invoice.InvoiceNo}
-                                                                </h3>
-                                                                <p className="text-xs text-gray-500 truncate">{invoice.Name || 'N/A'}</p>
-                                                            </div>
-                                                            <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(priority)}`}>
-                                                                {priority}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="flex items-center space-x-1">
-                                                                    <Calendar className="w-3 h-3" />
-                                                                    <span className="truncate">{formatDate(invoice.InvoiceDate)}</span>
-                                                                </span>
-                                                                <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(invoice.Status)}`}>
-                                                                    Status: {invoice.Status}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-blue-600 dark:text-blue-400 font-medium">₹{amountDisplay.formatted}</span>
-                                                                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">{invoice.CostCenter?.split(',')[0] || 'N/A'}</span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-gray-500 text-xs">
-                                                                    <Hash className="w-3 h-3 inline mr-1" />
-                                                                    {invoice.InvoiceNo}
-                                                                </span>
-                                                                <span className="text-gray-500 text-xs">
-                                                                    Amount: ₹{formatIndianCurrency(invoice.InvoiceAmount)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Invoice Details Panel with Dynamic Width */}
-                <div className={`transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                    ? 'lg:col-span-11'
-                    : 'lg:col-span-2'
-                    }`}>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors sticky top-6">
-                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
-                                    <FileCheck className="w-4 h-4 text-white" />
-                                </div>
-                                <span>{selectedInvoice ? 'Invoice Approval' : 'Select an Invoice'}</span>
-                            </h2>
-                        </div>
-
-                        <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-                            {selectedInvoice ? (
-                                <div className="space-y-6">
-                                    {invoiceDataLoading ? (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading detailed information...</p>
-                                        </div>
-                                    ) : selectedInvoiceData ? (
-                                        <>
-                                            {/* Enhanced Invoice Header */}
-                                            <div className="p-6 rounded-xl border-2 bg-gradient-to-r from-indigo-50 via-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 border-indigo-200 dark:border-indigo-700">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center space-x-4">
-                                                        <div className="relative">
-                                                            <div className="w-16 h-16 rounded-full border-4 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-indigo-100 dark:from-indigo-800/50 dark:to-indigo-800/50 flex items-center justify-center shadow-lg">
-                                                                <Receipt className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                                                            </div>
-                                                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
-                                                                <CheckCircle className="w-3 h-3 text-white" />
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-bold text-xl text-gray-900 dark:text-white">
-                                                                Invoice #{selectedInvoiceData.InvoiceNo}
-                                                            </h3>
-                                                            <p className="font-semibold text-lg text-indigo-600 dark:text-indigo-400">
-                                                                {selectedInvoiceData.Name || 'Invoice Approval'}
-                                                            </p>
-                                                            <div className="flex items-center space-x-2 mt-1">
-                                                                <span className="px-3 py-1 text-sm rounded-full border bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-opacity-20 dark:border-opacity-50">
-                                                                    General Invoice
-                                                                </span>
-                                                                <span className={`px-3 py-1 text-sm rounded-full border ${getStatusColor(selectedInvoiceData.Status)}`}>
-                                                                    Status: {selectedInvoiceData.Status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
-                                                            ₹{formatIndianCurrency(selectedInvoiceData.InvoiceAmount)}
-                                                        </p>
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Invoice Amount</p>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                                                            Date: {formatDate(selectedInvoiceData.InvoiceDate)}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Invoice ID</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedInvoiceData.Id}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">MOID</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{selectedInvoiceData.MOID}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Balance</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">₹{formatIndianCurrency(selectedInvoiceData.Balance || 0)}</span>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
-                                                        <span className="text-xs text-indigo-600 dark:text-indigo-400 block">Priority</span>
-                                                        <span className="font-medium text-gray-800 dark:text-gray-200">{getPriority(selectedInvoiceData)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Cost Center & DCA Details */}
-                                            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-700">
-                                                <h4 className="font-semibold text-purple-800 dark:text-purple-200 flex items-center mb-4">
-                                                    <CreditCardIcon className="w-5 h-5 mr-2" />
-                                                    Cost Center & DCA Information
-                                                </h4>
-
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                    <div className="space-y-4">
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <Building2 className="w-4 h-4 mr-2" />
-                                                                Cost Center Details
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div>
-                                                                    <span className="text-gray-500">Code:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CostCenter?.split(',')[0] || 'N/A'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-gray-500">Name:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CCName || 'N/A'}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <CreditCard className="w-4 h-4 mr-2" />
-                                                                DCA Information
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div>
-                                                                    <span className="text-gray-500">DCA Code:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DCACode || 'N/A'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-gray-500">DCA Name:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DCAName || 'N/A'}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-4">
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <ArrowRightLeft className="w-4 h-4 mr-2" />
-                                                                Credit Sub DCA
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div>
-                                                                    <span className="text-gray-500">Code:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CreditSubDca || 'N/A'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-gray-500">Name:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.CreditSubDCACodeName || 'N/A'}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                            <h5 className="font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center">
-                                                                <ArrowRightLeft className="w-4 h-4 mr-2" />
-                                                                Debit Sub DCA
-                                                            </h5>
-                                                            <div className="space-y-2 text-sm">
-                                                                <div>
-                                                                    <span className="text-gray-500">Code:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DebitSubDca || 'N/A'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-gray-500">Name:</span>
-                                                                    <p className="font-medium text-gray-800 dark:text-gray-200 mt-1">{selectedInvoiceData.DebitSubDCACodeName || 'N/A'}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Approval History Toggle */}
-                                            <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                                                <button
-                                                    onClick={() => setShowRemarksHistory(!showRemarksHistory)}
-                                                    className="flex items-center justify-between w-full text-left"
-                                                >
-                                                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                                                        <UserCheck className="w-5 h-5 mr-2" />
-                                                        View Approval History ({remarks.length})
-                                                    </h4>
-                                                    {showRemarksHistory ? (
-                                                        <ChevronUp className="w-4 h-4 text-gray-400" />
-                                                    ) : (
-                                                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                                                    )}
-                                                </button>
-                                            </div>
-
-                                            {/* Remarks History Section */}
-                                            {renderRemarksHistory()}
-
-                                            {/* Approval Comments */}
-                                            <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
-                                                <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
-                                                    <FileText className="w-4 h-4 mr-2" />
-                                                    <span className="text-red-600 dark:text-red-400">*</span> Approval Comments (Mandatory)
-                                                </label>
-                                                <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                                                    Please review all invoice details, amounts, DCA information, and provide your approval decision.
-                                                </p>
-                                                <textarea
-                                                    value={approvalComment}
-                                                    onChange={(e) => setApprovalComment(e.target.value)}
-                                                    className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${approvalComment.trim() === ''
-                                                        ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                                                        : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-                                                        }`}
-                                                    rows="4"
-                                                    placeholder="Please review invoice amount, cost center allocation, DCA details, and accounting entries..."
-                                                    required
-                                                />
-                                                {approvalComment.trim() === '' && (
-                                                    <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
-                                                        <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                                                        Approval comment is required before proceeding
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="space-y-4">
-                                                {renderActionButtons()}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                                            <p className="text-gray-500 dark:text-gray-400">Loading invoice details...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <AlertCircle className="w-12 h-12 text-blue-500 dark:text-blue-400" />
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Invoice Selected</h3>
-                                    <p className="text-gray-500 dark:text-gray-400">
-                                        Select an Invoice from the list to view details and take action.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredInvoices,
+                    selectedItem: selectedInvoice,
+                    onItemSelect: handleInvoiceSelect,
+                    renderItem: renderItemCard,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: invoicesLoading,
+                    error: invoicesError,
+                    onRefresh: () => dispatch(fetchVerificationGeneralInvoice(roleId || selectedRoleId)),
+                    config: {
+                        title: 'Pending',
+                        icon: Clock,
+                        emptyMessage: 'No Invoices found!',
+                        itemKey: 'InvoiceNo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'General Invoice Approval',
+                        icon: FileCheck,
+                        headerGradient: 'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedInvoice,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Select an Invoice',
+                        icon: FileCheck,
+                        selectedTitle: 'Invoice Approval',
+                        emptyTitle: 'No Invoice Selected',
+                        emptyMessage: 'Select an Invoice from the list to view details and take action.',
+                        headerGradient: 'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

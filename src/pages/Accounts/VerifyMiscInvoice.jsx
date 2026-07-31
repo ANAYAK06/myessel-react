@@ -525,6 +525,7 @@ const VerifyMiscInvoice = ({ notificationData, onNavigate }) => {
                         title: 'Miscellaneous Invoice Verification',
                         icon: Percent,
                         headerGradient: 'from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     },
                 }}
                 right={{

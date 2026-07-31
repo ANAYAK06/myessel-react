@@ -2,16 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    Banknote, Calendar, Hash, User, Clock, RefreshCw,
-    IndianRupee, Building, AlertCircle, FileBarChart,
-    ArrowUpCircle, Layers, MapPin, Receipt,
+    Banknote, Calendar, Hash, User, Clock,
+    IndianRupee, AlertCircle, FileBarChart,
+    ArrowUpCircle, Layers, MapPin,
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -260,15 +259,6 @@ const VerifyVendorPaymentByCash = ({ notificationData, onNavigate }) => {
 
     const vendorOptions  = [...new Set(payments.map(p => p.VendorName).filter(Boolean))];
     const payTypeOptions = [...new Set(payments.map(p => p.PaymentTypeName).filter(Boolean))];
-    const totalAmount    = payments.reduce((s, p) => s + (parseFloat(p.TransactionAmount) || 0), 0);
-
-    // ── Stats cards ───────────────────────────────────────────────────────────
-    const statsCards = [
-        { icon: Receipt,      value: payments.length,   label: 'Total Payments', color: 'indigo' },
-        { icon: AlertCircle,  value: payments.filter(p => getPriority(p) === 'High').length, label: 'High Priority', color: 'red' },
-        { icon: Building,     value: vendorOptions.length, label: 'Vendors', color: 'purple' },
-        { icon: IndianRupee,  value: `₹${formatIndianCurrency(totalAmount)}`, label: 'Total Amount', color: 'violet' },
-    ];
 
     // ── Left panel item renderers ─────────────────────────────────────────────
     const renderItemCard = (item) => {
@@ -307,6 +297,25 @@ const VerifyVendorPaymentByCash = ({ notificationData, onNavigate }) => {
         );
     };
 
+    const renderListItem = (item) => {
+        const priority = getPriority(item);
+        const amt = getAmountDisplay(item.TransactionAmount);
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[160px]">{item.VendorName}</span>
+                <span className="font-mono text-gray-500 dark:text-gray-400 min-w-[110px]">{item.TransactionRefNo}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs border ${payTypeColor(item.PaymentTypeName)}`}>
+                    {item.PaymentTypeName?.replace('Vendor ', '')}
+                </span>
+                <span className={`px-2 py-0.5 text-xs rounded-full border ${priorityColor(priority)}`}>{priority}</span>
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                    <Calendar className="w-3 h-3" />{item.TransactionDate}
+                </span>
+                <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{amt.formatted}</span>
+            </div>
+        );
+    };
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <Banknote className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -318,7 +327,7 @@ const VerifyVendorPaymentByCash = ({ notificationData, onNavigate }) => {
         if (!selectedItem) return null;
 
         return (
-            <div className="space-y-5">
+            <div className="space-y-4">
                 {(detailLoading || !detail) && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
                         <div className="flex items-center space-x-3">
@@ -536,7 +545,6 @@ const VerifyVendorPaymentByCash = ({ notificationData, onNavigate }) => {
                                 commentLabel: 'Verification Comments',
                                 commentPlaceholder: 'Please verify the vendor details, cost center allocation, invoice amounts, and any discrepancies...',
                                 commentRequired: true,
-                                commentRows: 4,
                                 commentMaxLength: 1000,
                                 showCharCount: true,
                                 validationStyle: 'dynamic',
@@ -580,7 +588,7 @@ const VerifyVendorPaymentByCash = ({ notificationData, onNavigate }) => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Vendor Cash Payment Verification'} (${payments.length})`}
                 subtitle={ModuleDisplayName}
@@ -609,92 +617,60 @@ const VerifyVendorPaymentByCash = ({ notificationData, onNavigate }) => {
                         options: payTypeOptions,
                     },
                 ]}
-                className="bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600"
+                enableViewToggle
             />
 
-            <div className="px-6 mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-2 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <div
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                    }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={handleItemSelect}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={listLoading}
-                            error={listError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No vendor payments pending',
-                                itemKey: 'TransactionRefNo',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                        <Banknote className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span>
-                                        {selectedItem
-                                            ? `${detail?.PaymentTypeName || 'Payment'} — Cash Verification`
-                                            : 'Payment Details'}
-                                    </span>
-                                </h2>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <AlertCircle className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Payment Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a vendor cash payment to review details and verify.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: listLoading,
+                    error: listError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No vendor payments pending',
+                        itemKey: 'TransactionRefNo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Vendor Cash Payment Verification',
+                        icon: Banknote,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: detailLoading,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Payment Details',
+                        icon: Banknote,
+                        selectedTitle: detail?.PaymentTypeName ? `${detail.PaymentTypeName} — Cash Verification` : 'Cash Verification',
+                        emptyTitle: 'No Payment Selected',
+                        emptyMessage: 'Select a vendor cash payment to review details and verify.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

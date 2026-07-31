@@ -445,6 +445,7 @@ const VerifyAdvancePayment = ({ notificationData, onNavigate }) => {
                         title: 'Advance Payment Verification',
                         icon: Wallet,
                         headerGradient: 'from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20',
+                        maxWidth: 'max-w-[80vw]',
                     },
                 }}
                 right={{

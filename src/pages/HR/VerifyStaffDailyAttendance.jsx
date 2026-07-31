@@ -853,7 +853,7 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
                         title: 'Attendance Verification',
                         icon: CalendarCheck,
                         headerGradient: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30',
-                        maxWidth: 'max-w-6xl'
+                        maxWidth: 'max-w-[80vw]'
                     }
                 }}
                 right={{

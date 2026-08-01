@@ -1,5 +1,5 @@
 // LeftPanel.jsx - Reusable Collapsible List Panel Component
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { ChevronLeft, ChevronRight, RefreshCw, Clock, CheckCircle, XCircle, Maximize2, X } from 'lucide-react';
 
@@ -85,6 +85,16 @@ const LeftPanel = ({
 
     // Popup state
     const [popupItem, setPopupItem] = useState(null);
+
+    // Pages clear selectedItem (setSelectedX(null)) once an approve/reject/verify
+    // action succeeds. Mirror that here so the popup — which pages have no direct
+    // handle on, since it's local state — closes itself instead of being left open
+    // showing stale/reset detail data.
+    useEffect(() => {
+        if (!selectedItem) {
+            setPopupItem(null);
+        }
+    }, [selectedItem]);
     const PopupIcon = popupConfig?.icon || IconComponent;
     const popupTitle = popupConfig?.title || mergedConfig.title;
     const popupHeaderGradient = popupConfig?.headerGradient || 'from-[#0d1b5e]/5 to-orange-50/30 dark:from-[#0d1b5e]/20 dark:to-gray-800';

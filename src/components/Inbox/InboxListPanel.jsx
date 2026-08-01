@@ -1,5 +1,5 @@
 // InboxListPanel.jsx - "Classic" full-width row list view for the inbox
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RefreshCw, Clock, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import DetailPopupModal from './DetailPopupModal';
 
@@ -57,6 +57,16 @@ const InboxListPanel = ({
 
     const IconComponent = mergedConfig.icon;
     const [popupItem, setPopupItem] = useState(null);
+
+    // Pages clear selectedItem (setSelectedX(null)) once an approve/reject/verify
+    // action succeeds. Mirror that here so the popup — which pages have no direct
+    // handle on, since it's local state — closes itself instead of being left open
+    // showing stale/reset detail data.
+    useEffect(() => {
+        if (!selectedItem) {
+            setPopupItem(null);
+        }
+    }, [selectedItem]);
 
     const handleRowClick = (item) => {
         if (onItemSelect) onItemSelect(item);

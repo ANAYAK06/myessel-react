@@ -806,7 +806,7 @@ const StaffPayrollGeneration = () => {
                 IsEditable:       d.IsEditable || "No",
                 ApplicableForPL:  d.ApplicableForPL  || "No",
                 ApplicableForESI: d.ApplicableForESI || "No",
-                PayDays:          String(d.PayDays ?? empRow.TotalSalaryDays ?? "0") + ".00",  // "28.00" like old app
+                PayDays:          Number(d.PayDays ?? empRow.TotalSalaryDays ?? 0).toFixed(2),  // "28.00" / "27.50" like old app
             })),
             ...newHeads.map(h => ({
                 SalaryHead:       h.SalaryHead,
@@ -816,7 +816,7 @@ const StaffPayrollGeneration = () => {
                 IsEditable:       "Yes",
                 ApplicableForPL:  h.ApplicableForPL  || "No",
                 ApplicableForESI: h.ApplicableForESI || "No",
-                PayDays:          "0",
+                PayDays:          "0.00",
             })),
         ];
 

@@ -380,24 +380,20 @@ const staffPayrollGenerationSlice = createSlice({
 
                 state.saveResult = action.payload;
 
-                const responseStr = typeof action.payload === 'string'
-                    ? action.payload
-                    : (action.payload?.Data || action.payload?.Message || '');
+                const dataVal = action.payload?.Data;
+                const saveStatusText = typeof dataVal === 'string' ? dataVal : (dataVal?.SaveStatus || '');
 
-                const isSuccess =
-                    (typeof responseStr === 'string' && (
-                        responseStr.toLowerCase().includes('success') ||
-                        responseStr.toLowerCase().includes('submitted') ||
-                        responseStr.toLowerCase().includes('saved')
-                    )) ||
-                    action.payload?.IsSuccessful === true ||
-                    action.payload?.ResponseCode === 200;
+                // Backend returns HTTP 200 AND IsSuccessful:false for both success and
+                // failure — the real result is the Data.SaveStatus prefix before "$":
+                // "Submited$<ref>$<transNo>" = success, "Error$.."/"BudgetError$.." = failure.
+                const [statusPrefix, ...statusRest] = String(saveStatusText).split('$');
+                const isSuccess = statusPrefix === 'Submited' || statusPrefix === 'Submitted';
 
                 if (isSuccess) {
                     state.saveStatus = 'success';
                 } else {
                     state.saveStatus = 'failed';
-                    state.errors.savePayroll = responseStr || 'Save failed';
+                    state.errors.savePayroll = statusRest.join('$') || action.payload?.Message || 'Save failed';
                 }
             })
             .addCase(savePayRollForSingleEmp.rejected, (state, action) => {
@@ -420,24 +416,20 @@ const staffPayrollGenerationSlice = createSlice({
 
                 state.saveResult = action.payload;
 
-                const responseStr = typeof action.payload === 'string'
-                    ? action.payload
-                    : (action.payload?.Data || action.payload?.Message || '');
+                const dataVal = action.payload?.Data;
+                const saveStatusText = typeof dataVal === 'string' ? dataVal : (dataVal?.SaveStatus || '');
 
-                const isSuccess =
-                    (typeof responseStr === 'string' && (
-                        responseStr.toLowerCase().includes('success') ||
-                        responseStr.toLowerCase().includes('submitted') ||
-                        responseStr.toLowerCase().includes('saved')
-                    )) ||
-                    action.payload?.IsSuccessful === true ||
-                    action.payload?.ResponseCode === 200;
+                // Backend returns HTTP 200 AND IsSuccessful:false for both success and
+                // failure — the real result is the Data.SaveStatus prefix before "$":
+                // "Submited$<ref>$<transNo>" = success, "Error$.."/"BudgetError$.." = failure.
+                const [statusPrefix, ...statusRest] = String(saveStatusText).split('$');
+                const isSuccess = statusPrefix === 'Submited' || statusPrefix === 'Submitted';
 
                 if (isSuccess) {
                     state.saveStatus = 'success';
                 } else {
                     state.saveStatus = 'failed';
-                    state.errors.savePayroll = responseStr || 'Save failed';
+                    state.errors.savePayroll = statusRest.join('$') || action.payload?.Message || 'Save failed';
                 }
             })
             .addCase(savePayRoll.rejected, (state, action) => {

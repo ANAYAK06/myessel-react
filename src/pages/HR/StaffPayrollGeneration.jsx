@@ -926,16 +926,42 @@ const StaffPayrollGeneration = () => {
             })).unwrap();
 
             console.log('✅ Save result:', result);
+
+            // Backend returns HTTP 200 (and IsSuccessful:false) for BOTH success and
+            // failure — the real result lives in Data.SaveStatus as "Prefix$details",
+            // e.g. "Submited$158356519$16" (success), "Error$..."/"BudgetError$..." (failure).
+            const saveStatusText = typeof result?.Data === 'string' ? result.Data : (result?.Data?.SaveStatus || '');
+            const [statusPrefix, ...statusRest] = String(saveStatusText).split('$');
+            const isActuallySaved = statusPrefix === 'Submited' || statusPrefix === 'Submitted';
+
+            if (!isActuallySaved) {
+                const errMsg = statusRest.join('$') || result?.Message || 'Failed to save payroll';
+                toast.error(errMsg);
+                return; // leave the table row, selection, and modal untouched so the user can act on it
+            }
+
             toast.success('Payroll saved successfully!');
-            // Remove the submitted employee from the table and its selection checkbox —
-            // remaining employees stay selected/listed
-            setTableRows(prev => prev.filter(r => r.EmpRefno !== empRefNo));
+            // Remove the submitted employee from the table
+            const remainingRows = tableRows.filter(r => r.EmpRefno !== empRefNo);
+            setTableRows(remainingRows);
             setSelectedEmpIds(prev => prev.filter(id => id !== empRefNo));
             setModalEmp(null);
 
-            // CC selection is left as-is — refetch its employee list so the now-paid
-            // employee drops out of "Select Employees" instead of staying stale
-            if (selectedCCCodes.length > 0 && selectedYear && selectedMonth) {
+            if (remainingRows.length === 0) {
+                // No employees left in this cost center — GetCCPayrollEmp doesn't
+                // reliably exclude already-paid employees on refetch, so reset the
+                // CC + employee selection entirely instead of leaving a stale list
+                // that reappears when the dropdown is reopened.
+                setSelectedCCCodes([]);
+                setSelectedEmpIds([]);
+                setDetailsMap({});
+                setOptionalMap({});
+                setPfesiMap({});
+                setGeneratedData(null);
+                dispatch(setSelectedCCCode(''));
+                toast.info('All selected employees have been submitted. Select the cost center again to process any remaining employees.');
+            } else if (selectedCCCodes.length > 0 && selectedYear && selectedMonth) {
+                // Employees remain — keep CC selected but refresh its employee list
                 dispatch(fetchCCPayrollEmp({ year: selectedYear, month: selectedMonth, ccCode: selectedCCCodes[0] }));
             }
         } catch (err) {

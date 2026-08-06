@@ -3,19 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    ArrowLeft, Building, FileText,
-    CheckCircle, XCircle, Clock, AlertCircle, Search, RefreshCw,
-    TrendingUp, User, Hash,
-    FileCheck, UserCheck,
-    FileX, Calculator,
-    Clipboard, ChevronDown, ChevronUp,
-    ChevronRight, ChevronLeft, TrendingDown,
+    CheckCircle, Clock,
+    TrendingUp, Hash,
+    Calculator,
+    Clipboard, ChevronLeft, TrendingDown,
     Briefcase, FileDown, Eye, X,
-    LayoutGrid, List
 } from 'lucide-react';
 
+import InboxHeader from '../../components/Inbox/InboxHeader';
+import ActionButtons from '../../components/Inbox/ActionButtons';
+import RemarksHistory from '../../components/Inbox/RemarksHistory';
+import VerificationInput from '../../components/Inbox/VerificationInput';
 import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
-import { useInboxView } from '../../contexts/InboxViewContext';
 
 // ✅ CC BUDGET AMENDMENT SLICE
 import {
@@ -111,7 +110,6 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
     const [showRemarksHistory, setShowRemarksHistory] = useState(false);
     const [showAttachmentModal, setShowAttachmentModal] = useState(false);
     const [attachmentUrl, setAttachmentUrl] = useState(null);
-    const { viewMode, setSplitView, setListView } = useInboxView();
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -202,24 +200,6 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
             case 'low': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200';
             default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200';
         }
-    };
-
-    const getActionIcon = (actionType) => {
-        const type = actionType.toLowerCase();
-        const iconMap = {
-            'approve': CheckCircle,
-            'verify': CheckCircle,
-            'accept': CheckCircle,
-            'return': ArrowLeft,
-            'send back': ArrowLeft,
-            'reject': XCircle,
-            'decline': XCircle,
-            'forward': ArrowLeft,
-            'escalate': ArrowLeft,
-            'hold': Clock,
-            'pending': Clock
-        };
-        return iconMap[type] || CheckCircle;
     };
 
     const getAmendTypeColor = (amendType) => {
@@ -379,69 +359,6 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
         }
     };
 
-    // ✅ RENDER REMARKS HISTORY (exactly like SPPO page)
-    const renderRemarksHistory = () => {
-        if (!showRemarksHistory) return null;
-
-        return (
-            <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                        <UserCheck className="w-5 h-5 mr-2" />
-                        Approval History ({remarks.length} Actions)
-                    </h4>
-                    <button
-                        onClick={() => setShowRemarksHistory(false)}
-                        className="p-1 text-gray-400 hover:text-gray-600"
-                    >
-                        <ChevronUp className="w-4 h-4" />
-                    </button>
-                </div>
-
-                {remarksLoading ? (
-                    <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500 mx-auto mb-2"></div>
-                        <p className="text-gray-500">Loading remarks...</p>
-                    </div>
-                ) : remarks.length === 0 ? (
-                    <div className="text-center py-4">
-                        <FileX className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p className="text-gray-500">No approval history found</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {remarks.map((remark, index) => (
-                            <div key={index} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                <div className="flex items-start space-x-3">
-                                    <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center">
-                                        <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-2 mb-1">
-                                            <span className="font-semibold text-gray-900 dark:text-gray-100">{remark.ActionBy}</span>
-                                            <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-600">
-                                                {remark.ActionRole}
-                                            </span>
-                                            <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-600">
-                                                {remark.Action}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">{remark.ActionRemarks}</p>
-                                        {remark.ActionDate && (
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                {new Date(remark.ActionDate).toLocaleString()}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     // ✅ RENDER ATTACHMENT MODAL
     const renderAttachmentModal = () => {
         if (!showAttachmentModal) return null;
@@ -571,81 +488,15 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
             );
         }
 
-        const filteredActions = enabledActions.filter(action => action.type.toLowerCase() !== 'send back');
-        console.log('ðŸ” Actions Debug:', {
-            originalCount: enabledActions.length,
-            original: enabledActions,
-            filteredCount: filteredActions.length,
-            filtered: filteredActions
-        });
-
-        if (filteredActions.length === 0) {
-            return (
-                <div className="text-center py-6">
-                    <div className="text-gray-500 mb-2">No applicable actions available</div>
-                    <div className="text-xs text-gray-400">Return actions are hidden for this module</div>
-                </div>
-            );
-        }
-
-        const actionCount = filteredActions.length;
-        const gridCols = actionCount === 1 ? 'grid-cols-1' :
-            actionCount === 2 ? 'grid-cols-1 md:grid-cols-2' :
-                actionCount === 3 ? 'grid-cols-1 md:grid-cols-3' :
-                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
-
-        const isDisabled = approvalLoading || verificationComment.trim() === '' || !isVerified;
-
         return (
-            <div className="space-y-4">
-                <div className="text-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        Available Actions ({filteredActions.length})
-                    </p>
-                    <div className="flex items-center justify-center space-x-4 mb-4">
-                        <div className={`flex items-center space-x-1 text-sm ${isVerified ? 'text-green-600' : 'text-orange-600'}`}>
-                            <CheckCircle className={`w-4 h-4 ${isVerified ? 'text-green-600' : 'text-orange-600'}`} />
-                            <span>Verification: {isVerified ? 'Completed' : 'Required'}</span>
-                        </div>
-                        <div className={`flex items-center space-x-1 text-sm ${verificationComment.trim() ? 'text-green-600' : 'text-orange-600'}`}>
-                            <FileText className={`w-4 h-4 ${verificationComment.trim() ? 'text-green-600' : 'text-orange-600'}`} />
-                            <span>Comments: {verificationComment.trim() ? 'Added' : 'Required'}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className={`grid ${gridCols} gap-4`}>
-                    {filteredActions.map((action, index) => {
-                        const IconComponent = getActionIcon(action.type);
-
-                        return (
-                            <button
-                                key={`${action.type}-${index}`}
-                                onClick={() => onActionClick(action)}
-                                disabled={isDisabled}
-                                className={`
-                                flex items-center justify-center space-x-2 px-6 py-4 
-                                ${action.className} 
-                                text-white rounded-lg transition-all 
-                                disabled:opacity-50 disabled:cursor-not-allowed 
-                                font-medium shadow-lg hover:shadow-xl
-                                min-h-[60px]
-                            `}
-                                title={
-                                    verificationComment.trim() === '' ? 'Please add verification comments first' :
-                                        !isVerified ? 'Please check the verification checkbox' :
-                                            `${action.text} (${action.type}: ${action.value})`
-                                }
-                            >
-                                <IconComponent className="w-5 h-5 flex-shrink-0" />
-                                <span className="truncate">
-                                    {approvalLoading ? 'Processing...' : action.text}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
+            <ActionButtons
+                actions={enabledActions}
+                onActionClick={onActionClick}
+                loading={approvalLoading}
+                isVerified={isVerified}
+                comment={verificationComment}
+                excludeActions={['send back']}
+            />
         );
     };
 
@@ -968,70 +819,35 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
                     </div>
                 )}
 
-                <div className="bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <button
-                        onClick={() => setShowRemarksHistory(!showRemarksHistory)}
-                        className="flex items-center justify-between w-full text-left"
-                    >
-                        <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                            <UserCheck className="w-5 h-5 mr-2" />
-                            View Approval History ({remarks.length})
-                        </h4>
-                        {showRemarksHistory ? (
-                            <ChevronUp className="w-4 h-4 text-gray-400" />
-                        ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                        )}
-                    </button>
-                </div>
+                <RemarksHistory
+                    isOpen={showRemarksHistory}
+                    onToggle={() => setShowRemarksHistory(!showRemarksHistory)}
+                    remarks={remarks}
+                    loading={remarksLoading}
+                    title="Approval History"
+                />
 
-                {renderRemarksHistory()}
-
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border-2 border-green-200 dark:border-green-700">
-                    <label className="flex items-start space-x-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={isVerified}
-                            onChange={(e) => setIsVerified(e.target.checked)}
-                            className="w-5 h-5 mt-1 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                        />
-                        <div>
-                            <span className="font-semibold text-green-800 dark:text-green-200 block">
-                                ✓ I have verified all amendment details
-                            </span>
-                            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                                Including budget amounts, CC code, amendment type, justification, and supporting documents
-                            </p>
-                        </div>
-                    </label>
-                </div>
-
-                <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-700">
-                    <label className="text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center">
-                        <FileText className="w-4 h-4 mr-2" />
-                        <span className="text-red-600 dark:text-red-400">*</span> Verification Comments (Mandatory)
-                    </label>
-                    <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                        Please verify budget amendment amounts, justification, supporting documents, and ensure proper authorization.
-                    </p>
-                    <textarea
-                        value={verificationComment}
-                        onChange={(e) => setVerificationComment(e.target.value)}
-                        className={`w-full px-4 py-3 border-2 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 transition-all ${verificationComment.trim() === ''
-                            ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                            : 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-                            }`}
-                        rows="4"
-                        placeholder="Please verify budget amendment amounts, justification, supporting documents, and approval requirements..."
-                        required
-                    />
-                    {verificationComment.trim() === '' && (
-                        <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center">
-                            <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                            Verification comment is required before proceeding
-                        </p>
-                    )}
-                </div>
+                <VerificationInput
+                    isVerified={isVerified}
+                    onVerifiedChange={setIsVerified}
+                    comment={verificationComment}
+                    onCommentChange={(e) => setVerificationComment(e.target.value)}
+                    config={{
+                        checkboxLabel: '✓ I have verified all amendment details',
+                        checkboxDescription: 'Including budget amounts, CC code, amendment type, justification, and supporting documents',
+                        commentLabel: 'Verification Comments',
+                        commentPlaceholder: 'Please verify budget amendment amounts, justification, supporting documents, and approval requirements...',
+                        commentRequired: true,
+                        commentRows: 4,
+                        validationStyle: 'dynamic',
+                        checkboxGradient: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+                        commentGradient: 'from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20',
+                        commentBorder: 'border-red-200 dark:border-red-700',
+                        checkboxContainerClass: 'p-5',
+                        commentContainerClass: 'p-5',
+                        commentLabelClass: 'text-sm font-bold text-red-800 dark:text-red-200 mb-3 flex items-center',
+                    }}
+                />
 
                 <div className="space-y-4">
                     {renderActionButtons()}
@@ -1045,106 +861,38 @@ const VerifyCCBudgetAmendment = ({ notificationData, onNavigate }) => {
             {/* Attachment Modal */}
             {renderAttachmentModal()}
 
-            {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 shadow-xl shadow-blue-900/20 p-7 text-white">
-                {/* Dot pattern overlay */}
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-                {/* Orange glow blob */}
-                <div className="absolute top-0 right-0 w-72 h-72 bg-orange-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 blur-3xl" />
-
-                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={handleBackToInbox}
-                            className="p-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
-                            title="Back to Dashboard"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg border border-white/20">
-                            <Briefcase className="h-7 w-7 text-white" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-bold text-orange-200 uppercase tracking-wider bg-orange-500/25 px-2 py-0.5 rounded-full border border-orange-400/30">
-                                    Budget Module
-                                </span>
-                                <span className="px-2 py-0.5 text-xs bg-red-500/80 text-white rounded-full font-semibold">
-                                    {amendmentsList.length} Pending
-                                </span>
-                            </div>
-                            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-                                {InboxTitle || 'CC Budget Amendment Verification'}
-                            </h1>
-                            <p className="text-blue-200 text-sm mt-0.5">
-                                {ModuleDisplayName} &bull; {amendmentsList.length} amendments pending verification
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* View mode toggle — split (Outlook-style) vs list (classic) */}
-                    <div className="flex items-center gap-0.5 bg-white/10 border border-white/20 rounded-lg p-0.5 shrink-0">
-                        <button
-                            onClick={setSplitView}
-                            className={`p-1.5 rounded-md transition-colors ${
-                                viewMode === 'split' ? 'bg-white/25 text-white' : 'text-blue-300 hover:text-white'
-                            }`}
-                            title="Split view"
-                        >
-                            <LayoutGrid className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={setListView}
-                            className={`p-1.5 rounded-md transition-colors ${
-                                viewMode === 'list' ? 'bg-white/25 text-white' : 'text-blue-300 hover:text-white'
-                            }`}
-                            title="List view"
-                        >
-                            <List className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Search and Filters */}
-                <div className="relative mt-5 grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="md:col-span-2">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-blue-300" />
-                            <input
-                                type="text"
-                                placeholder="Search by CC code, amendment ID, CC name, source CC..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-blue-300 border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <select
-                            value={filterCCCode}
-                            onChange={(e) => setFilterCCCode(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
-                        >
-                            <option value="All" className="text-gray-900">All Cost Centers</option>
-                            {ccCodes.map(ccCode => (
-                                <option key={ccCode} value={ccCode} className="text-gray-900">{ccCode}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <select
-                            value={filterAmendType}
-                            onChange={(e) => setFilterAmendType(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl focus:ring-2 focus:ring-orange-400 backdrop-blur-sm"
-                        >
-                            <option value="All" className="text-gray-900">All Types</option>
-                            {amendTypes.map(amendType => (
-                                <option key={amendType} value={amendType} className="text-gray-900">{amendType}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </div>
+            <InboxHeader
+                title={`${InboxTitle || 'CC Budget Amendment Verification'} (${amendmentsList.length})`}
+                subtitle={ModuleDisplayName}
+                itemCount={amendmentsList.length}
+                onBackClick={handleBackToInbox}
+                HeaderIcon={Briefcase}
+                badgeText="Budget Module"
+                badgeCount={amendmentsList.length}
+                searchConfig={{
+                    enabled: true,
+                    placeholder: 'Search by CC code, amendment ID, CC name, source CC...',
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                }}
+                filters={[
+                    {
+                        value: filterCCCode,
+                        onChange: (e) => setFilterCCCode(e.target.value),
+                        defaultValue: 'All',
+                        defaultLabel: 'All Cost Centers',
+                        options: ccCodes,
+                    },
+                    {
+                        value: filterAmendType,
+                        onChange: (e) => setFilterAmendType(e.target.value),
+                        defaultValue: 'All',
+                        defaultLabel: 'All Types',
+                        options: amendTypes,
+                    },
+                ]}
+                enableViewToggle
+            />
 
             {/* Main Content */}
             <InboxSplitLayout

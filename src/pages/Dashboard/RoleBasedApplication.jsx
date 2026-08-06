@@ -109,6 +109,9 @@ import VendorTDSPayment from '../Purchase/VendorTDSPayment';
 import BOESettlement from '../Purchase/BOESettlement';
 import ClientBadDebtReceivables from '../Accounts/ClientBadDebtReceivables';
 import ClientReceipt from '../Accounts/ClientReceipt';
+import RecieptAgainstScrapSale from '../Accounts/RecieptAgainstScrapSale';
+import Refund from '../Accounts/Refund';
+import CentralDayBook from '../Accounts/CentralDayBook';
 import JournalVoucherCreation from '../Accounts/JournalVoucherCreation';
 import CreditDebitNote from '../Purchase/CreditDebitNote';
 import LCBGAmend from '../Purchase/LCBGAmend';
@@ -1929,6 +1932,36 @@ const RoleBasedApplication = () => {
         // Client Receipt
         if (currentMenuData && isClientReceiptPage(currentMenuData)) {
             return <ClientReceipt menuData={currentMenuData} />;
+        }
+
+        // Receipt Against Scrap Sale
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase().includes('recieptagainstscrapsale') ||
+            currentMenuData.path?.toLowerCase().includes('receiptagainstscrapsale') ||
+            currentMenuData.name?.toLowerCase().includes('receipt against scrap sale') ||
+            currentMenuData.name?.toLowerCase().includes('scrap sale receipt')
+        )) {
+            return <RecieptAgainstScrapSale menuData={currentMenuData} />;
+        }
+
+        // Refund
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase() === '/accounts/refund' ||
+            currentMenuData.path?.toLowerCase().includes('/accounts/refund') ||
+            currentMenuData.reactRoute?.toLowerCase().includes('/accounts/refund') ||
+            currentMenuData.name?.toLowerCase() === 'refund'
+        )) {
+            return <Refund menuData={currentMenuData} />;
+        }
+
+        // Central Day Book
+        if (currentMenuData && (
+            currentMenuData.path?.toLowerCase() === '/accounts/centraldaybook' ||
+            currentMenuData.path?.toLowerCase().includes('/accounts/centraldaybook') ||
+            currentMenuData.reactRoute?.toLowerCase().includes('/accounts/centraldaybook') ||
+            currentMenuData.name?.toLowerCase() === 'central day book'
+        )) {
+            return <CentralDayBook menuData={currentMenuData} />;
         }
 
         // Journal Voucher Creation

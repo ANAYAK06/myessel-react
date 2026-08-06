@@ -62,6 +62,9 @@ import VerifyClientRecievable from '../../pages/Accounts/VerifyClientRecievable'
 import VerifyAdvancePayment from '../../pages/Accounts/VerifyAdvancePayment';
 import VerifyRetentionPayment from '../../pages/Accounts/VerifyRetentionPayment';
 import VerifyHoldPayment from '../../pages/Accounts/VerifyHoldPayment';
+import VerifyReceiptAgainstScrapSale from '../../pages/Accounts/VerifyReceiptAgainstScrapSale';
+import VerifyRefund from '../../pages/Accounts/VerifyRefund';
+import VerifyCentralDayBook from '../../pages/Accounts/VerifyCentralDayBook';
 
 
 // ============================================================================
@@ -448,6 +451,44 @@ const isHoldPaymentVerification = (path, category, title, displayName, workflowT
         title.includes('hold payment') || title.includes('verifyholdpayment') ||
         displayName.includes('hold payment') || displayName.includes('verifyholdpayment') ||
         workflowType.includes('holdpayment');
+};
+
+const isReceiptAgainstScrapSaleVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        'accountsapproval/verifyreceiptagainstscrapsale',
+        'verifyreceiptagainstscrapsale',
+        'receipt against scrap sale',
+    ];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('receipt against scrap sale') || category.includes('scrap sale receipt') ||
+        title.includes('receipt against scrap sale') || title.includes('scrap sale receipt') ||
+        displayName.includes('receipt against scrap sale') || displayName.includes('scrap sale receipt') ||
+        workflowType.includes('receiptagainstscrapsale');
+};
+
+const isRefundVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        'accountsapproval/verifyrefund',
+        'verifyrefund',
+    ];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('refund') ||
+        title.includes('refund') ||
+        displayName.includes('refund') ||
+        workflowType.includes('refund');
+};
+
+const isCentralDayBookVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        'accountsapproval/verifycentraldaybook',
+        'verifycentraldaybook',
+        'central day book',
+    ];
+    return pathMatches.some(match => path.includes(match)) ||
+        category.includes('central day book') || category.includes('centraldaybook') ||
+        title.includes('central day book') || title.includes('centraldaybook') ||
+        displayName.includes('central day book') || displayName.includes('centraldaybook') ||
+        workflowType.includes('centraldaybook');
 };
 
 const isLostDamagedItemsVerification = (path, category, title, displayName, workflowType) => {
@@ -1394,6 +1435,39 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isHoldPaymentVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifyHoldPayment');
             return <VerifyHoldPayment
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // RECEIPT AGAINST SCRAP SALE VERIFICATION
+        // ====================================================================
+        if (isReceiptAgainstScrapSaleVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyReceiptAgainstScrapSale');
+            return <VerifyReceiptAgainstScrapSale
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // REFUND VERIFICATION
+        // ====================================================================
+        if (isRefundVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyRefund');
+            return <VerifyRefund
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+        // ====================================================================
+
+        // CENTRAL DAY BOOK VERIFICATION
+        // ====================================================================
+        if (isCentralDayBookVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifyCentralDayBook');
+            return <VerifyCentralDayBook
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

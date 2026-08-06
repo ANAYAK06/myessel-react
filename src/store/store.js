@@ -120,6 +120,12 @@ import clientRecievableVerificationReducer from "../slices/accountsSlice/clientR
 import advancePaymentVerificationReducer from "../slices/accountsSlice/advancePaymentVerificationSlice";
 import retentionPaymentVerificationReducer from "../slices/accountsSlice/retentionPaymentVerificationSlice";
 import holdPaymentVerificationReducer from "../slices/accountsSlice/holdPaymentVerificationSlice";
+import scrapSaleReceiptReducer from "../slices/accountsSlice/scrapSaleReceiptSlice";
+import scrapSaleReceiptVerificationReducer from "../slices/accountsSlice/scrapSaleReceiptVerificationSlice";
+import refundReducer from "../slices/accountsSlice/refundSlice";
+import refundVerificationReducer from "../slices/accountsSlice/refundVerificationSlice";
+import centralDayBookReducer from "../slices/accountsSlice/centralDayBookSlice";
+import centralDayBookVerificationReducer from "../slices/accountsSlice/centralDayBookVerificationSlice";
 import journalVoucherReducer from "../slices/accountsSlice/journalVoucherSlice";
 import creditDebitNoteReducer from "../slices/purchaseSlice/creditDebitNoteSlice";
 import lcbgAmendReducer from "../slices/purchaseSlice/lcbgAmendSlice";
@@ -271,6 +277,12 @@ const store = configureStore({
     advancePaymentVerification:   advancePaymentVerificationReducer,
     retentionPaymentVerification: retentionPaymentVerificationReducer,
     holdPaymentVerification:      holdPaymentVerificationReducer,
+    scrapSaleReceipt:             scrapSaleReceiptReducer,
+    scrapSaleReceiptVerification: scrapSaleReceiptVerificationReducer,
+    refund:                       refundReducer,
+    refundVerification:           refundVerificationReducer,
+    centralDayBook:               centralDayBookReducer,
+    centralDayBookVerification:   centralDayBookVerificationReducer,
     journalVoucher:        journalVoucherReducer,
     creditDebitNote:       creditDebitNoteReducer,
     lcbgAmend:             lcbgAmendReducer,

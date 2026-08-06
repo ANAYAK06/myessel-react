@@ -229,8 +229,48 @@ const MultiSelectDropdown = ({
     );
 };
 
+// ─── Salary Head Row (module scope so the input keeps its identity/focus across parent re-renders) ──
+const HeadRow = ({ h, isNew = false, amounts, onAmountChange, onRemove }) => (
+    <div className={`grid grid-cols-2 items-center border-b border-gray-100 dark:border-gray-700 last:border-0
+                     ${isNew ? 'bg-green-50 dark:bg-green-900/10' : 'bg-white dark:bg-gray-800'}`}>
+        <div className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+            {h.SalaryHead}
+            {isNew && (
+                <>
+                    <span className="px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">New</span>
+                    <button onClick={() => onRemove(h.SalaryHead)}
+                            className="text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
+                        <X className="h-3 w-3" />
+                    </button>
+                </>
+            )}
+        </div>
+        <div className="px-4 py-2">
+            <input
+                type="number"
+                value={amounts[h.SalaryHead] ?? h.HeadAmount ?? 0}
+                onChange={e => onAmountChange(h.SalaryHead, e.target.value)}
+                disabled={h.IsEditable === 'No' && !isNew}
+                className="w-full text-right text-sm px-3 py-1.5
+                           border-2 border-gray-300 dark:border-gray-600 rounded-xl
+                           focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500
+                           dark:bg-gray-700 dark:text-white
+                           disabled:bg-gray-100 dark:disabled:bg-gray-600/40
+                           disabled:text-gray-500 dark:disabled:text-gray-400"
+            />
+        </div>
+    </div>
+);
+
+// ESI deduction head is recognized by name (matches the pattern used for
+// PF/ESI heads in staffCTCCreationSlice.js's autoFillPFESI).
+const isESIHeadName = (name) => (name || '').toUpperCase().includes('ESI');
+// PAID LEAVE earning head — its amount is derived from PLGross (sum of
+// ApplicableForPL="Yes" heads), not directly editable by the user.
+const isPaidLeaveHeadName = (name) => (name || '').toUpperCase().includes('PAID LEAVE');
+
 // ─── Employee Payroll Detail Modal ────────────────────────────────────────────
-const EmployeeDetailModal = ({ empRow, details, optionalHeads, ccCode, onClose, onSave, saving }) => {
+const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode, onClose, onSave, saving }) => {
     const empRefNo = empRow.EmpRefno;
 
     const [amounts,    setAmounts]   = useState(() => {
@@ -239,6 +279,7 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, ccCode, onClose, 
         return m;
     });
     const [newHeads,   setNewHeads]  = useState([]);
+    const [pfesi,      setPfesi]     = useState(() => pfesiData || []);
     const [headType,   setHeadType]  = useState('');
     const [salaryHead, setSalHead]   = useState('');
     const [amount,     setAmt]       = useState('');
@@ -250,6 +291,7 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, ccCode, onClose, 
 
     const allEarnings   = [...earnings,   ...newEarnings];
     const allDeductions = [...deductions, ...newDeds];
+    const allHeads       = [...details, ...newHeads];
 
     const gross    = allEarnings.reduce((s, h)   => s + Number(amounts[h.SalaryHead] ?? h.HeadAmount ?? 0), 0);
     const totalDed = allDeductions.reduce((s, h) => s + Number(amounts[h.SalaryHead] ?? h.HeadAmount ?? 0), 0);
@@ -257,57 +299,89 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, ccCode, onClose, 
 
     const filteredOptional = optionalHeads.filter(h => h.HeadType === headType);
 
+    // Recomputes PAID LEAVE (off PLGross = sum of ApplicableForPL="Yes" heads) and then
+    // ESI employee/employer contribution (off sum of ApplicableForESI="Yes" heads —
+    // which includes the just-recomputed PAID LEAVE amount, since PAID LEAVE is itself
+    // ESI-applicable). Percentages come from MonthlyPFESIData; the PL formula is:
+    //   PLAmount = round((PLGross / TotalSalaryDays) * TotalPLAttendanceDays)
+    const applyDependentRecalc = (nextAmounts, headsList) => {
+        let amts = { ...nextAmounts };
+
+        const plHead = headsList.find(h => h.HeadType === 'Earning' && isPaidLeaveHeadName(h.SalaryHead));
+        const totalSalaryDays = Number(empRow.TotalSalaryDays) || 0;
+        if (plHead && totalSalaryDays > 0) {
+            const plGross = headsList
+                .filter(h => h.ApplicableForPL === 'Yes')
+                .reduce((s, h) => s + Number(amts[h.SalaryHead] ?? h.HeadAmount ?? 0), 0);
+            const totalPLDays = Number(empRow.TotalPLAttendanceDays) || 0;
+            const plAmount = Math.round((plGross / totalSalaryDays) * totalPLDays);
+            amts = { ...amts, [plHead.SalaryHead]: plAmount };
+        }
+
+        const esiRate = pfesi.find(p => p.Type === 'ESI');
+        const esiHead = headsList.find(h => h.HeadType === 'Deduction' && isESIHeadName(h.SalaryHead));
+        if (esiRate && esiHead) {
+            const esiBase = headsList
+                .filter(h => h.ApplicableForESI === 'Yes')
+                .reduce((s, h) => s + Number(amts[h.SalaryHead] ?? h.HeadAmount ?? 0), 0);
+            const empAmt  = Math.round(esiBase * (Number(esiRate.EmpContPercent)  || 0) / 100);
+            const emprAmt = Math.round(esiBase * (Number(esiRate.EmprContPercent) || 0) / 100);
+            amts = { ...amts, [esiHead.SalaryHead]: empAmt };
+            setPfesi(prev => prev.map(p => p.Type === 'ESI'
+                ? { ...p, EmployeeContAmt: empAmt, EmployerContAmt: emprAmt }
+                : p));
+        }
+
+        setAmounts(amts);
+    };
+
+    const handleAmountChange = (sh, value) => {
+        const nextAmounts = { ...amounts, [sh]: value };
+        const changedHead = allHeads.find(h => h.SalaryHead === sh);
+        if (changedHead?.ApplicableForPL === 'Yes' || changedHead?.ApplicableForESI === 'Yes') {
+            applyDependentRecalc(nextAmounts, allHeads);
+        } else {
+            setAmounts(nextAmounts);
+        }
+    };
+
     const handleAdd = () => {
         if (!headType || !salaryHead || !amount) { toast.error('Please fill all fields'); return; }
         if (newHeads.find(h => h.SalaryHead === salaryHead)) { toast.error('Head already added'); return; }
         const head = optionalHeads.find(h => h.HeadName === salaryHead) || {};
-        setNewHeads(prev => [...prev, {
+        const newHead = {
             SalaryHead: salaryHead, HeadType: headType,
             HeadAmount: Number(amount), IsEditable: 'Yes', isNew: true,
             ApplicableForPL: head.ApplicableForPL || 'No',
             ApplicableForESI: head.ApplicableForESI || 'No',
-        }]);
-        setAmounts(prev => ({ ...prev, [salaryHead]: Number(amount) }));
+        };
+        const updatedNewHeads = [...newHeads, newHead];
+        setNewHeads(updatedNewHeads);
+
+        const nextAmounts = { ...amounts, [salaryHead]: Number(amount) };
+        if (newHead.ApplicableForPL === 'Yes' || newHead.ApplicableForESI === 'Yes') {
+            applyDependentRecalc(nextAmounts, [...details, ...updatedNewHeads]);
+        } else {
+            setAmounts(nextAmounts);
+        }
+
         setSalHead(''); setAmt(''); setHeadType('');
         toast.success('Head added');
     };
 
     const handleRemoveNew = (sh) => {
-        setNewHeads(prev => prev.filter(h => h.SalaryHead !== sh));
-        setAmounts(prev => { const n = { ...prev }; delete n[sh]; return n; });
-    };
+        const removedHead = newHeads.find(h => h.SalaryHead === sh);
+        const updatedNewHeads = newHeads.filter(h => h.SalaryHead !== sh);
+        setNewHeads(updatedNewHeads);
 
-    const HeadRow = ({ h, isNew = false }) => (
-        <div className={`grid grid-cols-2 items-center border-b border-gray-100 dark:border-gray-700 last:border-0
-                         ${isNew ? 'bg-green-50 dark:bg-green-900/10' : 'bg-white dark:bg-gray-800'}`}>
-            <div className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-                {h.SalaryHead}
-                {isNew && (
-                    <>
-                        <span className="px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">New</span>
-                        <button onClick={() => handleRemoveNew(h.SalaryHead)}
-                                className="text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
-                            <X className="h-3 w-3" />
-                        </button>
-                    </>
-                )}
-            </div>
-            <div className="px-4 py-2">
-                <input
-                    type="number"
-                    value={amounts[h.SalaryHead] ?? h.HeadAmount ?? 0}
-                    onChange={e => setAmounts(prev => ({ ...prev, [h.SalaryHead]: e.target.value }))}
-                    disabled={h.IsEditable === 'No' && !isNew}
-                    className="w-full text-right text-sm px-3 py-1.5
-                               border-2 border-gray-300 dark:border-gray-600 rounded-xl
-                               focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500
-                               dark:bg-gray-700 dark:text-white
-                               disabled:bg-gray-100 dark:disabled:bg-gray-600/40
-                               disabled:text-gray-500 dark:disabled:text-gray-400"
-                />
-            </div>
-        </div>
-    );
+        const nextAmounts = { ...amounts };
+        delete nextAmounts[sh];
+        if (removedHead?.ApplicableForPL === 'Yes' || removedHead?.ApplicableForESI === 'Yes') {
+            applyDependentRecalc(nextAmounts, [...details, ...updatedNewHeads]);
+        } else {
+            setAmounts(nextAmounts);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
@@ -364,8 +438,8 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, ccCode, onClose, 
                             {allEarnings.length === 0
                                 ? <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8">No earnings data</p>
                                 : <>
-                                    {earnings.map((h, i)    => <HeadRow key={`e-${i}`}  h={h} isNew={false} />)}
-                                    {newEarnings.map((h, i) => <HeadRow key={`ne-${i}`} h={h} isNew={true}  />)}
+                                    {earnings.map((h, i)    => <HeadRow key={`e-${i}`}  h={h} isNew={false} amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
+                                    {newEarnings.map((h, i) => <HeadRow key={`ne-${i}`} h={h} isNew={true}  amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
                                 </>}
                         </div>
 
@@ -381,8 +455,8 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, ccCode, onClose, 
                             {allDeductions.length === 0
                                 ? <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8">No deductions</p>
                                 : <>
-                                    {deductions.map((h, i) => <HeadRow key={`d-${i}`}  h={h} isNew={false} />)}
-                                    {newDeds.map((h, i)    => <HeadRow key={`nd-${i}`} h={h} isNew={true}  />)}
+                                    {deductions.map((h, i) => <HeadRow key={`d-${i}`}  h={h} isNew={false} amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
+                                    {newDeds.map((h, i)    => <HeadRow key={`nd-${i}`} h={h} isNew={true}  amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
                                 </>}
                         </div>
                     </div>
@@ -481,7 +555,7 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, ccCode, onClose, 
                             </button>
 
                             <button
-                                onClick={() => onSave({ empRow, details, amounts, newHeads, gross, totalDed, netPay })}
+                                onClick={() => onSave({ empRow, details, amounts, newHeads, gross, totalDed, netPay, pfesiData: pfesi })}
                                 disabled={saving}
                                 className="flex items-center gap-2 px-8 py-2.5
                                            bg-gradient-to-r from-indigo-600 to-purple-600
@@ -716,7 +790,7 @@ const StaffPayrollGeneration = () => {
     };
 
     // ── Save single employee — uses savePayRollForSingleEmp → spInsertSingleEmpSalary ──
-    const handleSave = async ({ empRow, details, amounts, newHeads, gross, totalDed, netPay }) => {
+    const handleSave = async ({ empRow, details, amounts, newHeads, gross, totalDed, netPay, pfesiData: modalPfesiData }) => {
         const empRefNo = empRow.EmpRefno;
 
         // Use the last day of the selected month as payroll date
@@ -819,7 +893,9 @@ const StaffPayrollGeneration = () => {
                 ? `${payrollDate.getFullYear()}-${String(payrollDate.getMonth() + 1).padStart(2, '0')}-${String(payrollDate.getDate()).padStart(2, '0')}`
                 : String(payrollDate);
 
-            const pfesiData = pfesiMap[empRefNo] || [];
+            // Prefer the modal's live-recalculated PF/ESI figures (kept in sync with
+            // ApplicableForESI head edits) over the stale snapshot from generate-time.
+            const pfesiData = modalPfesiData || pfesiMap[empRefNo] || [];
 
             // Match the format the SP's XML-style JSON parser expects:
             // all numeric values must be quoted strings, no extra fields.
@@ -851,9 +927,17 @@ const StaffPayrollGeneration = () => {
 
             console.log('✅ Save result:', result);
             toast.success('Payroll saved successfully!');
-            // Remove the submitted employee from the table — remaining employees stay
+            // Remove the submitted employee from the table and its selection checkbox —
+            // remaining employees stay selected/listed
             setTableRows(prev => prev.filter(r => r.EmpRefno !== empRefNo));
+            setSelectedEmpIds(prev => prev.filter(id => id !== empRefNo));
             setModalEmp(null);
+
+            // CC selection is left as-is — refetch its employee list so the now-paid
+            // employee drops out of "Select Employees" instead of staying stale
+            if (selectedCCCodes.length > 0 && selectedYear && selectedMonth) {
+                dispatch(fetchCCPayrollEmp({ year: selectedYear, month: selectedMonth, ccCode: selectedCCCodes[0] }));
+            }
         } catch (err) {
             console.error('❌ Save error:', err);
             toast.error(typeof err === 'string' ? err : err?.message || 'Failed to save payroll');
@@ -1390,6 +1474,7 @@ const StaffPayrollGeneration = () => {
                     empRow={modalEmp}
                     details={detailsMap[modalEmp.EmpRefno] || []}
                     optionalHeads={optionalMap[modalEmp.EmpRefno] || []}
+                    pfesiData={pfesiMap[modalEmp.EmpRefno] || []}
                     ccCode={modalEmp.CurrentCC || selectedCCCodes[0] || ''}
                     onClose={() => setModalEmp(null)}
                     onSave={handleSave}

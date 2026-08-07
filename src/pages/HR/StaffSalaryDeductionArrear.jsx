@@ -495,9 +495,6 @@ const StaffSalaryDeductionArrear = () => {
 
     // ── Refs that always hold the latest volatile state ────────────────────────
     const dedFormRef = useRef({});
-    const deductionSaveResultRef = useRef(null);
-    const deductionSaveResult    = useSelector(s => s.salaryDeductionArrear.deductionSaveResult);
-    useEffect(() => { deductionSaveResultRef.current = deductionSaveResult; }, [deductionSaveResult]);
 
     useEffect(() => {
         dedFormRef.current = {
@@ -553,53 +550,17 @@ const StaffSalaryDeductionArrear = () => {
     }, [dispatch]);
 
     // ── Watch save status → add to queue ──────────────────────────────────────
+    // spInsertSingleEmpSalaryDeduction only returns @AddStatus (a status string) —
+    // it never returns the newly-created EmpTransactionRefNo/Id. Building the queue
+    // row locally therefore always left savedTransRefNo/id null, so an immediate
+    // bulk submit sent EmpTransNos "0" and the SP silently did nothing (while still
+    // reporting "Submited"). Re-fetching the pending list gets the real, server-
+    // assigned transaction ref — the same thing a page refresh already fixed.
     useEffect(() => {
         if (deductionSaveStatus !== 'success') return;
 
-        const {
-            selectedDedEmp: emp,
-            selectedYear:   year,
-            selectedMonth:  month,
-            empDeductionsForMonth: dedData,
-            dedAmounts:     amounts,
-            localIdCounter: counter,
-            queuedEmployees: queued,
-        } = dedFormRef.current;
-
-        if (!emp || !year || !month) return;
-
-        const key = `${emp.EmpRefNo}_${month}_${year}`;
-        const alreadyQueued = queued.find(q => `${q.empRefNo}_${q.month}_${q.year}` === key);
-
-        if (!alreadyQueued) {
-            // Heads come from the API-fetched list only — no custom heads
-            const existingList = dedData?.lstDeduction || [];
-            const allNames     = existingList.map(d => d.HeadName);
-            const allAmounts   = allNames.map(n => String(Math.round(Number(amounts[n] ?? 0))));
-            const ccCode       = dedData?.CCCode || '';
-
-            setQueuedEmployees(prev => [...prev, {
-                localId:          counter,
-                empRefNo:         emp.EmpRefNo,
-                empName:          parseEmpName(emp),
-                month,
-                year,
-                ccCode,
-                deductionHeads:   allNames.join(',') + (allNames.length ? ',' : ''),
-                deductionAmounts: allAmounts.join(',') + (allAmounts.length ? ',' : ''),
-                savedTransRefNo:  deductionSaveResultRef.current?.Data?.EmpTransactionRefNo
-                                  || deductionSaveResultRef.current?.EmpTransactionRefNo
-                                  || deductionSaveResultRef.current?.Data?.Id
-                                  || null,
-                id:               deductionSaveResultRef.current?.Data?.Id
-                                  || deductionSaveResultRef.current?.Id
-                                  || null,
-                loadingHeads:     false,
-            }]);
-            setLocalIdCounter(prev => prev + 1);
-            setShowQueue(true);
-        }
-
+        setShowQueue(true);
+        dispatch(fetchPendingSalaryDeductions());
         handleClearDedForm();
         dispatch(clearDeductionSaveResult());
     }, [deductionSaveStatus, dispatch, handleClearDedForm]);
@@ -652,9 +613,6 @@ const StaffSalaryDeductionArrear = () => {
 
     // ── Arrear form ref ───────────────────────────────────────────────────────
     const arearFormRef = useRef({});
-    const arearSaveResultRef = useRef(null);
-    const arearSaveResult    = useSelector(s => s.salaryDeductionArrear.arearSaveResult);
-    useEffect(() => { arearSaveResultRef.current = arearSaveResult; }, [arearSaveResult]);
 
     useEffect(() => {
         arearFormRef.current = {
@@ -671,52 +629,17 @@ const StaffSalaryDeductionArrear = () => {
     });
 
     // ── Watch arrear save status → add to arrear queue ────────────────────────
+    // spInsertArearHead only returns @AddStatus (a status string) — it never
+    // returns the newly-created EmpTransactionRefNo/Id. Building the queue row
+    // locally therefore always left savedTransRefNo/id null, so an immediate
+    // bulk submit sent EmpTransNos "0" and the SP silently did nothing (while
+    // still reporting "Submited"). Re-fetching the pending list gets the real,
+    // server-assigned transaction ref — the same thing a page refresh already fixed.
     useEffect(() => {
         if (arearSaveStatus !== 'success') return;
 
-        const {
-            selectedArearEmp: emp,
-            arearMonth:  month,
-            arearYear:   year,
-            selectedArearHead: head,
-            arearTotal:  total,
-            ccRows:      rows,
-            arearLocalIdCounter: counter,
-            arearQueue:  queued,
-        } = arearFormRef.current;
-
-        if (!emp || !month || !year) return;
-
-        const key = `${emp.EmpRefNo}_${month}_${year}`;
-        const alreadyQueued = queued.find(q => `${q.empRefNo}_${q.month}_${q.year}` === key);
-
-        if (!alreadyQueued) {
-            const ccJson = JSON.stringify(rows.filter(r => Number(r.Amount) > 0).map(r => ({ CCCode: r.CCCode, Amount: String(r.Amount) })));
-            const ccCode = rows.find(r => Number(r.Amount) > 0)?.CCCode || rows[0]?.CCCode || '';
-
-            setArearQueue(prev => [...prev, {
-                localId:         counter,
-                empRefNo:        emp.EmpRefNo,
-                empName:         emp.EmpName || emp.FirstName || emp.EmpRefNo,
-                month,
-                year,
-                ccCode,
-                salaryHead:      head || '',
-                arearAmount:     String(total || 0),
-                ccJsonString:    ccJson,
-                parsedCC:        rows.filter(r => Number(r.Amount) > 0).map(r => ({ CCCode: r.CCCode, Amount: String(r.Amount) })),
-                savedTransRefNo: arearSaveResultRef.current?.Data?.EmpTransactionRefNo
-                                 || arearSaveResultRef.current?.EmpTransactionRefNo
-                                 || arearSaveResultRef.current?.Data?.Id
-                                 || null,
-                id:              arearSaveResultRef.current?.Data?.Id
-                                 || arearSaveResultRef.current?.Id
-                                 || null,
-            }]);
-            setArearLocalIdCounter(prev => prev + 1);
-            setShowArearQueue(true);
-        }
-
+        setShowArearQueue(true);
+        dispatch(fetchPendingSalaryArear());
         handleClearArearForm();
         dispatch(clearArearSaveResult());
     }, [arearSaveStatus, dispatch, handleClearArearForm]);

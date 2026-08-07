@@ -284,7 +284,7 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
     const [salaryHead, setSalHead]   = useState('');
     const [amount,     setAmt]       = useState('');
 
-    const earnings    = details.filter(d => d.HeadType === 'Earning' || d.HeadType === 'Benefit');
+    const earnings    = details.filter(d => d.HeadType === 'Earning' || d.HeadType === 'Benefit' || d.HeadType === 'OtherBenefit');
     const deductions  = details.filter(d => d.HeadType === 'Deduction');
     const newEarnings = newHeads.filter(h => h.HeadType === 'Earning' || h.HeadType === 'Benefit' || h.HeadType === 'OtherBenefit');
     const newDeds     = newHeads.filter(h => h.HeadType === 'Deduction');

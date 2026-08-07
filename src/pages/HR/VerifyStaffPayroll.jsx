@@ -55,7 +55,7 @@ import {
 const SalaryDetailModal = ({ employee, salaryDetails, onClose }) => {
     if (!employee) return null;
 
-    const earnings = salaryDetails.filter(d => d.EmployeeId === employee.EmpRefNo && d.HeadType === 'Earning');
+    const earnings = salaryDetails.filter(d => d.EmployeeId === employee.EmpRefNo && (d.HeadType === 'Earning' || d.HeadType === 'Benefit' || d.HeadType === 'OtherBenefit'));
     const deductions = salaryDetails.filter(d => d.EmployeeId === employee.EmpRefNo && d.HeadType === 'Deduction');
 
     return (

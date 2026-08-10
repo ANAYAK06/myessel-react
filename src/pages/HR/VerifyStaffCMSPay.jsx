@@ -283,6 +283,35 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
         setSelectedItem(item);
     };
 
+    // Shared by the manual "Export Excel" button and the auto-download that
+    // fires after a final Approve. Looks up beneficiary emails (not stored
+    // against the CMS payment record) live via GetStaffDetailsbyRefNo, then
+    // builds the bank-transfer XLSX. Throws on failure so callers can decide
+    // how to surface it.
+    const exportStaffCMSBankExcel = async () => {
+        const uniqueEmpRefNos = [...new Set(
+            cmsReportData.map((b) => b.Emprefno || b.EmpRefNo).filter(Boolean)
+        )];
+        const emailMap = {};
+        await Promise.all(uniqueEmpRefNos.map(async (empRefNo) => {
+            try {
+                const res = await getStaffDetailsByRefNo({ empRefNo, roleId });
+                const data = res?.Data || res;
+                if (data?.WorkEmail) emailMap[empRefNo] = data.WorkEmail;
+            } catch (err) {
+                console.warn('⚠️ Could not fetch email for', empRefNo, err);
+            }
+        }));
+
+        const displayData = cmsPayDetails || selectedItem;
+        generateStaffCMSBankExcel(cmsReportData, {
+            Month: displayData?.Month,
+            Year: displayData?.Year,
+            ConsolidateNo: displayData?.ConsolidateNo || selectedItem?.ConsolidateNo,
+            CMSTransactionNo: displayData?.CMSTransactionNo || selectedItem?.CMSTransactionNo,
+        }, emailMap);
+    };
+
     const handleDownloadExcel = async () => {
         if (!cmsReportData || cmsReportData.length === 0) {
             toast.error('No beneficiary data available to export');
@@ -290,31 +319,7 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
         }
         setIsDownloadingExcel(true);
         try {
-            // Beneficiary email isn't stored against the CMS payment record, so
-            // it's looked up live per employee from the employeeinfo table via
-            // GetStaffDetailsbyRefNo (WorkEmail). Missing lookups just fall back
-            // to a blank cell instead of failing the whole export.
-            const uniqueEmpRefNos = [...new Set(
-                cmsReportData.map((b) => b.Emprefno || b.EmpRefNo).filter(Boolean)
-            )];
-            const emailMap = {};
-            await Promise.all(uniqueEmpRefNos.map(async (empRefNo) => {
-                try {
-                    const res = await getStaffDetailsByRefNo({ empRefNo, roleId });
-                    const data = res?.Data || res;
-                    if (data?.WorkEmail) emailMap[empRefNo] = data.WorkEmail;
-                } catch (err) {
-                    console.warn('⚠️ Could not fetch email for', empRefNo, err);
-                }
-            }));
-
-            const displayData = cmsPayDetails || selectedItem;
-            generateStaffCMSBankExcel(cmsReportData, {
-                Month: displayData?.Month,
-                Year: displayData?.Year,
-                ConsolidateNo: displayData?.ConsolidateNo || selectedItem?.ConsolidateNo,
-                CMSTransactionNo: displayData?.CMSTransactionNo || selectedItem?.CMSTransactionNo,
-            }, emailMap);
+            await exportStaffCMSBankExcel();
             toast.success('Excel downloaded');
         } finally {
             setIsDownloadingExcel(false);
@@ -385,6 +390,16 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                 }
             } else {
                 toast.success(`${action.text || actionValue} completed successfully!`);
+            }
+
+            if (actionValue.toLowerCase() === 'approve' && cmsReportData.length > 0) {
+                try {
+                    await exportStaffCMSBankExcel();
+                    toast.success('Bank transfer Excel downloaded');
+                } catch (excelError) {
+                    console.error('❌ Auto excel export failed:', excelError);
+                    toast.error('Approved, but the bank transfer Excel could not be generated automatically. Use "Export Excel" to download it manually.', { autoClose: 10000 });
+                }
             }
 
             setTimeout(() => {

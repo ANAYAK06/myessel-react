@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import clsx from 'clsx';
+import * as XLSX from 'xlsx';
 import {
     Building2,
     UserSquare2,
@@ -48,6 +49,7 @@ import {
     selectIsAnyLoading,
     fetchCMSPayReportEmployeeData
 } from '../../slices/HrReportSlice/cmsPaymentReportSlice';
+import { getStaffDetailsByRefNo } from '../../api/HRReportAPI/StaffReportAPI';
 
 // Tooltip Component
 const Tooltip = ({ children, content }) => {
@@ -230,6 +232,63 @@ const convertToCSV = (data) => {
     return csvContent;
 };
 
+const BANK_HEADERS = [
+    'Transaction Type', 'Beneficiary Code', 'Beneficiary Account Number',
+    'Instrument Amount', 'Beneficiary Name', 'Drawee Location', 'Print Location',
+    'Bene Address 1', 'Bene Address 2', 'Bene Address 3', 'Bene Address 4', 'Bene Address 5',
+    'Instruction Reference Number', 'Customer Reference Number',
+    'Payment details 1', 'Payment details 2', 'Payment details 3', 'Payment details 4',
+    'Payment details 5', 'Payment details 6', 'Payment details 7',
+    'Cheque Number', 'Chq / Trn Date', 'MICR Number', 'IFSC Code',
+    'Bene Bank Name', 'Bene Bank Branch Name', 'Beneficiary email id',
+];
+
+// Employee email isn't part of the CMS payment report payload itself, so
+// it's looked up per-employee from GetStaffDetailsbyRefNo (employeeinfo.
+// WorkEmail) and passed in via emailMap. Falls back to any email-like field
+// already on the row, then blank, so a missing lookup is obvious.
+const resolveEmployeeEmail = (emp, emailMap = {}) => {
+    const empRefNo = emp.EmpRefNo || emp.EmprefNo;
+    return emailMap[empRefNo] || emp.Email || emp.EmailId || emp.EmailID || emp.WorkEmail || emp.MailId || emp.EmailAddress || '';
+};
+
+// Bank-transfer format Excel download — same layout used in the Labour CMS
+// verification screen, so this file can be uploaded straight to the bank.
+const downloadBankTransferExcel = (employees, month, year, emailMap = {}) => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dateStr = `${dd}/${mm}/${today.getFullYear()}`;
+
+    const rows = employees.map((emp) => {
+        const refNo = `${month || ''}-${year || ''}-${emp.CMSConsolidateNo || ''}`;
+        return [
+            'N',                                          // Transaction Type
+            '',                                            // Beneficiary Code
+            emp.BankAccountNo || '',                        // Beneficiary Account Number
+            parseFloat(emp.Amount || emp.NetSalary || 0),   // Instrument Amount
+            emp.EmpName || emp.EmployeeName || '',          // Beneficiary Name
+            '', '',                                         // Drawee/Print Location
+            '', '', '', '', '',                             // Bene Address 1-5
+            refNo,                                           // Instruction Reference Number
+            refNo,                                           // Customer Reference Number
+            '', '', '', '', '', '', '',                     // Payment details 1-7
+            '',                                              // Cheque Number
+            dateStr,                                         // Chq / Trn Date
+            '',                                              // MICR Number
+            emp.IFSCCode || '',                              // IFSC Code
+            emp.BankName || emp.Bank || '',                  // Bene Bank Name
+            emp.BranchName || '',                            // Bene Bank Branch Name
+            resolveEmployeeEmail(emp, emailMap),             // Beneficiary email id
+        ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([BANK_HEADERS, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bank Transfer');
+    XLSX.writeFile(wb, `StaffCMS_BankTransfer_${month || ''}_${year || ''}.xlsx`);
+};
+
 const StaffCMSPaymentReportPage = () => {
     const dispatch = useDispatch();
 
@@ -241,6 +300,9 @@ const StaffCMSPaymentReportPage = () => {
     const rawStaffCostCentres = useSelector(selectCMSPaidCostCentresStaff);
     const isAnyLoading = useSelector(selectIsAnyLoading);
     const errors = useSelector(selectErrors);
+
+    const { userData } = useSelector((state) => state.auth);
+    const roleId = userData?.roleId || userData?.RID;
 
     // Memoize the staff data to prevent unnecessary re-renders
     const staffEmployees = useMemo(() => {
@@ -283,6 +345,7 @@ const StaffCMSPaymentReportPage = () => {
     // For storing available employees for dropdown
     const [availableEmployees, setAvailableEmployees] = useState([]);
     const [filteredEmployees, setFilteredEmployees] = useState([]);
+    const [isDownloadingBankExcel, setIsDownloadingBankExcel] = useState(false);
 
     // Fetch years on component mount
     useEffect(() => {
@@ -710,6 +773,44 @@ const StaffCMSPaymentReportPage = () => {
         }
     };
 
+    // Handle bank-transfer format Excel download (same layout as Labour CMS verification)
+    const handleBankExcelDownload = async () => {
+        if (filteredEmployees.length === 0) {
+            toast.warning('No data available to download');
+            return;
+        }
+
+        setIsDownloadingBankExcel(true);
+        try {
+            // Beneficiary email isn't stored against the CMS payment record, so
+            // it's looked up live per employee from the employeeinfo table via
+            // GetStaffDetailsbyRefNo (WorkEmail). Missing lookups just fall back
+            // to a blank cell instead of failing the whole export.
+            const uniqueEmpRefNos = [...new Set(
+                filteredEmployees.map((emp) => emp.EmpRefNo || emp.EmprefNo).filter(Boolean)
+            )];
+            const emailMap = {};
+            await Promise.all(uniqueEmpRefNos.map(async (empRefNo) => {
+                try {
+                    const res = await getStaffDetailsByRefNo({ empRefNo, roleId });
+                    const data = res?.Data || res;
+                    if (data?.WorkEmail) emailMap[empRefNo] = data.WorkEmail;
+                } catch (err) {
+                    console.warn('⚠️ Could not fetch email for', empRefNo, err);
+                }
+            }));
+
+            downloadBankTransferExcel(filteredEmployees, localFilters.selectedMonth, localFilters.selectedYear, emailMap);
+            toast.success('Bank transfer Excel downloaded successfully');
+
+        } catch (error) {
+            console.error('❌ Bank Excel Download Error:', error);
+            toast.error('Bank transfer Excel download failed. Please try again.');
+        } finally {
+            setIsDownloadingBankExcel(false);
+        }
+    };
+
     return (
         <div className="space-y-6 p-6">
             {/* Page Header */}
@@ -999,6 +1100,17 @@ const StaffCMSPaymentReportPage = () => {
                                     >
                                         <Download className="h-5 w-5" />
                                         Export Excel
+                                    </button>
+                                </Tooltip>
+
+                                <Tooltip content="Download bank-transfer format Excel">
+                                    <button
+                                        onClick={handleBankExcelDownload}
+                                        disabled={isDownloadingBankExcel}
+                                        className="px-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-60"
+                                    >
+                                        <Download className="h-5 w-5" />
+                                        {isDownloadingBankExcel ? 'Preparing…' : 'Bank Transfer Excel'}
                                     </button>
                                 </Tooltip>
                             </div>

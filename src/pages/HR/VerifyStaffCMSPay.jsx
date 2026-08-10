@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import * as XLSX from 'xlsx';
 import {
     FileText, Clock,  Users,
     Calendar, Hash, DollarSign,
     CalendarDays,  Banknote,
-    Receipt} from 'lucide-react';
+    Receipt, Download} from 'lucide-react';
 
 import InboxHeader       from '../../components/Inbox/InboxHeader';
 import ActionButtons     from '../../components/Inbox/ActionButtons';
@@ -42,6 +43,8 @@ import {
     setSelectedMOID
 } from '../../slices/supplierPOSlice/purcahseHelperSlice';
 
+import { getStaffDetailsByRefNo } from '../../api/HRReportAPI/StaffReportAPI';
+
 import {
     fetchStatusList,
     selectEnabledActions,
@@ -51,6 +54,60 @@ import {
     resetApprovalData,
     setShowReturnButton
 } from '../../slices/CommonSlice/getStatusSlice';
+
+const BANK_HEADERS = [
+    'Transaction Type', 'Beneficiary Code', 'Beneficiary Account Number',
+    'Instrument Amount', 'Beneficiary Name', 'Drawee Location', 'Print Location',
+    'Bene Address 1', 'Bene Address 2', 'Bene Address 3', 'Bene Address 4', 'Bene Address 5',
+    'Instruction Reference Number', 'Customer Reference Number',
+    'Payment details 1', 'Payment details 2', 'Payment details 3', 'Payment details 4',
+    'Payment details 5', 'Payment details 6', 'Payment details 7',
+    'Cheque Number', 'Chq / Trn Date', 'MICR Number', 'IFSC Code',
+    'Bene Bank Name', 'Bene Bank Branch Name', 'Beneficiary email id',
+];
+
+// Employee email isn't part of the CMS report payload itself, so it's looked
+// up per-beneficiary from GetStaffDetailsbyRefNo (employeeinfo.WorkEmail) and
+// passed in via emailMap. Fall back to any email-like field already on the
+// row, then blank, so a missing lookup is obvious rather than silently wrong.
+const resolveBeneficiaryEmail = (b, emailMap = {}) => {
+    const empRefNo = b.Emprefno || b.EmpRefNo;
+    return emailMap[empRefNo] || b.Email || b.EmailId || b.EmailID || b.WorkEmail || b.MailId || b.EmailAddress || '';
+};
+
+const generateStaffCMSBankExcel = (beneficiaries, cmsInfo, emailMap = {}) => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dateStr = `${dd}/${mm}/${today.getFullYear()}`;
+
+    const refNo = `${cmsInfo.Month || ''}-${cmsInfo.Year || ''}-${cmsInfo.ConsolidateNo || ''}`;
+
+    const rows = beneficiaries.map((b) => [
+        'N',                                       // Transaction Type
+        '',                                        // Beneficiary Code
+        b.BeneficiaryAcNo || b.AccountNo || '',     // Beneficiary Account Number
+        parseFloat(b.Amount || 0),                  // Instrument Amount
+        b.BeneficiaryName || '',                    // Beneficiary Name
+        '', '',                                     // Drawee/Print Location
+        '', '', '', '', '',                         // Bene Address 1-5
+        refNo,                                       // Instruction Reference Number
+        refNo,                                       // Customer Reference Number
+        '', '', '', '', '', '', '',                 // Payment details 1-7
+        '',                                          // Cheque Number
+        dateStr,                                     // Chq / Trn Date
+        '',                                          // MICR Number
+        b.IFSC || b.IFSCCode || '',                  // IFSC Code
+        b.BankName || b.BeneBankName || '',          // Bene Bank Name
+        b.BranchName || b.BeneBankBranchName || '',  // Bene Bank Branch Name
+        resolveBeneficiaryEmail(b, emailMap),        // Beneficiary email id
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([BANK_HEADERS, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bank Transfer');
+    XLSX.writeFile(wb, `StaffCMS_BankTransfer_${cmsInfo.CMSTransactionNo || 'export'}.xlsx`);
+};
 
 const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
     const dispatch = useDispatch();
@@ -90,6 +147,7 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
     const [filterYear, setFilterYear] = useState('All');
     const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
     const [isLeftPanelHovered, setIsLeftPanelHovered] = useState(false);
+    const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
 
     const { InboxTitle, ModuleDisplayName } = notificationData || {};
 
@@ -223,6 +281,44 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
     const handleItemSelect = (item) => {
         console.log('✅ Selected CMS Pay Item:', item);
         setSelectedItem(item);
+    };
+
+    const handleDownloadExcel = async () => {
+        if (!cmsReportData || cmsReportData.length === 0) {
+            toast.error('No beneficiary data available to export');
+            return;
+        }
+        setIsDownloadingExcel(true);
+        try {
+            // Beneficiary email isn't stored against the CMS payment record, so
+            // it's looked up live per employee from the employeeinfo table via
+            // GetStaffDetailsbyRefNo (WorkEmail). Missing lookups just fall back
+            // to a blank cell instead of failing the whole export.
+            const uniqueEmpRefNos = [...new Set(
+                cmsReportData.map((b) => b.Emprefno || b.EmpRefNo).filter(Boolean)
+            )];
+            const emailMap = {};
+            await Promise.all(uniqueEmpRefNos.map(async (empRefNo) => {
+                try {
+                    const res = await getStaffDetailsByRefNo({ empRefNo, roleId });
+                    const data = res?.Data || res;
+                    if (data?.WorkEmail) emailMap[empRefNo] = data.WorkEmail;
+                } catch (err) {
+                    console.warn('⚠️ Could not fetch email for', empRefNo, err);
+                }
+            }));
+
+            const displayData = cmsPayDetails || selectedItem;
+            generateStaffCMSBankExcel(cmsReportData, {
+                Month: displayData?.Month,
+                Year: displayData?.Year,
+                ConsolidateNo: displayData?.ConsolidateNo || selectedItem?.ConsolidateNo,
+                CMSTransactionNo: displayData?.CMSTransactionNo || selectedItem?.CMSTransactionNo,
+            }, emailMap);
+            toast.success('Excel downloaded');
+        } finally {
+            setIsDownloadingExcel(false);
+        }
     };
 
     const buildApprovalPayload = (actionValue) => {
@@ -586,14 +682,24 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                             </div>
                         </div>
 
-                        {displayData.Total > 0 && (
-                            <div className="text-right">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Amount</p>
-                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    ₹{displayData.Total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                            </div>
-                        )}
+                        <div className="flex flex-col items-end gap-3">
+                            {displayData.Total > 0 && (
+                                <div className="text-right">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Amount</p>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                        ₹{displayData.Total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                </div>
+                            )}
+                            <button
+                                onClick={handleDownloadExcel}
+                                disabled={isDownloadingExcel}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
+                            >
+                                <Download className="h-4 w-4" />
+                                {isDownloadingExcel ? 'Preparing…' : 'Export Excel'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-blue-200 dark:border-blue-700">

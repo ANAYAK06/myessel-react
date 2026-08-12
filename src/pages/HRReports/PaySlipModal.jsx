@@ -169,7 +169,7 @@ const PaySlipModal = ({ isOpen, onClose, paySlipData, loading, employeeData }) =
                             </div>
                         ) : (
                             /* ─── PDF-captured content ─── */
-                            <div ref={paySlipRef} style={{ backgroundColor: 'white', fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+                            <div ref={paySlipRef} style={{ backgroundColor: 'white', fontFamily: "'Segoe UI', Arial, sans-serif", WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact', colorAdjust: 'exact' }}>
 
                                 {/* ── Letterhead ── */}
                                 <div style={{ backgroundColor: 'white', padding: '24px 32px 0 32px' }}>
@@ -188,10 +188,10 @@ const PaySlipModal = ({ isOpen, onClose, paySlipData, loading, employeeData }) =
                                         </div>
 
                                         {/* Pay Slip badge */}
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ backgroundColor: ORANGE, color: 'white', borderRadius: '8px 8px 0 0', padding: '10px 22px', display: 'inline-block' }}>
+                                        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                                            <div style={{ backgroundColor: ORANGE, color: 'white', borderRadius: '8px 8px 0 0', padding: '10px 22px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
                                                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.9 }}>Salary Slip</div>
-                                                <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>{employeeInfo.payRollDate || 'Monthly'}</div>
+                                                <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>{(employeeInfo.payRollDate || '').trim() || 'Monthly'}</div>
                                             </div>
                                         </div>
                                     </div>

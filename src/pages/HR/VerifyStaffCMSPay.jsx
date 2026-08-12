@@ -3,9 +3,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import {
-    FileText, Clock,  Users,
-    Calendar, Hash, DollarSign,
-    CalendarDays,  Banknote,
+    Clock, Users,
+    Calendar, Hash,
+    Banknote,
     Receipt, Download} from 'lucide-react';
 
 import InboxHeader       from '../../components/Inbox/InboxHeader';
@@ -66,10 +66,12 @@ const BANK_HEADERS = [
     'Bene Bank Name', 'Bene Bank Branch Name', 'Beneficiary email id',
 ];
 
-// Employee email isn't part of the CMS report payload itself, so it's looked
-// up per-beneficiary from GetStaffDetailsbyRefNo (employeeinfo.WorkEmail) and
-// passed in via emailMap. Fall back to any email-like field already on the
-// row, then blank, so a missing lookup is obvious rather than silently wrong.
+// Confirmed against the raw GetCMSDatatbyTransNo response: BeneficiaryEmail
+// is present but null, and there's no bank-name field at all on this payload.
+// Email is looked up live per-employee from GetStaffDetailsbyRefNo
+// (employeeinfo.WorkEmail) via emailMap until the backend starts returning it
+// directly. Bank name reads straight off the record — swap in a live lookup
+// here too if the backend fix doesn't end up covering it.
 const resolveBeneficiaryEmail = (b, emailMap = {}) => {
     const empRefNo = b.Emprefno || b.EmpRefNo;
     return emailMap[empRefNo] || b.Email || b.EmailId || b.EmailID || b.WorkEmail || b.MailId || b.EmailAddress || '';
@@ -98,8 +100,8 @@ const generateStaffCMSBankExcel = (beneficiaries, cmsInfo, emailMap = {}) => {
         dateStr,                                     // Chq / Trn Date
         '',                                          // MICR Number
         b.IFSC || b.IFSCCode || '',                  // IFSC Code
-        b.BankName || b.BeneBankName || '',          // Bene Bank Name
-        b.BranchName || b.BeneBankBranchName || '',  // Bene Bank Branch Name
+        b.BeneficiaryBank || b.BeneficiaryBankName || b.BankName || b.Bank || b.BeneBankName || '',            // Bene Bank Name
+        b.BeneficiaryBranch || b.BeneficiaryBranchName || b.BranchName || b.Branch || b.BeneBankBranchName || '', // Bene Bank Branch Name
         resolveBeneficiaryEmail(b, emailMap),        // Beneficiary email id
     ]);
 
@@ -514,64 +516,16 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
         </div>
     );
 
-    const renderCMSDetailsGrid = () => {
-        if (!cmsPayDetails) return null;
-
-        const detailItems = [
-            { label: 'CMS Transaction No', value: cmsPayDetails.CMSTransactionNo || '-', icon: Hash },
-            { label: 'Consolidate No', value: cmsPayDetails.ConsolidateNo || '-', icon: Hash },
-            { label: 'Transaction Ref No', value: cmsPayDetails.TransactionRefno || '-', icon: Hash },
-            { label: 'Month', value: cmsPayDetails.Month || '-', icon: Calendar },
-            { label: 'Year', value: cmsPayDetails.Year || '-', icon: Calendar },
-            { label: 'Effective Month', value: cmsPayDetails.EffectiveMonth || '-', icon: CalendarDays },
-            { label: 'Total Amount', value: cmsPayDetails.Total ? `₹${cmsPayDetails.Total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-', icon: DollarSign },
-            { label: 'CMS ID', value: cmsPayDetails.CMSId || '-', icon: Hash },
-            { label: 'MOID', value: cmsPayDetails.MOID || '-', icon: Hash }
-        ];
-
-        return (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                        <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        CMS Payment Details
-                    </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {detailItems.map((item, index) => {
-                        const IconComponent = item.icon;
-                        return (
-                            <div key={index} className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                                <div className="flex items-center space-x-2 mb-2">
-                                    <IconComponent className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                        {item.label}
-                                    </p>
-                                </div>
-                                <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
-                                    {item.value}
-                                </p>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        );
-    };
-
     const renderBeneficiariesTable = () => {
         if (!cmsReportData || cmsReportData.length === 0) return null;
 
         return (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
-                        <Users className="w-5 h-5 text-white" />
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 mb-3">
+                    <div className="p-1.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                        <Users className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                         Beneficiary Payment Details ({cmsReportData.length})
                     </h3>
                 </div>
@@ -580,22 +534,25 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                <th className="px-3 py-2 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                     Emp Ref No
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                <th className="px-3 py-2 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                     Beneficiary Name
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                <th className="px-3 py-2 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                     Account No
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                <th className="px-3 py-2 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                     IFSC
                                 </th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                <th className="px-3 py-2 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                    Bank
+                                </th>
+                                <th className="px-3 py-2 text-right text-[11px] font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                     Amount
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                <th className="px-3 py-2 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                     Date
                                 </th>
                             </tr>
@@ -603,22 +560,25 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {cmsReportData.map((beneficiary, index) => (
                                 <tr key={index} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-white">
                                         {beneficiary.Emprefno || '-'}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                    <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300">
                                         {beneficiary.BeneficiaryName || '-'}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-mono">
+                                    <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300 font-mono">
                                         {beneficiary.BeneficiaryAcNo || '-'}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-mono">
+                                    <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300 font-mono">
                                         {beneficiary.IFSC || '-'}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-right text-green-600 dark:text-green-400">
+                                    <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300">
+                                        {beneficiary.BeneficiaryBank || beneficiary.BeneficiaryBankName || beneficiary.BankName || beneficiary.Bank || '-'}
+                                    </td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-xs font-semibold text-right text-green-600 dark:text-green-400">
                                         ₹{parseFloat(beneficiary.Amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                    <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300">
                                         {beneficiary.Date || '-'}
                                     </td>
                                 </tr>
@@ -626,10 +586,10 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                         </tbody>
                         <tfoot className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
                             <tr>
-                                <td colSpan="4" className="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">
+                                <td colSpan="5" className="px-3 py-2 text-right text-xs font-bold text-gray-900 dark:text-white">
                                     Total:
                                 </td>
-                                <td className="px-4 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">
+                                <td className="px-3 py-2 text-right text-xs font-bold text-green-600 dark:text-green-400">
                                     ₹{cmsReportData.reduce((sum, b) => sum + parseFloat(b.Amount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                                 <td></td>
@@ -648,12 +608,12 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
         const hasDetailedData = !!cmsPayDetails;
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {detailsLoading && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
-                        <div className="flex items-center space-x-3">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                            <span className="text-blue-700 dark:text-blue-400 text-sm">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <span className="text-blue-700 dark:text-blue-400 text-xs">
                                 Loading CMS payment details...
                             </span>
                         </div>
@@ -661,35 +621,50 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                 )}
 
                 {/* CUSTOM HEADER */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
                     <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                            <div className="relative">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                                    <Receipt className="w-8 h-8 text-white" />
+                        <div className="flex items-start gap-3">
+                            <div className="relative flex-shrink-0">
+                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                                    <Receipt className="w-5 h-5 text-white" />
                                 </div>
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-500 rounded-full border-3 border-white dark:border-gray-800 flex items-center justify-center">
-                                    <Banknote className="w-4 h-4 text-white" />
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
+                                    <Banknote className="w-2.5 h-2.5 text-white" />
                                 </div>
                             </div>
 
                             <div className="flex-1">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                                <h2 className="text-base font-bold text-gray-900 dark:text-white mb-0.5">
                                     CMS Payment Verification
                                 </h2>
-                                <p className="text-blue-600 dark:text-blue-400 font-semibold mb-3">
+                                <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mb-2">
                                     CMS: {displayData.CMSTransactionNo} • Consolidate: {displayData.ConsolidateNo}
                                 </p>
 
-                                <div className="flex flex-wrap gap-2">
-                                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                                <div className="flex flex-wrap gap-1.5">
+                                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-[11px] font-medium">
                                         {displayData.Month} {displayData.Year}
                                     </span>
-                                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                                    <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[11px] font-medium">
                                         Transaction: {displayData.TransactionRefno}
                                     </span>
+                                    {hasDetailedData && displayData.MOID && (
+                                        <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-[11px] font-medium">
+                                            MOID: {displayData.MOID}
+                                        </span>
+                                    )}
+                                    {hasDetailedData && displayData.CMSId && (
+                                        <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-[11px] font-medium">
+                                            CMS ID: {displayData.CMSId}
+                                        </span>
+                                    )}
+                                    {displayData.EffectiveMonth && (
+                                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-[11px] font-medium">
+                                            Effective: {displayData.EffectiveMonth}
+                                        </span>
+                                    )}
                                     {hasDetailedData && cmsReportData.length > 0 && (
-                                        <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
+                                        <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-[11px] font-medium">
                                             {cmsReportData.length} Beneficiaries
                                         </span>
                                     )}
@@ -697,11 +672,11 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-3">
+                        <div className="flex flex-col items-end gap-2">
                             {displayData.Total > 0 && (
                                 <div className="text-right">
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Amount</p>
-                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Total Amount</p>
+                                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
                                         ₹{displayData.Total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </p>
                                 </div>
@@ -709,48 +684,14 @@ const VerifyStaffCMSPay = ({ notificationData, onNavigate }) => {
                             <button
                                 onClick={handleDownloadExcel}
                                 disabled={isDownloadingExcel}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-all disabled:opacity-60"
                             >
-                                <Download className="h-4 w-4" />
+                                <Download className="h-3.5 w-3.5" />
                                 {isDownloadingExcel ? 'Preparing…' : 'Export Excel'}
                             </button>
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-blue-200 dark:border-blue-700">
-                        {hasDetailedData && displayData.MOID && (
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">MOID</p>
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                    {displayData.MOID}
-                                </p>
-                            </div>
-                        )}
-                        {hasDetailedData && displayData.CMSId && (
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">CMS ID</p>
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                    {displayData.CMSId}
-                                </p>
-                            </div>
-                        )}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Effective Month</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                {displayData.EffectiveMonth || '-'}
-                            </p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Beneficiaries</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                {cmsReportData.length || 0}
-                            </p>
-                        </div>
-                    </div>
                 </div>
-
-                {/* CMS Details Grid */}
-                {hasDetailedData && renderCMSDetailsGrid()}
 
                 {/* Beneficiaries Table */}
                 {hasDetailedData && renderBeneficiariesTable()}

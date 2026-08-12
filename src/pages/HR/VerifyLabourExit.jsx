@@ -358,6 +358,46 @@ const VerifyLabourExit = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => {
+        const itemName = item.LabourName || item.EmployeeName || 'Unknown';
+        const itemContractor = item.ContractorName?.trim() || '';
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                    {itemName}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                    {item.LabourId}
+                </span>
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[80px]">
+                    <Hash className="w-3 h-3" />
+                    Ref: {item.Id}
+                </span>
+                {item.CCName && (
+                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[120px] truncate">
+                        <Building2 className="w-3 h-3 text-teal-400" />
+                        {item.CCName}
+                    </span>
+                )}
+                {itemContractor && (
+                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[110px] truncate">
+                        <Users className="w-3 h-3 text-cyan-400" />
+                        {itemContractor}
+                    </span>
+                )}
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[140px]">
+                    <Calendar className="w-3 h-3 text-teal-400" />
+                    Resignation: {item.ResignationDate}
+                </span>
+                <span className="ml-auto px-2 py-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full text-xs font-medium whitespace-nowrap">
+                    {item.LabourType || 'Exit'}
+                </span>
+            </div>
+        );
+    };
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-teal-200 dark:border-teal-600 bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-800/50 dark:to-emerald-800/50 flex items-center justify-center">
             <LogOut className="w-4 h-4 text-teal-600 dark:text-teal-400" />
@@ -718,6 +758,7 @@ const VerifyLabourExit = ({ notificationData, onNavigate }) => {
                 onBackClick={handleBackToInbox}
                 HeaderIcon={LogOut}
                 badgeText="Exit Verification"
+                enableViewToggle
                 badgeCount={exitGrid.length}
                 searchConfig={{
                     enabled: true,
@@ -754,6 +795,7 @@ const VerifyLabourExit = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: inboxError,

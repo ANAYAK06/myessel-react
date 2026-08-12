@@ -329,6 +329,43 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                {item.EmployeeName}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                {item.EmpRefNo}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[80px]">
+                <Hash className="w-3 h-3" />
+                ID: {item.Id}
+            </span>
+            {item.CCCode && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[110px] truncate">
+                    <Building2 className="w-3 h-3 text-indigo-400" />
+                    CC: {item.CCCode}
+                </span>
+            )}
+            {item.TransactionRefNo && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[120px] truncate">
+                    <FileText className="w-3 h-3 text-purple-400" />
+                    Ref: {item.TransactionRefNo}
+                </span>
+            )}
+            {item.Status && (
+                <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-[10px] font-medium whitespace-nowrap">
+                    {item.Status}
+                </span>
+            )}
+            <span className="ml-auto px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium whitespace-nowrap">
+                Full &amp; Final
+            </span>
+        </div>
+    );
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <BadgeDollarSign className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -661,6 +698,7 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
                 onBackClick={handleBackToInbox}
                 HeaderIcon={BadgeDollarSign}
                 badgeText="Full & Final"
+                enableViewToggle
                 badgeCount={gridList.length}
                 searchConfig={{
                     enabled: true,
@@ -697,6 +735,7 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: inboxError,

@@ -296,6 +296,37 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (batch) => {
+        const priority = getBatchPriority(batch);
+        const priorityColors = {
+            High:   'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200',
+            Medium: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200',
+            Low:    'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200',
+        };
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                    {batch.TransactionRefNo || 'Unknown Batch'}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                    {batch.WorkerCount || 0} Workers
+                </span>
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[120px] truncate">
+                    <Building2 className="w-3 h-3" />
+                    {batch.CreatedBy || batch.Createdby || '—'}
+                </span>
+                <span className="text-indigo-600 dark:text-indigo-400 font-medium min-w-[90px]">
+                    {batch.Status || 'Pending'}
+                </span>
+                <span className={`ml-auto px-2 py-0.5 text-xs rounded-full border whitespace-nowrap ${priorityColors[priority]}`}>
+                    {priority}
+                </span>
+            </div>
+        );
+    };
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -529,6 +560,7 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
                 HeaderIcon={Users}
                 badgeText="HR Verification"
                 badgeCount={verificationList.length}
+                enableViewToggle
                 searchConfig={{
                     enabled: true,
                     placeholder: 'Search by batch ref, created by...',
@@ -564,6 +596,7 @@ const VerifyWorkerStaffReg = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedBatch,
                     onItemSelect: handleBatchSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: listLoading,
                     error: listError,

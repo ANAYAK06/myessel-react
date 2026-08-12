@@ -314,6 +314,40 @@ const VerifyStaffAppraisal = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => {
+        const empName = item.EmployeName || item.EmployeeName || item.Name || '—';
+        const empId   = item.EmpRefNo    || item.EmployeeID   || '—';
+
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                    {empName}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                    {empId}
+                </span>
+                {(item.DesignatedAs || item.Designation) && (
+                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[140px] truncate">
+                        <Briefcase className="w-3 h-3 text-indigo-400" />
+                        {item.DesignatedAs || item.Designation}
+                    </span>
+                )}
+                {item.Year && item.Month && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                        {getMonthName(item.Month)} {item.Year}
+                    </span>
+                )}
+                {item.Status && (
+                    <span className="ml-auto px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-medium whitespace-nowrap">
+                        {item.Status}
+                    </span>
+                )}
+            </div>
+        );
+    };
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -559,6 +593,7 @@ const VerifyStaffAppraisal = ({ notificationData, onNavigate }) => {
                 onBackClick={handleBackToInbox}
                 HeaderIcon={Target}
                 badgeText="Appraisal"
+                enableViewToggle
                 badgeCount={verifyInbox.length}
                 searchConfig={{
                     enabled: true,
@@ -595,6 +630,7 @@ const VerifyStaffAppraisal = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: null,

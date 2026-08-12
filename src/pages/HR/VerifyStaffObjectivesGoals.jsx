@@ -416,6 +416,38 @@ const VerifyStaffObjectivesGoals = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                {item.Name}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[110px]">
+                ID: {item.Id} • {item.EmpRefNo}
+            </span>
+            {item.JoiningCCName && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[130px] truncate">
+                    <Building2 className="w-3 h-3" />
+                    {item.JoiningCCName}
+                </span>
+            )}
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" />
+                {item.EffectiveDate}
+            </span>
+            {item.Department && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px] truncate">
+                    <Briefcase className="w-3 h-3" />
+                    {item.Department}
+                </span>
+            )}
+            <span className="ml-auto px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium whitespace-nowrap">
+                {item.GroupName}
+            </span>
+        </div>
+    );
+
     const renderCollapsedItem = (item, isSelected) => (
         <div className="w-full h-full rounded-lg border-2 border-blue-200 dark:border-blue-600 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -661,6 +693,7 @@ const VerifyStaffObjectivesGoals = ({ notificationData, onNavigate }) => {
                 onBackClick={handleBackToInbox}
                 HeaderIcon={Target}
                 badgeText="Appraisal Verification"
+                enableViewToggle
                 badgeCount={appraisalInbox.length}
                 searchConfig={{
                     enabled: true,
@@ -703,6 +736,7 @@ const VerifyStaffObjectivesGoals = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: inboxError,

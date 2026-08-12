@@ -12,7 +12,7 @@ import InboxHeader from '../../components/Inbox/InboxHeader';
 import StatsCards from '../../components/Inbox/StatsCards';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
-import LeftPanel from '../../components/Inbox/LeftPanel';
+import InboxSplitLayout from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
 import {
@@ -340,6 +340,26 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px] truncate">
+                {item.CMSTransactionNo || item.TransactionNo}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[140px] truncate">
+                {[item.ContractorCode, item.CCCode].filter(Boolean).join(' • ') || '—'}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" />
+                {getMonth(item)} {getYear(item)}
+            </span>
+            <span className="ml-auto px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full font-medium whitespace-nowrap">
+                ₹{formatCurrency(item.TotalAmount || item.Total || 0)}
+            </span>
+        </div>
+    );
+
     const renderDetailContent = () => {
         if (!selectedItem) return null;
         const displayData = detail || selectedItem;
@@ -579,6 +599,7 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
                 HeaderIcon={HardHat}
                 badgeText="Labour CMS"
                 badgeCount={inbox.length}
+                enableViewToggle
                 searchConfig={{
                     enabled: true,
                     placeholder: 'Search by transaction no, contractor, CC...',
@@ -610,80 +631,57 @@ const VerifyLabourCMSPay = ({ notificationData, onNavigate }) => {
                 />
             </div>
 
-            <div
-                    className={`grid transition-all duration-300 ${isLeftPanelCollapsed && !isLeftPanelHovered
-                        ? 'grid-cols-1 lg:grid-cols-12 gap-2'
-                        : 'grid-cols-1 lg:grid-cols-3 gap-6'
-                        }`}
-                    onMouseLeave={() => {
-                        if (selectedItem && isLeftPanelCollapsed) setIsLeftPanelHovered(false);
-                    }}
-                >
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-1' : 'lg:col-span-1'}>
-                        <LeftPanel
-                            items={filteredItems}
-                            selectedItem={selectedItem}
-                            onItemSelect={setSelectedItem}
-                            renderItem={renderItemCard}
-                            renderCollapsedItem={renderCollapsedItem}
-                            isCollapsed={isLeftPanelCollapsed}
-                            onCollapseToggle={setIsLeftPanelCollapsed}
-                            isHovered={isLeftPanelHovered}
-                            onHoverChange={setIsLeftPanelHovered}
-                            loading={inboxLoading}
-                            error={inboxError}
-                            onRefresh={handleRefresh}
-                            config={{
-                                title: 'Pending Verification',
-                                icon: Clock,
-                                emptyMessage: 'No Labour CMS records found',
-                                itemKey: 'CMSTransactionNo',
-                                enableCollapse: true,
-                                enableRefresh: true,
-                                enableHover: true,
-                                maxHeight: '100%',
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                            }}
-                            renderPopupContent={renderDetailContent}
-                            popupConfig={{
-                                title: 'Labour CMS Verification',
-                                icon: HardHat,
-                                headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
-                                maxWidth: 'max-w-[80vw]',
-                            }}
-                        />
-                    </div>
-
-                    <div className={isLeftPanelCollapsed && !isLeftPanelHovered ? 'lg:col-span-11' : 'lg:col-span-2'}>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-4 border-b border-gray-200 dark:border-gray-700 rounded-t-xl">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                        <HardHat className="w-4 h-4 text-white" />
-                                    </div>
-                                    {selectedItem ? 'Labour CMS Verification' : 'Labour CMS Payment Details'}
-                                </h2>
-                            </div>
-                            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                                {selectedItem ? (
-                                    renderDetailContent()
-                                ) : (
-                                    <div className="text-center py-16">
-                                        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <HardHat className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                            No Record Selected
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Select a Labour CMS payment from the list to review and verify.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: setSelectedItem,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: inboxLoading,
+                    error: inboxError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending Verification',
+                        icon: Clock,
+                        emptyMessage: 'No Labour CMS records found',
+                        itemKey: 'CMSTransactionNo',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Labour CMS Verification',
+                        icon: HardHat,
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Labour CMS Payment Details',
+                        icon: HardHat,
+                        selectedTitle: 'Labour CMS Verification',
+                        emptyTitle: 'No Record Selected',
+                        emptyMessage: 'Select a Labour CMS payment from the list to review and verify.',
+                        headerGradient: 'from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh - 200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
         </div>
     );
 };

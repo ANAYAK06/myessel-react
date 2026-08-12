@@ -902,6 +902,7 @@ const VerifyEmployeeCTC = ({ notificationData, onNavigate }) => {
                 HeaderIcon={DollarSign}
                 badgeText="CTC Verification"
                 badgeCount={ctcInbox.length}
+                enableViewToggle
                 searchConfig={{
                     enabled: true,
                     placeholder: 'Search by name, emp ref, transaction ref...',

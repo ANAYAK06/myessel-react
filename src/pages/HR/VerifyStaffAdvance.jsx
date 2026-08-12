@@ -324,6 +324,44 @@ const VerifyStaffAdvance = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => {
+        const advType  = getAdvanceType(item);
+        const isLTA    = advType === 'LTA';
+        const badgeCls = isLTA
+            ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+            : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300';
+
+        return (
+            <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+                <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                    {item.EmployeName}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                    {item.EmployeeID}
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${badgeCls}`}>
+                    {advType}
+                </span>
+                <span className="font-bold text-indigo-700 dark:text-indigo-300 min-w-[100px]">
+                    ₹{fmt(item.LTAAmount)}
+                </span>
+                {item.TransactionRefNo && (
+                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[130px] truncate">
+                        <FileText className="w-3 h-3 text-purple-400" />
+                        {item.TransactionRefNo}
+                    </span>
+                )}
+                {item.Status && (
+                    <span className="ml-auto px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-[10px] font-medium whitespace-nowrap">
+                        {item.Status}
+                    </span>
+                )}
+            </div>
+        );
+    };
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <CreditCard className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -694,6 +732,7 @@ const VerifyStaffAdvance = ({ notificationData, onNavigate }) => {
                 HeaderIcon={CreditCard}
                 badgeText="Advance"
                 badgeCount={verifyInbox.length}
+                enableViewToggle
                 searchConfig={{
                     enabled: true,
                     placeholder: 'Search by name, emp ID, ref no…',
@@ -729,6 +768,7 @@ const VerifyStaffAdvance = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: null,

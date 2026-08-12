@@ -746,6 +746,41 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
         );
     };
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                {item.EmpName}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                {item.EmpRefno}
+            </span>
+            {item.CCCode && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[110px] truncate">
+                    <Building2 className="w-3 h-3" />
+                    {item.CCCode}
+                </span>
+            )}
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[70px]">
+                <Calendar className="w-3 h-3" />
+                {item.Month}/{item.Year}
+            </span>
+            {item._type === 'arear' && item.SalaryHead && (
+                <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 min-w-[100px] truncate">
+                    <Tag className="w-3 h-3 text-purple-500" />
+                    {item.SalaryHead}
+                </span>
+            )}
+            <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 rounded text-xs font-medium text-indigo-600 dark:text-indigo-300 whitespace-nowrap">
+                #{item.Id}
+            </span>
+            <span className="ml-auto">
+                <TypeBadge type={item._type} />
+            </span>
+        </div>
+    );
+
     const renderCollapsedItem = (item) => {
         if (!item) return null;
         const isDeduction = item._type === 'deduction';
@@ -878,6 +913,7 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
                 onBackClick={() => onNavigate?.('dashboard', { name: 'Dashboard', type: 'dashboard' })}
                 HeaderIcon={Layers}
                 badgeText="Deduction & Arear"
+                enableViewToggle
                 badgeCount={combinedInbox.length}
                 searchConfig={{
                     enabled: true,
@@ -912,6 +948,7 @@ const VerifySalaryDeductionArear = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: inboxError,

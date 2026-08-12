@@ -283,6 +283,36 @@ const VerifyLabourTypeChange = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                {item.LabourName}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                {item.LabourId}
+            </span>
+            <span className="flex items-center gap-1.5">
+                <TypeBadge type={item.CurrentType} />
+                <ArrowLeftRight className="w-3 h-3 text-gray-400" />
+                <TypeBadge type={item.NewType} />
+            </span>
+            {item.WithEffectFrom && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[110px]">
+                    <Calendar className="w-3 h-3" />
+                    w.e.f. {item.WithEffectFrom}
+                </span>
+            )}
+            {item.NewContractorName && (
+                <span className="ml-auto flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[120px] truncate">
+                    <Building2 className="w-3 h-3" />
+                    {item.NewContractorName}
+                </span>
+            )}
+        </div>
+    );
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center">
             <ArrowLeftRight className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -530,6 +560,7 @@ const VerifyLabourTypeChange = ({ notificationData, onNavigate }) => {
                 onBackClick={handleBackToInbox}
                 HeaderIcon={ArrowLeftRight}
                 badgeText="Type Change"
+                enableViewToggle
                 badgeCount={inbox.length}
                 searchConfig={{
                     enabled: true,
@@ -558,6 +589,7 @@ const VerifyLabourTypeChange = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: setSelectedItem,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: loading.inbox,
                     error: errors.inbox,

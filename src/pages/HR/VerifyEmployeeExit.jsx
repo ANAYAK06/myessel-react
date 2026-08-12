@@ -359,6 +359,36 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                {item.EmployeeName}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                {item.EmpRefNo}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Hash className="w-3 h-3" />
+                Ref: {item.Id}
+            </span>
+            {item.CCName && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[120px] truncate">
+                    <Building2 className="w-3 h-3 text-blue-400" />
+                    {item.CCName}
+                </span>
+            )}
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[140px]">
+                <Calendar className="w-3 h-3 text-indigo-400" />
+                {item.ResignationDate}
+            </span>
+            <span className="ml-auto px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium whitespace-nowrap">
+                Exit
+            </span>
+        </div>
+    );
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-blue-200 dark:border-blue-600 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-800/50 dark:to-purple-800/50 flex items-center justify-center">
             <LogOut className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -670,6 +700,7 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
                 HeaderIcon={LogOut}
                 badgeText="Exit Verification"
                 badgeCount={exitGrid.length}
+                enableViewToggle
                 searchConfig={{
                     enabled: true,
                     placeholder: 'Search by name, emp code, ref no...',
@@ -705,6 +736,7 @@ const VerifyEmployeeExit = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: inboxError,

@@ -422,6 +422,38 @@ const VerifyLabourObjectivesGoals = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                {item.Name}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[110px]">
+                ID: {item.Id} • {item.LabourId}
+            </span>
+            {item.JoiningCCName && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[130px] truncate">
+                    <Building2 className="w-3 h-3" />
+                    {item.JoiningCCName}
+                </span>
+            )}
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" />
+                {item.EffectiveDate}
+            </span>
+            {item.ContractorName && (
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[110px] truncate">
+                    <User className="w-3 h-3" />
+                    {item.ContractorName}
+                </span>
+            )}
+            <span className="ml-auto px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium whitespace-nowrap">
+                {item.GroupName}
+            </span>
+        </div>
+    );
+
     const renderAppraisalDetailsGrid = () => {
         if (!appraisalDetails) return null;
 
@@ -663,6 +695,7 @@ const VerifyLabourObjectivesGoals = ({ notificationData, onNavigate }) => {
                 onBackClick={handleBackToInbox}
                 HeaderIcon={Target}
                 badgeText="Appraisal Verification"
+                enableViewToggle
                 badgeCount={appraisalInbox.length}
                 searchConfig={{
                     enabled: true,
@@ -705,6 +738,7 @@ const VerifyLabourObjectivesGoals = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: handleItemSelect,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: inboxLoading,
                     error: inboxError,

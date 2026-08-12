@@ -274,6 +274,33 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
         </div>
     );
 
+    // Compact single-line row for the "classic" list view — same fields as
+    // renderItemCard, laid out horizontally instead of stacked.
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[160px] truncate">
+                {item.EmployeName}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[90px]">
+                {item.EmployeeID}
+            </span>
+            <AdvanceTypeBadge type={item.AdvanceType} />
+            <span className="font-bold text-teal-600 dark:text-teal-400 min-w-[90px]">
+                {fmt(item.LTAAmount)}
+            </span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[150px]">
+                <Repeat2 className="w-3 h-3 shrink-0" />
+                {fmt(item.EMIAmount)} × {item.NoOfInstallments}
+            </span>
+            {item.RequestedDate && (
+                <span className="ml-auto flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                    <Calendar className="w-3 h-3 shrink-0" />
+                    {item.RequestedDate}
+                </span>
+            )}
+        </div>
+    );
+
     const renderCollapsedItem = () => (
         <div className="w-full h-full rounded-lg border-2 border-teal-200 dark:border-teal-600 bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-800/40 dark:to-cyan-800/40 flex items-center justify-center">
             <CreditCard className="w-4 h-4 text-teal-600 dark:text-teal-400" />
@@ -471,6 +498,7 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
                 onBackClick={handleBackToInbox}
                 HeaderIcon={CreditCard}
                 badgeText="Advance Payment"
+                enableViewToggle
                 badgeCount={inbox.length}
                 searchConfig={{
                     enabled:     true,
@@ -499,6 +527,7 @@ const VerifyHRAdvancePayment = ({ notificationData, onNavigate }) => {
                     selectedItem: selectedItem,
                     onItemSelect: setSelectedItem,
                     renderItem: renderItemCard,
+                    renderListItem: renderListItem,
                     renderCollapsedItem: renderCollapsedItem,
                     loading: loading.inbox,
                     error: errors.inbox,

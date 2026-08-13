@@ -109,11 +109,11 @@ const MultiSelectDropdown = ({
     return (
         <div>
             {label && (
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2  items-center gap-2">
-                    {Icon && <Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
+                <label className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {Icon && <Icon className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
                     {label} {required && <span className="text-red-500">*</span>}
                     {selected.length > 0 && (
-                        <span className="ml-2 px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full">
+                        <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full">
                             {selected.length} selected
                         </span>
                     )}
@@ -127,9 +127,9 @@ const MultiSelectDropdown = ({
                     type="button"
                     disabled={disabled}
                     onClick={handleToggle}
-                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <span className={`text-sm ${selected.length === 0 ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white'}`}>
+                    <span className={`truncate ${selected.length === 0 ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white'}`}>
                         {loading
                             ? 'Loading…'
                             : selected.length === 0
@@ -139,18 +139,18 @@ const MultiSelectDropdown = ({
                                     : `${selected.length} selected`}
                     </span>
                     {loading
-                        ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400" />
-                        : <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />}
+                        ? <Loader2 className="h-3.5 w-3.5 flex-shrink-0 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        : <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />}
                 </button>
 
                 {open && !loading && (
-                    <div className={`absolute z-50 w-full bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-lg overflow-hidden
-                                    ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
+                    <div className={`absolute z-50 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden
+                                    ${openUp ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                         {/* Single scroll container — sticky headers inside so they stick correctly and nothing gets clipped */}
-                        <div className="max-h-96 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#a5b4fc #f3f4f6" }}>
-                            <div className="p-3 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-0 z-10">
+                        <div className="max-h-64 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#a5b4fc #f3f4f6" }}>
+                            <div className="p-2 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-0 z-10">
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-gray-400" />
                                     <input
                                         autoFocus
                                         type="text"
@@ -158,34 +158,34 @@ const MultiSelectDropdown = ({
                                         value={q}
                                         onChange={e => setQ(e.target.value)}
                                         onClick={e => e.stopPropagation()}
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-gray-600 dark:text-white text-sm"
+                                        className="w-full pl-8 pr-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-gray-600 dark:text-white text-xs"
                                     />
                                 </div>
                             </div>
 
-                            <div className="p-3 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-[73px] z-10">
-                                <label className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                            <div className="p-2 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 sticky top-[49px] z-10">
+                                <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-1.5 rounded-md transition-colors">
                                     <input
                                         type="checkbox"
                                         checked={allChecked}
                                         onChange={() => onChange(allChecked ? [] : options.map(getValue))}
-                                        className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-3.5 h-3.5 text-indigo-600 rounded focus:ring-1 focus:ring-indigo-500"
                                     />
-                                    <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                                    <span className="font-semibold text-gray-900 dark:text-white text-xs">
                                         Select All ({options.length})
                                     </span>
                                 </label>
                             </div>
 
                             {filtered.length === 0
-                                ? <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">No results</div>
+                                ? <div className="p-3 text-center text-gray-500 dark:text-gray-400 text-xs">No results</div>
                                 : filtered.map(o => {
                                     const val     = getValue(o);
                                     const checked = selected.includes(val);
                                     return (
                                         <label
                                             key={val}
-                                            className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                                            className="flex items-center gap-2 p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                                         >
                                             <input
                                                 type="checkbox"
@@ -193,10 +193,10 @@ const MultiSelectDropdown = ({
                                                 onChange={() => onChange(
                                                     checked ? selected.filter(s => s !== val) : [...selected, val]
                                                 )}
-                                                className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                                                className="w-3.5 h-3.5 text-indigo-600 rounded focus:ring-1 focus:ring-indigo-500"
                                             />
-                                            <span className="text-sm text-gray-700 dark:text-gray-200 flex-1">{getLabel(o)}</span>
-                                            {checked && <Check className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />}
+                                            <span className="text-xs text-gray-700 dark:text-gray-200 flex-1 truncate">{getLabel(o)}</span>
+                                            {checked && <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />}
                                         </label>
                                     );
                                 })}
@@ -206,19 +206,19 @@ const MultiSelectDropdown = ({
             </div>
 
             {selected.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                     {selected.map(val => {
                         const opt = options.find(o => getValue(o) === val);
                         const lbl = opt ? getLabel(opt) : val;
                         return (
                             <span key={val}
-                                  className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full text-sm">
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full text-[11px]">
                                 {lbl}
                                 <button
                                     onClick={() => onChange(selected.filter(s => s !== val))}
                                     className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
                                 >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-2.5 w-2.5" />
                                 </button>
                             </span>
                         );
@@ -251,8 +251,8 @@ const HeadRow = ({ h, isNew = false, amounts, onAmountChange, onRemove }) => (
                 value={amounts[h.SalaryHead] ?? h.HeadAmount ?? 0}
                 onChange={e => onAmountChange(h.SalaryHead, e.target.value)}
                 disabled={h.IsEditable === 'No' && !isNew}
-                className="w-full text-right text-sm px-3 py-1.5
-                           border-2 border-gray-300 dark:border-gray-600 rounded-xl
+                className="w-full text-right text-xs px-2.5 py-1.5
+                           border border-gray-300 dark:border-gray-600 rounded-lg
                            focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500
                            dark:bg-gray-700 dark:text-white
                            disabled:bg-gray-100 dark:disabled:bg-gray-600/40
@@ -386,31 +386,31 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
     return (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
              onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto"
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto"
                  onClick={e => e.stopPropagation()}>
 
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700
-                                rounded-t-2xl px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                            <User className="h-5 w-5 text-white" />
+                                rounded-t-xl px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                            <User className="h-4 w-4 text-white" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-white">{empRow.Name || empRefNo}</h3>
-                            <p className="text-indigo-100 text-sm">Payroll Details</p>
+                            <h3 className="text-sm font-bold text-white leading-tight">{empRow.Name || empRefNo}</h3>
+                            <p className="text-indigo-100 text-xs">Payroll Details</p>
                         </div>
                     </div>
                     <button onClick={onClose}
-                            className="p-2 hover:bg-white/20 rounded-xl transition-colors text-white">
-                        <X className="h-5 w-5" />
+                            className="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white">
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
-                <div className="p-6 space-y-5">
+                <div className="p-4 space-y-3">
                     {/* Employee meta */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3
                                     bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20
-                                    rounded-xl p-4 text-sm border border-indigo-100 dark:border-indigo-900">
+                                    rounded-lg p-3 text-xs border border-indigo-100 dark:border-indigo-900">
                         {[
                             { lbl: 'Employee ID',       val: empRefNo },
                             { lbl: 'Group',             val: empRow.GroupName || '—' },
@@ -418,42 +418,42 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
                             { lbl: 'Total Salary Days', val: empRow.TotalSalaryDays },
                         ].map(({ lbl, val }) => (
                             <div key={lbl}>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{lbl}</p>
-                                <p className="font-semibold text-gray-800 dark:text-white">{val}</p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-0.5">{lbl}</p>
+                                <p className="font-semibold text-gray-800 dark:text-white text-xs">{val}</p>
                             </div>
                         ))}
                     </div>
 
                     {/* Earnings + Deductions */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                            <div className="grid grid-cols-2 bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-700 dark:to-indigo-800 text-white text-sm font-bold">
-                                <div className="px-4 py-3 flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4" /> EARNINGS
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <div className="grid grid-cols-2 bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-700 dark:to-indigo-800 text-white text-xs font-bold">
+                                <div className="px-3 py-2 flex items-center gap-1.5">
+                                    <TrendingUp className="h-3.5 w-3.5" /> EARNINGS
                                 </div>
-                                <div className="px-4 py-3 flex items-center justify-end gap-1">
-                                    <IndianRupee className="h-3.5 w-3.5" /> Rs
+                                <div className="px-3 py-2 flex items-center justify-end gap-1">
+                                    <IndianRupee className="h-3 w-3" /> Rs
                                 </div>
                             </div>
                             {allEarnings.length === 0
-                                ? <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8">No earnings data</p>
+                                ? <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-6">No earnings data</p>
                                 : <>
                                     {earnings.map((h, i)    => <HeadRow key={`e-${i}`}  h={h} isNew={false} amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
                                     {newEarnings.map((h, i) => <HeadRow key={`ne-${i}`} h={h} isNew={true}  amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
                                 </>}
                         </div>
 
-                        <div className="border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                            <div className="grid grid-cols-2 bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-700 dark:to-indigo-800 text-white text-sm font-bold">
-                                <div className="px-4 py-3 flex items-center gap-2">
-                                    <Minus className="h-4 w-4" /> DEDUCTIONS
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <div className="grid grid-cols-2 bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-700 dark:to-indigo-800 text-white text-xs font-bold">
+                                <div className="px-3 py-2 flex items-center gap-1.5">
+                                    <Minus className="h-3.5 w-3.5" /> DEDUCTIONS
                                 </div>
-                                <div className="px-4 py-3 flex items-center justify-end gap-1">
-                                    <IndianRupee className="h-3.5 w-3.5" /> Rs
+                                <div className="px-3 py-2 flex items-center justify-end gap-1">
+                                    <IndianRupee className="h-3 w-3" /> Rs
                                 </div>
                             </div>
                             {allDeductions.length === 0
-                                ? <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8">No deductions</p>
+                                ? <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-6">No deductions</p>
                                 : <>
                                     {deductions.map((h, i) => <HeadRow key={`d-${i}`}  h={h} isNew={false} amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
                                     {newDeds.map((h, i)    => <HeadRow key={`nd-${i}`} h={h} isNew={true}  amounts={amounts} onAmountChange={handleAmountChange} onRemove={handleRemoveNew} />)}
@@ -462,41 +462,41 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
                     </div>
 
                     {/* Summary */}
-                    <div className="grid grid-cols-3 gap-4 p-6 bg-gradient-to-r from-gray-50 to-indigo-50 dark:from-gray-800 dark:to-indigo-900/20 rounded-xl">
+                    <div className="grid grid-cols-3 gap-3 p-4 bg-gradient-to-r from-gray-50 to-indigo-50 dark:from-gray-800 dark:to-indigo-900/20 rounded-lg">
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">GROSS</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-0.5">GROSS</p>
+                            <p className="text-base font-bold text-gray-900 dark:text-white">
                                 &#8377;{formatCurrency(gross)}
                             </p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">DEDUCTIONS</p>
-                            <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-0.5">DEDUCTIONS</p>
+                            <p className="text-base font-bold text-red-600 dark:text-red-400">
                                 &#8377;{formatCurrency(totalDed)}
                             </p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">NET PAY</p>
-                            <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-0.5">NET PAY</p>
+                            <p className="text-base font-bold text-green-600 dark:text-green-400">
                                 &#8377;{formatCurrency(netPay)}
                             </p>
                         </div>
                     </div>
 
                     {/* Other Salary Heads */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                             Other Salary Heads
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                     Head Type
                                 </label>
                                 <select
                                     value={headType}
                                     onChange={e => { setHeadType(e.target.value); setSalHead(''); }}
-                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs
                                                focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500
                                                dark:bg-gray-700 dark:text-white"
                                 >
@@ -508,7 +508,7 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                     Salary Head
                                 </label>
                                 {/* FIX 2: was <option value=""></option> — now has visible placeholder text */}
@@ -516,7 +516,7 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
                                     value={salaryHead}
                                     onChange={e => setSalHead(e.target.value)}
                                     disabled={!headType}
-                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs
                                                focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500
                                                dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -528,7 +528,7 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                     Amount
                                 </label>
                                 <input
@@ -536,34 +536,34 @@ const EmployeeDetailModal = ({ empRow, details, optionalHeads, pfesiData, ccCode
                                     value={amount}
                                     onChange={e => setAmt(e.target.value)}
                                     placeholder="0"
-                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs
                                                focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500
                                                dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between">
+                        <div className="mt-3 flex items-center justify-between">
                             <button
                                 onClick={handleAdd}
-                                className="flex items-center gap-2 px-5 py-2.5
+                                className="flex items-center gap-1.5 px-4 py-2
                                            bg-gradient-to-r from-indigo-600 to-purple-600
                                            hover:from-indigo-700 hover:to-purple-700
-                                           text-white text-sm rounded-xl font-semibold transition-all"
+                                           text-white text-xs rounded-lg font-semibold transition-all"
                             >
-                                <Plus className="h-4 w-4" /> Add
+                                <Plus className="h-3.5 w-3.5" /> Add
                             </button>
 
                             <button
                                 onClick={() => onSave({ empRow, details, amounts, newHeads, gross, totalDed, netPay, pfesiData: pfesi })}
                                 disabled={saving}
-                                className="flex items-center gap-2 px-8 py-2.5
+                                className="flex items-center gap-1.5 px-6 py-2
                                            bg-gradient-to-r from-indigo-600 to-purple-600
                                            hover:from-indigo-700 hover:to-purple-700
-                                           text-white rounded-xl font-bold text-sm
+                                           text-white rounded-lg font-bold text-xs
                                            transition-all shadow-md disabled:opacity-60"
                             >
-                                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                                 Submit
                             </button>
                         </div>
@@ -625,6 +625,7 @@ const StaffPayrollGeneration = () => {
     const [detailsMap,    setDetailsMap]    = useState({});   // EmpRefno → MonthlySalaryDetailsData[]
     const [optionalMap,   setOptionalMap]   = useState({});   // EmpRefno → lstOptionalHeads[]
     const [pfesiMap,      setPfesiMap]      = useState({});   // EmpRefno → MonthlyPFESIData[]
+    const [advanceMap,    setAdvanceMap]    = useState({});   // EmpRefno → AdvanceData[]
     const [generatedData, setGeneratedData] = useState(null);
 
     // Table search
@@ -752,18 +753,21 @@ const StaffPayrollGeneration = () => {
 
             setTableRows(enriched);
 
-            const pfesis = data?.MonthlyPFESIData || [];
+            const pfesis   = data?.MonthlyPFESIData || [];
+            const advances = data?.AdvanceData      || [];
             console.log('🔍 MonthlyPFESIData from API:', pfesis);
-            const dm = {}, om = {}, pm = {};
+            const dm = {}, om = {}, pm = {}, am = {};
             rows.forEach(r => {
                 dm[r.EmpRefno] = dets.filter(d => d.EmployeeId === r.EmpRefno);
                 om[r.EmpRefno] = optals.filter(o => o.EmpRefno  === r.EmpRefno);
                 pm[r.EmpRefno] = pfesis.filter(p => p.EmployeeId === r.EmpRefno);
+                am[r.EmpRefno] = advances.filter(a => a.EmployeeId === r.EmpRefno);
             });
             console.log('🔍 pfesiMap built:', pm);
             setDetailsMap(dm);
             setOptionalMap(om);
             setPfesiMap(pm);
+            setAdvanceMap(am);
 
             toast.success(`Payroll generated for ${rows.length} employee(s)`);
         } catch (err) {
@@ -785,6 +789,7 @@ const StaffPayrollGeneration = () => {
         setTableSearch('');
         setPayrollWarnings(null);
         setPfesiMap({});
+        setAdvanceMap({});
         dispatch(clearSaveResult());
         toast.info('All filters reset successfully');
     };
@@ -912,6 +917,21 @@ const StaffPayrollGeneration = () => {
             console.log('🔍 pfesiData for', empRefNo, ':', pfesiData);
             console.log('🔍 pfesiJsonString being sent:', JSON.stringify(pfesiFormatted));
 
+            // Rebuild the advance rows fetched at generate-time (LTASARefno/DCACode/CCCode/
+            // LTABalance/PayStatus), substituting in whatever amount was edited in this modal —
+            // without this, EmployeeSalAdvanceDetails never gets the linkage row on save.
+            const ADVANCE_TYPE_TO_HEAD = { LTA: 'LONG TERM ADVANCE', SA: 'SALARY ADVANCE' };
+            const advanceFormatted = (advanceMap[empRefNo] || []).map(a => ({
+                LTASARefno:  String(a.LTASARefno),
+                Amount:      String(Math.round(Number(amounts[ADVANCE_TYPE_TO_HEAD[a.AdvanceType]] ?? a.Amount ?? 0))),
+                DCACode:     a.DCACode,
+                CCCode:      a.CCCode,
+                AdvanceType: a.AdvanceType,
+                LTABalance:  String(a.LTABalance ?? 0),
+                PayStatus:   a.Paystatus || a.PayStatus || 'Pay',
+            }));
+            console.log('🔍 advanceJsonString being sent:', JSON.stringify(advanceFormatted));
+
             const result = await dispatch(savePayRollForSingleEmp({
                 payRollForDate:       payrollDateStr,
                 empRefNo,
@@ -922,7 +942,7 @@ const StaffPayrollGeneration = () => {
                 mainJsonString,
                 salaryHeadJsonString,
                 pfesiJsonString:      JSON.stringify(pfesiFormatted),
-                advanceJsonString:    '[]',
+                advanceJsonString:    JSON.stringify(advanceFormatted),
             })).unwrap();
 
             console.log('✅ Save result:', result);
@@ -989,67 +1009,67 @@ const StaffPayrollGeneration = () => {
     });
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
             {/* ── Header ─────────────────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto mb-8">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 rounded-2xl shadow-xl p-8 text-white">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <DollarSign className="h-10 w-10" />
+            <div className="max-w-7xl mx-auto mb-4">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 rounded-xl shadow-lg p-4 text-white">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                            <DollarSign className="h-6 w-6" />
                             <div>
-                                <h1 className="text-3xl font-bold">Staff Payroll Generation</h1>
-                                <p className="text-indigo-100 dark:text-indigo-200 text-lg mt-1">
+                                <h1 className="text-lg font-bold leading-tight">Staff Payroll Generation</h1>
+                                <p className="text-indigo-100 dark:text-indigo-200 text-xs">
                                     Generate and manage employee payroll
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={handleCompleteReset}
-                                className="flex items-center gap-2 p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all text-xs font-semibold"
                                 title="Reset All Filters"
                             >
-                                <RotateCcw className="h-5 w-5" />
-                                <span className="text-sm font-semibold hidden sm:inline">Reset All</span>
+                                <RotateCcw className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Reset All</span>
                             </button>
                         </div>
                     </div>
 
                     {/* Statistics */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <Users className="h-8 w-8" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2.5">
+                            <div className="flex items-center gap-2">
+                                <Users className="h-5 w-5" />
                                 <div>
-                                    <p className="text-sm text-indigo-100 dark:text-indigo-200">Total Employees</p>
-                                    <p className="text-2xl font-bold">{tableRows.length}</p>
+                                    <p className="text-[11px] text-indigo-100 dark:text-indigo-200">Total Employees</p>
+                                    <p className="text-base font-bold">{tableRows.length}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <Building className="h-8 w-8" />
+                        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2.5">
+                            <div className="flex items-center gap-2">
+                                <Building className="h-5 w-5" />
                                 <div>
-                                    <p className="text-sm text-indigo-100 dark:text-indigo-200">Selected CCs</p>
-                                    <p className="text-2xl font-bold">{selectedCCCodes.length}</p>
+                                    <p className="text-[11px] text-indigo-100 dark:text-indigo-200">Selected CCs</p>
+                                    <p className="text-base font-bold">{selectedCCCodes.length}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <CheckCircle className="h-8 w-8" />
+                        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2.5">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="h-5 w-5" />
                                 <div>
-                                    <p className="text-sm text-indigo-100 dark:text-indigo-200">Selected Emp</p>
-                                    <p className="text-2xl font-bold">{selectedEmpIds.length}</p>
+                                    <p className="text-[11px] text-indigo-100 dark:text-indigo-200">Selected Emp</p>
+                                    <p className="text-base font-bold">{selectedEmpIds.length}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <IndianRupee className="h-8 w-8" />
+                        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2.5">
+                            <div className="flex items-center gap-2">
+                                <IndianRupee className="h-5 w-5" />
                                 <div>
-                                    <p className="text-sm text-indigo-100 dark:text-indigo-200">Total Net Pay</p>
-                                    <p className="text-2xl font-bold">
+                                    <p className="text-[11px] text-indigo-100 dark:text-indigo-200">Total Net Pay</p>
+                                    <p className="text-base font-bold">
                                         &#8377;{formatCurrency(tableRows.reduce((s, r) => s + (r.NetValue || 0), 0))}
                                     </p>
                                 </div>
@@ -1059,37 +1079,37 @@ const StaffPayrollGeneration = () => {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-4">
                 {/* ── Filters Card ─────────────────────────────────────────────── */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-visible">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-visible">
                     <div
-                        className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 border-b border-gray-200 dark:border-gray-700 cursor-pointer"
+                        className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-4 py-3 border-b border-gray-200 dark:border-gray-700 rounded-t-xl cursor-pointer"
                         onClick={() => setShowFilters(!showFilters)}
                     >
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Filter className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                            <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                                <Filter className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                 Filters &amp; Selection
                             </h2>
                             {showFilters
-                                ? <ChevronUp className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                                : <ChevronDown className="w-6 h-6 text-gray-600 dark:text-gray-400" />}
+                                ? <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                : <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
                         </div>
                     </div>
 
                     {showFilters && (
-                        <div className="p-8 space-y-6">
+                        <div className="p-4 space-y-3">
                             {/* Row 1: Year + Month */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                        Select Year <span className="text-red-500">*</span>
+                                    <label className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                        <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                        Year <span className="text-red-500">*</span>
                                     </label>
                                     <select
                                         value={selectedYear || ''}
                                         onChange={e => handleYearChange(e.target.value)}
-                                        className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                                     >
                                         <option value="">Select Year</option>
                                         {displayYears.map(y => (
@@ -1099,15 +1119,15 @@ const StaffPayrollGeneration = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2  items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                        Select Month <span className="text-red-500">*</span>
+                                    <label className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                        <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                        Month <span className="text-red-500">*</span>
                                     </label>
                                     <select
                                         value={selectedMonth || ''}
                                         onChange={e => handleMonthChange(e.target.value)}
                                         disabled={!selectedYear}
-                                        className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <option value="">Select Month</option>
                                         {displayMonths.map(m => (
@@ -1115,37 +1135,35 @@ const StaffPayrollGeneration = () => {
                                         ))}
                                     </select>
                                 </div>
-                            </div>
 
-                            {/* Row 2: Cost Center + Employee */}
-                            {selectedYear && selectedMonth && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Row 2: Cost Center + Employee */}
+                                {selectedYear && selectedMonth && (
+                                    <>
                                     {salaryEmpCCLoading ? (
                                         <div>
-                                            <label className=" text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                                <Building className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                                Select Cost Centers <span className="text-red-500">*</span>
+                                            <label className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                                <Building className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                                Cost Centers <span className="text-red-500">*</span>
                                             </label>
-                                            <div className="flex items-center justify-center py-4 gap-2 text-sm text-gray-500 dark:text-gray-400
-                                                            border-2 border-gray-200 dark:border-gray-700 rounded-xl">
-                                                <Loader2 className="h-5 w-5 animate-spin text-indigo-600 dark:text-indigo-400" />
-                                                Loading cost centers…
+                                            <div className="flex items-center justify-center py-2 gap-2 text-xs text-gray-500 dark:text-gray-400
+                                                            border border-gray-200 dark:border-gray-700 rounded-lg">
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                                                Loading…
                                             </div>
                                         </div>
                                     ) : ccOptions.length === 0 ? (
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 items-center gap-2">
-                                                <Building className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                                Select Cost Centers <span className="text-red-500">*</span>
+                                            <label className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                                <Building className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                                Cost Centers <span className="text-red-500">*</span>
                                             </label>
-                                            <div className="text-center py-6 bg-gray-50 dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-700">
-                                                <AlertCircle className="h-7 w-7 mx-auto mb-2 text-gray-400" />
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">No cost centers available</p>
+                                            <div className="text-center py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">No cost centers available</p>
                                             </div>
                                         </div>
                                     ) : (
                                         <MultiSelectDropdown
-                                            label="Select Cost Centers"
+                                            label="Cost Centers"
                                             icon={Building}
                                             options={ccOptions}
                                             selected={selectedCCCodes}
@@ -1161,32 +1179,32 @@ const StaffPayrollGeneration = () => {
 
                                     {selectedCCCodes.length === 0 ? (
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 items-center gap-2">
-                                                <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                                Select Employees <span className="text-red-500">*</span>
+                                            <label className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                                <Users className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                                Employees <span className="text-red-500">*</span>
                                             </label>
-                                            <div className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl
+                                            <div className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg
                                                             bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500
-                                                            flex items-center gap-2 text-sm">
-                                                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                                                            flex items-center gap-1.5 text-xs">
+                                                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
                                                 Select a Cost Center first
                                             </div>
                                         </div>
                                     ) : ccPayrollEmpLoading ? (
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 items-center gap-2">
-                                                <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                                Select Employees <span className="text-red-500">*</span>
+                                            <label className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                                <Users className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                                Employees <span className="text-red-500">*</span>
                                             </label>
-                                            <div className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl
-                                                            bg-gray-50 dark:bg-gray-700/50 flex items-center gap-2 text-sm text-gray-500">
-                                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400" />
-                                                Loading employees…
+                                            <div className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg
+                                                            bg-gray-50 dark:bg-gray-700/50 flex items-center gap-1.5 text-xs text-gray-500">
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                                                Loading…
                                             </div>
                                         </div>
                                     ) : (
                                         <MultiSelectDropdown
-                                            label="Select Employees"
+                                            label="Employees"
                                             icon={Users}
                                             options={empOptions}
                                             selected={selectedEmpIds}
@@ -1199,24 +1217,25 @@ const StaffPayrollGeneration = () => {
                                             required
                                         />
                                     )}
-                                </div>
-                            )}
+                                    </>
+                                )}
+                            </div>
 
                             {/* Generate button */}
                             {selectedEmpIds.length > 0 && (
-                                <div className="flex justify-end pt-2 border-t border-gray-200 dark:border-gray-700">
+                                <div className="flex justify-end pt-3 border-t border-gray-200 dark:border-gray-700">
                                     <button
                                         onClick={handleGenerate}
                                         disabled={employeeWisePayrollDataLoading}
-                                        className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-base transition-all shadow-md
+                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-xs transition-all
                                             ${employeeWisePayrollDataLoading
                                                 ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                                                 : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white hover:shadow-lg'
                                             }`}
                                     >
                                         {employeeWisePayrollDataLoading
-                                            ? <><Loader2 className="h-5 w-5 animate-spin" /> Generating…</>
-                                            : <><FileText className="h-5 w-5" /> Generate Payroll</>}
+                                            ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating…</>
+                                            : <><FileText className="h-4 w-4" /> Generate Payroll</>}
                                     </button>
                                 </div>
                             )}
@@ -1226,28 +1245,28 @@ const StaffPayrollGeneration = () => {
 
                 {/* ── Loading State ─────────────────────────────────────────────── */}
                 {employeeWisePayrollDataLoading && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-16 flex flex-col items-center gap-4">
-                        <Loader2 className="h-12 w-12 animate-spin text-indigo-600 dark:text-indigo-400" />
-                        <p className="text-gray-600 dark:text-gray-400 font-medium text-lg">Generating payroll data…</p>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-10 flex flex-col items-center gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        <p className="text-gray-600 dark:text-gray-400 font-medium text-sm">Generating payroll data…</p>
                     </div>
                 )}
 
                 {/* ── Payroll Warnings Panel ────────────────────────────────────────── */}
                 {!employeeWisePayrollDataLoading && payrollWarnings && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border-2 border-amber-200 dark:border-amber-700">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-amber-200 dark:border-amber-700">
                         {/* Header */}
                         <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20
-                                        px-6 py-4 border-b border-amber-200 dark:border-amber-700
+                                        px-4 py-3 border-b border-amber-200 dark:border-amber-700
                                         flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-                                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-amber-900 dark:text-amber-200">
+                                    <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200">
                                         Payroll Generation Warnings
                                     </h3>
-                                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                                    <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
                                         {payrollWarnings.monthYear && `For ${payrollWarnings.monthYear} — `}
                                         The following employees may not be generated due to pending issues
                                     </p>
@@ -1262,7 +1281,7 @@ const StaffPayrollGeneration = () => {
                         </div>
 
                         {/* Warning rows */}
-                        <div className="p-5 space-y-3">
+                        <div className="p-4 space-y-2.5">
                             {[
                                 {
                                     key: 'payRevision',
@@ -1348,18 +1367,18 @@ const StaffPayrollGeneration = () => {
                                     }[w.color];
                                     return (
                                         <div key={w.key}
-                                             className={`${colorMap.bg} ${colorMap.border} border rounded-xl p-4`}>
-                                            <div className="flex items-start gap-3">
-                                                <span className="text-lg mt-0.5">{w.icon}</span>
+                                             className={`${colorMap.bg} ${colorMap.border} border rounded-lg p-3`}>
+                                            <div className="flex items-start gap-2.5">
+                                                <span className="text-base mt-0.5">{w.icon}</span>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`text-sm font-bold ${colorMap.label} mb-1`}>
+                                                    <p className={`text-xs font-bold ${colorMap.label} mb-0.5`}>
                                                         {w.label}
                                                     </p>
-                                                    <p className={`text-xs ${colorMap.desc} mb-2`}>{w.desc}</p>
+                                                    <p className={`text-[11px] ${colorMap.desc} mb-1.5`}>{w.desc}</p>
                                                     <div className="flex flex-wrap gap-1.5">
                                                         {payrollWarnings[w.key].map((name, i) => (
                                                             <span key={i}
-                                                                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${colorMap.tag}`}>
+                                                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${colorMap.tag}`}>
                                                                 <User className="h-3 w-3" />
                                                                 {name}
                                                             </span>
@@ -1376,46 +1395,46 @@ const StaffPayrollGeneration = () => {
 
                 {/* ── Results Table ─────────────────────────────────────────────── */}
                 {!employeeWisePayrollDataLoading && tableRows.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
                         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20
-                                        p-5 border-b border-gray-200 dark:border-gray-700
+                                        px-4 py-3 border-b border-gray-200 dark:border-gray-700
                                         flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                            <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                                <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                 Generated Payroll
-                                <span className="text-base font-normal text-gray-500 dark:text-gray-400 ml-1">
+                                <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">
                                     — {tableRows.length} employee(s)
                                 </span>
                             </h2>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                                     <input
                                         value={tableSearch}
                                         onChange={e => setTableSearch(e.target.value)}
                                         placeholder="Search…"
-                                        className="pl-9 pr-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-xl
+                                        className="pl-8 pr-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg
                                                    focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500
-                                                   dark:bg-gray-700 dark:text-white w-44"
+                                                   dark:bg-gray-700 dark:text-white w-40"
                                     />
                                 </div>
                                 <button
-                                    className="flex items-center gap-1.5 px-4 py-2 border-2 border-gray-300 dark:border-gray-600
+                                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 dark:border-gray-600
                                                hover:border-indigo-500 dark:hover:border-indigo-400
                                                text-gray-700 dark:text-gray-300 hover:text-indigo-700 dark:hover:text-indigo-300
-                                               rounded-xl text-sm font-semibold transition-colors"
+                                               rounded-lg text-xs font-semibold transition-colors"
                                     title="Export to Excel"
                                 >
-                                    <Download className="h-4 w-4" /> Export
+                                    <Download className="h-3.5 w-3.5" /> Export
                                 </button>
                             </div>
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-xs">
                                 <thead>
                                     <tr className="bg-indigo-700 dark:bg-indigo-800 text-white">
-                                        <th className="px-3 py-3 w-12 text-center"></th>
+                                        <th className="px-2.5 py-2 w-10 text-center"></th>
                                         {[
                                             ['Employee Id',     'text-left'  ],
                                             ['Name',            'text-left'  ],
@@ -1432,7 +1451,7 @@ const StaffPayrollGeneration = () => {
                                             ['Group',           'text-center'],
                                             ['Relieved CC/Job', 'text-left'  ],
                                         ].map(([lbl, cls]) => (
-                                            <th key={lbl} className={`px-3 py-3 text-xs font-bold uppercase tracking-wide ${cls}`}>
+                                            <th key={lbl} className={`px-2.5 py-2 text-[11px] font-bold uppercase tracking-wide ${cls}`}>
                                                 {lbl}
                                             </th>
                                         ))}
@@ -1441,7 +1460,7 @@ const StaffPayrollGeneration = () => {
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                     {filteredRows.length === 0 ? (
                                         <tr>
-                                            <td colSpan={15} className="text-center py-10 text-gray-400 dark:text-gray-500">
+                                            <td colSpan={15} className="text-center py-8 text-gray-400 dark:text-gray-500">
                                                 No records match your search
                                             </td>
                                         </tr>
@@ -1451,30 +1470,30 @@ const StaffPayrollGeneration = () => {
                                             className={`hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors
                                                         ${i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/60 dark:bg-gray-800/60'}`}
                                         >
-                                            <td className="px-3 py-3 text-center">
+                                            <td className="px-2.5 py-2 text-center">
                                                 <button
                                                     onClick={() => setModalEmp(row)}
-                                                    className="p-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40
+                                                    className="p-1 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/40
                                                                text-indigo-600 dark:text-indigo-400 transition-colors"
                                                     title="View / Edit payroll"
                                                 >
-                                                    <Edit2 className="h-4 w-4" />
+                                                    <Edit2 className="h-3.5 w-3.5" />
                                                 </button>
                                             </td>
-                                            <td className="px-3 py-3 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{row.EmpRefno}</td>
-                                            <td className="px-3 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{row.Name}</td>
-                                            <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">{row.DesignationName || '—'}</td>
-                                            <td className="px-3 py-3 text-center text-gray-600 dark:text-gray-400">{row.CurrentCC || row.CurrentCostCenter || '—'}</td>
-                                            <td className="px-3 py-3 text-gray-600 dark:text-gray-400">{row.Location || '—'}</td>
-                                            <td className="px-3 py-3 text-center text-gray-600 dark:text-gray-400">{row.WorkingDays}</td>
-                                            <td className="px-3 py-3 text-center text-gray-600 dark:text-gray-400">{row.TotalSalaryDays}</td>
-                                            <td className="px-3 py-3 text-center text-gray-600 dark:text-gray-400">{row.TotalPLAttendanceDays}</td>
-                                            <td className="px-3 py-3 text-center text-gray-600 dark:text-gray-400">{row.TotalHolidays}</td>
-                                            <td className="px-3 py-3 text-right font-medium text-gray-800 dark:text-gray-200">{formatCurrency(row.GrossValue)}</td>
-                                            <td className="px-3 py-3 text-right font-medium text-red-600 dark:text-red-400">{formatCurrency(row.Deductions)}</td>
-                                            <td className="px-3 py-3 text-right font-bold text-green-700 dark:text-green-400">{formatCurrency(row.NetValue)}</td>
-                                            <td className="px-3 py-3 text-center text-gray-600 dark:text-gray-400">{row.GroupName}</td>
-                                            <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">{row.RelievingCC || ''}</td>
+                                            <td className="px-2.5 py-2 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{row.EmpRefno}</td>
+                                            <td className="px-2.5 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">{row.Name}</td>
+                                            <td className="px-2.5 py-2 text-gray-500 dark:text-gray-400">{row.DesignationName || '—'}</td>
+                                            <td className="px-2.5 py-2 text-center text-gray-600 dark:text-gray-400">{row.CurrentCC || row.CurrentCostCenter || '—'}</td>
+                                            <td className="px-2.5 py-2 text-gray-600 dark:text-gray-400">{row.Location || '—'}</td>
+                                            <td className="px-2.5 py-2 text-center text-gray-600 dark:text-gray-400">{row.WorkingDays}</td>
+                                            <td className="px-2.5 py-2 text-center text-gray-600 dark:text-gray-400">{row.TotalSalaryDays}</td>
+                                            <td className="px-2.5 py-2 text-center text-gray-600 dark:text-gray-400">{row.TotalPLAttendanceDays}</td>
+                                            <td className="px-2.5 py-2 text-center text-gray-600 dark:text-gray-400">{row.TotalHolidays}</td>
+                                            <td className="px-2.5 py-2 text-right font-medium text-gray-800 dark:text-gray-200">{formatCurrency(row.GrossValue)}</td>
+                                            <td className="px-2.5 py-2 text-right font-medium text-red-600 dark:text-red-400">{formatCurrency(row.Deductions)}</td>
+                                            <td className="px-2.5 py-2 text-right font-bold text-green-700 dark:text-green-400">{formatCurrency(row.NetValue)}</td>
+                                            <td className="px-2.5 py-2 text-center text-gray-600 dark:text-gray-400">{row.GroupName}</td>
+                                            <td className="px-2.5 py-2 text-gray-500 dark:text-gray-400">{row.RelievingCC || ''}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -1485,9 +1504,9 @@ const StaffPayrollGeneration = () => {
 
                 {/* ── Empty state ───────────────────────────────────────────────── */}
                 {!employeeWisePayrollDataLoading && generatedData && tableRows.length === 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-16 text-center">
-                        <AlertCircle className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-                        <p className="text-gray-500 dark:text-gray-400 font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-10 text-center">
+                        <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+                        <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">
                             No payroll data found for the selected criteria
                         </p>
                     </div>

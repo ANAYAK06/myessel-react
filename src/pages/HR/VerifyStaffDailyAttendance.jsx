@@ -490,7 +490,6 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
                                         Attendance
                                     </span>
                                 </th>
-                                <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">LOP Status</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -580,17 +579,6 @@ const VerifyStaffDailyAttendance = ({ notificationData, onNavigate }) => {
                                                     was: <span className="font-semibold">{original || '—'}</span>
                                                 </p>
                                             )}
-                                        </td>
-
-                                        {/* LOP Status */}
-                                        <td className="px-3 py-1.5 text-center">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                                employee.LOPStatus === 'NoLOP'
-                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                                            }`}>
-                                                {employee.LOPStatus || '-'}
-                                            </span>
                                         </td>
                                     </tr>
                                 );

@@ -82,9 +82,9 @@ const BudgetProgressBar = ({ assigned, consumed, dcaName }) => {
     };
 
     const getIcon = () => {
-        if (percentage <= 50) return <TrendingUp className="h-4 w-4" />;
-        if (percentage <= 90) return <Activity className="h-4 w-4" />;
-        return <TrendingDown className="h-4 w-4" />;
+        if (percentage <= 50) return <TrendingUp className="h-3 w-3" />;
+        if (percentage <= 90) return <Activity className="h-3 w-3" />;
+        return <TrendingDown className="h-3 w-3" />;
     };
 
     const formatCurrency = (amount) => {
@@ -96,22 +96,22 @@ const BudgetProgressBar = ({ assigned, consumed, dcaName }) => {
     };
 
     return (
-        <div className={`rounded-lg p-3 ${getProgressBg()} border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-md`}>
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+        <div className={`rounded-md p-1.5 ${getProgressBg()} border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-md`}>
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1">
                     <span className={getIconColor()}>
                         {getIcon()}
                     </span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    <span className="text-[11px] font-medium text-gray-900 dark:text-white">
                         {percentage.toFixed(1)}% Consumed
                     </span>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-[10px] text-gray-500 dark:text-gray-400">
                     {formatCurrency(consumed)} / {formatCurrency(assigned)}
                 </div>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                <div 
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                <div
                     className={`h-full bg-gradient-to-r ${getProgressColor()} transition-all duration-500 ease-out rounded-full relative`}
                     style={{ width: `${Math.min(percentage, 100)}%` }}
                 >
@@ -1522,25 +1522,25 @@ const BudgetReport = ({ menuData }) => {
 
                         {/* Combined Budget Table (DCA + Depreciation) */}
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
                                 <thead className="bg-gradient-to-r from-indigo-600 to-purple-700 dark:from-indigo-700 dark:to-purple-800">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Account Head Code
+                                        <th className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider">
+                                            A/C Head Code
                                         </th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Account Head Name & Progress
+                                        <th className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider">
+                                            A/C Head Name & Progress
                                         </th>
                                         {!costCenter.isClosedStatus && (
-                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">
-                                                Assigned Budget
+                                            <th className="px-3 py-2 text-right text-[11px] font-bold text-white uppercase tracking-wider">
+                                                Assigned
                                             </th>
                                         )}
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">
-                                            Consumed Budget
+                                        <th className="px-3 py-2 text-right text-[11px] font-bold text-white uppercase tracking-wider">
+                                            Consumed
                                         </th>
                                         {!costCenter.isClosedStatus && (
-                                            <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">
+                                            <th className="px-3 py-2 text-right text-[11px] font-bold text-white uppercase tracking-wider">
                                                 Balance
                                             </th>
                                         )}
@@ -1555,25 +1555,25 @@ const BudgetReport = ({ menuData }) => {
 
                                         return (
                                             <React.Fragment key={`dca-${dca.code}`}>
-                                                <tr 
+                                                <tr
                                                     className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50 dark:hover:from-gray-700 dark:hover:to-gray-600 cursor-pointer transition-all duration-300"
                                                     onClick={() => toggleRowExpansion(costCenter.ccCode, dca.code)}
                                                 >
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                                                    <td className="px-3 py-1.5 whitespace-nowrap text-xs font-semibold text-gray-900 dark:text-white">
                                                         <div className="flex items-center">
                                                             {isExpanded ? (
-                                                                <ChevronUp className="h-5 w-5 mr-3 text-indigo-500" />
+                                                                <ChevronUp className="h-3.5 w-3.5 mr-1.5 text-indigo-500 shrink-0" />
                                                             ) : (
-                                                                <ChevronDown className="h-5 w-5 mr-3 text-indigo-500" />
+                                                                <ChevronDown className="h-3.5 w-3.5 mr-1.5 text-indigo-500 shrink-0" />
                                                             )}
                                                             <span className="font-mono">{dca.code}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                                                        <div className="space-y-2">
+                                                    <td className="px-3 py-1.5 text-xs text-gray-900 dark:text-white">
+                                                        <div className="space-y-1">
                                                             <div className="font-medium">{dca.name}</div>
                                                             {!costCenter.isClosedStatus && dca.assignedBudget > 0 && (
-                                                                <BudgetProgressBar 
+                                                                <BudgetProgressBar
                                                                     assigned={dca.assignedBudget}
                                                                     consumed={dca.consumedBudget}
                                                                     dcaName={dca.name}
@@ -1582,16 +1582,16 @@ const BudgetReport = ({ menuData }) => {
                                                         </div>
                                                     </td>
                                                     {!costCenter.isClosedStatus && (
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-semibold">
+                                                        <td className="px-3 py-1.5 whitespace-nowrap text-xs text-gray-900 dark:text-white text-right font-semibold">
                                                             {formatCurrency(dca.assignedBudget)}
                                                         </td>
                                                     )}
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-semibold">
+                                                    <td className="px-3 py-1.5 whitespace-nowrap text-xs text-gray-900 dark:text-white text-right font-semibold">
                                                         {formatCurrency(dca.consumedBudget)}
                                                     </td>
                                                     {!costCenter.isClosedStatus && (
                                                         <td className={clsx(
-                                                            "px-6 py-4 whitespace-nowrap text-sm text-right font-bold",
+                                                            "px-3 py-1.5 whitespace-nowrap text-xs text-right font-bold",
                                                             getBalanceColorClass(dca.balance)
                                                         )}>
                                                             {formatCurrency(dca.balance)}
@@ -1619,12 +1619,12 @@ const BudgetReport = ({ menuData }) => {
                                     {/* Depreciation Section Header Row */}
                                     {costCenter.depreciationData && costCenter.depreciationData.length > 0 && (
                                         <tr className="bg-gradient-to-r from-indigo-100 to-cyan-100 dark:from-indigo-900/40 dark:to-cyan-900/40">
-                                            <td colSpan={costCenter.isClosedStatus ? "3" : "5"} className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="bg-gradient-to-r from-indigo-500 to-cyan-600 p-2 rounded-lg">
-                                                        <Calculator className="h-5 w-5 text-white" />
+                                            <td colSpan={costCenter.isClosedStatus ? "3" : "5"} className="px-3 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-gradient-to-r from-indigo-500 to-cyan-600 p-1.5 rounded-lg">
+                                                        <Calculator className="h-4 w-4 text-white" />
                                                     </div>
-                                                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">
                                                         Depreciation, Interest & Budget Transfer
                                                     </h4>
                                                 </div>
@@ -1635,26 +1635,26 @@ const BudgetReport = ({ menuData }) => {
                                     {/* Depreciation Rows */}
                                     {costCenter.depreciationData && costCenter.depreciationData.map((depreciation) => (
                                         <tr key={`dep-${depreciation.code}`} className="bg-gradient-to-r from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20 hover:from-indigo-100 hover:to-cyan-100 dark:hover:from-indigo-800/30 dark:hover:to-cyan-800/30 transition-all duration-300">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                                            <td className="px-3 py-1.5 whitespace-nowrap text-xs font-semibold text-gray-900 dark:text-white">
                                                 <div className="flex items-center">
-                                                    <Calculator className="h-4 w-4 mr-3 text-indigo-500" />
+                                                    <Calculator className="h-3.5 w-3.5 mr-1.5 text-indigo-500 shrink-0" />
                                                     <span className="font-mono">{depreciation.code}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                            <td className="px-3 py-1.5 text-xs text-gray-900 dark:text-white">
                                                 <div className="font-medium">{depreciation.name}</div>
                                             </td>
                                             {!costCenter.isClosedStatus && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-semibold">
+                                                <td className="px-3 py-1.5 whitespace-nowrap text-xs text-gray-900 dark:text-white text-right font-semibold">
                                                     {formatCurrency(depreciation.assignedBudget)}
                                                 </td>
                                             )}
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right font-semibold">
+                                            <td className="px-3 py-1.5 whitespace-nowrap text-xs text-gray-900 dark:text-white text-right font-semibold">
                                                 {formatCurrency(depreciation.consumedBudget)}
                                             </td>
                                             {!costCenter.isClosedStatus && (
                                                 <td className={clsx(
-                                                    "px-6 py-4 whitespace-nowrap text-sm text-right font-bold",
+                                                    "px-3 py-1.5 whitespace-nowrap text-xs text-right font-bold",
                                                     getBalanceColorClass(depreciation.balance)
                                                 )}>
                                                     {formatCurrency(depreciation.balance)}
@@ -1666,10 +1666,10 @@ const BudgetReport = ({ menuData }) => {
                                     {/* Loading State for Depreciation */}
                                     {isStatusLoading && loading.ccDepreciationOverHead && (
                                         <tr className="bg-gradient-to-r from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20">
-                                            <td colSpan={costCenter.isClosedStatus ? "3" : "5"} className="px-6 py-8 text-center">
+                                            <td colSpan={costCenter.isClosedStatus ? "3" : "5"} className="px-3 py-4 text-center">
                                                 <div className="flex items-center justify-center">
-                                                    <RotateCcw className="h-6 w-6 text-indigo-500 animate-spin mr-3" />
-                                                    <p className="text-indigo-700 dark:text-indigo-300 font-medium">Loading depreciation data...</p>
+                                                    <RotateCcw className="h-5 w-5 text-indigo-500 animate-spin mr-2" />
+                                                    <p className="text-indigo-700 dark:text-indigo-300 font-medium text-xs">Loading depreciation data...</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1680,21 +1680,21 @@ const BudgetReport = ({ menuData }) => {
                                 {!costCenter.isClosedStatus && (
                                     <tfoot className="bg-gradient-to-r from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
                                         <tr>
-                                            <td className="px-6 py-4"></td>
-                                            <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">Total (DCA + Depreciation):</td>
-                                            <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white text-right">
+                                            <td className="px-3 py-2"></td>
+                                            <td className="px-3 py-2 text-xs font-bold text-gray-900 dark:text-white">Total (DCA + Depreciation):</td>
+                                            <td className="px-3 py-2 text-xs font-bold text-gray-900 dark:text-white text-right">
                                                 {formatCurrency(
                                                     costCenter.dcaBreakdown.reduce((sum, dca) => sum + dca.assignedBudget, 0) +
                                                     (costCenter.depreciationData || []).reduce((sum, dep) => sum + dep.assignedBudget, 0)
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white text-right">
+                                            <td className="px-3 py-2 text-xs font-bold text-gray-900 dark:text-white text-right">
                                                 {formatCurrency(
                                                     costCenter.dcaBreakdown.reduce((sum, dca) => sum + dca.consumedBudget, 0) +
                                                     (costCenter.depreciationData || []).reduce((sum, dep) => sum + dep.consumedBudget, 0)
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white text-right">
+                                            <td className="px-3 py-2 text-xs font-bold text-gray-900 dark:text-white text-right">
                                                 {formatCurrency(
                                                     costCenter.dcaBreakdown.reduce((sum, dca) => sum + dca.balance, 0) +
                                                     (costCenter.depreciationData || []).reduce((sum, dep) => sum + dep.balance, 0)

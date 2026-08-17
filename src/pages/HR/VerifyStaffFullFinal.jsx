@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
-    BadgeDollarSign, Clock, Calendar, Hash,
-    Building2, UserCheck, TrendingUp, TrendingDown,
-    Wallet, Award, FileText, User, Briefcase,
-    DollarSign, Percent, IndianRupee,
+    BadgeDollarSign, Clock, Hash,
+    Building2, UserCheck, Award, FileText, User,
+    IndianRupee,
 } from 'lucide-react';
 
 import InboxHeader      from '../../components/Inbox/InboxHeader';
@@ -154,7 +153,7 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
     useEffect(() => {
         if (selectedItem && viewData?.MOID) {
             const moid = Number(viewData.MOID);
-            const trno = String(viewData.Id || selectedItem.Id || '');
+            const trno = String(viewData.TransactionRefNo || selectedItem.TransactionRefNo || '');
             console.log('💬 Fetching Remarks — trno:', trno, 'MOID:', moid);
             dispatch(setSelectedMOID(moid));
             dispatch(fetchRemarks({ trno, moid }));
@@ -374,154 +373,146 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
 
     // ── Detail sub-sections ────────────────────────────────────────────────────
 
-    // Stat card — financial summary
-    const FinStatCard = ({ label, value, icon: Icon, gradient, note }) => (
-        <div className={`relative overflow-hidden rounded-xl p-4 text-white bg-gradient-to-br ${gradient} shadow-md`}>
-            <div className="absolute top-0 right-0 w-14 h-14 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
-            <div className="relative">
-                <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">{label}</p>
-                    <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
-                        <Icon className="h-3.5 w-3.5 text-white" />
-                    </div>
-                </div>
-                <p className="text-xl font-black">₹{fmt(value)}</p>
-                {note && <p className="text-[10px] text-white/70 mt-0.5">{note}</p>}
-            </div>
-        </div>
-    );
-
-    // Info row helper (for details table)
-    const InfoRow = ({ icon: Icon, label, value, accent = 'text-indigo-600 dark:text-indigo-400' }) => (
-        <div className="flex items-center justify-between px-5 py-3">
-            <span className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                <Icon className="w-4 h-4 text-indigo-400" />
-                <span>{label}</span>
-            </span>
-            <span className={`text-sm font-semibold ${accent} text-right max-w-[55%] truncate`}>
-                {value || 'N/A'}
-            </span>
-        </div>
-    );
-
-    const renderFinancialSummary = () => (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-700 to-purple-700 px-4 py-3 flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-white" />
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Financial Summary</h3>
-            </div>
-            <div className="p-4 bg-white dark:bg-gray-800 space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                    <FinStatCard label="Net Payable"      value={d.FinalNet}       icon={Wallet}       gradient="from-indigo-500 to-violet-600" note="Net to employee" />
-                    <FinStatCard label="Final Gross"      value={d.FinalGross}     icon={TrendingUp}   gradient="from-purple-500 to-indigo-600" note="Total earnings" />
-                    <FinStatCard label="Total Deductions" value={d.FinalDeduction} icon={TrendingDown} gradient="from-rose-500 to-pink-600"     note="Total deducted" />
-                </div>
-                {/* Secondary financial fields */}
-                <div className="divide-y divide-gray-100 dark:divide-gray-700 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                    <InfoRow icon={Award}      label="Leave Encashment"    value={`₹${fmt(d.LeaveEncashment)}`}       accent="text-indigo-700 dark:text-indigo-300" />
-                    <InfoRow icon={DollarSign} label="Last Drawn Salary"   value={`₹${fmt(d.LastDrawnSalary)}`}      accent="text-purple-700 dark:text-purple-300" />
-                    <InfoRow icon={Percent}    label="Per Day Rate"        value={`₹${fmt(d.LastDrawnSalaryPerDay)}`} accent="text-violet-700 dark:text-violet-300" />
-                    <InfoRow icon={Wallet}     label="Other Due"           value={`₹${fmt(d.OtherDue)}`}             accent="text-blue-700 dark:text-blue-300" />
-                </div>
-            </div>
+    // Compact grid cell (label above value) — used for dense info tables
+    const GridCell = ({ label, value }) => (
+        <div className="bg-white dark:bg-gray-800 px-3 py-1.5">
+            <p className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wide leading-tight">{label}</p>
+            <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">{value ?? 'N/A'}</p>
         </div>
     );
 
     const renderEmployeeInfo = () => (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-700 to-purple-700 px-4 py-3 flex items-center gap-2">
-                <User className="w-4 h-4 text-white" />
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Employee Information</h3>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs">
+            <div className="bg-gradient-to-r from-indigo-700 to-purple-700 px-3 py-1.5 flex items-center gap-2">
+                <User className="w-3.5 h-3.5 text-white" />
+                <h3 className="text-[11px] font-semibold text-white uppercase tracking-wider">Employee Information</h3>
             </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                <InfoRow icon={User}         label="Employee Name"      value={d.EmployeeName}                                           accent="text-indigo-700 dark:text-indigo-300" />
-                <InfoRow icon={Hash}         label="Employee ID"        value={d.EmpRefNo}                                               accent="text-purple-700 dark:text-purple-300" />
-                <InfoRow icon={Building2}    label="Cost Center"        value={d.CCCode}                                                  accent="text-violet-700 dark:text-violet-300" />
-                <InfoRow icon={Briefcase}    label="Group"              value={d.GroupName || (d.GroupId ? `Group ${d.GroupId}` : null)} accent="text-blue-700 dark:text-blue-300" />
-                <InfoRow icon={FileText}     label="Transaction Ref"    value={d.TransactionRefNo}                                        accent="text-indigo-700 dark:text-indigo-300" />
-                <InfoRow icon={Calendar}     label="Joining Date"       value={d.JoiningDate}                                             accent="text-purple-700 dark:text-purple-300" />
-                <InfoRow icon={Calendar}     label="Resignation Date"   value={d.ResignationDate}                                         accent="text-rose-600 dark:text-rose-400" />
-                <InfoRow icon={Calendar}     label="Relieving Date"     value={d.RelievingDate}                                           accent="text-rose-700 dark:text-rose-300" />
-            </div>
-        </div>
-    );
-
-    const renderGratuity = () => (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-violet-700 to-purple-700 px-4 py-3 flex items-center gap-2">
-                <Award className="w-4 h-4 text-white" />
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Gratuity &amp; Experience</h3>
-            </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                <InfoRow icon={Clock}        label="Total Days"         value={`${d.TotalExperiencedays ?? '—'} days`} />
-                <InfoRow icon={Clock}        label="Gratuity Years"     value={`${d.GratuityYears ?? '—'} yrs`} />
-                <InfoRow icon={Clock}        label="Gratuity Days"      value={`${d.Gratuitydays ?? '—'} days`} />
-                <InfoRow icon={DollarSign}   label="Gratuity Per Day"   value={`₹${fmt(d.GratuityPerday)}`} />
-                <InfoRow icon={Award}        label="Gratuity Amount"    value={`₹${fmt(d.Gratuity)}`}        accent="text-indigo-700 dark:text-indigo-300" />
-                <InfoRow icon={TrendingUp}   label="Bonus Basic"        value={`₹${fmt(d.BonusBasic)}`}      accent="text-purple-700 dark:text-purple-300" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-100 dark:bg-gray-700">
+                <GridCell label="Employee Name"    value={d.EmployeeName} />
+                <GridCell label="Employee ID"      value={d.EmpRefNo} />
+                <GridCell label="Cost Center"      value={d.CCCode} />
+                <GridCell label="Group"            value={d.GroupName || (d.GroupId ? `Group ${d.GroupId}` : null)} />
+                <GridCell label="Transaction Ref"  value={d.TransactionRefNo} />
+                <GridCell label="Joining Date"     value={d.JoiningDate} />
+                <GridCell label="Resignation Date" value={d.ResignationDate} />
+                <GridCell label="Relieving Date"   value={d.RelievingDate} />
             </div>
         </div>
     );
 
-    const renderLastMonthSalary = () => {
-        const ms = viewData?.MonthSalary;
-        if (!ms) return null;
+    // Gratuity — collapses to a single "not eligible" line when the amount is zero
+    const renderGratuity = () => {
+        const gratuityAmount = parseFloat(d.Gratuity) || 0;
         return (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-white" />
-                    <h3 className="text-xs font-semibold text-white uppercase tracking-wider">
-                        Last Month Salary {ms.PayRollFortheDate ? `— ${ms.PayRollFortheDate}` : ''}
-                    </h3>
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs">
+                <div className="bg-gradient-to-r from-violet-700 to-purple-700 px-3 py-1.5 flex items-center gap-2">
+                    <Award className="w-3.5 h-3.5 text-white" />
+                    <h3 className="text-[11px] font-semibold text-white uppercase tracking-wider">Gratuity</h3>
                 </div>
-                <div className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                    <InfoRow icon={TrendingUp}   label="Gross"          value={`₹${fmt(ms.Gross)}`}          accent="text-indigo-700 dark:text-indigo-300" />
-                    <InfoRow icon={TrendingDown} label="Total Deduction" value={`₹${fmt(ms.TotalDeduction)}`} accent="text-rose-600 dark:text-rose-400" />
-                    <InfoRow icon={Wallet}       label="Net Amount"     value={`₹${fmt(ms.NetAmount)}`}      accent="text-purple-700 dark:text-purple-300" />
-                    <InfoRow icon={Calendar}     label="Present Days"   value={`${ms.NoofPresentDays} days`} />
-                    <InfoRow icon={Calendar}     label="PL Days"        value={`${ms.NoofPLDays} days`} />
-                    <InfoRow icon={Clock}        label="Total Days"     value={`${ms.TotalSalaryDays} days`} />
-                    <InfoRow icon={Award}        label="Balance Leaves" value={`${ms.BalanceLeaves} days`} />
-                    {ms.AmountStatus && <InfoRow icon={UserCheck}    label="Status"         value={ms.AmountStatus} />}
-                    {ms.Category      && <InfoRow icon={Briefcase}   label="Category"       value={ms.Category} />}
-                </div>
+                {gratuityAmount <= 0 ? (
+                    <div className="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-semibold">
+                        Not Eligible for Gratuity
+                        {d.TotalExperiencedays ? ` — ${d.TotalExperiencedays} days of service` : ''}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-100 dark:bg-gray-700">
+                        <GridCell label="Total Service Days" value={`${d.TotalExperiencedays ?? '—'} days`} />
+                        <GridCell label="Gratuity Years"     value={`${d.GratuityYears ?? '—'} yrs`} />
+                        <GridCell label="Gratuity Days"      value={`${d.Gratuitydays ?? '—'} days`} />
+                        <GridCell label="Per Day"            value={`₹${fmt(d.GratuityPerday)}`} />
+                        <GridCell label="Gratuity Amount"    value={`₹${fmt(d.Gratuity)}`} />
+                    </div>
+                )}
             </div>
         );
     };
 
-    const renderHeadsTable = ({ title, icon: Icon, rows, gradient, emptyMsg }) => (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className={`px-4 py-3 bg-gradient-to-r ${gradient} flex items-center gap-2`}>
-                <Icon className="h-4 w-4 text-white" />
-                <span className="text-sm font-bold text-white">{title}</span>
-                <span className="ml-auto bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">{rows.length}</span>
-            </div>
-            {rows.length === 0 ? (
-                <div className="px-4 py-5 text-center text-sm text-gray-400 dark:text-gray-500">{emptyMsg}</div>
-            ) : (
-                <div className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                    {rows.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{r.SalaryHead || r.HeadName}</p>
-                            <p className="text-sm font-bold text-gray-700 dark:text-gray-200">₹{fmt(r.HeadAmount)}</p>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+    // Compact settlement slip — salary-slip style table combining last month
+    // earnings/deductions, bonus/leave encashment, and final totals in one view.
+    const renderSettlementSlip = () => {
+        const ms = viewData?.MonthSalary;
+        const bonusBasic       = parseFloat(d.BonusBasic) || 0;
+        const leaveEncashment  = parseFloat(d.LeaveEncashment) || 0;
 
-    const renderSalaryHeads = () => {
-        if (earnings.length === 0 && deductions.length === 0) return null;
+        const otherEarningsRows = [];
+        if (bonusBasic > 0) {
+            otherEarningsRows.push({ label: 'Bonus Basic (8.33%)', amount: bonusBasic });
+        }
+        if (leaveEncashment > 0) {
+            const days = ms?.BalanceLeaves;
+            otherEarningsRows.push({
+                label: 'Leave Encashment',
+                detail: `Last drawn ₹${fmt(d.LastDrawnSalary)}${days != null ? ` × ${days} days` : ''} @ ₹${fmt(d.LastDrawnSalaryPerDay)}/day`,
+                amount: leaveEncashment,
+            });
+        }
+
         return (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-700 to-purple-700 px-4 py-3 flex items-center gap-2">
-                    <IndianRupee className="w-4 h-4 text-white" />
-                    <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Salary Head Breakdown</h3>
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs">
+
+                {/* Header bar */}
+                <div className="grid grid-cols-2 bg-indigo-900 text-white text-[11px] font-semibold">
+                    <div className="px-3 py-1.5 border-r border-indigo-700">
+                        Salary For: {ms?.PayRollFortheDate || '—'}
+                    </div>
+                    <div className="px-3 py-1.5">
+                        Paid Days: {ms?.TotalSalaryDays ?? ms?.NoofPresentDays ?? '—'}
+                    </div>
                 </div>
-                <div className="p-4 bg-white dark:bg-gray-800 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderHeadsTable({ title: 'Earnings',   icon: TrendingUp,   rows: earnings,   gradient: 'from-indigo-500 to-violet-600', emptyMsg: 'No earnings heads' })}
-                    {renderHeadsTable({ title: 'Deductions', icon: TrendingDown, rows: deductions, gradient: 'from-rose-500 to-pink-600',     emptyMsg: 'No deduction heads' })}
+
+                {/* Earnings / Deductions */}
+                <div className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+                    <div>
+                        <div className="bg-indigo-700 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide">Earnings</div>
+                        {earnings.length === 0 ? (
+                            <div className="px-3 py-2 text-gray-400">No earnings heads</div>
+                        ) : earnings.map((r, i) => (
+                            <div key={i} className="flex justify-between px-3 py-1 border-b border-gray-100 dark:border-gray-700">
+                                <span className="text-gray-600 dark:text-gray-300 truncate pr-2">{r.SalaryHead || r.HeadName}</span>
+                                <span className="font-semibold text-gray-800 dark:text-gray-100 flex-shrink-0">{fmt(r.HeadAmount)}</span>
+                            </div>
+                        ))}
+                        <div className="flex justify-between px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 font-bold text-indigo-800 dark:text-indigo-300">
+                            <span>GROSS</span><span>{fmt(ms?.Gross ?? d.FinalGross)}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="bg-rose-700 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide">Deductions</div>
+                        {deductions.length === 0 ? (
+                            <div className="px-3 py-2 text-gray-400">No deduction heads</div>
+                        ) : deductions.map((r, i) => (
+                            <div key={i} className="flex justify-between px-3 py-1 border-b border-gray-100 dark:border-gray-700">
+                                <span className="text-gray-600 dark:text-gray-300 truncate pr-2">{r.SalaryHead || r.HeadName}</span>
+                                <span className="font-semibold text-gray-800 dark:text-gray-100 flex-shrink-0">{fmt(r.HeadAmount)}</span>
+                            </div>
+                        ))}
+                        <div className="flex justify-between px-3 py-1.5 bg-rose-50 dark:bg-rose-900/20 font-bold text-rose-800 dark:text-rose-300">
+                            <span>DEDUCTION</span><span>{fmt(ms?.TotalDeduction ?? d.FinalDeduction)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Other Earnings */}
+                {otherEarningsRows.length > 0 && (
+                    <div>
+                        <div className="bg-indigo-900 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide">Other Earnings</div>
+                        {otherEarningsRows.map((row, i) => (
+                            <div key={i} className="flex justify-between items-center px-3 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+                                <div className="min-w-0 pr-2">
+                                    <span className="text-gray-700 dark:text-gray-200 font-medium">{row.label}</span>
+                                    {row.detail && <span className="block text-[10px] text-gray-400 dark:text-gray-500 truncate">{row.detail}</span>}
+                                </div>
+                                <span className="font-semibold text-gray-800 dark:text-gray-100 flex-shrink-0">{fmt(row.amount)}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Totals */}
+                <div className="grid grid-cols-3 bg-indigo-900 text-white text-[11px] font-bold divide-x divide-indigo-700">
+                    <div className="px-3 py-2">Total Earnings: {fmt(d.FinalGross)}</div>
+                    <div className="px-3 py-2">Total Deductions: {fmt(d.FinalDeduction)}</div>
+                    <div className="px-3 py-2">Net Due: {fmt(d.FinalNet)}</div>
                 </div>
             </div>
         );
@@ -533,7 +524,7 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
         const hasDetailData = !!viewData;
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
 
                 {/* Loading */}
                 {detailsLoading && (
@@ -546,64 +537,49 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
                 )}
 
                 {/* Hero header */}
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-indigo-200 dark:border-indigo-700">
-                    <div className="flex items-start space-x-4">
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border-2 border-indigo-200 dark:border-indigo-700">
+                    <div className="flex items-start space-x-3">
                         <div className="relative flex-shrink-0">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                                <BadgeDollarSign className="w-8 h-8 text-white" />
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/30">
+                                <BadgeDollarSign className="w-5 h-5 text-white" />
                             </div>
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
-                                <UserCheck className="w-3 h-3 text-white" />
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
+                                <UserCheck className="w-2.5 h-2.5 text-white" />
                             </div>
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1 truncate">
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate">
                                 {d.EmployeeName}
                             </h2>
-                            <p className="text-indigo-600 dark:text-indigo-400 font-semibold mb-3">
+                            <p className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold mb-2">
                                 {d.EmpRefNo} {d.TransactionRefNo ? `• Ref: ${d.TransactionRefNo}` : ''}
                             </p>
-                            <div className="flex flex-wrap gap-2">
-                                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium">
+                            <div className="flex flex-wrap gap-1.5">
+                                <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-[10px] font-medium">
                                     Full &amp; Final Settlement
                                 </span>
                                 {hasDetailData && d.MOID && (
-                                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                                    <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-medium">
                                         MOID: {d.MOID}
                                     </span>
                                 )}
                                 {d.CCCode && (
-                                    <span className="px-3 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full text-xs font-medium">
+                                    <span className="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full text-[10px] font-medium">
                                         CC: {d.CCCode}
                                     </span>
                                 )}
                                 {d.Status && (
-                                    <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium">
+                                    <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-[10px] font-medium">
                                         {d.Status}
                                     </span>
                                 )}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Quick chips */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-indigo-200 dark:border-indigo-700">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Record ID</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">{d.Id || '-'}</p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Employee Code</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">{d.EmpRefNo || '-'}</p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Net Payable</p>
-                            <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">₹{fmt(d.FinalNet)}</p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Relieving Date</p>
-                            <p className="text-sm font-bold text-purple-700 dark:text-purple-300">{d.RelievingDate || '-'}</p>
+                        <div className="flex-shrink-0 text-right">
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400">Net Payable</p>
+                            <p className="text-base font-bold text-indigo-700 dark:text-indigo-300">₹{fmt(d.FinalNet)}</p>
                         </div>
                     </div>
                 </div>
@@ -611,11 +587,9 @@ const VerifyStaffFullFinal = ({ notificationData, onNavigate }) => {
                 {/* Detail sections — gated on hasDetailData */}
                 {hasDetailData ? (
                     <>
-                        {renderFinancialSummary()}
+                        {renderSettlementSlip()}
                         {renderEmployeeInfo()}
                         {renderGratuity()}
-                        {renderLastMonthSalary()}
-                        {renderSalaryHeads()}
                     </>
                 ) : !detailsLoading && (
                     <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-600 text-center text-sm text-gray-400">

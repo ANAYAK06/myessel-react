@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
 import AttachmentModal from '../../components/Inbox/AttachmentModal';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
@@ -382,33 +381,6 @@ const VerifyDailyIssue = ({ notificationData, onNavigate }) => {
     const totalAmount = calculateTotalAmount();
     const totalItems = dailyIssueDetails?.ItemList?.length || 0;
 
-    const statsCards = [
-        {
-            icon: FileText,
-            value: dailyIssueGrid.length,
-            label: 'Total Issues',
-            color: 'purple'
-        },
-        {
-            icon: Package,
-            value: totalItems,
-            label: 'Total Items',
-            color: 'blue'
-        },
-        {
-            icon: Building2,
-            value: dailyIssueDetails?.FromCC || selectedItem?.FromCC || '-',
-            label: 'From Cost Center',
-            color: 'indigo'
-        },
-        {
-            icon: TrendingUp,
-            value: `₹${totalAmount.toFixed(2)}`,
-            label: 'Total Amount',
-            color: 'green'
-        }
-    ];
-
     const renderItemCard = (item, isSelected) => {
         return (
             <div className="p-4">
@@ -439,6 +411,21 @@ const VerifyDailyIssue = ({ notificationData, onNavigate }) => {
             </div>
         );
     };
+
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px] truncate">{item.Tranno}</span>
+            <span className="text-gray-500 dark:text-gray-400 min-w-[100px]">From: {item.FromCC}</span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" /> {item.Date}
+            </span>
+            {item.Status && (
+                <span className="ml-auto px-2 py-0.5 text-xs rounded-full border bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 whitespace-nowrap">
+                    {item.Status}
+                </span>
+            )}
+        </div>
+    );
 
     const renderCollapsedItem = (item, isSelected) => (
         <div className="w-full h-full rounded-lg border-2 border-purple-200 dark:border-purple-600 bg-gradient-to-br from-purple-100 to-purple-100 dark:from-purple-800/50 dark:to-purple-800/50 flex items-center justify-center">
@@ -683,7 +670,7 @@ const VerifyDailyIssue = ({ notificationData, onNavigate }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Daily Issue'} (${dailyIssueGrid.length})`}
                 subtitle={ModuleDisplayName}
@@ -712,70 +699,60 @@ const VerifyDailyIssue = ({ notificationData, onNavigate }) => {
                         options: statuses
                     }
                 ]}
-                className="bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"
+                enableViewToggle
             />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <InboxSplitLayout
-                    isLeftPanelCollapsed={isLeftPanelCollapsed}
-                    onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
-                    isLeftPanelHovered={isLeftPanelHovered}
-                    onLeftPanelHoverChange={setIsLeftPanelHovered}
-                    left={{
-                        items: filteredItems,
-                        selectedItem: selectedItem,
-                        onItemSelect: handleItemSelect,
-                        renderItem: renderItemCard,
-                        renderCollapsedItem: renderCollapsedItem,
-                        loading: gridLoading,
-                        error: gridError,
-                        onRefresh: handleRefresh,
-                        config: {
-                            title: 'Pending',
-                            icon: Clock,
-                            emptyMessage: 'No Daily Issues found!',
-                            itemKey: 'Tranno',
-                            enableCollapse: true,
-                            enableRefresh: true,
-                            enableHover: true,
-                            maxHeight: '100%',
-                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
-                        },
-                        renderPopupContent: (_item) => renderDetailContent(),
-                        popupConfig: {
-                            title: 'Daily Issue Verification',
-                            icon: Layers,
-                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
-                            maxWidth: 'max-w-[80vw]',
-                        },
-                    }}
-                    right={{
-                        selectedItem: selectedItem,
-                        loading: false,
-                        renderContent: renderDetailContent,
-                        config: {
-                            title: 'Issue Details',
-                            icon: Layers,
-                            selectedTitle: 'Daily Issue Verification',
-                            emptyTitle: 'No Issue Selected',
-                            emptyMessage: 'Select a Daily Issue from the list to view details and take action.',
-                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
-                            maxHeight: 'calc(100vh-200px)',
-                            sticky: true,
-                            stickyTop: '1.5rem',
-                        },
-                    }}
-                />
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: gridLoading,
+                    error: gridError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending',
+                        icon: Clock,
+                        emptyMessage: 'No Daily Issues found!',
+                        itemKey: 'Tranno',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Daily Issue Verification',
+                        icon: Layers,
+                        headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Issue Details',
+                        icon: Layers,
+                        selectedTitle: 'Daily Issue Verification',
+                        emptyTitle: 'No Issue Selected',
+                        emptyMessage: 'Select a Daily Issue from the list to view details and take action.',
+                        headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh-200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
 
             <AttachmentModal
                 isOpen={showAttachmentModal}

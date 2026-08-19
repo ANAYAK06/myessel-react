@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 
 import InboxHeader from '../../components/Inbox/InboxHeader';
-import StatsCards from '../../components/Inbox/StatsCards';
 import AttachmentModal from '../../components/Inbox/AttachmentModal';
 import ActionButtons from '../../components/Inbox/ActionButtons';
 import RemarksHistory from '../../components/Inbox/RemarksHistory';
@@ -371,33 +370,6 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
 
     const { lostTotal, damagedTotal, grandTotal } = calculateTotalAmounts();
 
-    const statsCards = [
-        {
-            icon: FileText,
-            value: ldItemsList.length,
-            label: 'Total Reports',
-            color: 'purple'
-        },
-        {
-            icon: TrendingDown,
-            value: ldItemData?.itemlist ? `${ldItemData.itemlist.reduce((sum, item) => sum + parseInt(item.Lost || 0), 0)}` : '0',
-            label: 'Total Lost Items',
-            color: 'red'
-        },
-        {
-            icon: AlertCircle,
-            value: ldItemData?.itemlist ? `${ldItemData.itemlist.reduce((sum, item) => sum + parseInt(item.Damaged || 0), 0)}` : '0',
-            label: 'Total Damaged Items',
-            color: 'orange'
-        },
-        {
-            icon: IndianRupee,
-            value: `₹${formatIndianCurrency(grandTotal)}`,
-            label: 'Total Amount',
-            color: 'green'
-        }
-    ];
-
     const renderItemCard = (item, isSelected) => {
         return (
             <div className="p-4">
@@ -428,6 +400,21 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
             </div>
         );
     };
+
+    const renderListItem = (item) => (
+        <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white min-w-[140px] truncate">{item.Refno}</span>
+            <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">{item.CCCode}</span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[100px]">
+                <Calendar className="w-3 h-3" /> {item.Date}
+            </span>
+            {item.Status && (
+                <span className="ml-auto px-2 py-0.5 text-xs rounded-full border bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 whitespace-nowrap">
+                    {item.Status}
+                </span>
+            )}
+        </div>
+    );
 
     const renderCollapsedItem = (item, isSelected) => (
         <div className="w-full h-full rounded-lg border-2 border-purple-200 dark:border-purple-600 bg-gradient-to-br from-purple-100 to-purple-100 dark:from-purple-800/50 dark:to-purple-800/50 flex items-center justify-center">
@@ -541,20 +528,20 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
 
                 {/* Items Table */}
                 {hasDetailedData && ldItemData.itemlist && ldItemData.itemlist.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
-                                    <FileText className="w-5 h-5 text-white" />
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border-2 border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                                <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
+                                    <FileText className="w-4 h-4 text-white" />
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                                     Item Details
                                 </h3>
                             </div>
                             {ldItemData.FilePath && (
                                 <button
                                     onClick={() => handleViewAttachment(ldItemData.FilePath)}
-                                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm font-medium"
+                                    className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-xs font-medium"
                                 >
                                     View Document
                                 </button>
@@ -562,31 +549,31 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
                         </div>
 
                         <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
                                 <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Item Code
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Item Name
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Specification
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-center font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Lost Qty
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-center font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Damaged Qty
                                         </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-right font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Lost Amt
                                         </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-right font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Damaged Amt
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                        <th className="px-2.5 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Remarks
                                         </th>
                                     </tr>
@@ -594,32 +581,32 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
                                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                     {ldItemData.itemlist.map((item, index) => (
                                         <tr key={item.id || index} className="hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors">
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                                            <td className="px-2.5 py-1.5 font-medium text-gray-900 dark:text-white">
                                                 {item.itemcode}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                            <td className="px-2.5 py-1.5 text-gray-700 dark:text-gray-300">
                                                 {item.itemname}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            <td className="px-2.5 py-1.5 text-gray-600 dark:text-gray-400">
                                                 {item.specification}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-center">
-                                                <span className="inline-flex items-center px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-full font-medium">
+                                            <td className="px-2.5 py-1.5 text-center">
+                                                <span className="inline-flex items-center px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-full font-medium">
                                                     {item.Lost || 0}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-center">
-                                                <span className="inline-flex items-center px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full font-medium">
+                                            <td className="px-2.5 py-1.5 text-center">
+                                                <span className="inline-flex items-center px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full font-medium">
                                                     {item.Damaged || 0}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-right font-medium text-red-700 dark:text-red-400">
+                                            <td className="px-2.5 py-1.5 text-right font-medium text-red-700 dark:text-red-400">
                                                 ₹{formatIndianCurrency(item.LostAmt || 0)}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-right font-medium text-orange-700 dark:text-orange-400">
+                                            <td className="px-2.5 py-1.5 text-right font-medium text-orange-700 dark:text-orange-400">
                                                 ₹{formatIndianCurrency(item.DamagedAmt || 0)}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            <td className="px-2.5 py-1.5 text-gray-600 dark:text-gray-400">
                                                 {item.Remarks || '-'}
                                             </td>
                                         </tr>
@@ -686,7 +673,7 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
                         isVerified={isVerified}
                         comment={verificationComment}
                         showValidation={true}
-                        excludeActions={['send back']}
+                        excludeActions={['send back', 'return']}
                     />
                 )}
             </div>
@@ -694,7 +681,7 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="space-y-6">
             <InboxHeader
                 title={`${InboxTitle || 'Lost/Damaged Items'} (${ldItemsList.length})`}
                 subtitle={ModuleDisplayName}
@@ -723,70 +710,60 @@ const VerifyLostDamagedItems = ({ notificationData, onNavigate }) => {
                         options: statuses
                     }
                 ]}
-                className="bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"
+                enableViewToggle
             />
 
-            <div className="px-6 -mt-auto mb-6">
-                <StatsCards
-                    cards={statsCards}
-                    variant="simple"
-                    gridCols="grid-cols-1 md:grid-cols-4"
-                    gap="gap-4"
-                />
-            </div>
-
-            <div className="container mx-auto px-6">
-                <InboxSplitLayout
-                    isLeftPanelCollapsed={isLeftPanelCollapsed}
-                    onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
-                    isLeftPanelHovered={isLeftPanelHovered}
-                    onLeftPanelHoverChange={setIsLeftPanelHovered}
-                    left={{
-                        items: filteredItems,
-                        selectedItem: selectedItem,
-                        onItemSelect: handleItemSelect,
-                        renderItem: renderItemCard,
-                        renderCollapsedItem: renderCollapsedItem,
-                        loading: ldItemsLoading,
-                        error: ldItemsError,
-                        onRefresh: handleRefresh,
-                        config: {
-                            title: 'Pending',
-                            icon: Clock,
-                            emptyMessage: 'No Lost/Damaged Items found!',
-                            itemKey: 'Refno',
-                            enableCollapse: true,
-                            enableRefresh: true,
-                            enableHover: true,
-                            maxHeight: '100%',
-                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
-                        },
-                        renderPopupContent: (_item) => renderDetailContent(),
-                        popupConfig: {
-                            title: 'Lost/Damaged Items Verification',
-                            icon: Package,
-                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
-                            maxWidth: 'max-w-[80vw]',
-                        },
-                    }}
-                    right={{
-                        selectedItem: selectedItem,
-                        loading: false,
-                        renderContent: renderDetailContent,
-                        config: {
-                            title: 'Item Details',
-                            icon: Package,
-                            selectedTitle: 'Lost/Damaged Items Verification',
-                            emptyTitle: 'No Item Selected',
-                            emptyMessage: 'Select a Lost/Damaged Items report from the list to view details and take action.',
-                            headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
-                            maxHeight: 'calc(100vh-200px)',
-                            sticky: true,
-                            stickyTop: '1.5rem',
-                        },
-                    }}
-                />
-            </div>
+            <InboxSplitLayout
+                isLeftPanelCollapsed={isLeftPanelCollapsed}
+                onLeftPanelCollapseToggle={setIsLeftPanelCollapsed}
+                isLeftPanelHovered={isLeftPanelHovered}
+                onLeftPanelHoverChange={setIsLeftPanelHovered}
+                left={{
+                    items: filteredItems,
+                    selectedItem: selectedItem,
+                    onItemSelect: handleItemSelect,
+                    renderItem: renderItemCard,
+                    renderListItem: renderListItem,
+                    renderCollapsedItem: renderCollapsedItem,
+                    loading: ldItemsLoading,
+                    error: ldItemsError,
+                    onRefresh: handleRefresh,
+                    config: {
+                        title: 'Pending',
+                        icon: Clock,
+                        emptyMessage: 'No Lost/Damaged Items found!',
+                        itemKey: 'Refno',
+                        enableCollapse: true,
+                        enableRefresh: true,
+                        enableHover: true,
+                        maxHeight: '100%',
+                        headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                    },
+                    renderPopupContent: (_item) => renderDetailContent(),
+                    popupConfig: {
+                        title: 'Lost/Damaged Items Verification',
+                        icon: Package,
+                        headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                        maxWidth: 'max-w-[80vw]',
+                    },
+                }}
+                right={{
+                    selectedItem: selectedItem,
+                    loading: false,
+                    renderContent: renderDetailContent,
+                    config: {
+                        title: 'Item Details',
+                        icon: Package,
+                        selectedTitle: 'Lost/Damaged Items Verification',
+                        emptyTitle: 'No Item Selected',
+                        emptyMessage: 'Select a Lost/Damaged Items report from the list to view details and take action.',
+                        headerGradient: 'from-purple-50 to-purple-50 dark:from-purple-900/20 dark:to-purple-900/20',
+                        maxHeight: 'calc(100vh-200px)',
+                        sticky: true,
+                        stickyTop: '1.5rem',
+                    },
+                }}
+            />
 
             <AttachmentModal
                 isOpen={showAttachmentModal}

@@ -121,6 +121,10 @@ import TermLoanPayment from '../Accounts/TermLoanPayment';
 import AgencyCreation from '../Accounts/AgencyCreation';
 import ChatBot from '../../components/ChatBot/ChatBot';
 import LabourRuleConfig from '../HR/LabourRuleConfig';
+import ClientPOBudgetLimitConfig from '../Accounts/ClientPOBudgetLimitConfig';
+import CompanyDepreciationConfigure from '../Accounts/CompanyDepreciationConfigure';
+import CostCenterDayLimitConfig from '../Accounts/CostCenterDayLimitConfig';
+import AccruedInterestConfig from '../Accounts/AccruedInterestConfig';
 
 const RoleBasedApplication = () => {
     const { roleData } = useSelector((state) => state.auth);
@@ -235,6 +239,12 @@ const RoleBasedApplication = () => {
     // Check if menu item should route to Accrued Interest Report
     const isAccruedInterestReport = (menuData) => {
         if (!menuData) return false;
+
+        // Never shadow the separate Accrued Interest Configuration page
+        const isConfigPage = menuData.path?.toLowerCase().includes('config') ||
+            menuData.name?.toLowerCase().includes('config') ||
+            menuData.reactRoute?.toLowerCase().includes('config');
+        if (isConfigPage) return false;
 
         const pathMatches = menuData.path === '/Reports/AccruedInterestReport' ||
             menuData.path === '/Home/AccruedInterestReport' ||
@@ -847,6 +857,77 @@ const RoleBasedApplication = () => {
             name.includes('min wage config') ||
             route.includes('labourruleconfig') ||
             route.includes('labourconfig')
+        );
+    };
+
+    // Check if menu item should route to Client PO Budget Limit Configuration page
+    const isClientPOBudgetLimitConfigPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path.includes('clientpobudgetlimitconfig') ||
+            path.includes('clientpobudgetlimit') ||
+            path.includes('clientpolockpercent') ||
+            name.includes('client po budget limit') ||
+            name.includes('client po lock percent') ||
+            name.includes('clientpobudgetlimitconfig') ||
+            route.includes('clientpobudgetlimitconfig') ||
+            route.includes('clientpobudgetlimit')
+        );
+    };
+
+    // Check if menu item should route to Company Depreciation Configuration page
+    const isCompanyDepreciationConfigPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path.includes('companydepreciationconfigure') ||
+            path.includes('companydepreciationconfig') ||
+            path.includes('depreciationconfig') ||
+            name.includes('company depreciation config') ||
+            name.includes('companydepreciationconfigure') ||
+            name.includes('depreciation config') ||
+            route.includes('companydepreciationconfigure') ||
+            route.includes('companydepreciationconfig')
+        );
+    };
+
+    // Check if menu item should route to Cost Centre Day Limit Configuration page
+    const isCCDayLimitConfigPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path.includes('costcenterdaylimitconfig') ||
+            path.includes('ccdaylimitconfig') ||
+            path.includes('daylimitconfig') ||
+            name.includes('cost center day limit') ||
+            name.includes('cost centre day limit') ||
+            name.includes('cc day limit') ||
+            name.includes('day limit config') ||
+            route.includes('costcenterdaylimitconfig') ||
+            route.includes('daylimitconfig')
+        );
+    };
+
+    // Check if menu item should route to Accrued Interest Configuration page
+    const isAccruedInterestConfigPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        // Note: deliberately requires "config" so this never shadows the
+        // separate Accrued Interest *Report* page (path includes "accruedinterest" too)
+        return (
+            path.includes('accruedinterestconfig') ||
+            name.includes('accrued interest config') ||
+            name.includes('accruedinterestconfig') ||
+            route.includes('accruedinterestconfig')
         );
     };
 
@@ -2041,6 +2122,30 @@ const RoleBasedApplication = () => {
         if (currentMenuData && isLabourRuleConfigPage(currentMenuData)) {
             console.log('✅ Rendering LabourRuleConfig for:', currentMenuData.name);
             return <LabourRuleConfig menuData={currentMenuData} />;
+        }
+
+        // Client PO Budget Limit Configuration
+        if (currentMenuData && isClientPOBudgetLimitConfigPage(currentMenuData)) {
+            console.log('✅ Rendering ClientPOBudgetLimitConfig for:', currentMenuData.name);
+            return <ClientPOBudgetLimitConfig menuData={currentMenuData} />;
+        }
+
+        // Company Depreciation Configuration
+        if (currentMenuData && isCompanyDepreciationConfigPage(currentMenuData)) {
+            console.log('✅ Rendering CompanyDepreciationConfigure for:', currentMenuData.name);
+            return <CompanyDepreciationConfigure menuData={currentMenuData} />;
+        }
+
+        // Cost Centre Day Limit Configuration
+        if (currentMenuData && isCCDayLimitConfigPage(currentMenuData)) {
+            console.log('✅ Rendering CostCenterDayLimitConfig for:', currentMenuData.name);
+            return <CostCenterDayLimitConfig menuData={currentMenuData} />;
+        }
+
+        // Accrued Interest Configuration
+        if (currentMenuData && isAccruedInterestConfigPage(currentMenuData)) {
+            console.log('✅ Rendering AccruedInterestConfig for:', currentMenuData.name);
+            return <AccruedInterestConfig menuData={currentMenuData} />;
         }
 
         // Supplier PO Creation

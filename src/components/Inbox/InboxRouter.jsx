@@ -8,6 +8,7 @@ import VerifyStaffRegistration from '../../pages/HR/VerifyStaffRegistration';
 import VerifyVendorPayment from '../../pages/VendorPayment/VerifyVendorPayment';
 import VerifySupplierInvoice from '../../pages/VendorInvoice/VerifySupplierInvoice';
 import VerifySupplierPO from '../../pages/SupplierPO/VerifySupplierPO';
+import VerifySupplierPOAmend from '../../pages/SupplierPO/VerifySupplierPOAmend';
 import VerifySPPO from '../../pages/SPPO/VerifySPPO';
 import InboxItemPlaceholder from './InboxItemPlaceholder';
 import CostCenterApproval from '../../pages/CostCenter/CostCenterApproval';
@@ -162,6 +163,12 @@ const isSupplierInvoiceVerification = (path, category, title, displayName, workf
 };
 
 const isSupplierPOVerification = (path, category, title, displayName, workflowType) => {
+    // Never shadow the separate Supplier PO Amendment verification page — its
+    // path/title also contains "supplier po", so it must be excluded here.
+    const isAmendPage = path.includes('amend') || category.includes('amend') ||
+        title.includes('amend') || displayName.includes('amend') || workflowType.includes('amend');
+    if (isAmendPage) return false;
+
     const pathMatches = [
         '/supplierpo/verifysupplierpo',
         '/purchase/verifysupplierpo',
@@ -185,6 +192,36 @@ const isSupplierPOVerification = (path, category, title, displayName, workflowTy
         });
     } else {
         console.log('❌ Supplier PO not detected. Details:', {
+            path, category, title, displayName, workflowType
+        });
+    }
+
+    return isMatch;
+};
+
+const isSupplierPOAmendVerification = (path, category, title, displayName, workflowType) => {
+    const pathMatches = [
+        '/supplierpo/verifysupplierpoamend',
+        '/purchase/verifysupplierpoamend',
+        'verifysupplierpoamend',
+    ];
+
+    const isMatch = pathMatches.some(match => path.includes(match)) ||
+        (category.includes('supplier po') && category.includes('amend')) ||
+        category.includes('verifysupplierpoamend') ||
+        (title.includes('supplier po') && title.includes('amend')) ||
+        title.includes('verifysupplierpoamend') ||
+        (displayName.includes('supplier po') && displayName.includes('amend')) ||
+        displayName.includes('verifysupplierpoamend') ||
+        (workflowType.includes('supplier po') && workflowType.includes('amend')) ||
+        workflowType.includes('verifysupplierpoamend');
+
+    if (isMatch) {
+        console.log('✅ Supplier PO Amend detected by:', {
+            path, category, title, displayName, workflowType
+        });
+    } else {
+        console.log('❌ Supplier PO Amend not detected. Details:', {
             path, category, title, displayName, workflowType
         });
     }
@@ -1303,6 +1340,18 @@ const InboxRouter = ({ notificationData, onNavigate }) => {
         if (isSupplierInvoiceVerification(path, category, title, displayName, workflowType)) {
             console.log('✅ Routing to VerifySupplierInvoice');
             return <VerifySupplierInvoice
+                notificationData={notification}
+                onNavigate={onNavigate}
+            />;
+        }
+
+        // ====================================================================
+        // SUPPLIER PO AMENDMENT VERIFICATION (checked before the plain Supplier PO
+        // match below, since its path/title also contains "supplier po")
+        // ====================================================================
+        if (isSupplierPOAmendVerification(path, category, title, displayName, workflowType)) {
+            console.log('✅ Routing to VerifySupplierPOAmend');
+            return <VerifySupplierPOAmend
                 notificationData={notification}
                 onNavigate={onNavigate}
             />;

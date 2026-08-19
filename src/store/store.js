@@ -56,6 +56,7 @@ import dailyIssuedItemsReducer from "../slices/stockSlice/dailyIssueSlice";
 import scrapSaleReducer from "../slices/stockSlice/scrapSalesVerificationSlice";
 import closeSPPOReducer from "../slices/spPOSlice/closeSPPOSlice";
 import sppoAmend from "../slices/spPOSlice/sppoAmendSlice";
+import supplierPOAmendVerificationReducer from "../slices/supplierPOSlice/supplierPOAmendVerificationSlice";
 import monthlyattendance from "../slices/HRSlice/monthlyAttendanceSlice";
 import staffdailyattendance from "../slices/HRSlice/staffDailyAttendanceSlice";
 import labourobjectivesgoals from "../slices/HRSlice/labourObjectivesGoalsSlice";
@@ -141,6 +142,10 @@ import labourCMSVerificationReducer from "../slices/HRSlice/labourCMSVerificatio
 import bulkWorkerRegReducer from "../slices/HRSlice/bulkWorkerRegistrationSlice";
 import bulkWorkerVerifyReducer from "../slices/HRSlice/bulkWorkerVerificationSlice";
 import generalPaymentReducer from "../slices/accountsSlice/generalPaymentSlice";
+import clientPOBudgetLimitConfigReducer from "../slices/accountsSlice/clientPOBudgetLimitConfigSlice";
+import companyDepreciationConfigReducer from "../slices/accountsSlice/companyDepreciationConfigSlice";
+import ccDayLimitConfigReducer from "../slices/accountsSlice/ccDayLimitConfigSlice";
+import accruedInterestConfigReducer from "../slices/accountsSlice/accruedInterestConfigSlice";
 import labourReportReducer from "../slices/HrReportSlice/labourReportSlice";
 import labourBankChangeReducer from "../slices/HRSlice/labourBankChangeSlice";
 import empBankChangeReducer from "../slices/HRSlice/empBankChangeSlice";
@@ -213,6 +218,7 @@ const store = configureStore({
     scrapSale: scrapSaleReducer,
     closeSPPO: closeSPPOReducer,
     sppoAmend: sppoAmend,
+    supplierPOAmendVerification: supplierPOAmendVerificationReducer,
     monthlyattendance: monthlyattendance,
     staffdailyattendance: staffdailyattendance,
     labourobjectivesgoals: labourobjectivesgoals,
@@ -277,6 +283,10 @@ const store = configureStore({
     advancePaymentVerification:   advancePaymentVerificationReducer,
     retentionPaymentVerification: retentionPaymentVerificationReducer,
     holdPaymentVerification:      holdPaymentVerificationReducer,
+    clientPOBudgetLimitConfig:    clientPOBudgetLimitConfigReducer,
+    companyDepreciationConfig:    companyDepreciationConfigReducer,
+    ccDayLimitConfig:             ccDayLimitConfigReducer,
+    accruedInterestConfig:        accruedInterestConfigReducer,
     scrapSaleReceipt:             scrapSaleReceiptReducer,
     scrapSaleReceiptVerification: scrapSaleReceiptVerificationReducer,
     refund:                       refundReducer,

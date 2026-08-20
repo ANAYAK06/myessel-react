@@ -26,6 +26,7 @@ import {
 } from '../../slices/auth/authSlice';
 import ThemeToggle from '../../components/ThemeToggle';
 import ForgotPasswordModal from '../../components/ForgotPasswordModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 // Validation Schema for Role Login
 const roleValidationSchema = Yup.object({
@@ -40,6 +41,7 @@ const LoginOptions = () => {
     const [showRolePassword, setShowRolePassword] = useState(false);
     const [isProcessingLogin, setIsProcessingLogin] = useState(false); // ADDED: Track login processing
     const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [pendingRoleId, setPendingRoleId] = useState(null); // Role login succeeded but password change is required first
 
     const {
         employeeId,
@@ -80,6 +82,13 @@ const LoginOptions = () => {
 
                 console.log('✅ User validation result:', userResult);
                 console.log('🎯 Extracted roleId:', userResult.roleId);
+
+                if (userResult.data?.IsFirstTimeLogin) {
+                    console.log('🔑 First-time role login detected - requiring password change');
+                    setPendingRoleId(userResult.roleId);
+                    setIsProcessingLogin(false);
+                    return;
+                }
 
                 if (userResult.roleId) {
                     console.log('🔍 Calling getMenu with roleId:', userResult.roleId);
@@ -410,6 +419,23 @@ const LoginOptions = () => {
             isOpen={showForgotPassword}
             onClose={() => setShowForgotPassword(false)}
             loginType="role"
+        />
+        <ChangePasswordModal
+            isOpen={!!pendingRoleId}
+            username={employeeId}
+            loginType="role"
+            onSuccess={async () => {
+                setIsProcessingLogin(true);
+                try {
+                    await dispatch(getMenu(pendingRoleId)).unwrap();
+                    toast.success('Role login successful!');
+                } catch (err) {
+                    console.error('❌ Role login error after password change:', err);
+                    setIsProcessingLogin(false);
+                } finally {
+                    setPendingRoleId(null);
+                }
+            }}
         />
         </div>
     );

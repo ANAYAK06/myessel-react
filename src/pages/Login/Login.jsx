@@ -16,6 +16,7 @@ import {
 import ThemeToggle from '../../components/ThemeToggle';
 import sessionManager from '../../utilities/SessionManager';
 import ForgotPasswordModal from '../../components/ForgotPasswordModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 // Validation Schema
 const validationSchema = Yup.object({
@@ -39,7 +40,9 @@ const Login = () => {
         error,
         success,
         isAuthenticated,
-        loginType
+        loginType,
+        employeeId,
+        isFirstTimeLogin
     } = useSelector((state) => state.auth);
 
     useEffect(() => {
@@ -67,9 +70,11 @@ const Login = () => {
     useEffect(() => {
         if (success.validateEmployee) {
             dispatch(clearSuccess());
-            navigate('/login-options');
+            if (!isFirstTimeLogin) {
+                navigate('/login-options');
+            }
         }
-    }, [success.validateEmployee, dispatch, navigate]);
+    }, [success.validateEmployee, isFirstTimeLogin, dispatch, navigate]);
 
     useEffect(() => {
         if (success.getEmployeeDetails) {
@@ -516,6 +521,13 @@ const Login = () => {
                 isOpen={showForgotPassword}
                 onClose={() => setShowForgotPassword(false)}
                 loginType=""
+            />
+
+            <ChangePasswordModal
+                isOpen={isFirstTimeLogin}
+                username={employeeId}
+                loginType=""
+                onSuccess={() => navigate('/login-options')}
             />
 
         </div>

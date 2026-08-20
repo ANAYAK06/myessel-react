@@ -26,12 +26,17 @@ const ForgotPasswordModal = ({ isOpen, onClose, loginType = '' }) => {
         setLoading(true);
         setError('');
         try {
-            await axios.get(`${API_BASE_URL}/Accounts/CheckUserbyUsername`, {
+            const response = await axios.get(`${API_BASE_URL}/Accounts/SendForgotPasswordMail`, {
                 params: { Username: username.trim(), Logintype: loginType }
             });
-            setSent(true);
+            const result = response.data;
+            if (result?.IsSuccessful) {
+                setSent(true);
+            } else {
+                setError(result?.Message || 'Unable to process request. Please contact IT Support.');
+            }
         } catch (err) {
-            const msg = err.response?.data?.message || err.response?.data;
+            const msg = err.response?.data?.Message || err.response?.data;
             setError(typeof msg === 'string' ? msg : 'Unable to process request. Please contact IT Support.');
         } finally {
             setLoading(false);
@@ -76,7 +81,7 @@ const ForgotPasswordModal = ({ isOpen, onClose, loginType = '' }) => {
                     {!sent ? (
                         <>
                             <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
-                                Enter your Employee ID or Username and we'll send a password reset link to your registered email address.
+                                Enter your Employee ID or Username and we'll email your password to your registered email address.
                             </p>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
@@ -136,9 +141,9 @@ const ForgotPasswordModal = ({ isOpen, onClose, loginType = '' }) => {
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Check Your Email</h3>
                             <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-                                If an account exists for{' '}
-                                <span className="font-semibold text-orange-600 dark:text-orange-400">{username}</span>,
-                                a password reset link has been sent to the registered email address.
+                                Your password for{' '}
+                                <span className="font-semibold text-orange-600 dark:text-orange-400">{username}</span>{' '}
+                                has been sent to your registered email address.
                             </p>
                             <button
                                 onClick={handleClose}

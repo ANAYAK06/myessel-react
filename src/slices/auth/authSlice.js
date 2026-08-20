@@ -1,6 +1,7 @@
 // slices/auth/authSlice.js - OPTIMIZED VERSION - Improved performance and reduced localStorage operations
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as authAPI from '../../api/securityAPI/authAPI';
+import { updatePassword } from '../../api/businessinfoAPI/userAPI';
 
 
 // IMPROVED: Helper function to batch localStorage operations
@@ -267,6 +268,29 @@ export const getMenu = createAsyncThunk(
     }
 );
 
+// Change Password (used to clear the first-time-login flag)
+export const changePassword = createAsyncThunk(
+    'auth/changePassword',
+    async ({ username, newPassword, loginType }, { rejectWithValue }) => {
+        try {
+            const response = await updatePassword({
+                Username: username,
+                Password: newPassword,
+                Createdby: username,
+                LoginType: loginType
+            });
+
+            if (response && response.IsSuccessful) {
+                return { success: true, message: response.Message };
+            }
+            return rejectWithValue(response?.Message || 'Failed to update password');
+        } catch (error) {
+            const msg = error.response?.data?.Message || error.Message || error.message;
+            return rejectWithValue(msg || 'Failed to update password');
+        }
+    }
+);
+
 // IMPROVED: Load user from localStorage with better error handling
 export const loadUserFromStorage = createAsyncThunk(
     'auth/loadUserFromStorage',
@@ -337,25 +361,29 @@ const initialState = {
     roleData: null,
     roleId: null,
     userData: null,
+    isFirstTimeLogin: false,
     loading: {
         validateEmployee: false,
         validateUser: false,
         getEmployeeDetails: false,
         getMenu: false,
-        loadFromStorage: false
+        loadFromStorage: false,
+        changePassword: false
     },
     error: {
         validateEmployee: null,
         validateUser: null,
         getEmployeeDetails: null,
         getMenu: null,
-        loadFromStorage: null
+        loadFromStorage: null,
+        changePassword: null
     },
     success: {
         validateEmployee: false,
         validateUser: false,
         getEmployeeDetails: false,
-        getMenu: false
+        getMenu: false,
+        changePassword: false
     },
     lastActivity: null
 };
@@ -425,6 +453,7 @@ const authSlice = createSlice({
                 state.employeeValidated = true;
                 state.isAuthenticated = true; // Set to true so user can access /login-options
                 state.employeeId = action.meta.arg.employeeId;
+                state.isFirstTimeLogin = action.payload.data?.IsFirstTimeLogin === true;
                 state.lastActivity = new Date().toISOString();
                 state.error.validateEmployee = null;
             })
@@ -450,6 +479,7 @@ const authSlice = createSlice({
                 state.error.validateUser = null;
                 state.roleId = action.payload.roleId;
                 state.userData = action.payload.userData;
+                state.isFirstTimeLogin = action.payload.data?.IsFirstTimeLogin === true;
                 // IMPROVED: No redundant localStorage operations (handled in thunk)
             })
             .addCase(validateUser.rejected, (state, action) => {
@@ -504,6 +534,24 @@ const authSlice = createSlice({
                 console.log('❌ getMenu.rejected:', action.payload);
             })
             
+            // Change Password (first-time login)
+            .addCase(changePassword.pending, (state) => {
+                state.loading.changePassword = true;
+                state.error.changePassword = null;
+                state.success.changePassword = false;
+            })
+            .addCase(changePassword.fulfilled, (state) => {
+                state.loading.changePassword = false;
+                state.success.changePassword = true;
+                state.error.changePassword = null;
+                state.isFirstTimeLogin = false;
+            })
+            .addCase(changePassword.rejected, (state, action) => {
+                state.loading.changePassword = false;
+                state.error.changePassword = action.payload;
+                state.success.changePassword = false;
+            })
+
             // Load User from Storage - UPDATED FOR ROUTING APPROACH
             .addCase(loadUserFromStorage.pending, (state) => {
                 state.loading.loadFromStorage = true;

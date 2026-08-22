@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = 'http://localhost:57771/api';
+import { API_BASE_URL } from '../../config/apiConfig';
 
 // User Management Operations
 // -------------------------

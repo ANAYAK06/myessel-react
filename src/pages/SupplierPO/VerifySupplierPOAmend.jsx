@@ -13,7 +13,7 @@ import RemarksHistory    from '../../components/Inbox/RemarksHistory';
 import InboxSplitLayout  from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
-import { buildSupplierPOAmendUrl, getFileName } from '../../config/s3Config';
+import { buildSupplierPOUrl, buildSupplierPOAmendUrl, getFileName } from '../../config/s3Config';
 
 import {
     fetchSupplierPOAmendList,
@@ -108,9 +108,10 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
         return `${existingRemarks.trim()}||${formattedNewComment}`;
     };
 
-    const handleViewDoc = (filePath) => {
+    const handleViewDoc = (filePath, poType) => {
         if (!filePath) { toast.error('No document available'); return; }
-        setAttachmentUrl(buildSupplierPOAmendUrl(filePath));
+        const buildUrl = poType === 'Amend' ? buildSupplierPOAmendUrl : buildSupplierPOUrl;
+        setAttachmentUrl(buildUrl(filePath));
         setShowAttachmentModal(true);
     };
 
@@ -311,34 +312,46 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
 
     // ── Left panel card renderers ─────────────────────────────────────────────
 
-    const renderItemCard = (item) => {
+    const renderImpactBadge = (item) => {
         const hasPlus  = (item.PlusAmount || 0) > 0;
         const hasMinus = (item.MinusAmount || 0) > 0;
 
         return (
-            <div className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="w-11 h-11 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center shrink-0">
-                        <FileEdit className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.VendorName}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.PONo}</p>
-                    </div>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                        <Calendar className="w-3 h-3" /> {item.AmendDate}
+            <span className="flex items-center gap-2 whitespace-nowrap">
+                {hasPlus && (
+                    <span className="flex items-center gap-0.5 font-bold text-green-600 dark:text-green-400">
+                        <Plus className="w-3 h-3" />₹{formatIndianCurrency(item.PlusAmount)}
                     </span>
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                        ₹{formatIndianCurrency(item.AmendTotal || 0)}
-                        {hasPlus && <Plus className="w-3 h-3 text-green-600" />}
-                        {hasMinus && <Minus className="w-3 h-3 text-red-600" />}
+                )}
+                {hasMinus && (
+                    <span className="flex items-center gap-0.5 font-bold text-red-600 dark:text-red-400">
+                        <Minus className="w-3 h-3" />₹{formatIndianCurrency(item.MinusAmount)}
                     </span>
-                </div>
-            </div>
+                )}
+                {!hasPlus && !hasMinus && <span className="text-gray-400 dark:text-gray-500">—</span>}
+            </span>
         );
     };
+
+    const renderItemCard = (item) => (
+        <div className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+                <div className="w-11 h-11 rounded-full border-2 border-indigo-200 dark:border-indigo-600 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-800/40 dark:to-violet-800/40 flex items-center justify-center shrink-0">
+                    <FileEdit className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.VendorName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.PONo}</p>
+                </div>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                    <Calendar className="w-3 h-3" /> {item.AmendDate}
+                </span>
+                {renderImpactBadge(item)}
+            </div>
+        </div>
+    );
 
     const renderListItem = (item) => (
         <div className="flex items-center gap-x-6 gap-y-1 flex-wrap text-sm">
@@ -346,7 +359,7 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
             <span className="text-gray-500 dark:text-gray-400 min-w-[140px]">{item.PONo}</span>
             <span className="text-gray-500 dark:text-gray-400 min-w-[100px]">{item.AmendDate}</span>
             <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">{item.CCCode}</span>
-            <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{formatIndianCurrency(item.AmendTotal || 0)}</span>
+            <span className="ml-auto">{renderImpactBadge(item)}</span>
         </div>
     );
 
@@ -593,12 +606,12 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                                             <div className="min-w-0">
                                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{fileName}</p>
                                                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${doc.POType === 'Amend' ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
-                                                    {doc.POType}
+                                                    {doc.POType === 'Amend' ? `Amendment ${doc.POCount}` : 'Original PO'}
                                                 </span>
                                             </div>
                                         </div>
                                         <button
-                                            onClick={() => handleViewDoc(doc.Path)}
+                                            onClick={() => handleViewDoc(doc.Path, doc.POType)}
                                             className="ml-2 px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-medium shrink-0"
                                         >
                                             View

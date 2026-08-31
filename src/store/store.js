@@ -90,6 +90,8 @@ import staffAdvanceReducer from "../slices/HRSlice/staffAdvanceSlice";
 import staffAppraisalReducer from "../slices/HRSlice/staffAppraisalSlice";
 import staffCTCCreationReducer from "../slices/HRSlice/staffCTCCreationSlice";
 import staffAttendanceEntryReducer from "../slices/HRSlice/staffAttendanceEntrySlice";
+import staffReportingConfigReducer from "../slices/HRSlice/staffReportingConfigSlice";
+import employeePortalReducer from "../slices/HRSlice/employeePortalSlice";
 import cashVoucherReducer from "../slices/accountsSlice/cashVoucherSlice";
 import vendorCashPaymentReducer from "../slices/accountsSlice/vendorCashPaymentSlice";
 import ccCashTransferReducer from "../slices/accountsSlice/ccCashTransferSlice";
@@ -252,6 +254,8 @@ const store = configureStore({
     staffappraisal:  staffAppraisalReducer,
     staffCTCCreation:      staffCTCCreationReducer,
     staffAttendanceEntry:  staffAttendanceEntryReducer,
+    staffReportingConfig:  staffReportingConfigReducer,
+    employeePortal:        employeePortalReducer,
     cashvoucher:           cashVoucherReducer,
     vendorCashPayment:     vendorCashPaymentReducer,
     ccCashTransfer:        ccCashTransferReducer,

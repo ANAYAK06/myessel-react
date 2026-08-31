@@ -121,6 +121,7 @@ import TermLoanPayment from '../Accounts/TermLoanPayment';
 import AgencyCreation from '../Accounts/AgencyCreation';
 import ChatBot from '../../components/ChatBot/ChatBot';
 import LabourRuleConfig from '../HR/LabourRuleConfig';
+import StaffReportingConfiguration from '../HR/StaffReportingConfiguration';
 import ClientPOBudgetLimitConfig from '../Accounts/ClientPOBudgetLimitConfig';
 import CompanyDepreciationConfigure from '../Accounts/CompanyDepreciationConfigure';
 import CostCenterDayLimitConfig from '../Accounts/CostCenterDayLimitConfig';
@@ -857,6 +858,25 @@ const RoleBasedApplication = () => {
             name.includes('min wage config') ||
             route.includes('labourruleconfig') ||
             route.includes('labourconfig')
+        );
+    };
+
+    // Check if menu item should route to Staff Reporting Configuration page
+    const isStaffReportingConfigPage = (menuData) => {
+        if (!menuData) return false;
+        const path  = menuData.path?.toLowerCase()       || '';
+        const name  = menuData.name?.toLowerCase()       || '';
+        const route = menuData.reactRoute?.toLowerCase() || '';
+        return (
+            path === '/home/staffreportingconfiguration' ||
+            path.includes('staffreportingconfiguration') ||
+            path.includes('staffreportingconfig') ||
+            name.includes('staff reporting config') ||
+            name.includes('staffreportingconfig') ||
+            name.includes('reporting configuration') ||
+            name.includes('reporting connection') ||
+            route.includes('staffreportingconfiguration') ||
+            route.includes('staffreportingconfig')
         );
     };
 
@@ -1633,6 +1653,14 @@ const RoleBasedApplication = () => {
             console.log('✅ Rendering LabourSalaryReportPage for:', currentMenuData.name);
             return <LabourSalaryReportPage menuData={currentMenuData} />;
         }
+        // Staff Reporting Configuration — must be checked before isStaffReportPage below,
+        // since "Staff Reporting Configuration" starts with "staff report" and would
+        // otherwise be swallowed by that page's loose name-substring match.
+        if (currentMenuData && isStaffReportingConfigPage(currentMenuData)) {
+            console.log('✅ Rendering StaffReportingConfiguration for:', currentMenuData.name);
+            return <StaffReportingConfiguration menuData={currentMenuData} />;
+        }
+
         // check if the menu item should show staff report page
         if (currentMenuData && isStaffReportPage(currentMenuData)) {
             console.log('✅ Rendering StaffReportPage for:', currentMenuData.name);

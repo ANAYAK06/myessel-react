@@ -317,18 +317,13 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
         const hasMinus = (item.MinusAmount || 0) > 0;
 
         return (
-            <span className="flex items-center gap-2 whitespace-nowrap">
-                {hasPlus && (
-                    <span className="flex items-center gap-0.5 font-bold text-green-600 dark:text-green-400">
-                        <Plus className="w-3 h-3" />₹{formatIndianCurrency(item.PlusAmount)}
-                    </span>
-                )}
-                {hasMinus && (
-                    <span className="flex items-center gap-0.5 font-bold text-red-600 dark:text-red-400">
-                        <Minus className="w-3 h-3" />₹{formatIndianCurrency(item.MinusAmount)}
-                    </span>
-                )}
-                {!hasPlus && !hasMinus && <span className="text-gray-400 dark:text-gray-500">—</span>}
+            <span
+                className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 whitespace-nowrap"
+                title="Amendment difference value"
+            >
+                ₹{formatIndianCurrency(item.AmendDiffValue || 0)}
+                {hasPlus && <Plus className="w-3 h-3 text-green-600" />}
+                {hasMinus && <Minus className="w-3 h-3 text-red-600" />}
             </span>
         );
     };

@@ -13,7 +13,7 @@ import RemarksHistory    from '../../components/Inbox/RemarksHistory';
 import InboxSplitLayout  from '../../components/Inbox/InboxSplitLayout';
 import VerificationInput from '../../components/Inbox/VerificationInput';
 
-import { buildSupplierPOUrl, getFileName } from '../../config/s3Config';
+import { buildSupplierPOAmendUrl, getFileName } from '../../config/s3Config';
 
 import {
     fetchSupplierPOAmendList,
@@ -110,7 +110,7 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
 
     const handleViewDoc = (filePath) => {
         if (!filePath) { toast.error('No document available'); return; }
-        setAttachmentUrl(buildSupplierPOUrl(filePath));
+        setAttachmentUrl(buildSupplierPOAmendUrl(filePath));
         setShowAttachmentModal(true);
     };
 
@@ -421,7 +421,7 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
                         <div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Amend PO No</p>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.AmendPONO}</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.AmendPONO}{d.SerialNo != null ? ` (Amendment No: ${d.SerialNo})` : ''}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Vendor Code</p>
@@ -429,11 +429,27 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Cost Center</p>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.CCCode}</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.CCCode} {d.CCName ? `– ${d.CCName}` : ''}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Amend Date</p>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">{d.AmendDate}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">PO Date</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.PODate || '—'}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">PO Expire Date</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.POExpireDate || '—'}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">MRR Type</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.MRRType || '—'}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Reference</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{d.RefNo || '—'}{d.RefDate ? ` (${d.RefDate})` : ''}</p>
                         </div>
                     </div>
                 </div>
@@ -444,6 +460,14 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                             <TrendingUp className="w-3.5 h-3.5" /> Amendment Value Breakdown
                         </p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Excess PO Value (+)</p>
+                                <p className="text-sm font-bold text-green-600 dark:text-green-400">₹{formatIndianCurrency(detail.PlusAmount || 0)}</p>
+                            </div>
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Reduced PO Value (-)</p>
+                                <p className="text-sm font-bold text-red-600 dark:text-red-400">₹{formatIndianCurrency(detail.MinusAmount || 0)}</p>
+                            </div>
                             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Old PO Value</p>
                                 <p className="text-sm font-bold text-gray-800 dark:text-gray-200">₹{formatIndianCurrency(detail.OldPOValue || 0)}</p>
@@ -478,12 +502,19 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                                 <thead>
                                     <tr className="bg-indigo-100/60 dark:bg-indigo-900/20">
                                         <th className="px-3 py-2 text-left font-bold text-indigo-700 dark:text-indigo-300 uppercase">Item</th>
-                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Current Qty</th>
+                                        <th className="px-3 py-2 text-left font-bold text-indigo-700 dark:text-indigo-300 uppercase">HSN</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Units</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Previous Qty</th>
                                         <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Amend Qty</th>
-                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">New Qty</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Revised Qty</th>
+                                        <th className="px-3 py-2 text-right font-bold text-indigo-700 dark:text-indigo-300 uppercase">Quoted Price</th>
                                         <th className="px-3 py-2 text-right font-bold text-indigo-700 dark:text-indigo-300 uppercase">Std. Price</th>
+                                        <th className="px-3 py-2 text-right font-bold text-indigo-700 dark:text-indigo-300 uppercase">Purchase Price</th>
                                         <th className="px-3 py-2 text-right font-bold text-indigo-700 dark:text-indigo-300 uppercase">Amount</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">CGST%</th>
+                                        <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">SGST%</th>
                                         <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 uppercase">Type</th>
+                                        <th className="px-3 py-2 text-left font-bold text-indigo-700 dark:text-indigo-300 uppercase">Remarks</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -496,7 +527,9 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                                                     <p className="text-gray-400 dark:text-gray-500">{item.specification}</p>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-2 text-center font-medium text-gray-900 dark:text-white">{item.CurrentQty ?? '-'}</td>
+                                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300 font-mono">{item.HSNCode || '-'}</td>
+                                            <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{item.units || '-'}</td>
+                                            <td className="px-3 py-2 text-center font-medium text-gray-900 dark:text-white">{item.quantity ?? item.CurrentQty ?? '-'}</td>
                                             <td className="px-3 py-2 text-center">
                                                 {item.AmendQty ? (
                                                     <span className={`font-medium ${item.AmendType?.toLowerCase() === 'substract' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
@@ -505,13 +538,17 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                                                 ) : '-'}
                                             </td>
                                             <td className="px-3 py-2 text-center font-medium text-gray-900 dark:text-white">{item.PONewQty ?? '-'}</td>
-                                            <td className="px-3 py-2 text-right font-medium text-indigo-700 dark:text-indigo-400">₹{formatIndianCurrency(item.basicprice || 0)}</td>
+                                            <td className="px-3 py-2 text-right font-medium text-gray-700 dark:text-gray-300">₹{formatIndianCurrency(item.POQuotedPrice || 0)}</td>
+                                            <td className="px-3 py-2 text-right font-medium text-indigo-700 dark:text-indigo-400">₹{formatIndianCurrency(item.basicprice || item.POStandardPrice || 0)}</td>
+                                            <td className="px-3 py-2 text-right font-medium text-gray-900 dark:text-white">₹{formatIndianCurrency(item.POPurchasePrice || 0)}</td>
                                             <td className="px-3 py-2 text-right font-bold text-gray-900 dark:text-white">
                                                 ₹{formatIndianCurrency(item.Amount || 0)}
                                                 {item.OldAmount != null && item.OldAmount !== item.Amount && (
                                                     <span className="block text-gray-400 dark:text-gray-500 font-normal">was ₹{formatIndianCurrency(item.OldAmount)}</span>
                                                 )}
                                             </td>
+                                            <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{item.CGSTPercent ?? '-'}</td>
+                                            <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{item.SGSTPercent ?? '-'}</td>
                                             <td className="px-3 py-2 text-center">
                                                 {item.AmendType && (
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.AmendType.toLowerCase() === 'substract' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'}`}>
@@ -519,6 +556,7 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                                                     </span>
                                                 )}
                                             </td>
+                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{item.ItemRemark || '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>

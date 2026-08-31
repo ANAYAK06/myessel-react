@@ -20,6 +20,7 @@ export const S3_FOLDERS = {
     CC_BUDGET_AMENDMENT: 'AmendCCBudgetPROD',
     PURCHASE_ORDER: 'PurchaseOrders',
     SUPPLIER_PO: 'SupplierPOPROD',
+    SUPPLIER_PO_AMENDMENTS: 'SupplierAmendPOPROD',
     STAFF_DOCUMENTS: 'StaffDocuments',
     LEAVE_ATTACHMENTS: 'LeaveAttachments',
     SPPO_AMENDMENTS: 'SPPOAmendPROD',
@@ -61,6 +62,10 @@ export const buildPurchaseOrderUrl = (filePath) => {
 
 export const buildSupplierPOUrl = (filePath) => {
     return buildS3Url(S3_FOLDERS.SUPPLIER_PO, filePath);
+};
+
+export const buildSupplierPOAmendUrl = (filePath) => {
+    return buildS3Url(S3_FOLDERS.SUPPLIER_PO_AMENDMENTS, filePath);
 };
 
 export const buildStaffDocumentUrl = (filePath) => {
@@ -139,6 +144,7 @@ export default {
     buildCCBudgetAmendmentUrl,
     buildPurchaseOrderUrl,
     buildSupplierPOUrl,
+    buildSupplierPOAmendUrl,
     buildStaffDocumentUrl,
     buildLeaveAttachmentUrl,
     getFileName,

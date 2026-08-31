@@ -330,10 +330,7 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                     <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                         <Calendar className="w-3 h-3" /> {item.AmendDate}
                     </span>
-                    <span
-                        className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1"
-                        title="Additional budget required (Purchase Price vs Standard Price difference)"
-                    >
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
                         ₹{formatIndianCurrency(item.AmendTotal || 0)}
                         {hasPlus && <Plus className="w-3 h-3 text-green-600" />}
                         {hasMinus && <Minus className="w-3 h-3 text-red-600" />}
@@ -349,12 +346,7 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
             <span className="text-gray-500 dark:text-gray-400 min-w-[140px]">{item.PONo}</span>
             <span className="text-gray-500 dark:text-gray-400 min-w-[100px]">{item.AmendDate}</span>
             <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">{item.CCCode}</span>
-            <span
-                className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap"
-                title="Additional budget required (Purchase Price vs Standard Price difference)"
-            >
-                ₹{formatIndianCurrency(item.AmendTotal || 0)}
-            </span>
+            <span className="ml-auto font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">₹{formatIndianCurrency(item.AmendTotal || 0)}</span>
         </div>
     );
 
@@ -422,12 +414,6 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                                 <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">₹{formatIndianCurrency(detail.RevisedValue || 0)}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Revised PO Value</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Old Value: ₹{formatIndianCurrency(detail.OldPOValue || 0)}</p>
-                                <p
-                                    className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-1"
-                                    title="Difference between Standard Price and Purchase Price — additional budget to be sanctioned for this amendment"
-                                >
-                                    Addl. Budget Required: ₹{formatIndianCurrency(detail.AmendTotal || 0)}
-                                </p>
                             </div>
                         )}
                     </div>
@@ -474,11 +460,6 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
                             <TrendingUp className="w-3.5 h-3.5" /> Amendment Value Breakdown
                         </p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border-2 border-amber-300 dark:border-amber-700">
-                                <p className="text-xs text-amber-700 dark:text-amber-400 mb-1 font-semibold">Addl. Budget Required</p>
-                                <p className="text-sm font-bold text-amber-700 dark:text-amber-400">₹{formatIndianCurrency(detail.AmendTotal || 0)}</p>
-                                <p className="text-[10px] text-amber-600/80 dark:text-amber-500/80 mt-0.5">Std. Price vs Purchase Price diff.</p>
-                            </div>
                             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Excess PO Value (+)</p>
                                 <p className="text-sm font-bold text-green-600 dark:text-green-400">₹{formatIndianCurrency(detail.PlusAmount || 0)}</p>

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { ArrowRight, CheckCircle2, UserCheck } from 'lucide-react';
-import { PageHeader, DemoBanner, SectionCard, FormField, PrimaryButton, SecondaryButton, inputClass } from './PortalUI';
+import { PageHeader, SectionCard, FormField, PrimaryButton, SecondaryButton, inputClass } from './PortalUI';
 import CustomDatePicker from '../../../components/CustomDatePicker';
 
 /**
- * Reusable dummy request-form page.
+ * Reusable request-form page.
  * fields: [{ name, label, type: 'text'|'textarea'|'date'|'number'|'select', required, options, placeholder, span }]
  */
-const RequestFormBase = ({ title, subtitle, icon: Icon, fields, submitLabel = 'Submit Request', reportingPersonName = 'your reporting person', onSubmit, isDemo = true, sidePanel }) => {
+const RequestFormBase = ({ title, subtitle, icon: Icon, fields, submitLabel = 'Submit Request', reportingPersonName = 'your reporting person', onSubmit, sidePanel }) => {
     const initial = Object.fromEntries(fields.map((f) => [f.name, '']));
     const [values, setValues] = useState(initial);
     const [submitted, setSubmitted] = useState(false);
@@ -21,12 +21,6 @@ const RequestFormBase = ({ title, subtitle, icon: Icon, fields, submitLabel = 'S
         const missing = fields.filter((f) => f.required && !values[f.name]);
         if (missing.length) {
             toast.error(`Please fill: ${missing.map((f) => f.label).join(', ')}`);
-            return;
-        }
-
-        if (!onSubmit) {
-            setSubmitted(true);
-            toast.success('Request submitted (demo) — routed to your reporting person for verification.');
             return;
         }
 
@@ -50,7 +44,6 @@ const RequestFormBase = ({ title, subtitle, icon: Icon, fields, submitLabel = 'S
     return (
         <div>
             <PageHeader title={title} subtitle={subtitle} icon={Icon} />
-            {isDemo && <DemoBanner text="Demo preview — this form does not submit to a live workflow yet. Submission is simulated." />}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2">

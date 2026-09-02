@@ -90,7 +90,6 @@ const RequestAdvance = ({ employeeData }) => {
             fields={fields}
             submitLabel="Submit Advance Request"
             onSubmit={handleSubmit}
-            isDemo={false}
             sidePanel={sidePanel}
             reportingPersonName={reportingPerson?.EmployeeName?.trim() || 'your reporting person'}
         />

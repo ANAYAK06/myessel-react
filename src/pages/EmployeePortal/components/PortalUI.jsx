@@ -1,5 +1,13 @@
 import React from 'react';
-import { Sparkles, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Construction, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+
+// Status pill colours shared by My Requests, the dashboard recent-requests list, etc.
+export const requestStatusStyles = {
+    Pending: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+    Verified: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+    Approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
+    Rejected: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+};
 
 export const PageHeader = ({ title, subtitle, icon: Icon, action }) => (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
@@ -18,10 +26,13 @@ export const PageHeader = ({ title, subtitle, icon: Icon, action }) => (
     </div>
 );
 
-export const DemoBanner = ({ text = 'Demo preview — sample data shown for illustration. Not connected to live records.' }) => (
-    <div className="flex items-start gap-2 mb-5 px-3.5 py-2.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20">
-        <Sparkles className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
-        <p className="text-xs text-orange-700 dark:text-orange-300">{text}</p>
+export const UnderDevelopment = ({ note = 'This section is being built and will be available soon.' }) => (
+    <div className="flex flex-col items-center justify-center text-center py-20 px-4">
+        <div className="w-16 h-16 rounded-2xl bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 flex items-center justify-center mb-4">
+            <Construction className="w-8 h-8 text-orange-500" />
+        </div>
+        <p className="text-lg font-bold text-[#0d1b5e] dark:text-white">Under Development</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 max-w-sm">{note}</p>
     </div>
 );
 

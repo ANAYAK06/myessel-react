@@ -120,7 +120,6 @@ const RequestLeave = ({ employeeData }) => {
             fields={fields}
             submitLabel="Submit Leave Request"
             onSubmit={handleSubmit}
-            isDemo={false}
             sidePanel={sidePanel}
             reportingPersonName={reportingPerson?.EmployeeName?.trim() || 'your reporting person'}
         />

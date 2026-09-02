@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ListChecks } from 'lucide-react';
-import { PageHeader, SectionCard, Badge, EmptyState } from '../components/PortalUI';
-import { requestStatusStyles } from '../data/dummyData';
+import { PageHeader, SectionCard, Badge, EmptyState, requestStatusStyles } from '../components/PortalUI';
 import { fetchMyPortalRequests } from '../../../slices/HRSlice/employeePortalSlice';
 
 const tabs = ['All', 'Pending', 'Approved', 'Rejected'];

@@ -2,10 +2,9 @@ import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     CalendarCheck, Clock, Wallet, ListChecks, ArrowRight, Bell,
-    PlaneTakeoff, Receipt, ClipboardCheck,
+    CreditCard, ClipboardCheck,
 } from 'lucide-react';
-import { PageHeader, SectionCard, StatCard, Badge } from '../components/PortalUI';
-import { requestStatusStyles } from '../data/dummyData';
+import { PageHeader, SectionCard, StatCard, Badge, requestStatusStyles } from '../components/PortalUI';
 import {
     fetchMyLeaveBalances, fetchMyPayslipList, fetchMyAttendance, fetchMyPortalRequests,
 } from '../../../slices/HRSlice/employeePortalSlice';
@@ -14,15 +13,9 @@ const leaveBarColors = ['bg-blue-500', 'bg-orange-500', 'bg-emerald-500', 'bg-ro
 
 const quickActions = [
     { key: 'request-leave', label: 'Request Leave', icon: CalendarCheck },
-    { key: 'request-lta', label: 'Request LTA', icon: PlaneTakeoff },
-    { key: 'request-reimbursement', label: 'Reimbursement', icon: Receipt },
+    { key: 'request-advance', label: 'Request Advance', icon: Wallet },
     { key: 'my-requests', label: 'My Requests', icon: ListChecks },
-];
-
-const announcements = [
-    { title: 'Independence Day — Office Holiday', date: '2026-08-15', tag: 'Holiday' },
-    { title: 'Half-yearly performance review window opens', date: '2026-09-01', tag: 'HR' },
-    { title: 'Updated travel & LTA claim policy circulated', date: '2026-08-05', tag: 'Policy' },
+    { key: 'loan-advance-status', label: 'Loan / Advance', icon: CreditCard },
 ];
 
 const DashboardHome = ({ fullName, designation, onNavigate, isReportingPerson, employeeData }) => {
@@ -155,22 +148,7 @@ const DashboardHome = ({ fullName, designation, onNavigate, isReportingPerson, e
                 </SectionCard>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
-                {/* Announcements */}
-                <SectionCard title="Announcements" className="lg:col-span-2">
-                    <div className="space-y-3">
-                        {announcements.map((a, i) => (
-                            <div key={i} className="flex items-start gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{a.title}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{a.date} · {a.tag}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </SectionCard>
-
+            <div className="mt-5">
                 {/* Reporting person callout */}
                 {isReportingPerson ? (
                     <SectionCard title="Team Approvals" icon={ClipboardCheck}>

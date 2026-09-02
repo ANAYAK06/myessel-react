@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { Star, ClipboardList, CheckCircle2, Lock } from 'lucide-react';
+import { Star, ClipboardList, CheckCircle2, Lock, Pencil } from 'lucide-react';
 import {
     PageHeader, SectionCard, Badge, EmptyState, InfoRow,
     PrimaryButton, SecondaryButton, inputClass,
@@ -16,35 +16,85 @@ import {
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i);
-const SCALE = Array.from({ length: 10 }, (_, i) => i + 1);
 
 const staffTypeBadge = (t) =>
     t === 'Site'
         ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
         : 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400';
 
-const RatingScale = ({ value, onChange, disabled }) => (
-    <div className="flex flex-wrap gap-1.5">
-        {SCALE.map((n) => {
-            const active = Number(value) === n;
-            return (
-                <button
-                    key={n}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => onChange(active ? null : n)}
-                    className={`w-8 h-8 rounded-lg text-xs font-semibold border transition-colors
-                        ${active
-                            ? 'bg-[#0d1b5e] dark:bg-orange-500 text-white border-transparent'
-                            : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-orange-400'}
-                        ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                >
-                    {n}
-                </button>
-            );
-        })}
-    </div>
-);
+const scoreTone = (n) =>
+    n == null ? 'bg-gray-100 text-gray-400 dark:bg-white/10 dark:text-gray-500'
+        : n <= 3 ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300'
+            : n <= 6 ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
+                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300';
+
+const toneHex = (n) =>
+    n == null ? '#94a3b8' : n <= 3 ? '#e11d48' : n <= 6 ? '#f59e0b' : '#10b981';
+
+// One evaluation category — vertical card with a slider score + an optional-remark pencil.
+const CategoryCard = ({ line, rating, remark, remarkOpen, readOnly, onRate, onRemark, onToggleRemark }) => {
+    const showRemark = readOnly ? !!remark : remarkOpen;
+    return (
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.03] p-4">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{line.CategoryName}</p>
+                    {line.Description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{line.Description}</p>
+                    )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className={`w-9 h-8 rounded-lg text-xs font-bold flex items-center justify-center ${scoreTone(rating)}`}>
+                        {rating != null ? rating : '—'}
+                    </span>
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            onClick={onToggleRemark}
+                            title={remark ? 'Edit remark' : 'Add optional remark'}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors
+                                ${remark || remarkOpen
+                                    ? 'border-orange-300 text-orange-500 bg-orange-50 dark:bg-orange-500/10 dark:border-orange-400/40'
+                                    : 'border-gray-300 dark:border-gray-600 text-gray-400 hover:text-orange-500 hover:border-orange-400'}`}
+                        >
+                            <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-3">
+                <input
+                    type="range"
+                    min={0}
+                    max={10}
+                    step={1}
+                    disabled={readOnly}
+                    value={rating ?? 0}
+                    onChange={(e) => { const n = Number(e.target.value); onRate(n === 0 ? null : n); }}
+                    style={{ accentColor: toneHex(rating) }}
+                    className="w-full h-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400 mt-1 select-none">
+                    <span>1 · Poor</span>
+                    <span>{rating == null ? 'Drag to rate' : ''}</span>
+                    <span>Excellent · 10</span>
+                </div>
+            </div>
+
+            {showRemark && (
+                <input
+                    type="text"
+                    disabled={readOnly}
+                    value={remark || ''}
+                    onChange={(e) => onRemark(e.target.value)}
+                    placeholder="Optional note for this category"
+                    className={`${inputClass} mt-3 ${readOnly ? 'opacity-70' : ''}`}
+                />
+            )}
+        </div>
+    );
+};
 
 const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
     const dispatch = useDispatch();
@@ -55,8 +105,9 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
 
     const [selectedEmp, setSelectedEmp] = useState(navPayload?.empRefNo || '');
     const [year, setYear] = useState(navPayload?.year || CURRENT_YEAR);
-    const [ratings, setRatings] = useState({});      // { [categoryId]: 1..10 }
-    const [remarks, setRemarks] = useState({});      // { [categoryId]: string }
+    const [ratings, setRatings] = useState({});          // { [categoryId]: 1..10 }
+    const [remarks, setRemarks] = useState({});          // { [categoryId]: string }
+    const [openRemarks, setOpenRemarks] = useState({});  // { [categoryId]: true } — remark row shown
     const [overallRemarks, setOverallRemarks] = useState('');
     const [saving, setSaving] = useState(false);
 
@@ -92,13 +143,14 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
 
     // Seed local form state whenever a fresh evaluation loads.
     useEffect(() => {
-        const r = {}; const rm = {};
+        const r = {}; const rm = {}; const or = {};
         lines.forEach((l) => {
             if (l.Rating != null) r[l.CategoryId] = l.Rating;
-            if (l.Remarks) rm[l.CategoryId] = l.Remarks;
+            if (l.Remarks) { rm[l.CategoryId] = l.Remarks; or[l.CategoryId] = true; }
         });
         setRatings(r);
         setRemarks(rm);
+        setOpenRemarks(or);
         setOverallRemarks(ctx?.OverallRemarks || '');
     }, [lines, ctx]);
 
@@ -235,33 +287,19 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
                         {lines.length === 0 ? (
                             <EmptyState icon={Star} title="No categories" subtitle="No active evaluation categories are configured for this staff type." />
                         ) : (
-                            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {lines.map((l) => (
-                                    <div key={l.CategoryId} className="py-4 first:pt-0 last:pb-0">
-                                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-                                            <div className="min-w-0 lg:max-w-sm">
-                                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{l.CategoryName}</p>
-                                                {l.Description && (
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{l.Description}</p>
-                                                )}
-                                            </div>
-                                            <div className="shrink-0">
-                                                <RatingScale
-                                                    value={ratings[l.CategoryId]}
-                                                    disabled={readOnly}
-                                                    onChange={(v) => setRatings((p) => ({ ...p, [l.CategoryId]: v }))}
-                                                />
-                                            </div>
-                                        </div>
-                                        <input
-                                            type="text"
-                                            disabled={readOnly}
-                                            value={remarks[l.CategoryId] || ''}
-                                            onChange={(e) => setRemarks((p) => ({ ...p, [l.CategoryId]: e.target.value }))}
-                                            placeholder="Optional note for this category"
-                                            className={`${inputClass} mt-2.5 ${readOnly ? 'opacity-70' : ''}`}
-                                        />
-                                    </div>
+                                    <CategoryCard
+                                        key={l.CategoryId}
+                                        line={l}
+                                        rating={ratings[l.CategoryId] ?? null}
+                                        remark={remarks[l.CategoryId] || ''}
+                                        remarkOpen={!!openRemarks[l.CategoryId]}
+                                        readOnly={readOnly}
+                                        onRate={(v) => setRatings((p) => ({ ...p, [l.CategoryId]: v }))}
+                                        onRemark={(v) => setRemarks((p) => ({ ...p, [l.CategoryId]: v }))}
+                                        onToggleRemark={() => setOpenRemarks((p) => ({ ...p, [l.CategoryId]: !p[l.CategoryId] }))}
+                                    />
                                 ))}
                             </div>
                         )}

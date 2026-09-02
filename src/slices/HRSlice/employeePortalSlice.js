@@ -123,6 +123,95 @@ export const fetchMyLoanAdvanceStatus = createAsyncThunk(
     }
 );
 
+// GET this employee's plain loan/advance list — one row per approved Running/Closed loan
+// (AdvanceType, LTAValue, LTABalance, EMI, NoOfInstallments, NoOfBalanceInstallments, EMIStartDate, LoanStatus)
+export const fetchMyLoanDetails = createAsyncThunk(
+    'employeePortal/fetchMyLoanDetails',
+    async (empRefNo, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.getMyLoanDetails(empRefNo);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to fetch loan details');
+        }
+    }
+);
+
+// ─── Reporting-person pre-verification queue ───────────────────────────────────
+
+// GET portal requests awaiting this reporting person's Accept / Reject
+export const fetchPortalPendingApprovals = createAsyncThunk(
+    'employeePortal/fetchPortalPendingApprovals',
+    async (empRefNo, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.getPortalPendingApprovals(empRefNo);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to fetch pending approvals');
+        }
+    }
+);
+
+// POST the reporting person's Accept / Reject decision on a portal leave request
+export const actionPortalLeaveRequest = createAsyncThunk(
+    'employeePortal/actionPortalLeaveRequest',
+    async (data, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.actionPortalLeaveRequest(data);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to submit decision');
+        }
+    }
+);
+
+// POST submit an Advance Request from the portal (into the pre-verification staging table)
+export const submitPortalAdvanceRequest = createAsyncThunk(
+    'employeePortal/submitPortalAdvanceRequest',
+    async (data, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.submitPortalAdvanceRequest(data);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to submit advance request');
+        }
+    }
+);
+
+// Routes an Accept/Reject to the right endpoint based on the request kind (leave / advance).
+export const actionPortalRequest = createAsyncThunk(
+    'employeePortal/actionPortalRequest',
+    async (data, { rejectWithValue }) => {
+        try {
+            return (data.RequestType === 'Advance')
+                ? await employeePortalAPI.actionPortalAdvanceRequest(data)
+                : await employeePortalAPI.actionPortalLeaveRequest(data);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to submit decision');
+        }
+    }
+);
+
+// GET whether this employee is a reporting person for anyone
+export const fetchIsPortalReportingPerson = createAsyncThunk(
+    'employeePortal/fetchIsPortalReportingPerson',
+    async (empRefNo, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.getIsPortalReportingPerson(empRefNo);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to resolve reporting-person status');
+        }
+    }
+);
+
+// GET the requests this employee has raised from the portal + their status
+export const fetchMyPortalRequests = createAsyncThunk(
+    'employeePortal/fetchMyPortalRequests',
+    async (empRefNo, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.getMyPortalRequests(empRefNo);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to fetch your requests');
+        }
+    }
+);
+
 // GET this employee's uploaded documents (photo, ID proofs, etc.) — reuses the same endpoint
 // the HR Staff Registration verifier uses to show the attachment photo (GetEmployeeDocuments,
 // filtered by the caller for DocName === 'Photo').
@@ -167,6 +256,9 @@ const initialState = {
     leaveRequestSaveResult: null,
     leaveRequestSaveStatus: null, // null | 'pending' | 'success' | 'failed'
 
+    advanceRequestSaveResult: null,
+    advanceRequestSaveStatus: null, // null | 'pending' | 'success' | 'failed'
+
     payslipList: [],
     payslipDetail: null,
     pfEsiHistory: null,
@@ -174,12 +266,21 @@ const initialState = {
     leaveBalances: [],
     documents: [],
     loanAdvanceStatus: null,
+    loanDetails: [],
+
+    // Reporting-person pre-verification queue
+    portalPendingApprovals: [],
+    portalApprovalActionResult: null,
+    portalApprovalActionStatus: null, // null | 'pending' | 'success' | 'failed'
+    isPortalReportingPerson: false,
+    myPortalRequests: [],
 
     loading: {
         leaveTypes: false,
         leaveApplicationContext: false,
         reportingPerson: false,
         leaveRequestSave: false,
+        advanceRequestSave: false,
         payslipList: false,
         payslipDetail: false,
         pfEsiHistory: false,
@@ -187,12 +288,18 @@ const initialState = {
         leaveBalances: false,
         documents: false,
         loanAdvanceStatus: false,
+        loanDetails: false,
+        portalPendingApprovals: false,
+        portalApprovalAction: false,
+        isPortalReportingPerson: false,
+        myPortalRequests: false,
     },
     errors: {
         leaveTypes: null,
         leaveApplicationContext: null,
         reportingPerson: null,
         leaveRequestSave: null,
+        advanceRequestSave: null,
         payslipList: null,
         payslipDetail: null,
         pfEsiHistory: null,
@@ -200,6 +307,11 @@ const initialState = {
         leaveBalances: null,
         documents: null,
         loanAdvanceStatus: null,
+        loanDetails: null,
+        portalPendingApprovals: null,
+        portalApprovalAction: null,
+        isPortalReportingPerson: null,
+        myPortalRequests: null,
     },
 };
 
@@ -213,9 +325,19 @@ const employeePortalSlice = createSlice({
             state.leaveRequestSaveStatus = null;
             state.errors.leaveRequestSave = null;
         },
+        clearAdvanceRequestSaveResult(state) {
+            state.advanceRequestSaveResult = null;
+            state.advanceRequestSaveStatus = null;
+            state.errors.advanceRequestSave = null;
+        },
         clearPayslipDetail(state) {
             state.payslipDetail = null;
             state.errors.payslipDetail = null;
+        },
+        clearPortalApprovalActionResult(state) {
+            state.portalApprovalActionResult = null;
+            state.portalApprovalActionStatus = null;
+            state.errors.portalApprovalAction = null;
         },
         resetAll: () => initialState,
     },
@@ -290,6 +412,29 @@ const employeePortalSlice = createSlice({
                 state.loading.leaveRequestSave = false;
                 state.leaveRequestSaveStatus = 'failed';
                 state.errors.leaveRequestSave = action.payload;
+            });
+
+        // 4b. submitPortalAdvanceRequest
+        builder
+            .addCase(submitPortalAdvanceRequest.pending, (state) => {
+                state.loading.advanceRequestSave = true;
+                state.advanceRequestSaveStatus = 'pending';
+                state.errors.advanceRequestSave = null;
+                state.advanceRequestSaveResult = null;
+            })
+            .addCase(submitPortalAdvanceRequest.fulfilled, (state, action) => {
+                state.loading.advanceRequestSave = false;
+                const resultText = action.payload?.Data;
+                state.advanceRequestSaveResult = resultText;
+                state.advanceRequestSaveStatus = isSubmitSuccess(resultText) ? 'success' : 'failed';
+                if (!isSubmitSuccess(resultText)) {
+                    state.errors.advanceRequestSave = (resultText || '').replace('Error$', '') || 'Failed to submit advance request';
+                }
+            })
+            .addCase(submitPortalAdvanceRequest.rejected, (state, action) => {
+                state.loading.advanceRequestSave = false;
+                state.advanceRequestSaveStatus = 'failed';
+                state.errors.advanceRequestSave = action.payload;
             });
 
         // 5. fetchMyPayslipList
@@ -403,12 +548,130 @@ const employeePortalSlice = createSlice({
                 state.errors.loanAdvanceStatus = action.payload;
                 state.loanAdvanceStatus = null;
             });
+
+        // 12. fetchMyLoanDetails
+        builder
+            .addCase(fetchMyLoanDetails.pending, (state) => {
+                state.loading.loanDetails = true;
+                state.errors.loanDetails = null;
+            })
+            .addCase(fetchMyLoanDetails.fulfilled, (state, action) => {
+                state.loading.loanDetails = false;
+                state.loanDetails = asArray(action.payload);
+            })
+            .addCase(fetchMyLoanDetails.rejected, (state, action) => {
+                state.loading.loanDetails = false;
+                state.errors.loanDetails = action.payload;
+                state.loanDetails = [];
+            });
+
+        // 13. fetchPortalPendingApprovals
+        builder
+            .addCase(fetchPortalPendingApprovals.pending, (state) => {
+                state.loading.portalPendingApprovals = true;
+                state.errors.portalPendingApprovals = null;
+            })
+            .addCase(fetchPortalPendingApprovals.fulfilled, (state, action) => {
+                state.loading.portalPendingApprovals = false;
+                state.portalPendingApprovals = asArray(action.payload);
+            })
+            .addCase(fetchPortalPendingApprovals.rejected, (state, action) => {
+                state.loading.portalPendingApprovals = false;
+                state.errors.portalPendingApprovals = action.payload;
+                state.portalPendingApprovals = [];
+            });
+
+        // 14. actionPortalLeaveRequest
+        builder
+            .addCase(actionPortalLeaveRequest.pending, (state) => {
+                state.loading.portalApprovalAction = true;
+                state.portalApprovalActionStatus = 'pending';
+                state.errors.portalApprovalAction = null;
+                state.portalApprovalActionResult = null;
+            })
+            .addCase(actionPortalLeaveRequest.fulfilled, (state, action) => {
+                state.loading.portalApprovalAction = false;
+                const resultText = action.payload?.Data;
+                const ok = typeof resultText === 'string' &&
+                    (resultText.startsWith('Approved') || resultText.startsWith('Rejected'));
+                state.portalApprovalActionResult = resultText;
+                state.portalApprovalActionStatus = ok ? 'success' : 'failed';
+                if (!ok) {
+                    state.errors.portalApprovalAction =
+                        (resultText || '').replace('Error$', '') || 'Failed to submit decision';
+                }
+            })
+            .addCase(actionPortalLeaveRequest.rejected, (state, action) => {
+                state.loading.portalApprovalAction = false;
+                state.portalApprovalActionStatus = 'failed';
+                state.errors.portalApprovalAction = action.payload;
+            });
+
+        // 14b. actionPortalRequest (leave or advance, routed by RequestType)
+        builder
+            .addCase(actionPortalRequest.pending, (state) => {
+                state.loading.portalApprovalAction = true;
+                state.portalApprovalActionStatus = 'pending';
+                state.errors.portalApprovalAction = null;
+                state.portalApprovalActionResult = null;
+            })
+            .addCase(actionPortalRequest.fulfilled, (state, action) => {
+                state.loading.portalApprovalAction = false;
+                const resultText = action.payload?.Data;
+                const ok = typeof resultText === 'string' &&
+                    (resultText.startsWith('Approved') || resultText.startsWith('Rejected'));
+                state.portalApprovalActionResult = resultText;
+                state.portalApprovalActionStatus = ok ? 'success' : 'failed';
+                if (!ok) {
+                    state.errors.portalApprovalAction =
+                        (resultText || '').replace('Error$', '') || 'Failed to submit decision';
+                }
+            })
+            .addCase(actionPortalRequest.rejected, (state, action) => {
+                state.loading.portalApprovalAction = false;
+                state.portalApprovalActionStatus = 'failed';
+                state.errors.portalApprovalAction = action.payload;
+            });
+
+        // 15. fetchIsPortalReportingPerson
+        builder
+            .addCase(fetchIsPortalReportingPerson.pending, (state) => {
+                state.loading.isPortalReportingPerson = true;
+                state.errors.isPortalReportingPerson = null;
+            })
+            .addCase(fetchIsPortalReportingPerson.fulfilled, (state, action) => {
+                state.loading.isPortalReportingPerson = false;
+                state.isPortalReportingPerson = action.payload?.Data === true;
+            })
+            .addCase(fetchIsPortalReportingPerson.rejected, (state, action) => {
+                state.loading.isPortalReportingPerson = false;
+                state.errors.isPortalReportingPerson = action.payload;
+                state.isPortalReportingPerson = false;
+            });
+
+        // 16. fetchMyPortalRequests
+        builder
+            .addCase(fetchMyPortalRequests.pending, (state) => {
+                state.loading.myPortalRequests = true;
+                state.errors.myPortalRequests = null;
+            })
+            .addCase(fetchMyPortalRequests.fulfilled, (state, action) => {
+                state.loading.myPortalRequests = false;
+                state.myPortalRequests = asArray(action.payload);
+            })
+            .addCase(fetchMyPortalRequests.rejected, (state, action) => {
+                state.loading.myPortalRequests = false;
+                state.errors.myPortalRequests = action.payload;
+                state.myPortalRequests = [];
+            });
     },
 });
 
 export const {
     clearLeaveRequestSaveResult,
+    clearAdvanceRequestSaveResult,
     clearPayslipDetail,
+    clearPortalApprovalActionResult,
     resetAll,
 } = employeePortalSlice.actions;
 

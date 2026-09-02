@@ -45,9 +45,6 @@ const EmployeeDashboard = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
-    // seeded from the API once resolved; still toggleable for testing before reporting
-    // connections are configured
-    const [isReportingPerson, setIsReportingPerson] = useState(false);
 
     const d = employeeData || {};
     const empRefNo = d.EmpRefno;
@@ -59,10 +56,7 @@ const EmployeeDashboard = () => {
         }
     }, [dispatch, empRefNo]);
 
-    useEffect(() => {
-        setIsReportingPerson(isPortalReportingPerson === true);
-    }, [isPortalReportingPerson]);
-
+    const isReportingPerson = isPortalReportingPerson === true;
     const pendingApprovals = Array.isArray(portalPendingApprovals) ? portalPendingApprovals : [];
     const pendingCount = isReportingPerson ? pendingApprovals.length : 0;
 
@@ -129,7 +123,6 @@ const EmployeeDashboard = () => {
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
                 isReportingPerson={isReportingPerson}
-                onToggleReportingPerson={() => setIsReportingPerson((v) => !v)}
                 fullName={fullName}
                 designation={d.Appointed}
             />

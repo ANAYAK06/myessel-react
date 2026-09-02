@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, UserCog2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { employeeMenu, requestMenu, reportingPersonMenu } from '../menuConfig';
 
 const NavGroup = ({ title, items, activePage, onNavigate }) => (
@@ -29,7 +29,7 @@ const NavGroup = ({ title, items, activePage, onNavigate }) => (
     </div>
 );
 
-const Sidebar = ({ activePage, onNavigate, isOpen, onClose, isReportingPerson, onToggleReportingPerson, fullName, designation }) => {
+const Sidebar = ({ activePage, onNavigate, isOpen, onClose, isReportingPerson, fullName, designation }) => {
     return (
         <>
             {/* Mobile overlay */}
@@ -65,22 +65,6 @@ const Sidebar = ({ activePage, onNavigate, isOpen, onClose, isReportingPerson, o
                     {isReportingPerson && (
                         <NavGroup title="Reporting Person" items={reportingPersonMenu} activePage={activePage} onNavigate={onNavigate} />
                     )}
-                </div>
-
-                {/* Demo toggle */}
-                <div className="px-4 py-3 border-t border-white/10 shrink-0">
-                    <button
-                        onClick={onToggleReportingPerson}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                    >
-                        <UserCog2 className="w-4 h-4 text-orange-400 shrink-0" />
-                        <span className="flex-1 text-left text-xs text-white/70">
-                            Demo: Reporting Person View
-                        </span>
-                        <span className={`w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 ${isReportingPerson ? 'bg-orange-500' : 'bg-white/20'}`} style={{ height: '18px' }}>
-                            <span className={`block w-3.5 h-3.5 rounded-full bg-white transition-transform ${isReportingPerson ? 'translate-x-3.5' : 'translate-x-0'}`} />
-                        </span>
-                    </button>
                 </div>
 
                 {/* Footer / powered by */}

@@ -5,8 +5,10 @@ import {
     PlaneTakeoff, Receipt, ClipboardCheck,
 } from 'lucide-react';
 import { PageHeader, SectionCard, StatCard, Badge } from '../components/PortalUI';
-import { myRequests, requestStatusStyles, pendingApprovals } from '../data/dummyData';
-import { fetchMyLeaveBalances, fetchMyPayslipList, fetchMyAttendance } from '../../../slices/HRSlice/employeePortalSlice';
+import { requestStatusStyles } from '../data/dummyData';
+import {
+    fetchMyLeaveBalances, fetchMyPayslipList, fetchMyAttendance, fetchMyPortalRequests,
+} from '../../../slices/HRSlice/employeePortalSlice';
 
 const leaveBarColors = ['bg-blue-500', 'bg-orange-500', 'bg-emerald-500', 'bg-rose-500', 'bg-purple-500', 'bg-cyan-500'];
 
@@ -25,9 +27,15 @@ const announcements = [
 
 const DashboardHome = ({ fullName, designation, onNavigate, isReportingPerson, employeeData }) => {
     const dispatch = useDispatch();
-    const { leaveBalances, payslipList, attendanceData, loading } = useSelector((state) => state.employeePortal);
+    const {
+        leaveBalances, payslipList, attendanceData, loading,
+        myPortalRequests, portalPendingApprovals,
+    } = useSelector((state) => state.employeePortal);
 
     const empRefNo = employeeData?.EmpRefno;
+
+    const myReqs = Array.isArray(myPortalRequests) ? myPortalRequests : [];
+    const teamPending = Array.isArray(portalPendingApprovals) ? portalPendingApprovals : [];
 
     const today = useMemo(() => new Date(), []);
     const currentMonthName = useMemo(() => today.toLocaleString('en-US', { month: 'long' }), [today]);
@@ -38,6 +46,7 @@ const DashboardHome = ({ fullName, designation, onNavigate, isReportingPerson, e
             dispatch(fetchMyLeaveBalances(empRefNo));
             dispatch(fetchMyPayslipList(empRefNo));
             dispatch(fetchMyAttendance({ empRefNo, month: currentMonthName, year: currentYear }));
+            dispatch(fetchMyPortalRequests(empRefNo));
         }
     }, [dispatch, empRefNo, currentMonthName, currentYear]);
 
@@ -84,7 +93,13 @@ const DashboardHome = ({ fullName, designation, onNavigate, isReportingPerson, e
                     icon={Wallet}
                     tone="white"
                 />
-                <StatCard label="Open Requests" value={myRequests.filter(r => r.status === 'Pending' || r.status === 'Verified').length} sub="Awaiting action" icon={ListChecks} tone="white" />
+                <StatCard
+                    label="Open Requests"
+                    value={loading.myPortalRequests ? '…' : myReqs.filter((r) => r.Status === 'Pending').length}
+                    sub="Awaiting verification"
+                    icon={ListChecks}
+                    tone="white"
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -116,20 +131,27 @@ const DashboardHome = ({ fullName, designation, onNavigate, isReportingPerson, e
                         </button>
                     }
                 >
-                    <p className="text-xs text-gray-400 mb-3">
-                        Sample data — LTA/Advance/Reimbursement request tracking is not wired to live data yet.
-                    </p>
-                    <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {myRequests.slice(0, 4).map((r) => (
-                            <div key={r.id} className="flex items-center justify-between gap-3 py-2.5">
-                                <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{r.description}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{r.type} · {r.date}</p>
+                    {loading.myPortalRequests ? (
+                        <p className="text-sm text-gray-400 py-4 text-center">Loading…</p>
+                    ) : myReqs.length === 0 ? (
+                        <p className="text-sm text-gray-400 py-4 text-center">You haven't raised any requests yet.</p>
+                    ) : (
+                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                            {myReqs.slice(0, 4).map((r) => (
+                                <div key={`${r.RequestType}-${r.Id}`} className="flex items-center justify-between gap-3 py-2.5">
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                                            {r.RequestType === 'Advance'
+                                                ? `${r.AdvanceType === 'LTA' ? 'Long Term Advance' : 'Salary Advance'} — ₹${Number(r.Amount || 0).toLocaleString('en-IN')}`
+                                                : `${r.LeaveName || 'Leave'} — ${r.NoOfDays} day${Number(r.NoOfDays) === 1 ? '' : 's'}`}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{r.RequestType} · {r.SubmittedOn}</p>
+                                    </div>
+                                    <Badge className={requestStatusStyles[r.Status] || ''}>{r.Status}</Badge>
                                 </div>
-                                <Badge className={requestStatusStyles[r.status]}>{r.status}</Badge>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </SectionCard>
             </div>
 
@@ -153,7 +175,7 @@ const DashboardHome = ({ fullName, designation, onNavigate, isReportingPerson, e
                 {isReportingPerson ? (
                     <SectionCard title="Team Approvals" icon={ClipboardCheck}>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                            {pendingApprovals.length} request{pendingApprovals.length !== 1 ? 's' : ''} from your team awaiting your verification.
+                            {teamPending.length} request{teamPending.length !== 1 ? 's' : ''} from your team awaiting your verification.
                         </p>
                         <button
                             onClick={() => onNavigate('pending-approvals')}

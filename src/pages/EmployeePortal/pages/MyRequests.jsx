@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { ListChecks } from 'lucide-react';
-import { PageHeader, DemoBanner, SectionCard, Badge, EmptyState } from '../components/PortalUI';
-import { myRequests, requestStatusStyles } from '../data/dummyData';
+import { PageHeader, SectionCard, Badge, EmptyState } from '../components/PortalUI';
+import { requestStatusStyles } from '../data/dummyData';
+import { fetchMyPortalRequests } from '../../../slices/HRSlice/employeePortalSlice';
 
-const tabs = ['All', 'Pending', 'Verified', 'Approved', 'Rejected'];
+const tabs = ['All', 'Pending', 'Approved', 'Rejected'];
 
-const MyRequests = () => {
+const advanceTypeLabel = { LTA: 'Long Term Advance', SA: 'Salary Advance' };
+const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+
+const titleOf = (r) => {
+    if (r.RequestType === 'Advance') {
+        return `${advanceTypeLabel[r.AdvanceType] || 'Advance'} — ${money(r.Amount)}`;
+    }
+    return `${r.LeaveName || 'Leave'} — ${r.NoOfDays} day${Number(r.NoOfDays) === 1 ? '' : 's'}`;
+};
+
+const subOf = (r) => {
+    if (r.RequestType === 'Advance') {
+        const inst = r.NoOfInstallments ? ` × ${Math.round(r.NoOfInstallments)}` : '';
+        return `Advance · EMI ${money(r.EMIAmount)}${inst}${r.EMIStartDate ? ` from ${r.EMIStartDate}` : ''}`;
+    }
+    return `Leave · ${r.FromDate} → ${r.ToDate}`;
+};
+
+const MyRequests = ({ employeeData }) => {
+    const dispatch = useDispatch();
+    const { myPortalRequests, loading } = useSelector((state) => state.employeePortal);
+
+    const empRefNo = employeeData?.EmpRefno;
     const [tab, setTab] = useState('All');
-    const filtered = tab === 'All' ? myRequests : myRequests.filter((r) => r.status === tab);
+
+    useEffect(() => {
+        if (empRefNo) dispatch(fetchMyPortalRequests(empRefNo));
+    }, [dispatch, empRefNo]);
+
+    const rows = Array.isArray(myPortalRequests) ? myPortalRequests : [];
+    const filtered = tab === 'All' ? rows : rows.filter((r) => r.Status === tab);
 
     return (
         <div>
-            <PageHeader title="My Requests" subtitle="Track the status of everything you have submitted" icon={ListChecks} />
-            <DemoBanner />
+            <PageHeader title="My Requests" subtitle="Track the status of everything you have submitted from the portal" icon={ListChecks} />
 
             <SectionCard title="Request History" icon={ListChecks}>
                 <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
@@ -31,19 +60,30 @@ const MyRequests = () => {
                     ))}
                 </div>
 
-                {filtered.length === 0 ? (
+                {loading.myPortalRequests ? (
+                    <p className="text-sm text-gray-400 py-6 text-center">Loading…</p>
+                ) : filtered.length === 0 ? (
                     <EmptyState icon={ListChecks} title="No requests found" subtitle="Nothing matches this filter yet." />
                 ) : (
                     <div className="divide-y divide-gray-100 dark:divide-gray-700">
                         {filtered.map((r) => (
-                            <div key={r.id} className="flex items-center justify-between gap-3 py-3">
+                            <div key={`${r.RequestType}-${r.Id}`} className="flex items-start justify-between gap-3 py-3">
                                 <div className="min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{r.description}</p>
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-0.5">{r.id} · {r.type} · {r.date}</p>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{titleOf(r)}</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        {subOf(r)} · submitted {r.SubmittedOn}
+                                        {r.Status === 'Approved' && r.TransactionRefNo ? ` · Ref ${r.TransactionRefNo}` : ''}
+                                    </p>
+                                    {r.Reason && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                            {r.RequestType === 'Advance' ? 'Purpose' : 'Reason'}: {r.Reason}
+                                        </p>
+                                    )}
+                                    {r.Status === 'Rejected' && r.RejectRemarks && (
+                                        <p className="text-xs text-rose-500 mt-0.5">Rejected: {r.RejectRemarks}</p>
+                                    )}
                                 </div>
-                                <Badge className={`${requestStatusStyles[r.status]} shrink-0`}>{r.status}</Badge>
+                                <Badge className={`${requestStatusStyles[r.Status] || ''} shrink-0`}>{r.Status}</Badge>
                             </div>
                         ))}
                     </div>

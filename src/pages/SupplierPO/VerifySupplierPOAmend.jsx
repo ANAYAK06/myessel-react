@@ -211,8 +211,11 @@ const VerifySupplierPOAmend = ({ notificationData, onNavigate }) => {
             standardpriceAmts    += `${item.OldAmount || 0},`;
             purchaseprices       += `${item.POPurchasePrice || 0},`;
             purchasepriceAmts    += `${item.Amount || 0},`;
-            newPurchaseprices    += `${item.NewBasicprice || 0},`;
-            newPurchasepriceAmts += `${item.ItemNewPrice || 0},`;
+            // spGetSupplierPOAmend returns the amended purchase price / amount as
+            // POPurchasePrice / Amount — it never sends NewBasicprice / ItemNewPrice.
+            // Verification has no price-edit UI, so "new" == current amended values.
+            newPurchaseprices    += `${item.POPurchasePrice || 0},`;
+            newPurchasepriceAmts += `${item.Amount || 0},`;
         });
 
         return {

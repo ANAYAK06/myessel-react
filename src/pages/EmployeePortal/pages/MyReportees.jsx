@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Users2, HardHat, Building2, Star, ChevronRight, MapPin } from 'lucide-react';
 import {
-    PageHeader, SectionCard, StatCard, Badge, EmptyState, SearchInput, PrimaryButton, inputClass,
+    PageHeader, SectionCard, StatCard, Badge, EmptyState, SearchInput, PrimaryButton, Pagination, inputClass,
 } from '../components/PortalUI';
 import { fetchMyReportees, fetchReporteePhoto } from '../../../slices/HRSlice/employeePortalSlice';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i);
+const PAGE_SIZE = 6;
 
 const staffTypeBadge = (t) =>
     t === 'Site'
@@ -63,10 +64,10 @@ const ReporteeAvatar = ({ base64, fileType, name, cover }) => {
     useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
 
     return (
-        <div className={`w-20 h-20 rounded-full overflow-hidden shrink-0 flex items-center justify-center
+        <div className={`relative z-10 w-20 h-20 rounded-full overflow-hidden shrink-0 flex items-center justify-center
             text-lg font-bold text-white shadow-md ring-4 ring-white dark:ring-[#1e2535] bg-gradient-to-br ${cover}`}>
             {url
-                ? <img src={url} alt={name || 'Employee'} className="w-full h-full object-cover" />
+                ? <img src={url} alt={name || 'Employee'} className="w-full h-full object-cover object-top" />
                 : (initialsOf(name) || <Users2 className="w-7 h-7" />)}
         </div>
     );
@@ -84,7 +85,7 @@ const ReporteeCard = ({ r, photo, onEvaluate }) => {
             </div>
 
             {/* Body */}
-            <div className="px-4 pb-4 -mt-10 flex flex-col items-center text-center flex-1">
+            <div className="relative px-4 pb-4 -mt-10 flex flex-col items-center text-center flex-1">
                 <ReporteeAvatar base64={photo?.base64} fileType={photo?.fileType} name={r.EmployeeName} cover={accent.cover} />
 
                 <p className="mt-2.5 text-sm font-bold text-gray-800 dark:text-gray-100 truncate max-w-full">
@@ -142,6 +143,7 @@ const MyReportees = ({ employeeData, onNavigate }) => {
     const empRefNo = employeeData?.EmpRefno;
     const [year, setYear] = useState(CURRENT_YEAR);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         if (empRefNo) dispatch(fetchMyReportees({ empRefNo, periodYear: year }));
@@ -159,15 +161,24 @@ const MyReportees = ({ employeeData, onNavigate }) => {
         );
     }, [rows, search]);
 
-    // Lazily pull each reportee's photo once, cached by EmpRefNo in the slice.
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paged = useMemo(
+        () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+        [filtered, page]
+    );
+
+    useEffect(() => { setPage(1); }, [search, year]);
+    useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+
+    // Lazily pull the visible page's photos once, cached by EmpRefNo in the slice.
     useEffect(() => {
-        filtered.forEach((r) => {
+        paged.forEach((r) => {
             const known = Object.prototype.hasOwnProperty.call(reporteePhotos, r.EmpRefNo);
             if (r.EmpRefNo && !known && !reporteePhotoLoading[r.EmpRefNo]) {
                 dispatch(fetchReporteePhoto(r.EmpRefNo));
             }
         });
-    }, [dispatch, filtered, reporteePhotos, reporteePhotoLoading]);
+    }, [dispatch, paged, reporteePhotos, reporteePhotoLoading]);
 
     const siteCount = rows.filter((r) => r.StaffType === 'Site').length;
     const officeCount = rows.filter((r) => r.StaffType === 'Office').length;
@@ -214,16 +225,25 @@ const MyReportees = ({ employeeData, onNavigate }) => {
                         subtitle="Nobody is mapped to report to you yet. Ask HR to configure Employee Connections."
                     />
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filtered.map((r) => (
-                            <ReporteeCard
-                                key={r.EmpRefNo}
-                                r={r}
-                                photo={reporteePhotos[r.EmpRefNo]}
-                                onEvaluate={goEvaluate}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {paged.map((r) => (
+                                <ReporteeCard
+                                    key={r.EmpRefNo}
+                                    r={r}
+                                    photo={reporteePhotos[r.EmpRefNo]}
+                                    onEvaluate={goEvaluate}
+                                />
+                            ))}
+                        </div>
+                        <Pagination
+                            page={page}
+                            totalPages={totalPages}
+                            totalItems={filtered.length}
+                            pageSize={PAGE_SIZE}
+                            onPageChange={setPage}
+                        />
+                    </>
                 )}
             </SectionCard>
         </div>

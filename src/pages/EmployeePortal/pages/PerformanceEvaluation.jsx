@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Star, ClipboardList, CheckCircle2, Lock, Pencil } from 'lucide-react';
 import {
-    PageHeader, SectionCard, Badge, EmptyState, InfoRow,
+    PageHeader, SectionCard, Badge, EmptyState,
     PrimaryButton, SecondaryButton, inputClass,
 } from '../components/PortalUI';
 import {
@@ -16,6 +16,11 @@ import {
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i);
+
+const compactInput =
+    'w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-white/5 ' +
+    'text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 ' +
+    'focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-colors';
 
 const staffTypeBadge = (t) =>
     t === 'Site'
@@ -31,20 +36,20 @@ const scoreTone = (n) =>
 const toneHex = (n) =>
     n == null ? '#94a3b8' : n <= 3 ? '#e11d48' : n <= 6 ? '#f59e0b' : '#10b981';
 
-// One evaluation category — vertical card with a slider score + an optional-remark pencil.
+// One evaluation category — compact card with a slider score + an optional-remark pencil.
 const CategoryCard = ({ line, rating, remark, remarkOpen, readOnly, onRate, onRemark, onToggleRemark }) => {
     const showRemark = readOnly ? !!remark : remarkOpen;
     return (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.03] p-4">
-            <div className="flex items-start justify-between gap-3">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.03] p-3">
+            <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{line.CategoryName}</p>
+                    <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 leading-tight">{line.CategoryName}</p>
                     {line.Description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{line.Description}</p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{line.Description}</p>
                     )}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    <span className={`w-9 h-8 rounded-lg text-xs font-bold flex items-center justify-center ${scoreTone(rating)}`}>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`w-7 h-7 rounded-md text-[11px] font-bold flex items-center justify-center ${scoreTone(rating)}`}>
                         {rating != null ? rating : '—'}
                     </span>
                     {!readOnly && (
@@ -52,7 +57,7 @@ const CategoryCard = ({ line, rating, remark, remarkOpen, readOnly, onRate, onRe
                             type="button"
                             onClick={onToggleRemark}
                             title={remark ? 'Edit remark' : 'Add optional remark'}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors
+                            className={`w-7 h-7 rounded-md flex items-center justify-center border transition-colors
                                 ${remark || remarkOpen
                                     ? 'border-orange-300 text-orange-500 bg-orange-50 dark:bg-orange-500/10 dark:border-orange-400/40'
                                     : 'border-gray-300 dark:border-gray-600 text-gray-400 hover:text-orange-500 hover:border-orange-400'}`}
@@ -63,7 +68,7 @@ const CategoryCard = ({ line, rating, remark, remarkOpen, readOnly, onRate, onRe
                 </div>
             </div>
 
-            <div className="mt-3">
+            <div className="mt-2">
                 <input
                     type="range"
                     min={0}
@@ -73,12 +78,12 @@ const CategoryCard = ({ line, rating, remark, remarkOpen, readOnly, onRate, onRe
                     value={rating ?? 0}
                     onChange={(e) => { const n = Number(e.target.value); onRate(n === 0 ? null : n); }}
                     style={{ accentColor: toneHex(rating) }}
-                    className="w-full h-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full h-1.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                 />
-                <div className="flex justify-between text-[10px] text-gray-400 mt-1 select-none">
+                <div className="flex justify-between text-[9px] text-gray-400 mt-0.5 select-none">
                     <span>1 · Poor</span>
                     <span>{rating == null ? 'Drag to rate' : ''}</span>
-                    <span>Excellent · 10</span>
+                    <span>10 · Excellent</span>
                 </div>
             </div>
 
@@ -89,7 +94,7 @@ const CategoryCard = ({ line, rating, remark, remarkOpen, readOnly, onRate, onRe
                     value={remark || ''}
                     onChange={(e) => onRemark(e.target.value)}
                     placeholder="Optional note for this category"
-                    className={`${inputClass} mt-3 ${readOnly ? 'opacity-70' : ''}`}
+                    className={`${compactInput} mt-2 ${readOnly ? 'opacity-70' : ''}`}
                 />
             )}
         </div>
@@ -206,11 +211,21 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
         }
     };
 
+    const ctxPairs = ctx ? [
+        ['Emp Ref', ctx.EmpRefNo],
+        ['Period', ctx.PeriodYear],
+        ['Designation', ctx.DesignationName],
+        ['Department', ctx.DepartmentName],
+        ['Cost Center', [ctx.JoiningCostCenter, ctx.CCName].filter(Boolean).join(' · ')],
+        ['CC Type', ctx.CCType],
+        ...(readOnly ? [['Submitted On', ctx.SubmittedOn]] : []),
+    ] : [];
+
     return (
         <div>
             <PageHeader
                 title="Performance Evaluation"
-                subtitle="Rate the employees who report to you — annual review, 1 (poor) to 10 (excellent)"
+                subtitle="Annual review — 1 (poor) to 10 (excellent)"
                 icon={Star}
                 action={
                     <div className="flex gap-2">
@@ -248,30 +263,37 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
             ) : !ctx ? (
                 <SectionCard><EmptyState icon={Star} title="No data" subtitle="This reportee's details could not be found." /></SectionCard>
             ) : (
-                <div className="space-y-5">
-                    <SectionCard title={ctx.EmployeeName?.trim()} icon={ClipboardList} action={
-                        <div className="flex items-center gap-2">
-                            <Badge className={staffTypeBadge(ctx.StaffType)}>
-                                {ctx.StaffType === 'Site' ? 'Site Staff' : 'Office Staff'}
-                            </Badge>
-                            {readOnly && (
-                                <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
-                                    <Lock className="w-3 h-3 mr-1" /> Submitted
+                <div className="space-y-3">
+                    {/* Compact context strip */}
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.03] px-4 py-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <ClipboardList className="w-4 h-4 text-orange-400 shrink-0" />
+                                <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">{ctx.EmployeeName?.trim()}</p>
+                                <Badge className={staffTypeBadge(ctx.StaffType)}>
+                                    {ctx.StaffType === 'Site' ? 'Site' : 'Office'}
                                 </Badge>
+                                {readOnly && (
+                                    <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
+                                        <Lock className="w-3 h-3 mr-1" /> Submitted
+                                    </Badge>
+                                )}
+                            </div>
+                            {readOnly && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    Overall <span className="font-semibold text-gray-800 dark:text-gray-100">{Number(ctx.OverallRating).toFixed(1)}</span> / 10
+                                </span>
                             )}
                         </div>
-                    }>
-                        <div className="grid sm:grid-cols-2 gap-x-6">
-                            <InfoRow label="Emp Ref" value={ctx.EmpRefNo} />
-                            <InfoRow label="Period" value={ctx.PeriodYear} />
-                            <InfoRow label="Designation" value={ctx.DesignationName} />
-                            <InfoRow label="Department" value={ctx.DepartmentName} />
-                            <InfoRow label="Cost Center" value={[ctx.JoiningCostCenter, ctx.CCName].filter(Boolean).join(' · ')} />
-                            <InfoRow label="CC Type" value={ctx.CCType} />
-                            {readOnly && <InfoRow label="Submitted On" value={ctx.SubmittedOn} />}
-                            {readOnly && <InfoRow label="Overall Score" value={`${Number(ctx.OverallRating).toFixed(1)} / 10`} />}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-1.5 mt-2.5">
+                            {ctxPairs.map(([k, v]) => (
+                                <div key={k} className="min-w-0">
+                                    <p className="text-[10px] uppercase tracking-wide text-gray-400">{k}</p>
+                                    <p className="text-xs font-medium text-gray-800 dark:text-gray-100 truncate">{v || '—'}</p>
+                                </div>
+                            ))}
                         </div>
-                    </SectionCard>
+                    </div>
 
                     <SectionCard
                         title={`Rating Categories — ${ctx.StaffType === 'Site' ? 'Site Staff' : 'Office Staff'} (${ratedCount}/${lines.length})`}
@@ -279,7 +301,7 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
                         action={
                             !readOnly && ratedCount > 0 && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    Running average <span className="font-semibold text-gray-700 dark:text-gray-200">{avg.toFixed(1)}</span> / 10
+                                    Avg <span className="font-semibold text-gray-700 dark:text-gray-200">{avg.toFixed(1)}</span> / 10
                                 </span>
                             )
                         }
@@ -287,7 +309,7 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
                         {lines.length === 0 ? (
                             <EmptyState icon={Star} title="No categories" subtitle="No active evaluation categories are configured for this staff type." />
                         ) : (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                                 {lines.map((l) => (
                                     <CategoryCard
                                         key={l.CategoryId}
@@ -303,38 +325,39 @@ const PerformanceEvaluation = ({ employeeData, navPayload, onNavigate }) => {
                                 ))}
                             </div>
                         )}
-                    </SectionCard>
 
-                    <SectionCard title="Overall Remarks" icon={ClipboardList}>
-                        <textarea
-                            rows={3}
-                            disabled={readOnly}
-                            value={overallRemarks}
-                            onChange={(e) => setOverallRemarks(e.target.value)}
-                            placeholder="Summary of the year — strengths, areas to improve, goals"
-                            className={`${inputClass} ${readOnly ? 'opacity-70' : ''}`}
-                        />
-                        {!readOnly && (
-                            <div className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
-                                <SecondaryButton onClick={() => onNavigate?.('my-reportees')}>Back to Reportees</SecondaryButton>
-                                <SecondaryButton disabled={saving || ratedCount === 0} onClick={() => save('Draft')}>
-                                    {saving ? 'Saving…' : 'Save Draft'}
-                                </SecondaryButton>
-                                <PrimaryButton disabled={saving || !allRated} onClick={() => save('Submitted')}>
-                                    <CheckCircle2 className="w-4 h-4" /> {saving ? 'Submitting…' : 'Submit Evaluation'}
-                                </PrimaryButton>
-                            </div>
-                        )}
-                        {readOnly && (
-                            <div className="flex justify-end mt-4">
-                                <SecondaryButton onClick={() => onNavigate?.('my-reportees')}>Back to Reportees</SecondaryButton>
-                            </div>
-                        )}
-                        {!readOnly && !allRated && (
-                            <p className="text-xs text-gray-400 mt-2 text-right">
-                                Rate all {lines.length} categories to enable Submit.
-                            </p>
-                        )}
+                        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">Overall Remarks</p>
+                            <textarea
+                                rows={2}
+                                disabled={readOnly}
+                                value={overallRemarks}
+                                onChange={(e) => setOverallRemarks(e.target.value)}
+                                placeholder="Summary of the year — strengths, areas to improve, goals"
+                                className={`${compactInput} resize-none ${readOnly ? 'opacity-70' : ''}`}
+                            />
+
+                            {!readOnly ? (
+                                <div className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-3">
+                                    <SecondaryButton className="!py-2" onClick={() => onNavigate?.('my-reportees')}>Back to Reportees</SecondaryButton>
+                                    <SecondaryButton className="!py-2" disabled={saving || ratedCount === 0} onClick={() => save('Draft')}>
+                                        {saving ? 'Saving…' : 'Save Draft'}
+                                    </SecondaryButton>
+                                    <PrimaryButton className="!py-2" disabled={saving || !allRated} onClick={() => save('Submitted')}>
+                                        <CheckCircle2 className="w-4 h-4" /> {saving ? 'Submitting…' : 'Submit Evaluation'}
+                                    </PrimaryButton>
+                                </div>
+                            ) : (
+                                <div className="flex justify-end mt-3">
+                                    <SecondaryButton className="!py-2" onClick={() => onNavigate?.('my-reportees')}>Back to Reportees</SecondaryButton>
+                                </div>
+                            )}
+                            {!readOnly && !allRated && (
+                                <p className="text-[11px] text-gray-400 mt-1.5 text-right">
+                                    Rate all {lines.length} categories to enable Submit.
+                                </p>
+                            )}
+                        </div>
                     </SectionCard>
                 </div>
             )}

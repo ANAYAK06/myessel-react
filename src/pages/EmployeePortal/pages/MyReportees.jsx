@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Users2, HardHat, Building2, Star, ChevronRight, MapPin, IdCard } from 'lucide-react';
+import { Users2, HardHat, Building2, Star, ChevronRight, MapPin } from 'lucide-react';
 import {
     PageHeader, SectionCard, StatCard, Badge, EmptyState, SearchInput, PrimaryButton, inputClass,
 } from '../components/PortalUI';
@@ -22,8 +22,8 @@ const evalStatusBadge = (s) => ({
 
 const accentOf = (t) =>
     t === 'Site'
-        ? { ring: 'ring-amber-300/70 dark:ring-amber-500/40', grad: 'from-amber-400 to-orange-500' }
-        : { ring: 'ring-sky-300/70 dark:ring-sky-500/40', grad: 'from-sky-400 to-blue-500' };
+        ? { cover: 'from-amber-400 via-orange-400 to-orange-500' }
+        : { cover: 'from-sky-400 via-blue-400 to-indigo-500' };
 
 const initialsOf = (name) =>
     (name || '').trim().split(/\s+/).slice(0, 2).map((s) => s[0] || '').join('').toUpperCase();
@@ -32,8 +32,22 @@ const mimeOf = (ft) => ((ft || '').toUpperCase() === 'PNG' ? 'image/png' : 'imag
 
 const ctaLabel = (s) => (s === 'Submitted' ? 'Review' : s === 'Draft' ? 'Continue' : 'Evaluate');
 
+const Stars = ({ value }) => {
+    const filled = Math.round((Number(value) || 0) / 2); // rating is out of 10 → 5 stars
+    return (
+        <span className="inline-flex">
+            {[1, 2, 3, 4, 5].map((n) => (
+                <Star
+                    key={n}
+                    className={`w-3.5 h-3.5 ${n <= filled ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`}
+                />
+            ))}
+        </span>
+    );
+};
+
 // ── Avatar: builds (and revokes) its own blob URL from the cached base64 ────────
-const ReporteeAvatar = ({ base64, fileType, name, accent }) => {
+const ReporteeAvatar = ({ base64, fileType, name, cover }) => {
     const url = useMemo(() => {
         if (!base64) return null;
         try {
@@ -49,11 +63,11 @@ const ReporteeAvatar = ({ base64, fileType, name, accent }) => {
     useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
 
     return (
-        <div className={`w-16 h-16 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center
-            text-base font-bold text-white ring-2 ${accent.ring} bg-gradient-to-br ${accent.grad}`}>
+        <div className={`w-20 h-20 rounded-full overflow-hidden shrink-0 flex items-center justify-center
+            text-lg font-bold text-white shadow-md ring-4 ring-white dark:ring-[#1e2535] bg-gradient-to-br ${cover}`}>
             {url
                 ? <img src={url} alt={name || 'Employee'} className="w-full h-full object-cover" />
-                : (initialsOf(name) || <Users2 className="w-6 h-6" />)}
+                : (initialsOf(name) || <Users2 className="w-7 h-7" />)}
         </div>
     );
 };
@@ -61,56 +75,61 @@ const ReporteeAvatar = ({ base64, fileType, name, accent }) => {
 const ReporteeCard = ({ r, photo, onEvaluate }) => {
     const accent = accentOf(r.StaffType);
     return (
-        <div className="group flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-gray-200 dark:border-gray-700
-            bg-white dark:bg-white/[0.03] p-4 transition-all hover:border-orange-300 dark:hover:border-orange-400/40 hover:shadow-md">
+        <div className="flex flex-col rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden
+            bg-white dark:bg-white/[0.03] transition-all hover:border-orange-300 dark:hover:border-orange-400/40 hover:shadow-lg">
 
-            <div className="flex items-center gap-4 min-w-0 flex-1">
-                <ReporteeAvatar base64={photo?.base64} fileType={photo?.fileType} name={r.EmployeeName} accent={accent} />
-
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">{r.EmployeeName?.trim()}</p>
-                        <Badge className={staffTypeBadge(r.StaffType)}>
-                            {r.StaffType === 'Site' ? 'Site Staff' : 'Office Staff'}
-                        </Badge>
-                        {r.MappingType === 'Default' && (
-                            <Badge className="bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400">Default</Badge>
-                        )}
-                    </div>
-
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
-                        <IdCard className="w-3.5 h-3.5 shrink-0 text-gray-400" />
-                        <span className="truncate">
-                            {r.EmpRefNo}
-                            {r.DesignationName ? ` · ${r.DesignationName}` : ''}
-                            {r.DepartmentName ? ` · ${r.DepartmentName}` : ''}
-                        </span>
-                    </p>
-
-                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">
-                            {r.JoiningCostCenter || '—'}{r.CCName ? ` · ${r.CCName}` : ''}
-                            {r.CCType ? ` (${r.CCType})` : ''}
-                        </span>
-                    </p>
-                </div>
+            {/* Cover */}
+            <div className={`relative h-20 bg-gradient-to-br ${accent.cover}`}>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
             </div>
 
-            <div className="flex items-center justify-between sm:justify-end gap-4 sm:shrink-0
-                border-t sm:border-t-0 border-gray-100 dark:border-gray-700/60 pt-3 sm:pt-0">
-                <div className="text-left sm:text-right">
-                    <Badge className={evalStatusBadge(r.EvaluationStatus)}>{r.EvaluationStatus}</Badge>
-                    {r.OverallRating != null && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Score <span className="font-semibold text-gray-700 dark:text-gray-200">{Number(r.OverallRating).toFixed(1)}</span> / 10
-                        </p>
+            {/* Body */}
+            <div className="px-4 pb-4 -mt-10 flex flex-col items-center text-center flex-1">
+                <ReporteeAvatar base64={photo?.base64} fileType={photo?.fileType} name={r.EmployeeName} cover={accent.cover} />
+
+                <p className="mt-2.5 text-sm font-bold text-gray-800 dark:text-gray-100 truncate max-w-full">
+                    {r.EmployeeName?.trim()}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-full">
+                    {r.DesignationName || 'Employee'}
+                    {r.DepartmentName ? ` · ${r.DepartmentName}` : ''}
+                </p>
+
+                <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                    <Badge className={staffTypeBadge(r.StaffType)}>
+                        {r.StaffType === 'Site' ? 'Site Staff' : 'Office Staff'}
+                    </Badge>
+                    {r.MappingType === 'Default' && (
+                        <Badge className="bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400">Default</Badge>
                     )}
                 </div>
-                <PrimaryButton className="!px-3 !py-1.5" onClick={() => onEvaluate(r)}>
-                    {ctaLabel(r.EvaluationStatus)}
-                    <ChevronRight className="w-3.5 h-3.5" />
-                </PrimaryButton>
+
+                <p className="flex items-center gap-1 mt-2 text-[11px] text-gray-400 max-w-full">
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    <span className="truncate">
+                        {r.JoiningCostCenter || '—'}{r.CCName ? ` · ${r.CCName}` : ''}
+                        {r.CCType ? ` (${r.CCType})` : ''}
+                    </span>
+                </p>
+
+                <div className="flex items-center gap-2 mt-2.5">
+                    <Badge className={evalStatusBadge(r.EvaluationStatus)}>{r.EvaluationStatus}</Badge>
+                    {r.OverallRating != null && (
+                        <span className="inline-flex items-center gap-1">
+                            <Stars value={r.OverallRating} />
+                            <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+                                {Number(r.OverallRating).toFixed(1)}
+                            </span>
+                        </span>
+                    )}
+                </div>
+
+                <div className="mt-auto pt-3.5 w-full">
+                    <PrimaryButton className="w-full !justify-center" onClick={() => onEvaluate(r)}>
+                        {ctaLabel(r.EvaluationStatus)}
+                        <ChevronRight className="w-3.5 h-3.5" />
+                    </PrimaryButton>
+                </div>
             </div>
         </div>
     );
@@ -195,7 +214,7 @@ const MyReportees = ({ employeeData, onNavigate }) => {
                         subtitle="Nobody is mapped to report to you yet. Ask HR to configure Employee Connections."
                     />
                 ) : (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         {filtered.map((r) => (
                             <ReporteeCard
                                 key={r.EmpRefNo}

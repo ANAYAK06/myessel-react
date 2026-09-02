@@ -238,6 +238,76 @@ export const fetchMyLeaveBalances = createAsyncThunk(
     }
 );
 
+// ─── My Reportees + Performance Evaluation (annual) ───────────────────────────
+
+// GET the employees reporting to this reporting person (+ derived StaffType and this
+// year's evaluation status). arg: empRefNo string, or { empRefNo, periodYear }.
+export const fetchMyReportees = createAsyncThunk(
+    'employeePortal/fetchMyReportees',
+    async (arg, { rejectWithValue }) => {
+        const empRefNo = typeof arg === 'string' ? arg : arg?.empRefNo;
+        const periodYear = typeof arg === 'string' ? null : arg?.periodYear ?? null;
+        try {
+            return await employeePortalAPI.getMyReportees(empRefNo, periodYear);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to fetch reportees');
+        }
+    }
+);
+
+// GET the active evaluation categories for a staff type ('Site' | 'Office' | null = both)
+export const fetchEvaluationCategories = createAsyncThunk(
+    'employeePortal/fetchEvaluationCategories',
+    async (staffType = null, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.getEvaluationCategories(staffType);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to fetch evaluation categories');
+        }
+    }
+);
+
+// GET one reportee's evaluation for a year — { Context, Lines }
+export const fetchReporteeEvaluation = createAsyncThunk(
+    'employeePortal/fetchReporteeEvaluation',
+    async ({ empRefNo, reportingPersonEmpRefNo, periodYear = null }, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.getReporteeEvaluation(empRefNo, reportingPersonEmpRefNo, periodYear);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to load evaluation');
+        }
+    }
+);
+
+// POST save (Draft) or submit a reportee's evaluation
+export const saveReporteeEvaluation = createAsyncThunk(
+    'employeePortal/saveReporteeEvaluation',
+    async (data, { rejectWithValue }) => {
+        try {
+            return await employeePortalAPI.saveReporteeEvaluation(data);
+        } catch (err) {
+            return rejectWithValue(err.message || 'Failed to save evaluation');
+        }
+    }
+);
+
+// GET one reportee's profile photo — reuses GetEmployeeDocuments and keeps only the
+// 'Photo' doc so the store isn't bloated with every ID-proof binary. Cached per
+// EmpRefNo (base64 null = employee has no photo; still cached so we don't refetch).
+export const fetchReporteePhoto = createAsyncThunk(
+    'employeePortal/fetchReporteePhoto',
+    async (empRefNo, { rejectWithValue }) => {
+        try {
+            const docs = await getEmployeeDocuments(empRefNo);
+            const list = Array.isArray(docs?.Data) ? docs.Data : Array.isArray(docs) ? docs : [];
+            const photo = list.find((d) => d.DocName === 'Photo');
+            return { empRefNo, base64: photo?.DocBinaryData || null, fileType: photo?.FileType || null };
+        } catch (err) {
+            return rejectWithValue({ empRefNo, message: err.message || 'Failed to fetch photo' });
+        }
+    }
+);
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 const isSubmitSuccess = (dataVal) => {
     if (typeof dataVal !== 'string' || !dataVal) return false;
@@ -278,6 +348,15 @@ const initialState = {
     isPortalReportingPerson: false,
     myPortalRequests: [],
 
+    // My Reportees + performance evaluation
+    myReportees: [],
+    evaluationCategories: [],
+    reporteeEvaluation: null,          // { Context, Lines }
+    evaluationSaveResult: null,        // 'Saved' | 'Submitted' | 'Error$...'
+    evaluationSaveStatus: null,        // null | 'pending' | 'success' | 'failed'
+    reporteePhotos: {},               // EmpRefNo -> { base64, fileType } (base64 null = no photo)
+    reporteePhotoLoading: {},         // EmpRefNo -> true while in flight
+
     loading: {
         leaveTypes: false,
         leaveApplicationContext: false,
@@ -296,6 +375,10 @@ const initialState = {
         portalApprovalAction: false,
         isPortalReportingPerson: false,
         myPortalRequests: false,
+        myReportees: false,
+        evaluationCategories: false,
+        reporteeEvaluation: false,
+        evaluationSave: false,
     },
     errors: {
         leaveTypes: null,
@@ -315,6 +398,10 @@ const initialState = {
         portalApprovalAction: null,
         isPortalReportingPerson: null,
         myPortalRequests: null,
+        myReportees: null,
+        evaluationCategories: null,
+        reporteeEvaluation: null,
+        evaluationSave: null,
     },
 };
 
@@ -341,6 +428,15 @@ const employeePortalSlice = createSlice({
             state.portalApprovalActionResult = null;
             state.portalApprovalActionStatus = null;
             state.errors.portalApprovalAction = null;
+        },
+        clearEvaluationSaveResult(state) {
+            state.evaluationSaveResult = null;
+            state.evaluationSaveStatus = null;
+            state.errors.evaluationSave = null;
+        },
+        clearReporteeEvaluation(state) {
+            state.reporteeEvaluation = null;
+            state.errors.reporteeEvaluation = null;
         },
         resetAll: () => initialState,
     },
@@ -681,6 +777,97 @@ const employeePortalSlice = createSlice({
                 state.errors.myPortalRequests = action.payload;
                 state.myPortalRequests = [];
             });
+
+        // 17. fetchMyReportees
+        builder
+            .addCase(fetchMyReportees.pending, (state) => {
+                state.loading.myReportees = true;
+                state.errors.myReportees = null;
+            })
+            .addCase(fetchMyReportees.fulfilled, (state, action) => {
+                state.loading.myReportees = false;
+                state.myReportees = asArray(action.payload);
+            })
+            .addCase(fetchMyReportees.rejected, (state, action) => {
+                state.loading.myReportees = false;
+                state.errors.myReportees = action.payload;
+                state.myReportees = [];
+            });
+
+        // 18. fetchEvaluationCategories
+        builder
+            .addCase(fetchEvaluationCategories.pending, (state) => {
+                state.loading.evaluationCategories = true;
+                state.errors.evaluationCategories = null;
+            })
+            .addCase(fetchEvaluationCategories.fulfilled, (state, action) => {
+                state.loading.evaluationCategories = false;
+                state.evaluationCategories = asArray(action.payload);
+            })
+            .addCase(fetchEvaluationCategories.rejected, (state, action) => {
+                state.loading.evaluationCategories = false;
+                state.errors.evaluationCategories = action.payload;
+                state.evaluationCategories = [];
+            });
+
+        // 19. fetchReporteeEvaluation
+        builder
+            .addCase(fetchReporteeEvaluation.pending, (state) => {
+                state.loading.reporteeEvaluation = true;
+                state.errors.reporteeEvaluation = null;
+                state.reporteeEvaluation = null;
+            })
+            .addCase(fetchReporteeEvaluation.fulfilled, (state, action) => {
+                state.loading.reporteeEvaluation = false;
+                state.reporteeEvaluation = action.payload?.Data || null;
+            })
+            .addCase(fetchReporteeEvaluation.rejected, (state, action) => {
+                state.loading.reporteeEvaluation = false;
+                state.errors.reporteeEvaluation = action.payload;
+                state.reporteeEvaluation = null;
+            });
+
+        // 20. saveReporteeEvaluation
+        builder
+            .addCase(saveReporteeEvaluation.pending, (state) => {
+                state.loading.evaluationSave = true;
+                state.evaluationSaveStatus = 'pending';
+                state.errors.evaluationSave = null;
+                state.evaluationSaveResult = null;
+            })
+            .addCase(saveReporteeEvaluation.fulfilled, (state, action) => {
+                state.loading.evaluationSave = false;
+                const resultText = action.payload?.Data;
+                const ok = typeof resultText === 'string' &&
+                    (/^saved$/i.test(resultText) || /^submitted$/i.test(resultText));
+                state.evaluationSaveResult = resultText;
+                state.evaluationSaveStatus = ok ? 'success' : 'failed';
+                if (!ok) {
+                    state.errors.evaluationSave =
+                        (resultText || '').replace('Error$', '') || 'Failed to save evaluation';
+                }
+            })
+            .addCase(saveReporteeEvaluation.rejected, (state, action) => {
+                state.loading.evaluationSave = false;
+                state.evaluationSaveStatus = 'failed';
+                state.errors.evaluationSave = action.payload;
+            });
+
+        // 21. fetchReporteePhoto — cached per EmpRefNo for the reportee cards
+        builder
+            .addCase(fetchReporteePhoto.pending, (state, action) => {
+                state.reporteePhotoLoading[action.meta.arg] = true;
+            })
+            .addCase(fetchReporteePhoto.fulfilled, (state, action) => {
+                const { empRefNo, base64, fileType } = action.payload;
+                state.reporteePhotos[empRefNo] = { base64, fileType };
+                state.reporteePhotoLoading[empRefNo] = false;
+            })
+            .addCase(fetchReporteePhoto.rejected, (state, action) => {
+                const key = action.payload?.empRefNo ?? action.meta.arg;
+                state.reporteePhotos[key] = { base64: null, fileType: null };
+                state.reporteePhotoLoading[key] = false;
+            });
     },
 });
 
@@ -689,6 +876,8 @@ export const {
     clearAdvanceRequestSaveResult,
     clearPayslipDetail,
     clearPortalApprovalActionResult,
+    clearEvaluationSaveResult,
+    clearReporteeEvaluation,
     resetAll,
 } = employeePortalSlice.actions;
 

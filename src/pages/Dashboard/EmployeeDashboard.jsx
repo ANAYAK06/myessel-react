@@ -42,6 +42,7 @@ const EmployeeDashboard = () => {
     const { logout } = useLogout();
 
     const [activePage, setActivePage] = useState('dashboard');
+    const [navPayload, setNavPayload] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
@@ -70,8 +71,9 @@ const EmployeeDashboard = () => {
         .map((n) => n[0])
         .join('');
 
-    const handleNavigate = (key) => {
+    const handleNavigate = (key, payload = null) => {
         setActivePage(key);
+        setNavPayload(payload);
         setSidebarOpen(false);
     };
 
@@ -90,6 +92,7 @@ const EmployeeDashboard = () => {
         initials,
         onNavigate: handleNavigate,
         isReportingPerson,
+        navPayload,
     };
 
     const renderPage = () => {

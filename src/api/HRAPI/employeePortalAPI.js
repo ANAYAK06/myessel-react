@@ -134,3 +134,45 @@ export const actionPortalAdvanceRequest = async (data) => {
     });
     return response.data;
 };
+
+// ─── My Reportees + Performance Evaluation (annual) ────────────────────────────
+
+// 15. GET the employees reporting to this reporting person (explicit connections +
+// default-fallback), each with derived StaffType ('Site' | 'Office') and this year's
+// evaluation status. Pass periodYear = null for the current year.
+export const getMyReportees = async (empRefNo, periodYear = null) => {
+    const response = await axios.get(`${API_BASE_URL}/HR/GetMyReportees`, {
+        params: { EmpRefNo: empRefNo, PeriodYear: periodYear },
+        headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+};
+
+// 16. GET the active evaluation categories for a staff type ('Site' | 'Office' | null = both)
+export const getEvaluationCategories = async (staffType = null) => {
+    const response = await axios.get(`${API_BASE_URL}/HR/GetEvaluationCategories`, {
+        params: { StaffType: staffType },
+        headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+};
+
+// 17. GET one reportee's evaluation for a year — { Context, Lines } where Lines is every
+// category for that staff type with any already-saved rating/remarks pre-filled.
+export const getReporteeEvaluation = async (empRefNo, reportingPersonEmpRefNo, periodYear = null) => {
+    const response = await axios.get(`${API_BASE_URL}/HR/GetReporteeEvaluation`, {
+        params: { EmpRefNo: empRefNo, ReportingPersonEmpRefNo: reportingPersonEmpRefNo, PeriodYear: periodYear },
+        headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+};
+
+// 18. POST save (Draft) or submit a reportee's evaluation
+// Payload: { EmpRefNo, ReportingPersonId, PeriodYear, OverallRemarks, Status: 'Draft' | 'Submitted',
+//            CreatedBy, Details: [{ CategoryId, Rating, Remarks }] }
+export const saveReporteeEvaluation = async (data) => {
+    const response = await axios.post(`${API_BASE_URL}/HR/SaveReporteeEvaluation`, data, {
+        headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+};

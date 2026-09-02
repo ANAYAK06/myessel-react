@@ -165,7 +165,12 @@ const RevisionHeadRow = ({ head, onAmountChange, onAmountTypeChange, disabled })
     return (
         <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-colors">
             <td className={c}>
-                <p className="text-gray-800 dark:text-gray-200 font-medium">{head.HeadName}</p>
+                <p className="text-gray-800 dark:text-gray-200 font-medium">
+                    {head.HeadName}
+                    {head.isAutoFilled && (
+                        <span className="ml-2 px-1.5 py-0.5 text-[10px] font-semibold bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 rounded">Auto</span>
+                    )}
+                </p>
                 {head.ValidationMsg && <p className="text-[10px] text-gray-400 mt-0.5">{head.ValidationMsg}</p>}
             </td>
             <td className={`${c} text-center`}>

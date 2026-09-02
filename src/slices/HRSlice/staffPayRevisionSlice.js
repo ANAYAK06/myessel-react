@@ -160,6 +160,51 @@ export const saveEmpPayRevision = createAsyncThunk(
 
 const TOTAL_HEAD_TYPES = ['GROSSSALARY', 'DEDUCTIONTOTAL', 'NETSALARY', 'BENEFITTOTAL', 'OTHERBENEFITTOTAL', 'CTCTOTAL'];
 
+// ── PF / ESI auto-fill (mirrors staffCTCCreationSlice) ────────────────────────
+const isPFHead    = (name) => name.includes('P.F') || name.includes('PF') || name.includes('PROVIDENT');
+const isESIHead   = (name) => name.includes('E.S.I') || name.includes('ESI') || name.includes('EMPLOYEE STATE');
+const isAdminPFHead = (name) => name.includes('ADMIN');
+
+// When Basic Salary is revised and PF/ESI is applicable for the employee, recompute
+// the statutory heads as a % of the revised monthly Basic. All revision amounts are
+// stored monthly, so no Monthly/Yearly conversion is needed here.
+const autoFillPFESI = (heads, empRule) => {
+    if (!empRule) return heads;
+
+    const basicHead = heads.find(
+        (h) => h.HeadType === 'Earning' && h.HeadName?.toUpperCase().includes('BASIC')
+    );
+    const basicMonthly = parseFloat(basicHead?.HeadAmount) || 0;
+    const pctOfBasic = (rate) => parseFloat(((basicMonthly * (parseFloat(rate) || 0)) / 100).toFixed(2));
+
+    return heads.map((h) => {
+        const name = h.HeadName?.toUpperCase() || '';
+
+        if (h.HeadType === 'Deduction' && empRule.PFExist === 'Yes' && isPFHead(name)) {
+            return { ...h, HeadAmount: pctOfBasic(empRule.PFPercent), isAutoFilled: true };
+        }
+
+        if ((h.HeadType === 'Benefit' || h.HeadType === 'OtherBenefit') && empRule.PFExist === 'Yes' && isPFHead(name)) {
+            // No dedicated PF Admin head, so the employer PF head carries employer + admin
+            // (e.g. 12% + 1%). A dedicated Admin head gets only the admin percent.
+            const rate = isAdminPFHead(name)
+                ? (parseFloat(empRule.PFAdminPercent) || 0)
+                : (parseFloat(empRule.PFemployerPercent) || 0) + (parseFloat(empRule.PFAdminPercent) || 0);
+            return { ...h, HeadAmount: pctOfBasic(rate), isAutoFilled: true };
+        }
+
+        if (h.HeadType === 'Deduction' && empRule.ESIExist === 'Yes' && isESIHead(name)) {
+            return { ...h, HeadAmount: pctOfBasic(empRule.ESIPercent), isAutoFilled: true };
+        }
+
+        if ((h.HeadType === 'Benefit' || h.HeadType === 'OtherBenefit') && empRule.ESIExist === 'Yes' && isESIHead(name)) {
+            return { ...h, HeadAmount: pctOfBasic(empRule.ESIemployerPercent), isAutoFilled: true };
+        }
+
+        return h;
+    });
+};
+
 // Recalculate total rows from editable head amounts
 const recalculateTotals = (heads) => {
     const updated = heads.map((h) => ({ ...h }));
@@ -287,7 +332,8 @@ const staffPayRevisionSlice = createSlice({
 
         // ── Creation reducers (new) ────────────────────────────────────────────
 
-        // Update a single head's amount (always stored as monthly) and recalculate totals
+        // Update a single head's amount (always stored as monthly). If Basic Salary was
+        // changed and PF/ESI is applicable, auto-fill the statutory heads, then recalc totals.
         updateRevisionHeadAmount: (state, action) => {
             const { rowno, amount } = action.payload;
             const idx = state.localRevisionHeads.findIndex((h) => h.Rowno === rowno);
@@ -295,7 +341,21 @@ const staffPayRevisionSlice = createSlice({
                 state.localRevisionHeads[idx] = {
                     ...state.localRevisionHeads[idx],
                     HeadAmount: parseFloat(amount) || 0,
+                    isAutoFilled: false,
                 };
+
+                const updatedHead = state.localRevisionHeads[idx];
+                const isBasicSalary =
+                    updatedHead.HeadType === 'Earning' &&
+                    updatedHead.HeadName?.toUpperCase().includes('BASIC');
+
+                if (isBasicSalary && state.revisionHeadsData?.EmpRuleStatus) {
+                    state.localRevisionHeads = autoFillPFESI(
+                        state.localRevisionHeads,
+                        state.revisionHeadsData.EmpRuleStatus,
+                    );
+                }
+
                 state.localRevisionHeads = recalculateTotals(state.localRevisionHeads);
             }
         },

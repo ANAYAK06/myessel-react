@@ -263,6 +263,9 @@ const initialState = {
     payslipDetail: null,
     pfEsiHistory: null,
     attendanceData: null,
+    // Attendance cached per "Month-Year" so the calendar can show several months at once
+    attendanceByPeriod: {},
+    attendancePeriodLoading: {},
     leaveBalances: [],
     documents: [],
     loanAdvanceStatus: null,
@@ -485,20 +488,34 @@ const employeePortalSlice = createSlice({
                 state.pfEsiHistory = null;
             });
 
-        // 8. fetchMyAttendance
+        // 8. fetchMyAttendance — also cached per "Month-Year" for the multi-month calendar
         builder
-            .addCase(fetchMyAttendance.pending, (state) => {
+            .addCase(fetchMyAttendance.pending, (state, action) => {
                 state.loading.attendanceData = true;
                 state.errors.attendanceData = null;
+                const { month, year } = action.meta.arg || {};
+                if (month && year) state.attendancePeriodLoading[`${month}-${year}`] = true;
             })
             .addCase(fetchMyAttendance.fulfilled, (state, action) => {
                 state.loading.attendanceData = false;
                 state.attendanceData = action.payload;
+                const { month, year } = action.meta.arg || {};
+                if (month && year) {
+                    const key = `${month}-${year}`;
+                    state.attendanceByPeriod[key] = action.payload;
+                    state.attendancePeriodLoading[key] = false;
+                }
             })
             .addCase(fetchMyAttendance.rejected, (state, action) => {
                 state.loading.attendanceData = false;
                 state.errors.attendanceData = action.payload;
                 state.attendanceData = null;
+                const { month, year } = action.meta.arg || {};
+                if (month && year) {
+                    const key = `${month}-${year}`;
+                    state.attendanceByPeriod[key] = null;
+                    state.attendancePeriodLoading[key] = false;
+                }
             });
 
         // 9. fetchMyLeaveBalances

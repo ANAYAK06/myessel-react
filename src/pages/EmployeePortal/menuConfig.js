@@ -9,7 +9,7 @@ export const employeeMenu = [
     { key: 'profile', label: 'My Profile', desc: 'Personal details', icon: User },
     { key: 'attendance', label: 'Attendance / Time', desc: 'Daily attendance record', icon: Clock },
     { key: 'leave-balance', label: 'Leave Balance', desc: 'Entitlement & used', icon: CalendarCheck },
-    { key: 'payslips', label: 'Payslips', desc: 'Monthly salary slips', icon: FileText },
+    // { key: 'payslips', label: 'Payslips', desc: 'Monthly salary slips', icon: FileText },
     { key: 'tax', label: 'Form 16 / Tax', desc: 'Tax documents', icon: ScrollText },
     { key: 'pf-esi', label: 'PF / ESI Details', desc: 'Statutory contributions', icon: ShieldCheck },
     { key: 'loan-advance-status', label: 'Loan / Advance Status', desc: 'Outstanding balance & EMI history', icon: CreditCard },

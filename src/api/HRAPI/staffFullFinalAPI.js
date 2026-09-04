@@ -66,21 +66,54 @@ export const generateFinalSalary = async (params) => {
 // 3. Save Final Salary (POST) - Final submission after user reviews generated values
 //
 // ── FIELD NAME CONTRACT ───────────────────────────────────────────────────────
-// Same base params as Generate. Any user-modified deduction/addition values
-// will be added to this payload in a later update once that feature is scoped.
-// Params (current): @EmpRefNo, @Createdby
-// Returns GenerateStatus = "Generated" on success
+// spUpdateFinalSalary locates the draft rows by @TransactionRefno + @EmpRefno
+// (Status IS NULL) and re-applies the head amounts, then spSaveFinalSalary runs
+// the budget check and finalises. The whole payload below is required — omitting
+// TransactionRefNo makes the SP guard fail with "Error$Some thing Went Wrong",
+// and an empty Salaryheads string makes it skip the update and return blank.
+//
+// SP params: @TransactionRefno, @CCCode, @EmpRefno, @MonthGross, @MonthDeduction,
+//   @MonthNet, @FinalNet, @FinalGross, @FinalDeduction, @RecoverAmt,
+//   @PayRollFortheDate, @Salaryheads, @Headtypes, @HeadAmounts, @ApplicablePLs,
+//   @ApplicableESIs, @Createdby, @PaymentAmount  (+ @Roleid for spSaveFinalSalary)
+// Returns SaveStatus = "Submited$" on success.
 // ─────────────────────────────────────────────────────────────────────────────
 export const saveFinalSalary = async (params) => {
     try {
         console.log('💾 Saving Final Salary - raw params:', params);
 
-        if (!params.empRefNo)   throw new Error('Employee Ref No is required');
-        if (!params.createdBy)  throw new Error('Created By is required');
+        if (!params.empRefNo)          throw new Error('Employee Ref No is required');
+        if (!params.createdBy)         throw new Error('Created By is required');
+        if (!params.transactionRefNo)  throw new Error('Transaction Ref No is required — generate the settlement first');
+
+        const num = (v) => {
+            const n = parseFloat(v);
+            return isNaN(n) ? 0 : n;
+        };
 
         const payload = {
-            EmpRefNo:  params.empRefNo?.toString()  || '',
-            Createdby: params.createdBy?.toString() || '',
+            EmpRefNo:          params.empRefNo?.toString()          || '',
+            Createdby:         params.createdBy?.toString()         || '',
+            TransactionRefNo:  params.transactionRefNo?.toString()  || '',
+            CCCode:            params.ccCode?.toString()            || '',
+            RoleId:            parseInt(params.roleId, 10) || 0,
+            PayRollFortheDate: params.payRollFortheDate?.toString() || '',
+
+            MonthGross:        num(params.monthGross),
+            MonthDeduction:    num(params.monthDeduction),
+            MonthNet:          num(params.monthNet),
+
+            FinalGross:        num(params.finalGross),
+            FinalDeduction:    num(params.finalDeduction),
+            FinalNet:          num(params.finalNet),
+            RecoverAmt:        num(params.recoverAmt),
+            PaymentAmount:     num(params.paymentAmount),
+
+            Salaryheads:       params.salaryheads    || '',
+            Headtypes:         params.headtypes      || '',
+            HeadAmounts:       params.headAmounts    || '',
+            ApplicablePLs:     params.applicablePLs  || '',
+            ApplicableESIs:    params.applicableESIs || '',
         };
 
         console.log('🔗 API URL:', `${API_BASE_URL}/HR/SaveFinalSalary`);

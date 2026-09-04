@@ -311,6 +311,7 @@ const StaffFullFinal = () => {
     const dispatch = useDispatch();
     const { userData } = useSelector(s => s.auth);
     const userName = userData?.userName || userData?.username || 'User';
+    const roleId   = userData?.roleId || userData?.RID || 0;
 
     // ── Selectors ────────────────────────────────────────────────────────────
     const empList         = useSelector(selectEmpListArray);
@@ -362,10 +363,7 @@ const StaffFullFinal = () => {
         dispatch(generateFinalSalary({ empRefNo: selectedEmpRefNo, createdBy: userName }));
     }, [selectedEmpRefNo, userName, dispatch]);
 
-    const handleSave = useCallback(() => {
-        if (!selectedEmpRefNo) return;
-        dispatch(saveFinalSalary({ empRefNo: selectedEmpRefNo, createdBy: userName }));
-    }, [selectedEmpRefNo, userName, dispatch]);
+    // handleSave is defined further down (after the derived totals it depends on).
 
     const handleReset = useCallback(() => {
         setSelectedEmpRefNo('');
@@ -441,6 +439,66 @@ const StaffFullFinal = () => {
         generateError.toLowerCase().includes('already generated');
 
     const selectedEmpName = empList.find(e => e.EmpRefNo === selectedEmpRefNo)?.Name || '';
+
+    // ── Submit ───────────────────────────────────────────────────────────────
+    // spUpdateFinalSalary needs the draft's TransactionRefNo + CCCode and the
+    // full comma-separated head lists (existing generated heads + any optional
+    // heads the user entered an amount for). Each list must carry a trailing
+    // comma and hold the same number of entries — the SP walks them in lockstep.
+    const handleSave = useCallback(() => {
+        if (!selectedEmpRefNo) return;
+        const transactionRefNo = d?.TransactionRefNo || d?.MonthSalary?.TransactionRefNo || '';
+        const ccCode           = d?.CCCode || d?.MonthSalary?.JoiningCostCenter || '';
+        if (!d || !transactionRefNo) {
+            toast.error('Generate the settlement before submitting.');
+            return;
+        }
+
+        const optionalRows = (d.lstMonthSalaryOptionalHeads || [])
+            .filter(h => parseFloat(optionalAmounts[h.HeadName]) > 0)
+            .map(h => ({
+                SalaryHead:       h.HeadName,
+                HeadType:         h.HeadType,
+                HeadAmount:       parseFloat(optionalAmounts[h.HeadName]),
+                ApplicableForPL:  h.ApplicableForPL  || 'No',
+                ApplicableForESI: h.ApplicableForESI || 'No',
+            }));
+
+        const allHeads = [...(d.lstMonthSalaryHeads || []), ...optionalRows];
+        if (allHeads.length === 0) {
+            toast.error('No salary heads available to submit.');
+            return;
+        }
+
+        const join = (arr) => arr.join(',') + ',';   // SP loop needs a trailing comma
+        const salaryheads    = join(allHeads.map(h => h.SalaryHead || h.HeadName));
+        const headtypes      = join(allHeads.map(h => h.HeadType || ''));
+        const headAmounts    = join(allHeads.map(h => parseFloat(h.HeadAmount) || 0));
+        const applicablePLs  = join(allHeads.map(h => h.ApplicableForPL  || 'No'));
+        const applicableESIs = join(allHeads.map(h => h.ApplicableForESI || 'No'));
+
+        dispatch(saveFinalSalary({
+            empRefNo:          selectedEmpRefNo,
+            createdBy:         userName,
+            roleId,
+            transactionRefNo,
+            ccCode,
+            payRollFortheDate: d.MonthSalary?.PayRollFortheDate || d.PayRollFortheDate || '',
+
+            monthGross:        d.MonthSalary?.Gross,
+            monthDeduction:    d.MonthSalary?.TotalDeduction,
+            monthNet:          d.MonthSalary?.NetAmount,
+
+            finalGross:        adjustedGross,
+            finalDeduction:    adjustedDeduction,
+            finalNet:          adjustedNet,
+            recoverAmt:        d.RecoverAmt,
+            paymentAmount:     adjustedNet,
+
+            salaryheads, headtypes, headAmounts, applicablePLs, applicableESIs,
+        }));
+    }, [selectedEmpRefNo, userName, roleId, d, optionalAmounts,
+        adjustedGross, adjustedDeduction, adjustedNet, dispatch]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4 md:p-6">

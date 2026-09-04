@@ -159,6 +159,22 @@ const resolveGenerateStatus = (payload) => {
     return { isSuccess, responseStr, data: isSuccess ? data : null };
 };
 
+// SaveFinalSalary succeeds when the SP output param SaveStatus starts with
+// "Submited" (spSaveFinalSalary sets @AddStatus='Submited$'). Other prefixes are
+// error channels: "BudgetError$…", "NextLevelError$…", "Error$…".
+const resolveSaveStatus = (payload) => {
+    const data  = payload?.Data ?? payload;
+    const raw   = (data?.SaveStatus ?? data?.GenerateStatus ?? payload?.Message ?? '').toString();
+    const parts = raw.split('$');
+    const prefix = parts[0] || '';
+    const detail = parts.slice(1).join('$');
+    const isSuccess = prefix.toLowerCase() === 'submited';
+    const responseStr = isSuccess
+        ? 'Submited'
+        : (detail || prefix || 'Save final salary failed');
+    return { isSuccess, responseStr };
+};
+
 // ApproveFinalSalary succeeds when Data === "Submited" (SP output param)
 const resolveApproveStatus = (payload) => {
     const dataVal     = payload?.Data;
@@ -284,7 +300,7 @@ const staffFullFinalSlice = createSlice({
                 state.loading.save = false;
                 console.log('✅ Save Final Salary fulfilled - Raw Response:', action.payload);
                 state.saveResult = action.payload;
-                const { isSuccess, responseStr } = resolveGenerateStatus(action.payload);
+                const { isSuccess, responseStr } = resolveSaveStatus(action.payload);
                 if (isSuccess) {
                     state.saveStatus = 'success';
                 } else {

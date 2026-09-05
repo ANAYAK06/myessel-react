@@ -239,8 +239,12 @@ const resolveSaveStatus = (payload) => {
     const responseStr = typeof dataVal === 'string'
         ? dataVal
         : (payload?.Message || 'Save failed');
-    const isSuccess = payload?.IsSuccessful === true ||
-        (typeof responseStr === 'string' && responseStr.toLowerCase().includes('submit'));
+    // NOTE: backend's IsSuccessful is true for ANY non-null @Addstatus string coming back
+    // from spInsertAppraisalPayRevision — including business-rule rejections like
+    // "Access Denied", "AlreadyRevised", "Salary Rules Does Not Exist For This Group".
+    // The only literal value that means the row was actually inserted is "Submited",
+    // so that's the sole thing we treat as success here.
+    const isSuccess = typeof responseStr === 'string' && responseStr.trim().toLowerCase() === 'submited';
     return { isSuccess, responseStr };
 };
 

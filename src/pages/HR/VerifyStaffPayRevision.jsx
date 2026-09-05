@@ -369,6 +369,17 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
         }).format(amount || 0);
     };
 
+    // Compact, no-decimal formatter used inside the dense breakdown table
+    // so Monthly + Yearly columns can sit side by side without wrapping.
+    const formatAmount = (amount) => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount || 0);
+    };
+
     const statsCards = [
         {
             icon: RefreshCw,
@@ -525,32 +536,42 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
         });
 
         return (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border-2 border-gray-200 dark:border-gray-700">
                 {/* Employee Info Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 mb-6 border border-blue-200 dark:border-blue-700">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-3 mb-4 border border-blue-200 dark:border-blue-700">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">NAME OF THE EMPLOYEE</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{revisionDetails.EmployeeName}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">EMPLOYEE</p>
+                            <p className="font-semibold text-gray-900 dark:text-white truncate">{revisionDetails.EmployeeName}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">LOCATION</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{revisionDetails.State || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">EMPLOYEE CODE</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">EMPLOYEE CODE</p>
                             <p className="font-semibold text-gray-900 dark:text-white">{revisionDetails.EmpRefNo}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">CATEGORY</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{revisionDetails.Category || 'N/A'}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">LOCATION</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{revisionDetails.State || 'N/A'}</p>
                         </div>
                         <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">REVISION DATE</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{revisionDetails.AppraisalDate}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">CATEGORY</p>
+                            <p className="font-semibold text-gray-900 dark:text-white truncate">{revisionDetails.Category || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">GROUP</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{revisionDetails.GroupName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">CHANGED TO GROUP</p>
+                            <p className="font-semibold text-green-600 dark:text-green-400">{revisionDetails.NewGroupName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">EFFECTIVE MONTH</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">
+                                {revisionDetails.MonthName} {revisionDetails.Year} <span className="text-gray-500 dark:text-gray-400 font-normal">({revisionDetails.AppraisalDate})</span>
+                            </p>
                         </div>
                         <div className="text-right">
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">REVISION NO</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-[10px] mb-0.5">REVISION NO</p>
                             <p className="font-bold text-blue-600 dark:text-blue-400">
                                 Rev {revisionDetails.RevisionNo}
                                 {revisionDetails.PreviousRevisionNo > 0 && ` (Prev: ${revisionDetails.PreviousRevisionNo})`}
@@ -559,28 +580,45 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                     </div>
                 </div>
 
-                {/* Pay Revision Breakdown Table with Comparison */}
+                {/* Pay Revision Breakdown Table with Comparison — Monthly & Yearly */}
                 <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-[11px]">
                         <thead className="bg-gradient-to-r from-gray-800 to-gray-900 dark:from-gray-900 dark:to-black">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-32">
+                                <th rowSpan={2} className="px-2 py-2 text-left text-[10px] font-semibold text-white uppercase tracking-wider w-24 align-bottom">
                                     Section
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                                <th rowSpan={2} className="px-2 py-2 text-left text-[10px] font-semibold text-white uppercase tracking-wider align-bottom">
                                     Particulars
                                 </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                                <th rowSpan={2} className="px-2 py-2 text-center text-[10px] font-semibold text-white uppercase tracking-wider align-bottom">
                                     Type
                                 </th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider bg-red-900/30">
+                                <th colSpan={3} className="px-2 py-1 text-center text-[10px] font-semibold text-white uppercase tracking-wider border-l border-gray-600">
+                                    Monthly
+                                </th>
+                                <th colSpan={3} className="px-2 py-1 text-center text-[10px] font-semibold text-white uppercase tracking-wider border-l border-gray-600">
+                                    Yearly
+                                </th>
+                            </tr>
+                            <tr>
+                                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-white uppercase tracking-wider bg-red-900/30 border-l border-gray-600">
                                     Existing
                                 </th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider bg-green-900/30">
+                                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-white uppercase tracking-wider bg-green-900/30">
                                     Revised
                                 </th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider bg-blue-900/30">
-                                    Difference
+                                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-white uppercase tracking-wider bg-blue-900/30">
+                                    Diff
+                                </th>
+                                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-white uppercase tracking-wider bg-red-900/30 border-l border-gray-600">
+                                    Existing
+                                </th>
+                                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-white uppercase tracking-wider bg-green-900/30">
+                                    Revised
+                                </th>
+                                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-white uppercase tracking-wider bg-blue-900/30">
+                                    Diff
                                 </th>
                             </tr>
                         </thead>
@@ -606,58 +644,77 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                                                     <tr key={`${groupIndex}-${itemIndex}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                                         {/* MainHead column with rowspan for first item only */}
                                                         {isFirstInGroup && (
-                                                            <td 
-                                                                rowSpan={rowSpan} 
-                                                                className="px-4 py-3 text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 border-r-2 border-gray-300 dark:border-gray-600 align-middle text-center"
+                                                            <td
+                                                                rowSpan={rowSpan}
+                                                                className="px-2 py-1.5 text-[11px] font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 border-r-2 border-gray-300 dark:border-gray-600 align-middle text-center"
                                                             >
                                                                 <div className="flex items-center justify-center h-full">
-                                                                    <span className="writing-mode-vertical transform rotate-180 text-xs tracking-wider uppercase whitespace-nowrap">
+                                                                    <span className="writing-mode-vertical transform rotate-180 text-[10px] tracking-wider uppercase whitespace-nowrap">
                                                                         {group.mainHead}
                                                                     </span>
                                                                 </div>
                                                             </td>
                                                         )}
-                                                        
+
                                                         {/* Head Name */}
-                                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                                            <div className="flex items-center space-x-2">
+                                                        <td className="px-2 py-1.5 text-[11px] text-gray-900 dark:text-white">
+                                                            <div className="flex items-center space-x-1.5">
                                                                 <span>{head.HeadName}</span>
                                                                 {head.HeadReviseType && (
-                                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${revisionBadgeColor}`}>
-                                                                        {head.HeadReviseType === 'New' && <Plus className="w-3 h-3 inline mr-1" />}
-                                                                        {head.HeadReviseType === 'Old_New' && <ArrowRight className="w-3 h-3 inline mr-1" />}
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium whitespace-nowrap ${revisionBadgeColor}`}>
+                                                                        {head.HeadReviseType === 'New' && <Plus className="w-2.5 h-2.5 inline mr-0.5" />}
+                                                                        {head.HeadReviseType === 'Old_New' && <ArrowRight className="w-2.5 h-2.5 inline mr-0.5" />}
                                                                         {head.HeadReviseType}
                                                                     </span>
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        
+
                                                         {/* Amount Type */}
-                                                        <td className="px-4 py-3 text-center text-sm text-gray-900 dark:text-white">
+                                                        <td className="px-2 py-1.5 text-center text-[11px] text-gray-900 dark:text-white whitespace-nowrap">
                                                             {head.ApplicableType || head.CTCAmounttype || '-'}
                                                         </td>
-                                                        
-                                                        {/* Existing Amount */}
-                                                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 bg-red-50 dark:bg-red-900/10">
-                                                            {head.ExistingMonthlyAmount > 0 ? formatCurrency(head.ExistingMonthlyAmount) : '-'}
+
+                                                        {/* Monthly Existing */}
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-semibold text-gray-700 dark:text-gray-300 bg-red-50 dark:bg-red-900/10 border-l border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                                                            {head.ExistingMonthlyAmount > 0 ? formatAmount(head.ExistingMonthlyAmount) : '-'}
                                                         </td>
-                                                        
-                                                        {/* Revised Amount */}
-                                                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white bg-green-50 dark:bg-green-900/10">
-                                                            {head.MonthlyAmount > 0 ? formatCurrency(head.MonthlyAmount) : '-'}
+
+                                                        {/* Monthly Revised */}
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-semibold text-gray-900 dark:text-white bg-green-50 dark:bg-green-900/10 whitespace-nowrap">
+                                                            {head.MonthlyAmount > 0 ? formatAmount(head.MonthlyAmount) : '-'}
                                                         </td>
-                                                        
-                                                        {/* Difference */}
-                                                        <td className="px-4 py-3 text-right text-sm font-bold bg-blue-50 dark:bg-blue-900/10">
-                                                            {head.MonthlyDiff !== 0 && (
+
+                                                        {/* Monthly Difference */}
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-bold bg-blue-50 dark:bg-blue-900/10 whitespace-nowrap">
+                                                            {head.MonthlyDiff !== 0 ? (
                                                                 <span className={head.MonthlyDiff > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                                                                     {head.MonthlyDiff > 0 && '+'}
-                                                                    {formatCurrency(head.MonthlyDiff)}
-                                                                    {head.MonthlyDiff > 0 && <TrendingUpIcon className="w-3 h-3 inline ml-1" />}
-                                                                    {head.MonthlyDiff < 0 && <TrendingDown className="w-3 h-3 inline ml-1" />}
+                                                                    {formatAmount(head.MonthlyDiff)}
                                                                 </span>
-                                                            )}
-                                                            {head.MonthlyDiff === 0 && <span className="text-gray-500">-</span>}
+                                                            ) : <span className="text-gray-500">-</span>}
+                                                        </td>
+
+                                                        {/* Yearly Existing */}
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-semibold text-gray-700 dark:text-gray-300 bg-red-50 dark:bg-red-900/10 border-l border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                                                            {head.ExistingYearlyAmount > 0 ? formatAmount(head.ExistingYearlyAmount) : '-'}
+                                                        </td>
+
+                                                        {/* Yearly Revised */}
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-semibold text-gray-900 dark:text-white bg-green-50 dark:bg-green-900/10 whitespace-nowrap">
+                                                            {head.YearlyAmount > 0 ? formatAmount(head.YearlyAmount) : '-'}
+                                                        </td>
+
+                                                        {/* Yearly Difference */}
+                                                        <td className="px-2 py-1.5 text-right text-[11px] font-bold bg-blue-50 dark:bg-blue-900/10 whitespace-nowrap">
+                                                            {head.YearlyDiff !== 0 ? (
+                                                                <span className={head.YearlyDiff > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                                                    {head.YearlyDiff > 0 && '+'}
+                                                                    {formatAmount(head.YearlyDiff)}
+                                                                    {head.YearlyDiff > 0 && <TrendingUpIcon className="w-2.5 h-2.5 inline ml-0.5" />}
+                                                                    {head.YearlyDiff < 0 && <TrendingDown className="w-2.5 h-2.5 inline ml-0.5" />}
+                                                                </span>
+                                                            ) : <span className="text-gray-500">-</span>}
                                                         </td>
                                                     </tr>
                                                 );
@@ -670,7 +727,7 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                                         // Determine styling based on HeadType
                                         let bgClass = '';
                                         let textClass = 'text-gray-900 dark:text-white';
-                                        
+
                                         // Total rows styling
                                         if (head.HeadType === 'GROSSSALARY') {
                                             bgClass = 'bg-blue-600 dark:bg-blue-700';
@@ -689,37 +746,54 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                                             textClass = 'font-bold text-white';
                                         } else if (head.HeadType === 'CTCTOTAL') {
                                             bgClass = 'bg-blue-800 dark:bg-blue-900';
-                                            textClass = 'font-bold text-white text-base';
+                                            textClass = 'font-bold text-white text-[12px]';
                                         }
 
                                         return (
                                             <tr key={`${groupIndex}-${itemIndex}`} className={`${bgClass}`}>
                                                 {/* Empty Section cell */}
-                                                <td className={`px-4 py-3 text-sm ${textClass} ${bgClass}`}>
+                                                <td className={`px-2 py-1.5 text-[11px] ${textClass} ${bgClass}`}>
                                                     {/* Empty for total rows */}
                                                 </td>
                                                 {/* Head Name */}
-                                                <td className={`px-4 py-3 text-sm ${textClass} ${bgClass}`}>
+                                                <td className={`px-2 py-1.5 text-[11px] ${textClass} ${bgClass}`}>
                                                     {head.HeadName}
                                                 </td>
                                                 {/* Amount Type */}
-                                                <td className={`px-4 py-3 text-center text-sm ${textClass} ${bgClass}`}>
+                                                <td className={`px-2 py-1.5 text-center text-[11px] ${textClass} ${bgClass}`}>
                                                     {head.ApplicableType || head.CTCAmounttype || '-'}
                                                 </td>
-                                                {/* Existing Amount */}
-                                                <td className={`px-4 py-3 text-right text-sm ${textClass} ${bgClass}`}>
-                                                    {head.ExistingMonthlyAmount > 0 ? formatCurrency(head.ExistingMonthlyAmount) : '-'}
+                                                {/* Monthly Existing */}
+                                                <td className={`px-2 py-1.5 text-right text-[11px] border-l border-white/10 whitespace-nowrap ${textClass} ${bgClass}`}>
+                                                    {head.ExistingMonthlyAmount > 0 ? formatAmount(head.ExistingMonthlyAmount) : '-'}
                                                 </td>
-                                                {/* Revised Amount */}
-                                                <td className={`px-4 py-3 text-right text-sm ${textClass} ${bgClass}`}>
-                                                    {head.MonthlyAmount > 0 ? formatCurrency(head.MonthlyAmount) : '-'}
+                                                {/* Monthly Revised */}
+                                                <td className={`px-2 py-1.5 text-right text-[11px] whitespace-nowrap ${textClass} ${bgClass}`}>
+                                                    {head.MonthlyAmount > 0 ? formatAmount(head.MonthlyAmount) : '-'}
                                                 </td>
-                                                {/* Difference */}
-                                                <td className={`px-4 py-3 text-right text-sm ${textClass} ${bgClass}`}>
+                                                {/* Monthly Difference */}
+                                                <td className={`px-2 py-1.5 text-right text-[11px] whitespace-nowrap ${textClass} ${bgClass}`}>
                                                     {head.MonthlyDiff !== 0 ? (
                                                         <span>
                                                             {head.MonthlyDiff > 0 && '+'}
-                                                            {formatCurrency(head.MonthlyDiff)}
+                                                            {formatAmount(head.MonthlyDiff)}
+                                                        </span>
+                                                    ) : '-'}
+                                                </td>
+                                                {/* Yearly Existing */}
+                                                <td className={`px-2 py-1.5 text-right text-[11px] border-l border-white/10 whitespace-nowrap ${textClass} ${bgClass}`}>
+                                                    {head.ExistingYearlyAmount > 0 ? formatAmount(head.ExistingYearlyAmount) : '-'}
+                                                </td>
+                                                {/* Yearly Revised */}
+                                                <td className={`px-2 py-1.5 text-right text-[11px] whitespace-nowrap ${textClass} ${bgClass}`}>
+                                                    {head.YearlyAmount > 0 ? formatAmount(head.YearlyAmount) : '-'}
+                                                </td>
+                                                {/* Yearly Difference */}
+                                                <td className={`px-2 py-1.5 text-right text-[11px] whitespace-nowrap ${textClass} ${bgClass}`}>
+                                                    {head.YearlyDiff !== 0 ? (
+                                                        <span>
+                                                            {head.YearlyDiff > 0 && '+'}
+                                                            {formatAmount(head.YearlyDiff)}
                                                         </span>
                                                     ) : '-'}
                                                 </td>
@@ -732,47 +806,11 @@ const VerifyStaffPayRevision = ({ notificationData, onNavigate }) => {
                     </table>
                 </div>
 
-                {/* Revision Summary */}
-                <div className="mt-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                    <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
-                        <TrendingUpIcon className="w-4 h-4 text-blue-600" />
-                        <span>Pay Revision Summary</span>
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-gray-500 dark:text-gray-400 mb-1">Previous Group</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                                {revisionDetails.GroupName || 'N/A'}
-                            </p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-gray-500 dark:text-gray-400 mb-1">New Group</p>
-                            <p className="font-semibold text-green-600 dark:text-green-400">
-                                {revisionDetails.NewGroupName || 'N/A'}
-                            </p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                            <p className="text-gray-500 dark:text-gray-400 mb-1">Revision No</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                                {revisionDetails.RevisionNo}
-                            </p>
-                        </div>
-                        {revisionDetails.Category && (
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                                <p className="text-gray-500 dark:text-gray-400 mb-1">Category</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">
-                                    {revisionDetails.Category}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
                 {/* Additional Info */}
                 {revisionDetails.PayRevisionHeadData?.EmpRuleStatus && (
-                    <div className="mt-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Additional Information</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div className="mt-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                        <h4 className="text-xs font-bold text-gray-900 dark:text-white mb-2">Additional Information</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
                             {revisionDetails.PayRevisionHeadData.EmpRuleStatus.PFExist && (
                                 <div>
                                     <p className="text-gray-500 dark:text-gray-400">PF Status</p>

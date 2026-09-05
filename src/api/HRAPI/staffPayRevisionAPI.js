@@ -259,8 +259,11 @@ export const getEmpDataForAppraisal = async (empRefNo) => {
 // 10. Save Employee Pay Revision (POST)
 //
 // SP: spInsertAppraisalPayRevision
-// Params: @EmpRefno, @Month, @Year, @Remarks, @Heads (JSON), @CreatedBy, @Roleid, @GroupId
+// Params: @EmpRefno, @Month, @Year, @Date, @Remarks, @Heads (JSON), @CreatedBy, @Roleid, @GroupId
 // Output: @Addstatus → "Submited" on success
+// @Date is the user-picked effective date (YYYY-MM-DD). When present, the SP derives
+// Month/Year from it and uses it for the HRSalaryRules-effective-date and
+// next-appraisal-date checks — without it those checks always fail.
 export const saveEmpPayRevision = async (params) => {
     try {
         console.log('💾 Saving Employee Pay Revision - raw params:', params);
@@ -268,6 +271,7 @@ export const saveEmpPayRevision = async (params) => {
         if (!params.empRefNo)   throw new Error('Employee Ref No is required');
         if (!params.createdBy)  throw new Error('Created By is required');
         if (!params.heads)      throw new Error('Heads data is required');
+        if (!params.date)       throw new Error('Effective date is required');
 
         const transformedHeads = transformRevisionHeadsForPayload(
             Array.isArray(params.heads) ? params.heads : JSON.parse(params.heads)
@@ -277,6 +281,7 @@ export const saveEmpPayRevision = async (params) => {
             EmpRefNo:        params.empRefNo.toString(),
             Month:           parseInt(params.month)  || 0,
             Year:            parseInt(params.year)   || 0,
+            Date:            params.date,
             Remarks:         params.remarks?.toString() || '',
             HeadsJsonString: JSON.stringify(transformedHeads),
             CreatedBy:       params.createdBy.toString(),

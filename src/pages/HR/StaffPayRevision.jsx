@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
@@ -6,7 +6,10 @@ import {
     RotateCcw, Send, TrendingUp, TrendingDown,
     FileText, ChevronDown, Briefcase, Award, Info,
     DollarSign, Navigation, ArrowRight, RefreshCw, Layers,
+    CalendarDays,
 } from 'lucide-react';
+
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 import {
     fetchAppraisalEmp,
@@ -60,6 +63,22 @@ const fmt = (val, dec = 2) => {
 const diff = (newAmt, existAmt) => {
     const d = (parseFloat(newAmt) || 0) - (parseFloat(existAmt) || 0);
     return d;
+};
+
+// Backend sends EffectiveDate as "01-Mar-2026" (dd-Mon-yyyy). Parse that into a real
+// Date object — CustomDatePicker's own string parser only understands numeric formats.
+const parseServerDate = (str) => {
+    if (!str) return null;
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+};
+
+const toISODate = (d) => {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
 };
 
 const TOTAL_HEAD_TYPES = ['GROSSSALARY', 'DEDUCTIONTOTAL', 'NETSALARY', 'BENEFITTOTAL', 'OTHERBENEFITTOTAL', 'CTCTOTAL'];
@@ -262,6 +281,14 @@ const StaffPayRevision = () => {
     const [selectedEmp,   setSelectedEmp]   = useState('');
     const [selectedGroup, setSelectedGroup] = useState('');
     const [remarks,       setRemarks]       = useState('');
+    const [effectiveDate, setEffectiveDate] = useState(null);
+
+    // Server's suggested next-appraisal date — used as the minimum selectable date
+    // (the SP rejects an effective date earlier than this) and to pre-fill the picker.
+    const nextAppraisalDate = useMemo(
+        () => parseServerDate(appraisalData?.EffectiveDate),
+        [appraisalData]
+    );
 
     // Load employees + check access on mount
     useEffect(() => {
@@ -270,12 +297,15 @@ const StaffPayRevision = () => {
         return () => { dispatch(resetCreationFlow()); };
     }, [dispatch, roleId]);
 
-    // After appraisalData loads, pre-select the employee's current group
+    // After appraisalData loads, pre-select the employee's current group and
+    // default the effective date to the server-suggested next appraisal date
+    // (still editable — this is only a starting point, not a fixed value).
     useEffect(() => {
         if (!appraisalData) return;
         if (appraisalData.GroupId) {
             setSelectedGroup(String(appraisalData.GroupId));
         }
+        setEffectiveDate(parseServerDate(appraisalData.EffectiveDate));
     }, [appraisalData]);
 
     // Handle save status
@@ -287,6 +317,7 @@ const StaffPayRevision = () => {
             setSelectedEmp('');
             setSelectedGroup('');
             setRemarks('');
+            setEffectiveDate(null);
             dispatch(fetchAppraisalEmp());
         } else if (saveRevisionStatus === 'failed' && saveRevisionError) {
             toast.error(saveRevisionError);
@@ -297,6 +328,7 @@ const StaffPayRevision = () => {
     const handleEmpChange = (e) => {
         setSelectedEmp(e.target.value);
         setSelectedGroup('');
+        setEffectiveDate(null);
         dispatch(clearRevisionData());
     };
 
@@ -326,6 +358,11 @@ const StaffPayRevision = () => {
         if (!appraisalData)             { toast.warn('Please load revision data first.');    return; }
         if (!selectedGroup)             { toast.warn('Please select a group.');              return; }
         if (localRevisionHeads.length === 0) { toast.warn('No revision heads to save.');    return; }
+        if (!effectiveDate)              { toast.warn('Please select an effective date.');   return; }
+        if (nextAppraisalDate && effectiveDate < nextAppraisalDate) {
+            toast.warn(`Select an effective date on or after ${nextAppraisalDate.toLocaleDateString('en-GB')}.`);
+            return;
+        }
 
         const empRule = revisionHeadsData?.EmpRuleStatus;
 
@@ -372,8 +409,9 @@ const StaffPayRevision = () => {
 
         dispatch(saveEmpPayRevision({
             empRefNo:  selectedEmp,
-            month:     appraisalData.Month  || 0,
-            year:      appraisalData.Year   || 0,
+            month:     effectiveDate.getMonth() + 1,
+            year:      effectiveDate.getFullYear(),
+            date:      toISODate(effectiveDate),
             remarks:   remarks.trim(),
             heads:     localRevisionHeads,
             createdBy: userName,
@@ -459,7 +497,7 @@ const StaffPayRevision = () => {
                         </div>
                         <button
                             type="button"
-                            onClick={() => { dispatch(clearRevisionData()); setSelectedEmp(''); setSelectedGroup(''); setRemarks(''); }}
+                            onClick={() => { dispatch(clearRevisionData()); setSelectedEmp(''); setSelectedGroup(''); setRemarks(''); setEffectiveDate(null); }}
                             disabled={isBusy}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600 disabled:opacity-50">
                             <RotateCcw className="h-3.5 w-3.5" /> Reset
@@ -613,7 +651,7 @@ const StaffPayRevision = () => {
                                             { label: 'Category',        value: revisionHeadsData?.Category || appraisalData?.Category || '—' },
                                             { label: 'State',           value: revisionHeadsData?.State || '—' },
                                             { label: 'Group',           value: revisionHeadsData?.GroupName ? `${revisionHeadsData.GroupName} (${revisionHeadsData.GroupId})` : appraisalData?.GroupName || '—' },
-                                            { label: 'Effective Date',  value: appraisalData?.EffectiveDate || '—' },
+                                            { label: 'Suggested Effective Date', value: appraisalData?.EffectiveDate || '—' },
                                             { label: 'Daily Wage',      value: groupSalaryType === 'Yes' ? 'Yes' : 'No' },
                                         ].map(({ label, value }) => (
                                             <div key={label}>
@@ -850,6 +888,28 @@ const StaffPayRevision = () => {
                             </div>
                             <div className="p-6 md:p-8">
                                 <SectionHeader icon={FileText} title="Remarks &amp; Submission" />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                    <div>
+                                        <CustomDatePicker
+                                            label="Effective Date"
+                                            required
+                                            value={effectiveDate}
+                                            onChange={(d) => setEffectiveDate(d)}
+                                            minDate={nextAppraisalDate}
+                                            disabled={saveRevisionLoading}
+                                            format="DD/MM/YYYY"
+                                            placeholder="Select effective date"
+                                        />
+                                        {nextAppraisalDate && (
+                                            <p className="mt-1.5 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                                                <CalendarDays className="h-3 w-3" />
+                                                Suggested / earliest: {nextAppraisalDate.toLocaleDateString('en-GB')}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1.5">
                                     Remarks
                                 </label>
@@ -881,7 +941,7 @@ const StaffPayRevision = () => {
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
-                                onClick={() => { dispatch(clearRevisionData()); setSelectedEmp(''); setSelectedGroup(''); setRemarks(''); }}
+                                onClick={() => { dispatch(clearRevisionData()); setSelectedEmp(''); setSelectedGroup(''); setRemarks(''); setEffectiveDate(null); }}
                                 disabled={saveRevisionLoading}
                                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600 disabled:opacity-50">
                                 <RotateCcw className="h-4 w-4" /> Reset
